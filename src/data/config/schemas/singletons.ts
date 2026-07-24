@@ -14,6 +14,12 @@ const int = z.number().int();
 export const zBoardConfig = z.object({
   cols: int, rows: int,
   selectedSlots: int.describe('Squad size = first N of the owned order.'),
+  drag: z.object({
+    liftFactor: num.describe('While dragging, the icon lifts up by this × the tile height so a thumb never covers it.'),
+    liftScale: num.describe('A held item scales to this × its resting size (1 = no change).'),
+    easeMs: num.describe('Duration (ms) of the lift ease-in on grab / ease-out on release.'),
+    easeCurve: z.string().describe('CSS timing-function for the lift ease (natural settle, no bounce).'),
+  }).strict().describe('Held-tile lift so the dragged icon stays visible above the finger/thumb.'),
   startLayout: z.object({
     generators: z.array(stringConfigRef('generators', 'key')).describe('Generators placed on a fresh board (→ generators.key).'),
     seedItems: z.array(z.object({

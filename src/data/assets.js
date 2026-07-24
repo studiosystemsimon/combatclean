@@ -10,7 +10,7 @@ export const ASSETS = {
   // ── Merge chains ──────────────────────────────────────────────────────────
   // NOTE: the chain IDs (blade / bow / magic) are OPAQUE internal keys shared with
   // the combat VFX + hero-weapon system (config.js trailStyle / impactColor). Each
-  // ladder obeys the three cardinal laws (see agent mergecombat-merge-icon-author):
+  // ladder obeys the three cardinal laws (see agent merge-icon-author):
   // every icon clearly differentiated, escalation clear, power/sophistication rising.
   // Blades = SAME sword, escalating MATERIAL + gem + elaboration (art/refs/progression-reference.png).
   // wood → brass → iron → steel(+gem) → gold(+gem) → mythril(+gem) → obsidian(+gem) → radiant crystal(+gem).

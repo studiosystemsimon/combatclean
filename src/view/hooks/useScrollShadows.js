@@ -11,6 +11,7 @@ export function useScrollShadows() {
   const elRef = useRef(null);
   const [shadows, setShadows] = useState({ top: false, bottom: false });
   const rafRef = useRef(null);
+  const teardownRef = useRef(null);
 
   const measure = useCallback(() => {
     const el = elRef.current;
@@ -26,8 +27,11 @@ export function useScrollShadows() {
     rafRef.current = requestAnimationFrame(measure);
   }, [measure]);
 
+  // NB: a callback ref must NOT return a cleanup function in React 18 (it warns and ignores it —
+  // leaking the listeners). Instead we stash the teardown in a ref and run it on re-attach / unmount.
   const ref = useCallback(
     (el) => {
+      if (teardownRef.current) { teardownRef.current(); teardownRef.current = null; }
       elRef.current = el;
       if (!el) return;
       measure();
@@ -37,7 +41,7 @@ export function useScrollShadows() {
       if (el.firstElementChild) ro.observe(el.firstElementChild);
       const onResize = () => measure();
       window.addEventListener('resize', onResize);
-      return () => {
+      teardownRef.current = () => {
         el.removeEventListener('scroll', onScroll);
         ro.disconnect();
         window.removeEventListener('resize', onResize);
@@ -49,6 +53,7 @@ export function useScrollShadows() {
   useEffect(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (teardownRef.current) { teardownRef.current(); teardownRef.current = null; }
     };
   }, []);
 

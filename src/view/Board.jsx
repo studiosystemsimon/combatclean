@@ -29,6 +29,10 @@ const rarity = (t) => RARITY[Math.min(t, RARITY.length - 1)];
 const tierName = (t) => TIER_NAME[Math.min(t, TIER_NAME.length - 1)];
 const intensity = (t) => (t >= 6 ? 'crit' : t >= 4 ? 'heavy' : 'normal');
 const JUICE = 1.5;
+// Held-tile lift (config) — a dragged icon rises above the finger so a thumb never
+// covers it. Amount is a factor of tile height (scale-independent); the ease makes
+// the grab/release feel natural. Rides the .mb-bob wrapper so finger tracking stays 1:1.
+const DRAG = BOARD.drag;
 const RM = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Two items are a merge pair iff the model says so (same chain + level, not maxed).
 const pair = (a, b) => canMerge(a, b);
@@ -301,6 +305,10 @@ export default function Board() {
       if (d.hint) clearTimeout(d.hint);
       d.el.classList.remove('mb-lifted', 'mb-dragging');
       const inner = d.el.querySelector('.mb-inner'); if (inner) inner.style.transform = '';
+      // Ease the lifted icon back down to rest (mirrors the grab ease).
+      if (d.bob) { d.bob.style.transition = RM ? 'none' : `transform ${DRAG.easeMs}ms ${DRAG.easeCurve}`; d.bob.style.transform = ''; }
+      d.el.style.removeProperty('--mb-lift-scale'); // inner eases back via its own transition
+
       cellEls.current.forEach((ce) => ce && ce.classList.remove('mb-dim', 'mb-dropok'));
       for (const [, rec] of tiles.current) rec.el.classList.remove('mb-canmerge', 'mb-hovok');
     };
@@ -327,6 +335,21 @@ export default function Board() {
       try { tileEl.setPointerCapture(e.pointerId); } catch { /* */ }
       tileEl.classList.add('mb-lifted', 'mb-dragging'); tileEl.style.transition = '';
       if (cellEls.current[cell]) cellEls.current[cell].classList.add('mb-dim');
+      // Lift the icon up above the finger so a thumb never covers it, eased in from
+      // rest so the grab feels natural (config: BOARD.drag). Items only — generators
+      // are tapped/relocated, not held. The lift rides .mb-bob so the el transform
+      // keeps tracking the finger 1:1 and the drop target stays under the finger.
+      if (!isGen) {
+        tileEl.style.setProperty('--mb-lift-scale', DRAG.liftScale); // held item swells (config)
+        const bob = tileEl.querySelector('.mb-bob');
+        if (bob) {
+          const lift = Math.round(g.h * DRAG.liftFactor);
+          drag.current.bob = bob;
+          bob.style.transition = RM ? 'none' : `transform ${DRAG.easeMs}ms ${DRAG.easeCurve}`;
+          if (RM) bob.style.transform = `translateY(${-lift}px)`;
+          else requestAnimationFrame(() => { if (drag.current && drag.current.el === tileEl) bob.style.transform = `translateY(${-lift}px)`; });
+        }
+      }
       if (!isGen) {
         drag.current.hint = setTimeout(() => { // green "possible matches" only after holding 4s
           for (let i = 0; i < N; i++) {

@@ -4,7 +4,16 @@
 // the data barrels re-combine logical (C) + presentation (C.ui) into the shape the ported view reads.
 import { C } from '../game/content.ts';
 
-const at = (cat, key) => (C.ui && C.ui[cat] && C.ui[cat][String(key)]) || {};
+// Returns PRESENTATION ONLY. The UI entry's `id` (numeric, id-kind) / `key` (string, key-kind) are
+// the registry IDENTITY LINK used to find it — NOT presentation. They must be stripped here so a
+// barrel that spreads the result (`{ ...logical, ...uiEntry }`) can never let the UI's numeric `id`
+// clobber the logical slug `id` the runtime keys on (bug: gacha `banner.id` became 6000 → the summon
+// reducer's `C.BANNERS[6000]` missed → silent no-op). Barrels merge presentation; identity stays logical.
+const at = (cat, key) => {
+  const e = (C.ui && C.ui[cat] && C.ui[cat][String(key)]) || {};
+  const { id: _id, key: _key, ...presentation } = e;
+  return presentation;
+};
 
 export const uiHero = (slug) => at('heroes', C.heroSlugToId[slug]);
 export const uiEnemy = (slug) => at('enemies', C.enemySlugToId[slug]);

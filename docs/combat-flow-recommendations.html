@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Boss / Loss / Progress Flow: Recommendations</title>
+<style>
+  :root{
+    --bg:#0f1117; --bg2:#161a24; --panel:#1b2130; --line:#2a3346;
+    --ink:#e7ecf5; --dim:#93a0b8; --faint:#6b7891;
+    --gold:#ffd45e; --green:#5ad17a; --red:#ff5a5a; --blue:#5aa9ff; --purple:#b98cff;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:linear-gradient(180deg,#0d0f15,#0f1117 40%);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 22px 80px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.2px}
+  h2{font-size:20px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line);
+     display:flex;align-items:center;gap:10px}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+  p{margin:8px 0}
+  .sub{color:var(--dim);font-size:15px;margin:0 0 4px}
+  .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim);vertical-align:middle}
+  code{background:#0c0f16;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:#cfe0ff}
+  .lead{color:var(--dim);max-width:70ch}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .card.good{border-color:#2f5a3c;background:linear-gradient(180deg,#16241b,#141a22)}
+  .card.bad{border-color:#5a2f2f;background:linear-gradient(180deg,#241616,#1a1414)}
+  .card h3{margin-top:0}
+  ul{margin:8px 0;padding-left:20px}li{margin:5px 0}
+  .muted{color:var(--faint)}
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:14px 0}
+  .node{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:120px;flex:0 0 auto}
+  .node b{display:block;font-size:14px}
+  .node small{color:var(--dim)}
+  .node.state{border-left:4px solid var(--blue)}
+  .node.win{border-left:4px solid var(--green)}
+  .node.lose{border-left:4px solid var(--red)}
+  .node.boss{border-left:4px solid var(--gold)}
+  .node.btn{border-left:4px solid var(--purple)}
+  .arrow{align-self:center;color:var(--faint);font-size:20px;padding:0 2px}
+  .lane{display:flex;flex-direction:column;gap:6px}
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+  tr:last-child td{border-bottom:none}
+  .btnpill{display:inline-block;font-weight:800;font-size:12px;padding:4px 10px;border-radius:8px;white-space:nowrap}
+  .b-next{background:#20304a;color:#bcd4ff;border:1px solid #34507d}
+  .b-boss{background:#3a2a12;color:var(--gold);border:1px solid #6b5220}
+  .b-retry{background:#123021;color:var(--green);border:1px solid #245a3c}
+  .b-back{background:#2a2030;color:var(--purple);border:1px solid #4d3a63}
+  .b-none{background:#171b25;color:var(--faint);border:1px solid var(--line)}
+  .rec{background:#12261a;border:1px solid #245a3c;border-radius:10px;padding:12px 14px;margin:10px 0}
+  .rec b{color:var(--green)}
+  .warn{color:var(--red);font-weight:700}
+  .kbd{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12px;color:var(--dim)}
+  .decision{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px;margin:10px 0;background:var(--bg2)}
+  .decision .q{font-weight:800;margin-bottom:6px}
+  .opt{margin:3px 0}
+  .opt .pick{color:var(--green);font-weight:800}
+  .foot{margin-top:40px;color:var(--faint);font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+  .pipe{color:var(--faint);padding:0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Combat progression flow — recommendations</h1>
+  <p class="sub">Combat Clean &nbsp;<span class="pipe">·</span>&nbsp; boss entry &nbsp;<span class="pipe">·</span>&nbsp; defeat handling &nbsp;<span class="pipe">·</span>&nbsp; the "go back a level" button</p>
+  <p class="lead">Everything below is derived from the current code (<code>src/game/store/reducer.ts</code>,
+  <code>src/game/map/map.ts</code>, <code>src/view/Autobattler.jsx</code>). This page proposes a cleaner flow
+  and lists the concrete decisions to make — it changes no code.</p>
+
+  <!-- ============================================================= -->
+  <h2>1 · How it works today</h2>
+  <p class="lead">One integer, <code>battle.level</code>, drives the whole thing (zone, enemies, rewards, boss).
+  <code>furthestLevel</code> is a high-water mark. A boss sits on every 10th level. A hidden
+  <code>recovering</code> flag silently changes what winning does.</p>
+
+  <div class="flow">
+    <div class="node win"><b>WIN a level</b><small>enemies cleared</small></div>
+    <span class="arrow">→</span>
+    <div class="lane">
+      <div class="node state"><b>if recovering</b><small>replay SAME level again ↺ (farm loop)</small></div>
+      <div class="node boss"><b>else if next = boss</b><small>jump to boss, stop on <code>gate</code></small></div>
+      <div class="node state"><b>else</b><small>auto-advance +1, keep fighting</small></div>
+    </div>
+  </div>
+  <div class="flow">
+    <div class="node lose"><b>LOSE a level</b><small>all heroes down</small></div>
+    <span class="arrow">→</span>
+    <div class="node lose"><b>drop to level − 1</b><small>set <code>recovering = true</code>, auto-restart</small></div>
+    <span class="arrow">→</span>
+    <div class="node state"><b>farm loop</b><small>winning now just replays that lower level…</small></div>
+    <span class="arrow">→</span>
+    <div class="node btn"><b>…until you tap NEXT</b><small>the only way back up</small></div>
+  </div>
+
+  <h3>The one button (<code>challengeNext</code>)</h3>
+  <table>
+    <tr><th>Shown when</th><th>Label</th><th>What a tap does</th></tr>
+    <tr><td>at a boss <code>gate</code></td><td><span class="btnpill b-boss">BOSS</span></td><td>start the boss fight</td></tr>
+    <tr><td><code>recovering</code> &amp; fighting, next is boss</td><td><span class="btnpill b-boss">BOSS</span></td><td>jump +1 into the boss <span class="warn">— skips the danger gate</span></td></tr>
+    <tr><td><code>recovering</code> &amp; fighting, next is normal</td><td><span class="btnpill b-next">NEXT</span></td><td>jump +1, leave the farm loop</td></tr>
+    <tr><td>otherwise</td><td><span class="btnpill b-none">hidden</span></td><td>—</td></tr>
+  </table>
+
+  <!-- ============================================================= -->
+  <h2>2 · Why it feels bad</h2>
+  <div class="grid2">
+    <div class="card bad">
+      <h3>Losing punishes twice, silently</h3>
+      <p>Defeat drops you a level <em>and</em> flips on a hidden farm loop. You didn't ask to retreat, and now
+      winning shows no progress — the game quietly replays a lower level until you notice a small button.</p>
+    </div>
+    <div class="card bad">
+      <h3>One overloaded, part-time button</h3>
+      <p>The same button means "start boss" and "skip forward," and it only appears in <code>recovering</code>/<code>gate</code>
+      states. Its meaning shifts under the player.</p>
+    </div>
+    <div class="card bad">
+      <h3>Two doors into a boss</h3>
+      <p>Reaching a boss naturally shows a "⚠ BOSS AHEAD" danger gate; jumping forward with the button drops you
+      straight into the boss with no gate. Same event, two experiences.</p>
+    </div>
+    <div class="card bad">
+      <h3>No "retry" and no "play boss on demand"</h3>
+      <p>You can't simply retry the level you just lost, and a boss is only ever reachable as a side effect of
+      <code>level % 10 == 0</code>.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <h2>3 · Recommended flow <span class="tag">opinionated default</span></h2>
+  <p class="lead">Three principles: <b>winning always feels like forward motion</b>; <b>losing is a soft setback with
+  one obvious next tap</b>; <b>bosses are a single, deliberate, clearly-labelled gate</b>. One primary button per
+  state, always labelled with its action <em>and</em> its target level.</p>
+
+  <div class="flow">
+    <div class="node win"><b>WIN — normal</b></div><span class="arrow">→</span>
+    <div class="node state"><b>reward beat</b><small>~1.5s</small></div><span class="arrow">→</span>
+    <div class="node state"><b>auto-advance +1</b><small>momentum, no tap needed</small></div>
+  </div>
+  <div class="flow">
+    <div class="node win"><b>WIN — level before boss</b></div><span class="arrow">→</span>
+    <div class="node boss"><b>BOSS GATE</b><small>danger panel, always</small></div><span class="arrow">→</span>
+    <div class="node btn"><b><span class="btnpill b-boss">⚔ FIGHT BOSS · L20</span></b><small>one explicit tap</small></div>
+  </div>
+  <div class="flow">
+    <div class="node lose"><b>LOSE</b></div><span class="arrow">→</span>
+    <div class="node lose"><b>DEFEAT beat</b><small>stay on the level you lost</small></div><span class="arrow">→</span>
+    <div class="lane">
+      <div class="node btn"><b><span class="btnpill b-retry">↻ RETRY · L14</span></b><small>same level, heroes full-healed — default</small></div>
+      <div class="node btn"><b><span class="btnpill b-back">◂ STEP BACK · L13</span></b><small>farm one lower — a CHOICE, not automatic</small></div>
+    </div>
+  </div>
+  <div class="flow">
+    <div class="node btn"><b>Replay from map</b><small>pick any cleared level</small></div><span class="arrow">→</span>
+    <div class="node state"><b>Replay mode</b><small>persistent button:</small></div><span class="arrow">→</span>
+    <div class="node btn"><b><span class="btnpill b-next">▸ RESUME · L20</span></b><small>back to the frontier in one tap</small></div>
+  </div>
+
+  <h3>The rules, stated plainly</h3>
+  <table>
+    <tr><th>Event</th><th>Recommended behaviour</th><th>Why</th></tr>
+    <tr><td>Win on the frontier (normal node)</td><td>Auto-advance +1 after a short reward beat</td><td>Winning = progress; keeps the "one more" pull</td></tr>
+    <tr><td>Win the pre-boss level</td><td>Stop on the Boss Gate; single <span class="btnpill b-boss">⚔ FIGHT BOSS</span> tap. <b>Always</b> via the gate</td><td>Bosses are the beat you should feel; kill the second, gate-skipping path</td></tr>
+    <tr><td>Win a boss</td><td>Zone-clear celebration, then auto-advance into the next zone</td><td>Payoff + momentum</td></tr>
+    <tr><td>Lose</td><td><b>Stay on the level.</b> Offer <span class="btnpill b-retry">↻ RETRY</span> (default) and <span class="btnpill b-back">◂ STEP BACK −1</span></td><td>Retry the thing you failed; retreating becomes a decision, not a silent demotion</td></tr>
+    <tr><td>Replay a cleared level (from map)</td><td>Enter Replay mode with an always-visible <span class="btnpill b-next">▸ RESUME · L{furthest}</span></td><td>Never strand the player in a farm loop; getting back is one obvious tap</td></tr>
+  </table>
+
+  <h3>Button model — one primary action per state</h3>
+  <table>
+    <tr><th>State</th><th>Primary button</th><th>Secondary</th></tr>
+    <tr><td>Fighting (frontier)</td><td><span class="btnpill b-none">none</span> <span class="muted">— auto-advances on win</span></td><td>—</td></tr>
+    <tr><td>Boss gate</td><td><span class="btnpill b-boss">⚔ FIGHT BOSS · L{n}</span></td><td>—</td></tr>
+    <tr><td>Defeat</td><td><span class="btnpill b-retry">↻ RETRY · L{n}</span></td><td><span class="btnpill b-back">◂ STEP BACK · L{n-1}</span></td></tr>
+    <tr><td>Replaying a cleared level</td><td><span class="btnpill b-next">▸ RESUME · L{furthest}</span></td><td>—</td></tr>
+  </table>
+  <p class="muted">Every label carries the concrete target level so the player always knows exactly where a tap sends them.</p>
+
+  <!-- ============================================================= -->
+  <h2>4 · Decisions for you to make</h2>
+  <p class="lead">The recommendation above bakes in some choices. These are the ones worth your explicit call —
+  the recommended pick is marked, but say the word and I'll set any of them differently.</p>
+
+  <div class="decision">
+    <div class="q">A · On a loss, where does the player land?</div>
+    <div class="opt"><span class="pick">▸ Retry the SAME level (recommended)</span> — heroes full-healed, no demotion.</div>
+    <div class="opt">▸ Keep today's behaviour: auto-drop to level − 1.</div>
+    <div class="opt">▸ No penalty at all — just restart, optionally after an ad / small cost.</div>
+  </div>
+  <div class="decision">
+    <div class="q">B · How does a boss start?</div>
+    <div class="opt"><span class="pick">▸ Explicit "⚔ Fight Boss" tap at the gate (recommended)</span> — deliberate, dramatic.</div>
+    <div class="opt">▸ Auto-start after a short danger countdown (fully idle-friendly).</div>
+  </div>
+  <div class="decision">
+    <div class="q">C · After a normal win?</div>
+    <div class="opt"><span class="pick">▸ Auto-advance (recommended)</span> — momentum, matches an auto-battler.</div>
+    <div class="opt">▸ Require a "Next" tap each level (more control, more friction).</div>
+  </div>
+  <div class="decision">
+    <div class="q">D · Can players farm cleared levels?</div>
+    <div class="opt"><span class="pick">▸ Yes, only via the map, with a persistent Resume (recommended)</span> — intentional, never sticky.</div>
+    <div class="opt">▸ No — always snap to the frontier.</div>
+  </div>
+
+  <!-- ============================================================= -->
+  <h2>5 · Where it changes in code</h2>
+  <p class="lead">For when a direction is chosen — the flow lives in a small, well-bounded set of reducer actions
+  plus the arena button. No new systems; this is a rewrite of existing handlers.</p>
+  <table>
+    <tr><th>File · symbol</th><th>Change</th></tr>
+    <tr><td><code>reducer.ts</code> · <code>RESOLVE_LOSS</code></td><td>Stop mutating <code>level</code>. Enter a new <code>defeat</code> status on the same level. Remove the auto <code>recovering</code> farm loop.</td></tr>
+    <tr><td><code>reducer.ts</code> · new <code>RETRY</code> / <code>STEP_BACK</code></td><td>Respawn same level (heroes healed) / respawn level − 1. Explicit, player-driven.</td></tr>
+    <tr><td><code>reducer.ts</code> · <code>RESOLVE_WIN</code></td><td>Keep frontier auto-advance + boss→<code>gate</code>. Remove the <code>recovering</code> "replay same level" branch (replaced by map-replay + Resume).</td></tr>
+    <tr><td><code>reducer.ts</code> · <code>CHALLENGE_NEXT</code></td><td>Split the overloaded action into explicit <code>fightBoss</code> and <code>resumeFrontier</code>.</td></tr>
+    <tr><td><code>Autobattler.jsx</code></td><td>Render a proper Defeat panel (Retry / Step Back), the Boss Gate (Fight Boss), and the Replay Resume button — one primary per state, each labelled with its target level.</td></tr>
+    <tr><td><code>strings.js</code></td><td>Add the new labels (<span class="kbd">fightBoss, retry, stepBack, resume</span>) with the level token.</td></tr>
+  </table>
+
+  <div class="rec">
+    <b>My one-line recommendation:</b> take <b>A▸Retry</b>, <b>B▸Explicit gate</b>, <b>C▸Auto-advance</b>, <b>D▸Map-only replay</b>.
+    That removes the silent demotion, gives every state a single clearly-labelled button, and makes the boss the
+    deliberate moment it should be — the smallest change that fixes all four pain points.
+  </div>
+
+  <div class="foot">
+    Generated for Combat Clean · recommendations only, no code changed · flow verified against
+    <span class="kbd">reducer.ts / map.ts / Autobattler.jsx</span> as of this session.
+  </div>
+
+</div>
+</body>
+</html>

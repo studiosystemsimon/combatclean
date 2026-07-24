@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gear Screen — mockup v5 (Combat Clean)</title>
+<!--
+  GEAR SCREEN MOCKUP · v5 · game two-zone shell, repurposed · NO bottom popups.
+  ─────────────────────────────────────────────────────────────────────────────
+  TOP ZONE  (= --combat-h, where combat used to be) → HEROES:
+      left  = vertical hero carousel (all heroes, scroll)   → <HeroCarousel>
+      right = selected hero info: portrait + power + 3 equipped slots (equipment detail)
+  BOTTOM ZONE (= context size, the gear panel proportion) → EQUIPMENT LIST:
+      squad actions (Equip All Best / Level Weapons / Merge All) + filters
+      + inline item-detail bar (mid-screen) + full armory grid
+  Flow: pick hero (top-left) → its loadout shows top-right → tap gear (bottom) → Equip to that hero.
+  Shell formula lifted verbatim from src/index.css (combat-h) so the bottom equipment
+  zone keeps EXACTLY the proportion the live gear screen has under combat.
+
+  TRANSFER MAP
+    .hero-zone       → src/view/screens/GearScreen.jsx top region (was combat-panel area)
+    .carousel        → new <HeroCarousel> (all HEROES)
+    .hero-info slots → hero.base + heroGearPower; rows reuse SmallEquipmentTile
+    .squadbar        → autoEquipAll / autoLevelAll / batch fuseGear (src/game/gear/gear.ts)
+    .equip-grid gtile→ reuse MediumEquipmentTile verbatim
+    .equip-detail    → reuse GearSheet fields inline
+  ─────────────────────────────────────────────────────────────────────────────
+-->
+<style>
+@font-face { font-family:'Uniform Bold';           src:url('../../src/fonts/Uniform-Bold.ttf') format('truetype'); font-display:swap; }
+@font-face { font-family:'Uniform Condensed Bold';  src:url('../../src/fonts/Uniform-Condensed-Bold.ttf') format('truetype'); font-display:swap; }
+:root{
+  --bg:#0e1424; --panel-line:rgba(255,255,255,.1); --gold:#ffd45e; --green:#5ad17a; --red:#ff5d6c;
+  --blue:#5a8cff; --purple:#b46bff; --text:#eef2ff;
+  --r-common:#9aa7bd; --r-uncommon:#5ad17a; --r-rare:#4aa3ff; --r-epic:#b46bff; --r-legendary:#ffb020;
+  --header-h:52px; --nav-h:60px; --orders-h:84px; --app-w:min(460px,100vw);
+  --combat-h:max(150px, calc(min(100dvh,900px) - var(--header-h) - var(--nav-h) - var(--orders-h) - (var(--app-w) * 5 / 7)));
+}
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{ font-family:'Uniform Condensed Bold', system-ui, sans-serif; color:var(--text);
+  background:radial-gradient(120% 80% at 50% -10%, #16203a 0%, #0a0f1c 60%, #070b15 100%);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:14px; }
+.app{ width:var(--app-w); height:min(100dvh,900px); display:flex; flex-direction:column; background:var(--bg);
+  border-radius:26px; overflow:hidden; position:relative; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 8px #05070e, 0 0 0 9px #1b2540; }
+.cap{ font-size:10px; letter-spacing:.5px; color:#5b6a8c; }
+
+.header{ height:var(--header-h); flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:0 12px; border-bottom:1px solid var(--panel-line); background:rgba(0,0,0,.35); }
+.brand{ font-size:16px; letter-spacing:1px; color:#dfe8ff; margin-right:auto; }
+.cur{ display:flex; align-items:center; gap:4px; font-size:12px; color:#eaf0ff; background:rgba(255,255,255,.06); border:1px solid var(--panel-line); border-radius:999px; padding:4px 9px; }
+.cur b{ color:var(--gold); }
+
+.gear{ flex:1 1 0; min-height:0; display:flex; flex-direction:column; position:relative; }
+.toast{ position:absolute; top:8px; left:50%; transform:translate(-50%,-14px); z-index:60; opacity:0; pointer-events:none;
+  background:linear-gradient(180deg,#ffe79a,#ffca44); color:#241a02; font-size:12px; letter-spacing:.3px; padding:7px 14px; border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,.45); white-space:nowrap; transition:opacity .2s ease, transform .2s ease; }
+.toast.show{ opacity:1; transform:translate(-50%,0); }
+
+/* ══ TOP ZONE (= --combat-h) : HEROES ══════════════════════════════════════ */
+.hero-zone{ flex:0 0 var(--combat-h); height:var(--combat-h); display:flex; min-height:0; border-bottom:2px solid rgba(255,208,94,.28); }
+
+/* left: vertical hero carousel */
+.carousel{ flex:0 0 82px; overflow-y:auto; padding:7px 6px; border-right:1px solid var(--panel-line); scroll-snap-type:y proximity; scrollbar-width:none; }
+.carousel::-webkit-scrollbar{ display:none; }
+.hchip{ scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; gap:2px; padding:5px 2px; border-radius:12px; cursor:pointer; margin-bottom:5px; border:1px solid transparent; transition:background .12s ease; }
+.hchip:active{ background:rgba(255,255,255,.05); }
+.hchip.sel{ background:linear-gradient(180deg, rgba(255,208,94,.16), rgba(255,208,94,.03)); border-color:color-mix(in srgb,var(--gold) 45%,transparent); }
+.hchip .av{ width:48px; height:48px; border-radius:12px; display:grid; place-items:center; font-size:26px; border:2px solid var(--rar); position:relative;
+  background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--rar) 42%, transparent), rgba(0,0,0,.4)); }
+.hchip.sel .av{ box-shadow:0 0 12px color-mix(in srgb, var(--rar) 55%, transparent); }
+.hchip .nm{ font-size:8.5px; color:#cdd8ee; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hchip .pw{ font-size:8.5px; color:var(--gold); line-height:1; }
+.hchip .warn{ position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:50%; background:var(--red); color:#fff; font-size:8px; display:grid; place-items:center; border:1px solid #1b2540; }
+
+/* right: selected hero info + loadout */
+.hero-info{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; overflow-y:auto; scrollbar-width:none;
+  background:radial-gradient(130% 90% at 15% 0%, color-mix(in srgb,var(--hero-rar,#4aa3ff) 18%, transparent), transparent 60%); }
+.hero-info::-webkit-scrollbar{ display:none; }
+.hi-head{ display:flex; align-items:center; gap:11px; padding:11px 12px 8px; }
+.hi-portrait{ width:58px; height:58px; border-radius:14px; flex:0 0 auto; display:grid; place-items:center; font-size:33px; border:2px solid var(--hero-rar,#4aa3ff);
+  background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--hero-rar,#4aa3ff) 45%, transparent), rgba(0,0,0,.42)); box-shadow:0 0 16px color-mix(in srgb,var(--hero-rar,#4aa3ff) 45%, transparent); }
+.hi-id{ margin-right:auto; min-width:0; } .hi-name{ font-size:18px; color:#fff; line-height:1.05; } .hi-role{ font-size:10px; color:#9fb0cf; letter-spacing:1.5px; text-transform:uppercase; }
+.hi-pow{ text-align:right; } .hi-pow .v{ font-family:'Uniform Bold'; font-size:26px; color:var(--gold); line-height:.9; text-shadow:0 0 14px rgba(255,208,94,.45),0 2px 2px #000; } .hi-pow .l{ font-size:9px; letter-spacing:2px; color:#9fb0cf; }
+.hi-sub{ display:flex; align-items:center; justify-content:space-between; padding:0 12px 6px; }
+.hi-sub .l{ font-size:10px; letter-spacing:2px; color:#8393b3; }
+.hi-auto{ font-size:10px; color:var(--gold); background:rgba(255,208,94,.12); border:1px solid color-mix(in srgb,var(--gold) 40%,transparent); border-radius:999px; padding:3px 10px; cursor:pointer; }
+.eqrows{ padding:0 10px 10px; display:flex; flex-direction:column; gap:7px; }
+.eqrow{ display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:12px; cursor:pointer; border:1px solid var(--panel-line);
+  background:linear-gradient(90deg, color-mix(in srgb, var(--rar,#2a3350) 15%, transparent), transparent 55%), rgba(255,255,255,.03); }
+.eqrow:active{ transform:scale(.99); } .eqrow.empty{ --rar:rgba(255,255,255,.18); border-style:dashed; }
+.eq-ic{ width:44px; height:44px; border-radius:11px; flex:0 0 auto; display:grid; place-items:center; font-size:23px; border:2px solid var(--rar); position:relative; overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--rar,#2a3350) 40%, transparent), rgba(0,0,0,.4)); }
+.eqrow.empty .eq-ic{ opacity:.5; }
+.eq-ic .sheen{ position:absolute; inset:0; mix-blend-mode:screen; opacity:0; } .eqrow.lg .eq-ic .sheen{ opacity:1; background:linear-gradient(115deg,transparent 30%,rgba(255,244,214,.5) 50%,transparent 70%); background-size:250% 250%; animation:gsheen 2.6s linear infinite; }
+.eq-mid{ margin-right:auto; min-width:0; } .eq-slot{ font-size:9px; letter-spacing:1.4px; color:#8393b3; text-transform:uppercase; }
+.eq-nm{ font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .eq-nm .rr{ color:var(--rar); } .eq-empty-t{ font-size:11px; color:#7f8dad; }
+.eq-right{ text-align:right; flex:0 0 auto; } .eq-pow{ font-size:15px; color:var(--gold); } .eq-pow .ic{ font-size:8px; } .eq-lv{ font-size:9px; color:#9fb0cf; }
+.eq-fuse{ display:inline-grid; place-items:center; width:14px; height:14px; border-radius:50%; margin-left:4px; vertical-align:middle; background:linear-gradient(180deg,#7be08e,#31a457); color:#04140a; font-size:8px; border:1px solid rgba(255,255,255,.35); box-shadow:0 0 8px rgba(90,209,122,.7); }
+
+/* ══ BOTTOM ZONE (= context size) : EQUIPMENT LIST ═════════════════════════ */
+.equip{ flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+.squadbar{ flex:0 0 auto; display:flex; gap:6px; padding:7px 8px 6px; }
+.sqbtn{ flex:1; height:40px; border-radius:10px; border:1px solid var(--panel-line); cursor:pointer; color:#eaf0ff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; line-height:1; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.2)); transition:transform .1s ease, filter .15s ease; }
+.sqbtn:active{ transform:scale(.97); filter:brightness(1.12); }
+.sqbtn .i{ font-size:14px; } .sqbtn .t{ font-size:8px; letter-spacing:.2px; } .sqbtn .s{ font-size:7.5px; color:#9fb0cf; }
+.sqbtn.equip{ border-color:color-mix(in srgb,var(--gold) 50%,transparent); background:linear-gradient(180deg, rgba(255,208,94,.20), rgba(255,208,94,.05)); color:var(--gold); }
+.sqbtn.level{ border-color:color-mix(in srgb,var(--blue) 45%,transparent); background:linear-gradient(180deg, rgba(90,140,255,.20), rgba(90,140,255,.05)); }
+.sqbtn.merge{ border-color:color-mix(in srgb,var(--purple) 45%,transparent); background:linear-gradient(180deg, rgba(180,107,255,.20), rgba(180,107,255,.05)); }
+.equip-bar{ flex:0 0 auto; display:flex; gap:5px; align-items:center; padding:2px 10px 6px; }
+.equip-bar .t{ font-size:10px; letter-spacing:2px; color:#8393b3; margin-right:2px; }
+.chip{ height:24px; padding:0 9px; border-radius:999px; border:1px solid var(--panel-line); background:rgba(255,255,255,.04); color:#c7d3ea; font-size:11px; cursor:pointer; display:flex; align-items:center; }
+.chip.on{ background:linear-gradient(180deg, rgba(255,208,94,.22), rgba(255,208,94,.06)); color:var(--gold); border-color:color-mix(in srgb, var(--gold) 55%, transparent); }
+.chip.sort{ margin-left:auto; }
+.equip-detail{ flex:0 0 auto; margin:0 10px 6px; border-radius:12px; border:1px solid var(--rar,var(--panel-line)); overflow:hidden; display:none;
+  background:radial-gradient(120% 120% at 12% 0%, color-mix(in srgb, var(--rar) 22%, transparent), transparent 60%), linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.26)); box-shadow:0 0 16px color-mix(in srgb, var(--rar) 26%, transparent); }
+.equip-detail.show{ display:block; }
+.ed-top{ display:flex; align-items:center; gap:10px; padding:8px 10px 7px; }
+.ed-ic{ width:44px; height:44px; border-radius:10px; flex:0 0 auto; display:grid; place-items:center; font-size:24px; border:2px solid var(--rar); position:relative; overflow:hidden; background:radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--rar) 46%, transparent), rgba(0,0,0,.42)); }
+.ed-ic .sheen{ position:absolute; inset:0; mix-blend-mode:screen; opacity:0; } .ed-ic.lg .sheen{ opacity:1; background:linear-gradient(115deg,transparent 30%,rgba(255,244,214,.55) 50%,transparent 70%); background-size:250% 250%; animation:gsheen 2.6s linear infinite; }
+.ed-meta{ margin-right:auto; min-width:0; } .ed-nm{ font-size:13px; color:#fff; } .ed-nm .rr{ color:var(--rar); }
+.ed-sub{ font-size:10px; color:#9fb0cf; margin-top:1px; } .ed-sub b{ color:#dfe8ff; } .ed-own{ font-size:9px; color:var(--gold); }
+.ed-pv{ text-align:right; } .ed-pv .v{ font-family:'Uniform Bold'; font-size:20px; color:var(--gold); text-shadow:0 0 12px rgba(255,208,94,.4); } .ed-pv .l{ font-size:8px; letter-spacing:1.5px; color:#9fb0cf; }
+.ed-actions{ display:flex; gap:6px; padding:0 8px 8px; }
+.ed-btn{ flex:1; height:36px; border-radius:9px; border:1px solid var(--panel-line); cursor:pointer; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; }
+.ed-btn .c{ font-size:8px; color:#cfe0ff; opacity:.9; }
+.ed-btn.equip{ background:linear-gradient(180deg, rgba(255,208,94,.24), rgba(255,208,94,.06)); border-color:color-mix(in srgb,var(--gold) 50%,transparent); color:var(--gold); }
+.ed-btn.level{ background:linear-gradient(180deg, rgba(90,140,255,.28), rgba(90,140,255,.08)); border-color:color-mix(in srgb,var(--blue) 45%,transparent); }
+.ed-btn.fuse{ background:linear-gradient(180deg, rgba(180,107,255,.28), rgba(180,107,255,.08)); border-color:color-mix(in srgb,var(--purple) 45%,transparent); }
+.ed-btn:disabled{ opacity:.4; cursor:default; }
+.equip-grid{ flex:1 1 0; min-height:0; overflow-y:auto; padding:2px 10px 14px; scrollbar-width:none;
+  display:grid; grid-template-columns:repeat(5,1fr); grid-auto-rows:max-content; gap:6px; align-content:start; align-items:start;
+  mask-image:linear-gradient(180deg, transparent 0, #000 6px, #000 calc(100% - 16px), transparent 100%); }
+.equip-grid::-webkit-scrollbar{ display:none; }
+
+/* .gtile — verbatim from src/index.css */
+.gtile{ --rar:#9aa7bd; position:relative; aspect-ratio:1/1.12; border-radius:11px; cursor:pointer; border:2px solid var(--rar); overflow:hidden; display:grid; place-items:center;
+  background:radial-gradient(120% 76% at 50% 0%, color-mix(in srgb, var(--rar) 42%, transparent) 0%, transparent 62%), linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.44) 82%);
+  box-shadow:0 3px 9px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.35); transition:transform .1s ease; }
+.gtile:active{ transform:scale(.93); }
+.gtile.r-rare{ box-shadow:0 3px 10px rgba(0,0,0,.5), 0 0 9px color-mix(in srgb, var(--rar) 40%, transparent); }
+.gtile.r-epic{ box-shadow:0 3px 11px rgba(0,0,0,.5), 0 0 13px color-mix(in srgb, var(--rar) 50%, transparent); }
+.gtile.r-legendary{ box-shadow:0 3px 12px rgba(0,0,0,.5), 0 0 17px color-mix(in srgb, var(--rar) 62%, transparent); }
+.gtile.sel{ outline:2px solid var(--gold); outline-offset:1px; }
+.gtile::before,.gtile::after{ content:''; position:absolute; width:9px; height:9px; border:2px solid var(--rar); opacity:.55; z-index:4; pointer-events:none; }
+.gtile::before{ top:3px; left:3px; border-right:0; border-bottom:0; border-top-left-radius:6px; }
+.gtile::after{ bottom:3px; right:3px; border-left:0; border-top:0; border-bottom-right-radius:6px; }
+.gtile-sheen{ position:absolute; inset:0; pointer-events:none; opacity:0; z-index:3; }
+.gtile.r-legendary .gtile-sheen{ opacity:1; mix-blend-mode:screen; background-size:250% 250%; animation:gsheen 2.6s linear infinite; background:linear-gradient(115deg, transparent 30%, rgba(255,244,214,.5) 50%, transparent 70%); }
+@keyframes gsheen{ from{ background-position:180% 0; } to{ background-position:-80% 0; } }
+.gt-glyph{ font-size:24px; filter:drop-shadow(0 3px 4px rgba(0,0,0,.55)); transform:translateY(-3px); }
+.gt-pow{ position:absolute; top:2px; left:2px; z-index:6; display:flex; align-items:center; gap:1px; font-size:9px; line-height:1; color:var(--gold); background:rgba(4,7,14,.72); border:1px solid rgba(255,255,255,.12); border-radius:5px; padding:1px 3px; text-shadow:0 1px 2px #000; }
+.gt-pow .ic{ font-size:6px; }
+.gt-pips{ position:absolute; top:3px; right:3px; z-index:6; display:flex; gap:1.3px; } .gt-pips i{ width:3px; height:3px; border-radius:50%; background:var(--rar); box-shadow:0 0 3px var(--rar); }
+.gt-btm{ position:absolute; left:0; right:0; bottom:0; height:22px; z-index:4; background:linear-gradient(180deg, transparent, rgba(4,7,14,.55) 45%, rgba(4,7,14,.92)); }
+.gt-name{ position:absolute; left:2px; right:2px; bottom:2px; z-index:5; text-align:center; font-size:8px; color:#eaf0ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 2px #000; }
+.gt-lvl{ position:absolute; right:2px; bottom:1px; z-index:6; font-size:9px; color:#fff; text-shadow:0 1px 2px #000; } .gt-lvl s{ font-size:5.5px; text-decoration:none; color:#9fb0cf; margin-right:1px; }
+.gt-owner{ position:absolute; left:1px; bottom:1px; width:16px; height:16px; border-radius:50%; display:grid; place-items:center; z-index:6; font-size:10px; background:#101a30; border:1px solid rgba(255,255,255,.22); }
+.gt-uniq{ position:absolute; top:1px; left:1px; z-index:7; font-size:10px; filter:drop-shadow(0 1px 2px #000); } .gt-uniq ~ .gt-pow{ left:17px; }
+.gt-fuse{ position:absolute; right:2px; top:14px; z-index:7; width:13px; height:13px; border-radius:50%; background:linear-gradient(180deg,#7be08e,#31a457); color:#04140a; font-size:8px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.35); box-shadow:0 0 8px rgba(90,209,122,.7); animation:fusePulse 1.2s ease-in-out infinite; }
+@keyframes fusePulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.15);} }
+@keyframes powFlash{ 0%{ transform:scale(1);} 40%{ transform:scale(1.3); filter:brightness(1.5);} 100%{ transform:scale(1);} } .flashpow{ animation:powFlash .55s ease-out; }
+
+.navbar{ height:var(--nav-h); flex:0 0 auto; display:flex; border-top:1px solid var(--panel-line); background:rgba(0,0,0,.4); }
+.navbar .nb{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:9px; color:#6f7ea0; }
+.navbar .nb .i{ font-size:19px; filter:grayscale(.4); } .navbar .nb.on{ color:var(--gold); } .navbar .nb.on .i{ filter:none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <span class="brand">SQUAD GEAR</span>
+    <span class="cur">🪙 <b id="coins">12,480</b></span>
+    <span class="cur">🔧 <b id="gxp">340</b></span>
+  </div>
+
+  <div class="gear">
+    <div class="toast" id="toast"></div>
+
+    <!-- TOP ZONE (combat-sized): heroes -->
+    <div class="hero-zone">
+      <div class="carousel" id="carousel"></div>
+      <div class="hero-info" id="heroInfo"></div>
+    </div>
+
+    <!-- BOTTOM ZONE (context-sized): equipment list -->
+    <div class="equip">
+      <div class="squadbar">
+        <button class="sqbtn equip" id="btnEquip"><span class="i">⚡</span><span class="t">EQUIP ALL BEST</span><span class="s" id="sEquip"></span></button>
+        <button class="sqbtn level" id="btnLevel"><span class="i">⬆</span><span class="t">LEVEL WEAPONS</span><span class="s" id="sLevel"></span></button>
+        <button class="sqbtn merge" id="btnMerge"><span class="i">✦</span><span class="t">MERGE ALL</span><span class="s" id="sMerge"></span></button>
+      </div>
+      <div class="equip-bar" id="equipBar">
+        <span class="t">ARMORY</span>
+        <button class="chip on" data-slot="all">All</button>
+        <button class="chip" data-slot="weapon">⚔️</button>
+        <button class="chip" data-slot="armor">🛡️</button>
+        <button class="chip" data-slot="trinket">💍</button>
+        <button class="chip sort" id="sortChip">↕ Power</button>
+      </div>
+      <div class="equip-detail" id="equipDetail"></div>
+      <div class="equip-grid" id="grid"></div>
+    </div>
+  </div>
+
+  <div class="navbar">
+    <div class="nb"><span class="i">🧩</span>Merge</div>
+    <div class="nb"><span class="i">🛡️</span>Heroes</div>
+    <div class="nb on"><span class="i">⚔️</span>Gear</div>
+    <div class="nb"><span class="i">🎁</span>Gacha</div>
+    <div class="nb"><span class="i">🗺️</span>Map</div>
+  </div>
+</div>
+<div class="cap">gear-screen-mockup · v5 · top=heroes (combat-size) · bottom=equipment (context-size)</div>
+
+<script>
+const MUL={common:1,uncommon:1.25,rare:1.5,epic:2.1,legendary:3};
+const RCOL={common:'#9aa7bd',uncommon:'#5ad17a',rare:'#4aa3ff',epic:'#b46bff',legendary:'#ffb020'};
+const RNAME={common:'Common',uncommon:'Uncommon',rare:'Rare',epic:'Epic',legendary:'Legendary'};
+const RORDER=['common','uncommon','rare','epic','legendary'];
+const SLOTS=['weapon','armor','trinket'];
+const SLOT_ICON={weapon:'⚔️',armor:'🛡️',trinket:'💍'}, SLOT_NAME={weapon:'Weapon',armor:'Armor',trinket:'Trinket'};
+const gearPower=g=>Math.round(g.base*MUL[g.rarity]*(1+0.14*(g.level-1)));
+const levelCost=lv=>Math.round(30*Math.pow(1.35,lv-1));
+const fuseCoin=r=>25+RORDER.indexOf(r)*25;
+
+const HEROES=[
+  {id:'knight',name:'Knight',role:'Tank',em:'🤴',rar:'rare',base:320},
+  {id:'paladin',name:'Paladin',role:'Tank',em:'😇',rar:'epic',base:340},
+  {id:'templar',name:'Templar',role:'Tank',em:'✝️',rar:'rare',base:300},
+  {id:'barbarian',name:'Barbarian',role:'Bruiser',em:'🪓',rar:'epic',base:310},
+  {id:'berserker',name:'Berserker',role:'Bruiser',em:'😤',rar:'rare',base:295},
+  {id:'dwarf',name:'Dwarf',role:'Bruiser',em:'🧔',rar:'uncommon',base:270},
+  {id:'valkyrie',name:'Valkyrie',role:'Fighter',em:'🦅',rar:'epic',base:305},
+  {id:'monk',name:'Monk',role:'Fighter',em:'🧘',rar:'rare',base:285},
+  {id:'ranger',name:'Ranger',role:'Marksman',em:'🏹',rar:'epic',base:280},
+  {id:'elf',name:'Elf Archer',role:'Marksman',em:'🧝',rar:'rare',base:265},
+  {id:'assassin',name:'Assassin',role:'Assassin',em:'🥷',rar:'rare',base:260},
+  {id:'rogue',name:'Rogue',role:'Assassin',em:'🗡️',rar:'uncommon',base:250},
+  {id:'dragoon',name:'Dragoon',role:'Fighter',em:'🐉',rar:'legendary',base:370},
+  {id:'wizard',name:'Wizard',role:'Mage',em:'🧙',rar:'epic',base:315},
+  {id:'sorceress',name:'Sorceress',role:'Mage',em:'🧙‍♀️',rar:'legendary',base:360},
+  {id:'warlock',name:'Warlock',role:'Mage',em:'👿',rar:'rare',base:290},
+  {id:'necro',name:'Necromancer',role:'Summoner',em:'💀',rar:'epic',base:300},
+  {id:'druid',name:'Druid',role:'Support',em:'🌿',rar:'uncommon',base:255},
+  {id:'cleric',name:'Cleric',role:'Support',em:'💠',rar:'uncommon',base:210},
+  {id:'bard',name:'Bard',role:'Support',em:'🎵',rar:'common',base:200},
+];
+let uid=0;
+const G=(slot,rarity,level,base,name,opt={})=>({id:++uid,slot,rarity,level,base,name,equippedTo:null,unique:!!opt.unique});
+let GEAR=[
+  G('weapon','legendary',12,20,'Wyrmblade',{unique:true}), G('weapon','epic',9,15,'Shadow Dagger'),
+  G('weapon','epic',6,15,'Cinderfang',{unique:true}), G('weapon','rare',7,12,'Steel Greatblade'),
+  G('weapon','rare',4,11,'Iron Sword'), G('weapon','rare',3,11,'Bronze Falchion'), G('weapon','uncommon',5,9,'Bronze Sword'),
+  G('weapon','uncommon',7,9,'Hunter Bow'), G('weapon','common',3,7,'Rusty Blade'),
+  G('armor','legendary',10,20,'Dragonscale',{unique:true}), G('armor','epic',8,15,'Ossuary Plate',{unique:true}),
+  G('armor','epic',5,14,'Iron Plate'), G('armor','rare',6,12,'Scale Aegis'), G('armor','rare',3,11,'Lilypad Aegis',{unique:true}),
+  G('armor','uncommon',4,9,'Leather Tunic'), G('armor','uncommon',3,8,'Padded Vest'), G('armor','common',2,7,'Cloth Wrap'),
+  G('trinket','legendary',9,20,'Dragonheart',{unique:true}), G('trinket','epic',7,15,'Frost Locket',{unique:true}),
+  G('trinket','epic',4,14,'Ember Band'), G('trinket','rare',5,12,'Bog Charm',{unique:true}), G('trinket','rare',2,11,'Copper Band'),
+  G('trinket','uncommon',6,9,'Grave Sigil'), G('trinket','common',3,7,'Chipped Relic'),
+];
+let coins=12480, gxp=340;
+const byId=id=>GEAR.find(g=>g.id===id);
+const strongest=slot=>GEAR.filter(g=>g.slot===slot).sort((a,b)=>gearPower(b)-gearPower(a));
+strongest('weapon')[0].equippedTo='dragoon'; strongest('armor')[0].equippedTo='dragoon'; strongest('trinket')[1].equippedTo='dragoon';
+strongest('weapon')[1].equippedTo='knight'; GEAR.find(g=>g.name==='Iron Plate').equippedTo='knight';
+
+let selHero='knight', selItemId=null, filterSlot='all', sortMode='power';
+const heroById=id=>HEROES.find(h=>h.id===id);
+const equippedOf=id=>{const o={};GEAR.forEach(g=>{if(g.equippedTo===id)o[g.slot]=g;});return o;};
+const heroGearPower=id=>GEAR.filter(g=>g.equippedTo===id).reduce((s,g)=>s+gearPower(g),0);
+const heroPower=id=>heroById(id).base+heroGearPower(id);
+const emptyCount=id=>{const e=equippedOf(id);return SLOTS.filter(s=>!e[s]).length;};
+const canFuseItem=g=>g.rarity!=='legendary'&&GEAR.filter(x=>x.slot===g.slot&&x.rarity===g.rarity&&x.id!==g.id&&!x.equippedTo).length>=2;
+const anyWeaponBelowMax=()=>GEAR.some(g=>g.slot==='weapon'&&g.equippedTo&&g.level<30);
+const anyMergeReady=()=>{for(const s of SLOTS)for(let i=0;i<RORDER.length-1;i++){if(GEAR.filter(g=>g.slot===s&&g.rarity===RORDER[i]&&!g.equippedTo).length>=3&&coins>=fuseCoin(RORDER[i]))return true;}return false;};
+
+// ── TOP: carousel + hero info ───────────────────────────────────────────────
+function renderCarousel(){
+  document.getElementById('carousel').innerHTML=HEROES.map(h=>`
+    <div class="hchip ${h.id===selHero?'sel':''}" data-h="${h.id}">
+      <div class="av" style="--rar:${RCOL[h.rar]}">${h.em}${emptyCount(h.id)?`<span class="warn">${emptyCount(h.id)}</span>`:''}</div>
+      <div class="nm">${h.name}</div><div class="pw">💪${heroPower(h.id)}</div>
+    </div>`).join('');
+  [...document.querySelectorAll('#carousel .hchip')].forEach(el=>el.onclick=()=>{ selHero=el.dataset.h; renderCarousel(); renderHeroInfo(); renderGrid(); });
+}
+function renderHeroInfo(flash){
+  const h=heroById(selHero), eq=equippedOf(selHero);
+  const rows=SLOTS.map(slot=>{ const g=eq[slot];
+    if(!g) return `<div class="eqrow empty" data-slot="${slot}"><div class="eq-ic"><span>${SLOT_ICON[slot]}</span></div>
+      <div class="eq-mid"><div class="eq-slot">${SLOT_NAME[slot]}</div><div class="eq-empty-t">Empty — pick below</div></div>
+      <div class="eq-right"><div class="eq-pow" style="color:#7f8dad">—</div></div></div>`;
+    return `<div class="eqrow ${g.rarity==='legendary'?'lg':''}" data-slot="${slot}" data-id="${g.id}" style="--rar:${RCOL[g.rarity]}">
+      <div class="eq-ic"><div class="sheen"></div><span>${SLOT_ICON[slot]}</span></div>
+      <div class="eq-mid"><div class="eq-slot">${SLOT_NAME[slot]}</div><div class="eq-nm">${g.unique?'💎 ':''}<span class="rr">${RNAME[g.rarity]}</span> ${g.name}</div></div>
+      <div class="eq-right"><div class="eq-pow"><span class="ic">💪</span>${gearPower(g)}${canFuseItem(g)?'<span class="eq-fuse">▲</span>':''}</div><div class="eq-lv">Lv ${g.level}</div></div></div>`;
+  }).join('');
+  const el=document.getElementById('heroInfo'); el.style.setProperty('--hero-rar',RCOL[h.rar]);
+  el.innerHTML=`<div class="hi-head"><div class="hi-portrait">${h.em}</div>
+      <div class="hi-id"><div class="hi-name">${h.name}</div><div class="hi-role">${h.role}</div></div>
+      <div class="hi-pow"><div class="v" id="hiPow">${heroPower(selHero)}</div><div class="l">POWER</div></div></div>
+    <div class="hi-sub"><span class="l">EQUIPMENT</span><span class="hi-auto" id="hiAuto">⚡ Auto-equip</span></div>
+    <div class="eqrows">${rows}</div>`;
+  [...el.querySelectorAll('.eqrow')].forEach(r=>r.onclick=()=>{ setFilter(r.dataset.slot); if(r.dataset.id){ selItemId=+r.dataset.id; renderGrid(); renderDetail(); } });
+  document.getElementById('hiAuto').onclick=()=>{ autoEquipHero(selHero); redrawAll(true); toastMsg('⚡ Best gear equipped'); };
+  if(flash){ const p=document.getElementById('hiPow'); if(p){ p.classList.remove('flashpow'); void p.offsetWidth; p.classList.add('flashpow'); } }
+}
+
+// ── BOTTOM: item detail bar + grid ──────────────────────────────────────────
+function renderDetail(){
+  const d=document.getElementById('equipDetail'); const g=selItemId!=null?byId(selItemId):null;
+  if(!g){ d.classList.remove('show'); d.innerHTML=''; return; }
+  const owner=g.equippedTo?heroById(g.equippedTo):null; const isEq=g.equippedTo===selHero; const nextR=RORDER[RORDER.indexOf(g.rarity)+1];
+  d.style.setProperty('--rar',RCOL[g.rarity]); d.classList.add('show');
+  d.innerHTML=`<div class="ed-top">
+      <div class="ed-ic ${g.rarity==='legendary'?'lg':''}"><div class="sheen"></div><span>${SLOT_ICON[g.slot]}</span></div>
+      <div class="ed-meta"><div class="ed-nm">${g.unique?'💎 ':''}<span class="rr">${RNAME[g.rarity]}</span> ${g.name}</div>
+        <div class="ed-sub">${SLOT_NAME[g.slot]} · Lv <b>${g.level}</b>/30</div><div class="ed-own">${owner?('On '+owner.name):'In armory'}</div></div>
+      <div class="ed-pv"><div class="v">${gearPower(g)}</div><div class="l">POWER</div></div></div>
+    <div class="ed-actions">
+      <button class="ed-btn equip" data-act="equip">${isEq?'Unequip':'Equip → '+heroById(selHero).name}</button>
+      <button class="ed-btn level" data-act="level" ${g.level<30&&gxp>=levelCost(g.level)?'':'disabled'}><span>Level Up</span><span class="c">🔧 ${levelCost(g.level)}</span></button>
+      <button class="ed-btn fuse" data-act="fuse" ${canFuseItem(g)&&nextR&&coins>=fuseCoin(g.rarity)?'':'disabled'}>${nextR?`<span>Fuse</span><span class="c">→ ${RNAME[nextR]} · 🪙${fuseCoin(g.rarity)}</span>`:'<span>Max</span>'}</button></div>`;
+  [...d.querySelectorAll('.ed-btn')].forEach(b=>b.onclick=()=>doAct(b.dataset.act));
+}
+function renderGrid(){
+  let list=GEAR.slice();
+  if(filterSlot!=='all')list=list.filter(g=>g.slot===filterSlot);
+  if(sortMode==='power')list.sort((a,b)=>gearPower(b)-gearPower(a));
+  else list.sort((a,b)=>RORDER.indexOf(b.rarity)-RORDER.indexOf(a.rarity)||gearPower(b)-gearPower(a));
+  document.getElementById('grid').innerHTML=list.map(g=>{
+    const owner=g.equippedTo?heroById(g.equippedTo):null; const pips=Array.from({length:RORDER.indexOf(g.rarity)+1},()=>'<i></i>').join('');
+    return `<div class="gtile r-${g.rarity}${g.id===selItemId?' sel':''}" data-id="${g.id}" style="--rar:${RCOL[g.rarity]}">
+      <div class="gtile-sheen"></div><span class="gt-glyph">${SLOT_ICON[g.slot]}</span>
+      ${g.unique?'<span class="gt-uniq">💎</span>':''}<span class="gt-pow"><span class="ic">💪</span><b>${gearPower(g)}</b></span>
+      <span class="gt-pips">${pips}</span>${canFuseItem(g)&&!g.equippedTo?'<span class="gt-fuse">▲</span>':''}
+      <div class="gt-btm"></div><span class="gt-name">${g.name}</span><span class="gt-lvl"><s>LV</s>${g.level}</span>
+      ${owner?`<span class="gt-owner">${owner.em}</span>`:''}</div>`;
+  }).join('');
+  [...document.querySelectorAll('#grid .gtile')].forEach(el=>el.onclick=()=>{ selItemId=+el.dataset.id; renderGrid(); renderDetail(); });
+}
+function setFilter(slot){ filterSlot=slot; [...document.querySelectorAll('#equipBar .chip:not(.sort)')].forEach(c=>c.classList.toggle('on',c.dataset.slot===slot)); renderGrid(); }
+
+function doAct(act){
+  const g=byId(selItemId); if(!g) return;
+  if(act==='equip'){ if(g.equippedTo===selHero){ g.equippedTo=null; } else { GEAR.forEach(x=>{if(x.equippedTo===selHero&&x.slot===g.slot)x.equippedTo=null;}); g.equippedTo=selHero; } }
+  else if(act==='level'){ if(gxp>=levelCost(g.level)&&g.level<30){ gxp-=levelCost(g.level); g.level++; } }
+  else if(act==='fuse'){ const fodder=GEAR.filter(x=>x.slot===g.slot&&x.rarity===g.rarity&&x.id!==g.id&&!x.equippedTo).slice(0,2); const nextR=RORDER[RORDER.indexOf(g.rarity)+1];
+    if(fodder.length>=2&&nextR&&coins>=fuseCoin(g.rarity)){ coins-=fuseCoin(g.rarity); GEAR=GEAR.filter(x=>!fodder.includes(x)); g.rarity=nextR; toastMsg(`✦ Fused → ${RNAME[nextR]}`); } }
+  redrawAll(true);
+}
+function autoEquipHero(id){ SLOTS.forEach(slot=>{ const best=GEAR.filter(g=>g.slot===slot&&(!g.equippedTo||g.equippedTo===id)).sort((a,b)=>gearPower(b)-gearPower(a))[0];
+  if(best){ GEAR.forEach(x=>{if(x.equippedTo===id&&x.slot===slot)x.equippedTo=null;}); best.equippedTo=id; } }); }
+function equipAllBest(){
+  const before=HEROES.reduce((s,h)=>s+heroGearPower(h.id),0);
+  const ranked=[...HEROES].sort((a,b)=>b.base-a.base).map(h=>h.id); GEAR.forEach(g=>g.equippedTo=null);
+  SLOTS.forEach(slot=>{ const pool=GEAR.filter(g=>g.slot===slot).sort((a,b)=>gearPower(b)-gearPower(a)); ranked.forEach((hid,i)=>{if(pool[i])pool[i].equippedTo=hid;}); });
+  const gained=HEROES.reduce((s,h)=>s+heroGearPower(h.id),0)-before; redrawAll(true); toastMsg(`⚡ Squad optimized · +${gained} power`);
+}
+function levelWeapons(){
+  let spent=0,ups=0,guard=0;
+  while(guard++<2000){ const c=GEAR.filter(g=>g.slot==='weapon'&&g.equippedTo&&g.level<30&&gxp-spent>=levelCost(g.level)).sort((a,b)=>levelCost(a.level)-levelCost(b.level));
+    if(!c.length)break; spent+=levelCost(c[0].level); c[0].level++; ups++; }
+  gxp-=spent; redrawAll(true); toastMsg(ups?`⬆ ${ups} weapon level-ups · 🔧 ${spent}`:'No weapon upgrades affordable');
+}
+function mergeAll(){
+  let merges=0,guard=0;
+  while(guard++<500){ let done=false;
+    for(const slot of SLOTS){ for(let ri=0;ri<RORDER.length-1;ri++){ const r=RORDER[ri];
+      const pool=GEAR.filter(g=>g.slot===slot&&g.rarity===r&&!g.equippedTo).sort((a,b)=>gearPower(b)-gearPower(a));
+      if(pool.length>=3&&coins>=fuseCoin(r)){ const target=pool[0],fodder=pool.slice(-2); coins-=fuseCoin(r); GEAR=GEAR.filter(x=>!fodder.includes(x)); target.rarity=RORDER[ri+1]; merges++; done=true; break; } } if(done)break; }
+    if(!done)break; }
+  redrawAll(true); toastMsg(merges?`✦ ${merges} merges complete`:'Nothing to merge');
+}
+function redrawAll(flash){ if(selItemId!=null&&!byId(selItemId))selItemId=null; syncCur(); renderCarousel(); renderHeroInfo(flash); renderGrid(); renderDetail(); }
+
+function syncCur(){ document.getElementById('coins').textContent=coins.toLocaleString(); document.getElementById('gxp').textContent=gxp; refreshHints(); }
+function refreshHints(){
+  const missing=HEROES.reduce((s,h)=>s+emptyCount(h.id),0);
+  document.getElementById('sEquip').textContent=missing?`${missing} empty`:'optimal';
+  document.getElementById('sLevel').textContent=anyWeaponBelowMax()?`🔧${gxp}`:'maxed';
+  document.getElementById('sMerge').textContent=anyMergeReady()?'ready':'—';
+}
+let toastT=0; function toastMsg(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1700); }
+
+document.getElementById('btnEquip').onclick=equipAllBest;
+document.getElementById('btnLevel').onclick=levelWeapons;
+document.getElementById('btnMerge').onclick=mergeAll;
+[...document.querySelectorAll('#equipBar .chip:not(.sort)')].forEach(el=>el.onclick=()=>setFilter(el.dataset.slot));
+document.getElementById('sortChip').onclick=()=>{ sortMode=sortMode==='power'?'rarity':'power'; document.getElementById('sortChip').textContent='↕ '+(sortMode==='power'?'Power':'Rarity'); renderGrid(); };
+
+renderCarousel(); renderHeroInfo(); renderGrid(); renderDetail(); refreshHints();
+</script>
+</body>
+</html>

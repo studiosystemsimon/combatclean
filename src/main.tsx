@@ -16,7 +16,10 @@ const DATA_SOURCE = `cfg#${cfg.schemaVersion} · ${cfg.categories.length} catego
 console.log(`[boot] Combat Clean — ${DATA_SOURCE} — categories: ${cfg.categories.join(', ')}`);
 
 // Dev-only device-frame preview (src/preview) — iframes a fresh load in a phone bezel. Never ships.
-if (import.meta.env.DEV && window.self === window.top) {
+// When it's active the OUTER (top-window) copy of the game must NOT render: the preview iframes a
+// fresh load of this page and THAT inner copy (window.self !== window.top) is the real, visible game.
+const usingPreview = import.meta.env.DEV && window.self === window.top;
+if (usingPreview) {
   import('./preview').then(({ mountDevicePreview }) => mountDevicePreview());
 }
 // Dev-only Marksman overlay (src/marksman) — mounts inside the preview iframe (self !== top). Never ships.
@@ -24,10 +27,16 @@ if (import.meta.env.DEV && window.self !== window.top) {
   import('./marksman').then(({ mountMarksmanOverlay }) => mountMarksmanOverlay());
 }
 
-const root = document.getElementById('ui-root');
-if (!root) throw new Error('[boot] #ui-root not found');
-createRoot(root).render(
-  <GameProvider>
-    <Game />
-  </GameProvider>,
-);
+// Do NOT mount a second game behind the preview. mountDevicePreview() hides #game-frame, but a game
+// rendered into it keeps SIMULATING (display:none stops layout, not timers) — and its body-level FX
+// (currency bursts appended to document.body, z:9999) still paint. With the Header hidden, the burst
+// target rect is all-zeros, so those strays fly to the top-left corner OVER the bezel. One sim only.
+if (!usingPreview) {
+  const root = document.getElementById('ui-root');
+  if (!root) throw new Error('[boot] #ui-root not found');
+  createRoot(root).render(
+    <GameProvider>
+      <Game />
+    </GameProvider>,
+  );
+}

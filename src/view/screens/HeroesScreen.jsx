@@ -27,6 +27,12 @@ import { canLevelHero, heroLevelCost, heroAtMax, levelUpHeroMax } from '../../mo
 import { fxHeroLevelUp, fxMaxed, fxLevelAll, fxEquip, fxEquipBest, fxHeroFuse } from '../fx/hero-fx.js';
 import { fmtK as fmt } from '../fmt.js';
 
+// Touch gesture split: a quick drag SCROLLS the roster; a HELD drag (long-press) picks a hero up to
+// drop into the squad. Mouse picks up on a small move (its wheel/scrollbar does the scrolling).
+const HERO_DRAG_HOLD_MS = 220;    // touch: hold this long (without scrolling) to pick a hero up
+const HERO_DRAG_SCROLL_TOL = 10;  // touch: moving this far before the hold fires = a scroll, not a pickup
+const HERO_DRAG_MOVE_TOL = 8;     // mouse: move this far to actually start dragging
+
 const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
 const gearColor = (rarity) => (GEAR_RARITY[rarity] || GEAR_RARITY.common).color;
 const slotEl = (id, slot) => document.querySelector(`.hs-gslot[data-hero-id="${id}"][data-slot="${slot}"]`);
@@ -52,6 +58,9 @@ export default function HeroesScreen() {
   const cellRefs = useRef({});
   const dragRef = useRef(null);
   const dragEnd = useRef(0); // performance.now() of the last drag end — suppresses the trailing click
+  // Blocks the list from panning under the finger DURING an active touch drag. Added only while a drag
+  // is live (see beginDrag), so ordinary scrolling keeps its passive fast-path (no jank).
+  const blockScrollRef = useRef((e) => { const d = dragRef.current; if (d && d.started && d.touch) e.preventDefault(); });
 
   // `id` throughout this screen is a CID (a Character instance). heroPower/heroGearPower
   // take the archetype (char.hero) + the cid respectively.
@@ -192,11 +201,44 @@ export default function HeroesScreen() {
     performAscend(sel);
   };
 
-  // ── Drag-swap (pointer): threshold to start → avatar clone follows finger →
-  // hovered target displaces → drop commits swapHeroes (or eases home). ──────────
+  // ── Drag-swap (pointer). Touch: a quick drag SCROLLS the roster; a LONG-PRESS picks the hero up to
+  // drop into the squad. Mouse: pick up on a small move (its wheel/scrollbar does the scrolling).
+  // Avatar clone follows the finger; the hovered target displaces; drop commits swapHeroes (or eases home).
+  const beginDrag = (d, clientX, clientY) => {
+    const src = tileEl(d.id);
+    if (!src) { clearTimeout(d.lp); if (dragRef.current === d) dragRef.current = null; return; }
+    d.started = true;
+    const r = src.getBoundingClientRect();
+    d.originRect = r; d.grabDx = clientX - r.left; d.grabDy = clientY - r.top;
+    d.lift = r.height * 0.5; // raise the tile half its height so it stays visible above the finger
+    const rar = src.style.getPropertyValue('--rar');
+    const av = src.cloneNode(true); // keeps the rarity class + cloned --rar (border / wash)
+    av.classList.add('hs-drag-avatar');
+    // Object.assign (NOT cssText) so the cloned --rar custom property survives.
+    Object.assign(av.style, {
+      position: 'fixed', left: `${clientX - d.grabDx}px`, top: `${clientY - d.grabDy}px`,
+      width: `${r.width}px`, height: `${r.height}px`, margin: '0',
+      zIndex: '1000', pointerEvents: 'none', transition: 'none',
+      transform: `translateY(${-d.lift}px) scale(1.06)`,
+    });
+    if (rar) av.style.setProperty('--rar', rar);
+    document.body.appendChild(av);
+    d.avatar = av;
+    setDragId(d.id);
+    setPopId(null); setPopState('hero'); setSelSlot(null); // a drag preempts the popup
+    // Own the gesture for touch: stop the list panning under the finger for the rest of the drag.
+    if (d.touch) document.addEventListener('touchmove', blockScrollRef.current, { passive: false });
+  };
   const onTilePointerDown = (e, id) => {
     if (e.button != null && e.button !== 0) return;
-    dragRef.current = { id, sx: e.clientX, sy: e.clientY, pid: e.pointerId, started: false, over: null };
+    const touch = e.pointerType !== 'mouse';
+    // armed = "hero pickup allowed". Mouse: armed now. Touch: only after the long-press timer fires —
+    // until then a move is treated as a list scroll (see `move`). lp = the pending long-press timer.
+    const d = { id, sx: e.clientX, sy: e.clientY, pid: e.pointerId, started: false, over: null, touch, armed: !touch, lp: null };
+    dragRef.current = d;
+    if (touch) d.lp = setTimeout(() => {
+      if (dragRef.current === d && !d.started) beginDrag(d, d.sx, d.sy); // held still → pick up in place; moves position it
+    }, HERO_DRAG_HOLD_MS);
   };
   useEffect(() => {
     const move = (e) => {
@@ -204,28 +246,16 @@ export default function HeroesScreen() {
       if (!d || e.pointerId !== d.pid) return;
       const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
       if (!d.started) {
-        if (Math.hypot(dx, dy) < 8) return;
-        const src = tileEl(d.id);
-        if (!src) { dragRef.current = null; return; }
-        d.started = true;
-        const r = src.getBoundingClientRect();
-        d.originRect = r; d.grabDx = d.sx - r.left; d.grabDy = d.sy - r.top;
-        d.lift = r.height * 0.5; // raise the tile half its height so it stays visible above the finger
-        const rar = src.style.getPropertyValue('--rar');
-        const av = src.cloneNode(true); // keeps the rarity class + cloned --rar (border / wash)
-        av.classList.add('hs-drag-avatar');
-        // Object.assign (NOT cssText) so the cloned --rar custom property survives.
-        Object.assign(av.style, {
-          position: 'fixed', left: `${r.left}px`, top: `${r.top}px`,
-          width: `${r.width}px`, height: `${r.height}px`, margin: '0',
-          zIndex: '1000', pointerEvents: 'none', transition: 'none',
-          transform: `translateY(${-d.lift}px) scale(1.06)`,
-        });
-        if (rar) av.style.setProperty('--rar', rar);
-        document.body.appendChild(av);
-        d.avatar = av;
-        setDragId(d.id);
-        setPopId(null); setPopState('hero'); setSelSlot(null); // a drag preempts the popup
+        if (!d.armed) {
+          // touch, before the long-press fires: a real move = the player is SCROLLING → drop the
+          // pickup candidate and let the browser pan the list (touch-action: pan-y).
+          if (Math.hypot(dx, dy) > HERO_DRAG_SCROLL_TOL) { clearTimeout(d.lp); dragRef.current = null; }
+          return;
+        }
+        // mouse: pick the hero up once the pointer moves past the start threshold.
+        if (Math.hypot(dx, dy) < HERO_DRAG_MOVE_TOL) return;
+        beginDrag(d, e.clientX, e.clientY);
+        if (!d.started) return;
       }
       if (d.avatar) { d.avatar.style.left = `${e.clientX - d.grabDx}px`; d.avatar.style.top = `${e.clientY - d.grabDy}px`; }
       const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -248,11 +278,12 @@ export default function HeroesScreen() {
     const finish = (e) => {
       const d = dragRef.current;
       if (!d || e.pointerId !== d.pid) return;
+      clearTimeout(d.lp); // cancel a pending long-press (a tap or scroll that never became a drag)
       dragRef.current = null;
       if (!d.started) return;
       dragEnd.current = performance.now(); // swallow the click that trails this pointerup
       const { avatar: av, over } = d;
-      const done = () => { if (av) av.remove(); setDragId(null); setOverId(null); setOverTf(''); };
+      const done = () => { if (av) av.remove(); setDragId(null); setOverId(null); setOverTf(''); document.removeEventListener('touchmove', blockScrollRef.current); };
       const glide = (left, top, then) => {
         if (!av) { then(); return; }
         void av.offsetWidth; // commit the current position so the transition eases FROM here
@@ -278,6 +309,7 @@ export default function HeroesScreen() {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
+      document.removeEventListener('touchmove', blockScrollRef.current); // safety if unmounted mid-drag
     };
   }, [actions]); // eslint-disable-line react-hooks/exhaustive-deps
 

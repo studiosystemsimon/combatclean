@@ -1073,6 +1073,14 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 /* bottom:2px, not 6 — .battle adds a 4px bottom padding below the arena, so 2 + 4 = 6px
    of visible clearance from the combat-area's actual bottom edge. */
 .arena .hero-row { position: absolute; left: 0; right: 0; bottom: 2px; z-index: 3; transform: none; }
+/* The 5 heroes ALWAYS fit on ONE row at EVERY resolution. Base .row is flex-wrap:wrap
+   with fixed 72px chips, so on narrower viewports 5×72 + gaps overflows and wraps to a
+   second row. Force the hero band to never wrap, and let its chips flex from a 0 basis
+   (capped at the 72px resting size) so they share the row width and shrink to fit when
+   it's tight instead of wrapping. Scoped to hero-row — the enemy row still wraps for
+   large formations. */
+.arena .hero-row { flex-wrap: nowrap; }
+.arena .hero-row .chip { flex: 1 1 0; min-width: 0; max-width: 72px; }
 
 /* Boss levels: the boss sticker is ~3x taller than a normal enemy chip. Pin the boss
    low (flex-end) so it stands just above the pinned hero band; its ART is dropped
@@ -1276,7 +1284,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   font-size: 44px; opacity: 0.45; pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
 
 /* drag lift */
-.mb-tile.mb-lifted .mb-inner { transform: scale(1.15) rotate(var(--mb-tilt, -5deg)); filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.55)); }
+.mb-tile.mb-lifted .mb-inner { transform: scale(var(--mb-lift-scale, 1.15)) rotate(var(--mb-tilt, -5deg)); filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.55)); }
 
 /* valid-merge-target pulse (during drag) */
 .mb-tile.mb-canmerge .mb-inner { animation: mbCanmerge 0.9s ease-in-out infinite; }
@@ -1396,7 +1404,13 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 
 .hs-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 10px 14px; }
 .hs-squad-band .hs-grid { padding: 0; }
-.hs-cell { display: flex; flex-direction: column; gap: 2px; transition: opacity 0.18s ease, filter 0.18s ease; }
+/* content-visibility: the browser skips layout/paint/image-decode for cells not near the
+   viewport, so a large roster no longer renders every tile offscreen (scroll perf). Nodes stay
+   in the DOM, so drag-swap / refs / popup / VFX still resolve. contain-intrinsic-size reserves
+   each skipped cell's box (auto = remember the real size once rendered) so scroll height + the
+   5-col grid stay correct. Squad cells are always on-screen, so this is a no-op for them. */
+.hs-cell { display: flex; flex-direction: column; gap: 2px; transition: opacity 0.18s ease, filter 0.18s ease;
+  content-visibility: auto; contain-intrinsic-size: auto 96px; }
 
 .hs-tile { --rar: #9aa7bd; position: relative; aspect-ratio: 1 / 1; border-radius: 11px; overflow: hidden; cursor: pointer;
   border: 2px solid var(--rar); padding: 0; width: 100%;
@@ -1517,10 +1531,12 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-ci-d.up { color: #8dffb0; } .hs-ci-d.dn { color: #ff7a7a; }
 
 /* ── Drag-swap ─────────────────────────────────────────────────────────────
-   Tiles own the drag gesture (touch-action:none so a touch-drag doesn't scroll).
-   The dragged tile becomes a hollow "hole"; a body-level clone (.hs-drag-avatar)
-   follows the pointer above everything, so the scroll area never clips it. */
-.hs-tile { touch-action: none; }
+   pan-y so a quick vertical touch-drag SCROLLS the roster; a long-press picks the
+   hero up instead (gated in JS — see HeroesScreen onTilePointerDown). During an
+   active touch drag a non-passive touchmove handler blocks the pan. The dragged tile
+   becomes a hollow "hole"; a body-level clone (.hs-drag-avatar) follows the pointer
+   above everything, so the scroll area never clips it. */
+.hs-tile { touch-action: pan-y; }
 .hs-tile.hs-dragsrc { opacity: 0.22; }
 .hs-tile.hs-drag-avatar { box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.35); cursor: grabbing; }
 

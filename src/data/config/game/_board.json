@@ -2,6 +2,12 @@
 	"cols": 7,
 	"rows": 5,
 	"selectedSlots": 5,
+	"drag": {
+		"liftFactor": 0.45,
+		"liftScale": 1.5,
+		"easeMs": 160,
+		"easeCurve": "cubic-bezier(0.22, 1, 0.36, 1)"
+	},
 	"startLayout": {
 		"generators": [
 			"blade",
