@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Volley",
 		"limit": "Arrow Storm"
+	},
+	"portrait": {
+		"scale": 1.7,
+		"x": 0.022,
+		"y": -0.407
 	}
 }

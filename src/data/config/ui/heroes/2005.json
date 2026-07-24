@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Skill",
 		"limit": "Ultimate"
+	},
+	"portrait": {
+		"scale": 1.55,
+		"x": -0.117,
+		"y": -0.26
 	}
 }

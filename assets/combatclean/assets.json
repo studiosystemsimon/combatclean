@@ -115,83 +115,163 @@
 		},
 		"hero.knight": {
 			"type": "image",
-			"file": "heroes/knight.png"
+			"file": "heroes/knight.png",
+			"anchor": {
+				"x": 0.5686,
+				"y": 0.8745
+			}
 		},
 		"hero.paladin": {
 			"type": "image",
-			"file": "heroes/paladin.png"
+			"file": "heroes/paladin.png",
+			"anchor": {
+				"x": 0.5351,
+				"y": 0.924
+			}
 		},
 		"hero.templar": {
 			"type": "image",
-			"file": "heroes/templar.png"
+			"file": "heroes/templar.png",
+			"anchor": {
+				"x": 0.5383,
+				"y": 0.96
+			}
 		},
 		"hero.barbarian": {
 			"type": "image",
-			"file": "heroes/barbarian.png"
+			"file": "heroes/barbarian.png",
+			"anchor": {
+				"x": 0.4904,
+				"y": 0.918
+			}
 		},
 		"hero.berserker": {
 			"type": "image",
-			"file": "heroes/berserker.png"
+			"file": "heroes/berserker.png",
+			"anchor": {
+				"x": 0.5144,
+				"y": 0.963
+			}
 		},
 		"hero.dwarf-warrior": {
 			"type": "image",
-			"file": "heroes/dwarf-warrior.png"
+			"file": "heroes/dwarf-warrior.png",
+			"anchor": {
+				"x": 0.4985,
+				"y": 0.924
+			}
 		},
 		"hero.valkyrie": {
 			"type": "image",
-			"file": "heroes/valkyrie.png"
+			"file": "heroes/valkyrie.png",
+			"anchor": {
+				"x": 0.5415,
+				"y": 0.9765
+			}
 		},
 		"hero.monk": {
 			"type": "image",
-			"file": "heroes/monk.png"
+			"file": "heroes/monk.png",
+			"anchor": {
+				"x": 0.5112,
+				"y": 0.951
+			}
 		},
 		"hero.ranger": {
 			"type": "image",
-			"file": "heroes/ranger.png"
+			"file": "heroes/ranger.png",
+			"anchor": {
+				"x": 0.4793,
+				"y": 0.9435
+			}
 		},
 		"hero.elf-archer": {
 			"type": "image",
-			"file": "heroes/elf-archer.png"
+			"file": "heroes/elf-archer.png",
+			"anchor": {
+				"x": 0.5435,
+				"y": 0.9735
+			}
 		},
 		"hero.assassin": {
 			"type": "image",
-			"file": "heroes/assassin.png"
+			"file": "heroes/assassin.png",
+			"anchor": {
+				"x": 0.5335,
+				"y": 0.972
+			}
 		},
 		"hero.rogue": {
 			"type": "image",
-			"file": "heroes/rogue.png"
+			"file": "heroes/rogue.png",
+			"anchor": {
+				"x": 0.5543,
+				"y": 0.936
+			}
 		},
 		"hero.dragoon": {
 			"type": "image",
-			"file": "heroes/dragoon.png"
+			"file": "heroes/dragoon.png",
+			"anchor": {
+				"x": 0.6085,
+				"y": 0.9765
+			}
 		},
 		"hero.wizard": {
 			"type": "image",
-			"file": "heroes/wizard.png"
+			"file": "heroes/wizard.png",
+			"anchor": {
+				"x": 0.4856,
+				"y": 0.9555
+			}
 		},
 		"hero.sorceress": {
 			"type": "image",
-			"file": "heroes/sorceress.png"
+			"file": "heroes/sorceress.png",
+			"anchor": {
+				"x": 0.524,
+				"y": 0.9615
+			}
 		},
 		"hero.warlock": {
 			"type": "image",
-			"file": "heroes/warlock.png"
+			"file": "heroes/warlock.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.9495
+			}
 		},
 		"hero.necromancer": {
 			"type": "image",
-			"file": "heroes/necromancer.png"
+			"file": "heroes/necromancer.png",
+			"anchor": {
+				"x": 0.5431,
+				"y": 0.978
+			}
 		},
 		"hero.druid": {
 			"type": "image",
-			"file": "heroes/druid.png"
+			"file": "heroes/druid.png",
+			"anchor": {
+				"x": 0.567,
+				"y": 0.978
+			}
 		},
 		"hero.cleric": {
 			"type": "image",
-			"file": "heroes/cleric.png"
+			"file": "heroes/cleric.png",
+			"anchor": {
+				"x": 0.5958,
+				"y": 0.984
+			}
 		},
 		"hero.bard": {
 			"type": "image",
-			"file": "heroes/bard.png"
+			"file": "heroes/bard.png",
+			"anchor": {
+				"x": 0.4936,
+				"y": 0.966
+			}
 		},
 		"enemy.slime": {
 			"type": "image",
@@ -487,83 +567,163 @@
 		},
 		"hero.alchemist": {
 			"type": "image",
-			"file": "heroes/alchemist.png"
+			"file": "heroes/alchemist.png",
+			"anchor": {
+				"x": 0.5128,
+				"y": 0.963
+			}
 		},
 		"hero.beastmaster": {
 			"type": "image",
-			"file": "heroes/beastmaster.png"
+			"file": "heroes/beastmaster.png",
+			"anchor": {
+				"x": 0.5383,
+				"y": 0.945
+			}
 		},
 		"hero.dancer": {
 			"type": "image",
-			"file": "heroes/dancer.png"
+			"file": "heroes/dancer.png",
+			"anchor": {
+				"x": 0.527,
+				"y": 0.9315
+			}
 		},
 		"hero.dark-knight": {
 			"type": "image",
-			"file": "heroes/dark-knight.png"
+			"file": "heroes/dark-knight.png",
+			"anchor": {
+				"x": 0.5527,
+				"y": 0.927
+			}
 		},
 		"hero.geomancer": {
 			"type": "image",
-			"file": "heroes/geomancer.png"
+			"file": "heroes/geomancer.png",
+			"anchor": {
+				"x": 0.5479,
+				"y": 0.909
+			}
 		},
 		"hero.gladiator": {
 			"type": "image",
-			"file": "heroes/gladiator.png"
+			"file": "heroes/gladiator.png",
+			"anchor": {
+				"x": 0.5128,
+				"y": 0.9525
+			}
 		},
 		"hero.gunslinger": {
 			"type": "image",
-			"file": "heroes/gunslinger.png"
+			"file": "heroes/gunslinger.png",
+			"anchor": {
+				"x": 0.4936,
+				"y": 0.9555
+			}
 		},
 		"hero.inquisitor": {
 			"type": "image",
-			"file": "heroes/inquisitor.png"
+			"file": "heroes/inquisitor.png",
+			"anchor": {
+				"x": 0.5271,
+				"y": 0.9765
+			}
 		},
 		"hero.lancer": {
 			"type": "image",
-			"file": "heroes/lancer.png"
+			"file": "heroes/lancer.png",
+			"anchor": {
+				"x": 0.508,
+				"y": 0.912
+			}
 		},
 		"hero.mage": {
 			"type": "image",
-			"file": "heroes/mage.png"
+			"file": "heroes/mage.png",
+			"anchor": {
+				"x": 0.5223,
+				"y": 0.9795
+			}
 		},
 		"hero.ninja": {
 			"type": "image",
-			"file": "heroes/ninja.png"
+			"file": "heroes/ninja.png",
+			"anchor": {
+				"x": 0.5585,
+				"y": 0.939
+			}
 		},
 		"hero.pirate": {
 			"type": "image",
-			"file": "heroes/pirate.png"
+			"file": "heroes/pirate.png",
+			"anchor": {
+				"x": 0.488,
+				"y": 0.9615
+			}
 		},
 		"hero.priest": {
 			"type": "image",
-			"file": "heroes/priest.png"
+			"file": "heroes/priest.png",
+			"anchor": {
+				"x": 0.5225,
+				"y": 0.9495
+			}
 		},
 		"hero.samurai": {
 			"type": "image",
-			"file": "heroes/samurai.png"
+			"file": "heroes/samurai.png",
+			"anchor": {
+				"x": 0.5112,
+				"y": 0.957
+			}
 		},
 		"hero.shaman": {
 			"type": "image",
-			"file": "heroes/shaman.png"
+			"file": "heroes/shaman.png",
+			"anchor": {
+				"x": 0.5615,
+				"y": 0.981
+			}
 		},
 		"hero.spellblade": {
 			"type": "image",
-			"file": "heroes/spellblade.png"
+			"file": "heroes/spellblade.png",
+			"anchor": {
+				"x": 0.584,
+				"y": 0.9045
+			}
 		},
 		"hero.summoner": {
 			"type": "image",
-			"file": "heroes/summoner.png"
+			"file": "heroes/summoner.png",
+			"anchor": {
+				"x": 0.515,
+				"y": 0.951
+			}
 		},
 		"hero.warlord": {
 			"type": "image",
-			"file": "heroes/warlord.png"
+			"file": "heroes/warlord.png",
+			"anchor": {
+				"x": 0.5239,
+				"y": 0.948
+			}
 		},
 		"hero.warrior": {
 			"type": "image",
-			"file": "heroes/warrior.png"
+			"file": "heroes/warrior.png",
+			"anchor": {
+				"x": 0.4984,
+				"y": 0.9135
+			}
 		},
 		"hero.witch": {
 			"type": "image",
-			"file": "heroes/witch.png"
+			"file": "heroes/witch.png",
+			"anchor": {
+				"x": 0.527,
+				"y": 0.969
+			}
 		}
 	}
 }

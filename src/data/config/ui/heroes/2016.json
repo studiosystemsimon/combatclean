@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Bone Spear",
 		"limit": "Army of Dead"
+	},
+	"portrait": {
+		"scale": 1.55,
+		"x": -0.024,
+		"y": -0.267
 	}
 }

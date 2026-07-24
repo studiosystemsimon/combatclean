@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Regrowth",
 		"limit": "Wild Bloom"
+	},
+	"portrait": {
+		"scale": 1.95,
+		"x": -0.055,
+		"y": -0.387
 	}
 }

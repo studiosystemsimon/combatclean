@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Flurry",
 		"limit": "Inner Peace"
+	},
+	"portrait": {
+		"scale": 1.65,
+		"x": 0.018,
+		"y": -0.426
 	}
 }

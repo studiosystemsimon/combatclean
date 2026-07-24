@@ -1,0 +1,10 @@
+using provided subject
+running gen.sh obsidia (FORCE=1)…
+  ..obsidia try 1 bg=MISS, retrying
+  ..obsidia try 2 bg=MISS, retrying
+  ..obsidia try 3 bg=MISS, retrying
+  ..obsidia try 4 bg=MISS, retrying
+WARN obsidia (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 42  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/obsidia.png

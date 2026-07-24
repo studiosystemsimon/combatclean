@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Frenzy",
 		"limit": "Bloodrage"
+	},
+	"portrait": {
+		"scale": 1.45,
+		"x": -0.003,
+		"y": -0.193
 	}
 }

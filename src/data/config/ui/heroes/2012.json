@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Jump",
 		"limit": "Sky High"
+	},
+	"portrait": {
+		"scale": 1.6,
+		"x": -0.111,
+		"y": -0.313
 	}
 }

@@ -42,6 +42,17 @@ def start_generate(slug, subject):
 def _q(s):
     return "'" + str(s).replace("'", "'\\''") + "'"
 
+def write_meta(meta_path, data):
+    """Persist trim_meta.json, keeping a .bak of the previous contents so a bad/empty
+    write can always be recovered."""
+    try:
+        if os.path.exists(meta_path):
+            import shutil; shutil.copyfile(meta_path, meta_path + ".bak")
+    except OSError:
+        pass
+    with open(meta_path, "w") as f:
+        json.dump(data, f, indent=2)
+
 def run_export(no_build, dry=False):
     """Run export-to-game.mjs via a LOGIN shell (node/npm/git-lfs on PATH). Parses the
     trailing 'RESULT {json}' summary line."""
@@ -63,6 +74,30 @@ def run_export(no_build, dry=False):
         return {"ok": False, "error": "export timed out"}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+# background export (the build takes ~1-2 min — run detached + poll, don't hold the fetch open)
+EXPORT_LOG = "/tmp/combatclean_export.log"
+EXPORT = {"proc": None}
+def start_export(no_build):
+    extra = " --no-build" if no_build else ""
+    cmd = ["/bin/zsh", "-lc",
+           "cd %s && exec node export-to-game.mjs%s >%s 2>&1" % (_q(PIPELINE), extra, _q(EXPORT_LOG))]
+    EXPORT["proc"] = subprocess.Popen(cmd, start_new_session=True)
+def export_status():
+    p = EXPORT["proc"]
+    log = ""
+    try:
+        with open(EXPORT_LOG, errors="replace") as f: log = f.read()[-4000:]
+    except OSError: pass
+    result = None
+    for line in reversed(log.strip().splitlines()):
+        if line.startswith("RESULT "):
+            try: result = json.loads(line[len("RESULT "):])
+            except Exception: pass
+            break
+    rc = p.poll() if p else None
+    return {"started": bool(p), "running": bool(p) and rc is None,
+            "done": bool(p) and rc is not None, "returncode": rc, "result": result, "log": log}
 
 def gen_status(root, slug):
     png = os.path.join(root, "heroes", slug + ".png")
@@ -139,6 +174,8 @@ def build_handler(root, meta_path):
                 q = parse_qs(urlparse(self.path).query)
                 slug = slugify((q.get("slug", [""])[0]))
                 return self._send(200, "application/json", json.dumps(gen_status(root, slug)))
+            if path == "/api/export-status":
+                return self._send(200, "application/json", json.dumps(export_status()))
             if path.startswith("/img/"):
                 fp = self._safe(path[len("/img/"):])
                 if fp and os.path.isfile(fp):
@@ -155,13 +192,13 @@ def build_handler(root, meta_path):
                 except Exception as e:
                     return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
                 if path == "/api/save":
-                    with open(meta_path, "w") as f: json.dump(body, f, indent=2)
+                    write_meta(meta_path, body)
                     return self._send(200, "application/json", json.dumps({"ok": True, "path": meta_path}))
                 # /api/clip
                 meta  = body.get("meta", {"images": {}})
                 scope = body.get("scope", "all")
                 only  = body.get("only") if scope == "current" else None
-                with open(meta_path, "w") as f: json.dump(meta, f, indent=2)   # treatments + pockets travel here
+                write_meta(meta_path, meta)   # treatments + pockets travel here
                 with open(RUNCTL, "w") as f:
                     json.dump({"root": root, "only": only}, f, indent=2)
                 result = run_photoshop()
@@ -193,9 +230,12 @@ def build_handler(root, meta_path):
                     try: body = json.loads(self.rfile.read(n).decode("utf-8"))
                     except Exception: body = {}
                 # save-by-default: persist fill + registration points before exporting
-                if isinstance(body.get("meta"), dict):
-                    with open(meta_path, "w") as f: json.dump(body["meta"], f, indent=2)
-                return self._send(200, "application/json", json.dumps(run_export(bool(body.get("no_build")), bool(body.get("dry")))))
+                if isinstance(body.get("meta"), dict):          # save-by-default (fill + reg + portrait + treatments)
+                    write_meta(meta_path, body["meta"])
+                if body.get("dry"):                              # quick synchronous dry classification
+                    return self._send(200, "application/json", json.dumps(run_export(False, True)))
+                start_export(bool(body.get("no_build")))         # real export runs in the BACKGROUND (poll /api/export-status)
+                return self._send(200, "application/json", json.dumps({"ok": True, "started": True}))
             return self._send(404, "text/plain", "not found")
     return Handler
 
@@ -209,8 +249,8 @@ def main():
         print("root not found:", root); sys.exit(1)
     meta_path = os.path.join(root, "trim_meta.json")
     Handler = build_handler(root, meta_path)
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("127.0.0.1", args.port), Handler) as httpd:
+    http.server.ThreadingHTTPServer.allow_reuse_address = True
+    with http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler) as httpd:
         print("trim tool: http://localhost:%d   (root: %s)" % (args.port, root))
         print("metadata:", meta_path)
         try: httpd.serve_forever()

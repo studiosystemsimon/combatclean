@@ -1,0 +1,16 @@
+{
+	"id": 2038,
+	"name": "Warrior",
+	"iconAssetId": "hero.warrior",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	},
+	"portrait": {
+		"scale": 1.65,
+		"x": -0.025,
+		"y": -0.364
+	}
+}

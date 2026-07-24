@@ -3,7 +3,7 @@
 // (virtual:asset-registry, keyed by the same view key as the config), NOT a second glob — one art path.
 // emoji/label defaults come from src/data/assets.js (the plan's "resolver default" table). Keeps the
 // data barrels pure.
-import { urlById } from 'virtual:asset-registry';
+import { urlById, registry } from 'virtual:asset-registry';
 import { ASSETS } from '../data/assets.js';
 import { GENERATORS } from '../data/generators.js';
 import { HEROES } from '../data/heroes.js';
@@ -12,11 +12,29 @@ import { HEROES } from '../data/heroes.js';
 const firstUrl = (rec) => (rec ? (rec.url ?? Object.values(rec)[0] ?? null) : null);
 export const artUrl = (key) => firstUrl(urlById[key]);
 
+// Registration point: authored in assets.json as `anchor`, baked into the resolved registry
+// (Map<assetId, ResolvedAsset>). It's the point IN the image — a fraction {x,y} — that marks where
+// the asset should be PINNED when placed (e.g. a character's base). null when the asset declares none.
+const anchorOf = (key) => registry.get(key)?.anchor ?? null;
+
 const base = (key) => ASSETS[key] ?? ASSETS.missing;
 export const resolve = (key) => {
   const a = base(key);
-  return { emoji: a.emoji, label: a.label, img: artUrl(key) };
+  return { emoji: a.emoji, label: a.label, img: artUrl(key), anchor: anchorOf(key) };
 };
+
+// Place a resolved asset by its REGISTRATION POINT: pin the authored anchor point to the
+// bottom-centre ground line of its box, so characters of different art proportions stand on the
+// same line. Returns a transform to layer over the box-centred art; undefined when the asset
+// declares no anchor (assets without one keep the default centring — no behaviour change).
+export function anchorStyle(a) {
+  const an = a && a.anchor;
+  if (!an) return undefined;
+  const ax = an.x ?? 0.5, ay = an.y ?? 1;        // registration point (fraction of the image)
+  const dx = ((0.5 - ax) * 100).toFixed(2);      // align anchor.x to the box's horizontal centre
+  const dy = ((1 - ay) * 100).toFixed(2);        // align anchor.y to the box's bottom (ground line)
+  return { transform: `translate(${dx}%, ${dy}%)` };
+}
 export const assetFor = resolve;
 export const itemAsset = (chain, level) => resolve(`${chain}.${level}`);
 export const generatorAsset = (genId) => resolve(GENERATORS[genId].asset);

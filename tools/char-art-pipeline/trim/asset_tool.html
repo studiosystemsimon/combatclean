@@ -77,7 +77,13 @@
   .trow .trm { background:#3a3d42; border:1px solid var(--line); color:#cbd0d6; border-radius:5px; padding:4px 8px; cursor:pointer; }
   .addOutline { background:#343841; color:#e7e9ec; border:1px dashed var(--line); border-radius:6px; padding:6px 10px; cursor:pointer; width:100%; }
   .modal-card .mf { padding:0 16px 14px; color:#7f868d; font-size:11px; }
-  #tileEditor { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:8px; }
+  #gameSize:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:8px; margin-left:28px; align-self:center; }
+  #gameSize .cmb-chip { position:relative; width:72px; height:54px; display:flex; align-items:center; justify-content:center;
+                        background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/10px 10px; border-radius:4px; }
+  #gameSize .cmb-chip img { height:100%; width:auto; max-width:100%; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  #gameSize .cmb-ground { position:absolute; left:0; right:0; bottom:0; height:1px; background:rgba(255,255,255,.28); pointer-events:none; }
+  #gameSize .gs-lbl { font-size:11px; color:#7f868d; white-space:nowrap; }
+  #tileEditor:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:8px; }
   .mocktile { position:relative; width:300px; height:300px; border-radius:14px; overflow:hidden;
               background:linear-gradient(160deg,#2b2f36,#1c1f24); box-shadow:0 6px 24px rgba(0,0,0,.5); }
   .mocktile #tileArt { position:absolute; left:50%; bottom:2px; height:82%; width:auto; transform:translateX(-50%);
@@ -90,6 +96,19 @@
   .tilectrls { display:flex; align-items:center; gap:14px; color:#9aa0a6; }
   .tilectrls input[type=range] { width:180px; }
   .tilehint { color:#7f868d; font-size:12px; }
+  #tileGallery:not([hidden]) { width:100%; align-self:stretch; display:flex; flex-direction:column; }
+  #galHead { display:flex; align-items:center; gap:12px; padding:6px 4px 10px; color:#9aa0a6; font-size:12px; }
+  #galHead #galInfo { flex:1; }
+  #galGrid { display:grid; gap:12px; padding:0 4px 40px; grid-template-columns:repeat(auto-fill, minmax(128px, 1fr)); align-content:start; }
+  .gtile { display:flex; flex-direction:column; gap:5px; }
+  .gtile .mocktile.sm { width:100%; height:auto; aspect-ratio:1/1; box-shadow:0 3px 12px rgba(0,0,0,.45); }
+  .gtile .mocktile.sm img { position:absolute; left:50%; bottom:2px; height:82%; width:auto; transform:translateX(-50%);
+                            cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:none; }
+  .gtile .mocktile.sm img:active { cursor:grabbing; }
+  .gtile.sel .mocktile.sm { outline:2px solid var(--accent); outline-offset:1px; }
+  .gtile:hover .mocktile.sm { outline:2px solid #4a5568; outline-offset:1px; }
+  .gtile .gtname { text-align:center; font-size:11px; color:#9aa0a6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gtile.sel .gtname { color:#e7e9ec; }
 
   /* generate tab */
   #genWrap { max-width:760px; margin:0 auto; padding:28px 24px 60px; }
@@ -135,10 +154,11 @@
           <button data-v="trim">Trimmed</button>
           <button data-v="256">256</button>
           <button data-v="tile">Tile</button>
+          <button data-v="all">All tiles</button>
         </div>
         <span class="spacer"></span>
         <label id="zoomLbl">100%</label>
-        <input id="zoom" type="range" min="10" max="300" value="100" step="5">
+        <input id="zoom" type="range" min="10" max="800" value="100" step="5">
         <button id="fit">Fit</button>
         <button id="treatBtn">Treatment</button>
         <button id="regBtn" title="Registry/anchor point — click to set, applies to all">◎ Registry</button>
@@ -153,6 +173,10 @@
         Use <b>Trimmed</b> / <b>256</b> to view the generated die-cut + square exports.</div>
       <div id="stageWrap">
         <div id="stage"><img id="img" alt=""><div id="dots"></div></div>
+        <div id="gameSize" hidden>
+          <div class="cmb-chip"><img id="gsArt" alt=""><span class="cmb-ground"></span></div>
+          <div class="gs-lbl">in combat ≈ 54px tall</div>
+        </div>
         <div id="stageMsg"></div>
         <div id="tileEditor" hidden>
           <div class="mocktile" id="mockTile"><img id="tileArt" alt=""><span class="mt-frame"></span></div>
@@ -162,6 +186,10 @@
             <button id="pReset">Reset</button>
           </div>
           <div class="tilehint">Drag the portrait to position · slider to zoom · saved per hero · exported to the hero tile</div>
+        </div>
+        <div id="tileGallery" hidden>
+          <div id="galHead"><span id="galInfo">drag a tile to move · scroll to scale · click to select</span><button id="galReset">Reset selected</button></div>
+          <div id="galGrid"></div>
         </div>
       </div>
     </div>
@@ -255,23 +283,70 @@ function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
   if (state.view==='trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
   if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
-function select(i){ state.idx=i; document.getElementById('curName').textContent=cur().key; loadStage(); renderList(); }
+function select(i){ state.idx=i; document.getElementById('curName').textContent=cur().key;
+  if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery(); else loadStage();
+  renderList(); }
 function loadStage(){
   const img=document.getElementById('img'), msg=document.getElementById('stageMsg');
   msg.style.display='none'; img.style.visibility='hidden';
-  img.onload=()=>{ state.natural={w:img.naturalWidth,h:img.naturalHeight}; img.style.visibility='visible'; fitZoom(); };
+  img.onload=()=>{ state.natural={w:img.naturalWidth,h:img.naturalHeight}; img.style.visibility='visible';
+    if(state.view==='256') setZoom(1); else fitZoom(); };   // 256 shows at true 1:1 size; big assets fit
   img.onerror=()=>{ img.style.visibility='hidden';
     msg.textContent=state.view==='source'?'image missing':'not generated yet — click Clip'; msg.style.display='block';
     document.getElementById('dots').innerHTML=''; };
   img.src=stageURL();
+  updateGameSize();
+}
+function updateGameSize(){
+  const gs=document.getElementById('gameSize');
+  if(state.view!=='256'){ gs.hidden=true; return; }
+  const it=cur(), base=it.name.replace(/\.png$/i,''), gsArt=document.getElementById('gsArt');
+  const reg=(state.meta[it.key]||{}).reg;                          // combat positions by the ASSET ANCHOR (registry point)
+  const ax=reg?reg[0]:0.5, ay=reg?reg[1]:1;                        // anchorStyle default = bottom-centre
+  gsArt.onerror=()=>{ gsArt.style.visibility='hidden'; };
+  gsArt.onload =()=>{ gsArt.style.visibility='visible'; };
+  gsArt.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((1-ay)*100).toFixed(2)}%)`;  // = anchorStyle()
+  gsArt.src=`/img/${it.cat}/${base}_256.png?v=${state.ver}`;
+  gs.hidden=false;
 }
 function setView(v){ state.view=v;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  const isTile = v==='tile';
-  document.getElementById('stage').style.display = isTile?'none':'';
+  const isTile = v==='tile', isAll = v==='all';
+  document.getElementById('stage').style.display = (isTile||isAll)?'none':'';
   if(!isTile) document.getElementById('stageMsg').style.display='none';
   document.getElementById('tileEditor').hidden = !isTile;
-  if(isTile) renderTile(); else loadStage(); }
+  document.getElementById('tileGallery').hidden = !isAll;
+  if(isTile||isAll) document.getElementById('gameSize').hidden = true;   // in-game-size preview is 256-view only
+  if(isTile) renderTile(); else if(isAll) renderGallery(); else loadStage(); }
+
+function portraitOf(key){ const rec=(state.meta[key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
+function applyImgPortrait(img,p){ img.style.height=(82*(p.scale??1))+'%'; img.style.left=`calc(50% + ${(p.x??0)*100}%)`; img.style.bottom=`calc(2px + ${(p.y??0)*100}%)`; }
+function galInfoFor(key){ const p=portraitOf(key), nm=key.split('/').pop().replace(/\.png$/,'');
+  document.getElementById('galInfo').textContent=`${nm}: scale ${(p.scale??1).toFixed(2)} · x ${(p.x??0).toFixed(2)} · y ${(p.y??0).toFixed(2)}   —   drag = move · scroll = scale · click = select`; }
+function renderGallery(){
+  const grid=document.getElementById('galGrid'); grid.innerHTML='';
+  for(const it of state.items){
+    if(it.cat!=='heroes') continue;                 // tiles are heroes
+    const base=it.name.replace(/\.png$/i,'');
+    const cell=document.createElement('div'); cell.className='gtile'+(it.key===cur().key?' sel':'');
+    cell.innerHTML=`<div class="mocktile sm"><img alt=""><span class="mt-frame"></span></div><span class="gtname">${base}</span>`;
+    const img=cell.querySelector('img'), mt=cell.querySelector('.mocktile');
+    applyImgPortrait(img, portraitOf(it.key));
+    img.onerror=()=>{ img.style.visibility='hidden'; };
+    img.src=`/img/heroes/${encodeURIComponent(base)}_256.png?v=${state.ver}`;
+    let d=null, moved=false;
+    img.addEventListener('pointerdown', e=>{ d={sx:e.clientX,sy:e.clientY,p:{...portraitOf(it.key)},w:mt.clientWidth||130,h:mt.clientHeight||130}; moved=false; try{img.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); });
+    img.addEventListener('pointermove', e=>{ if(!d) return; const dx=e.clientX-d.sx, dy=e.clientY-d.sy; if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
+      const p=portraitOf(it.key); p.x=+((d.p.x??0)+dx/d.w).toFixed(3); p.y=+((d.p.y??0)-dy/d.h).toFixed(3); applyImgPortrait(img,p); galInfoFor(it.key); });
+    img.addEventListener('pointerup', ()=>{ const wasMoved=moved; d=null; if(!wasMoved){ const i=state.items.findIndex(x=>x.key===it.key); if(i>=0) select(i); } });
+    img.addEventListener('pointercancel', ()=>{ d=null; });
+    cell.addEventListener('wheel', e=>{ e.preventDefault(); const p=portraitOf(it.key);
+      p.scale=+Math.max(0.4,Math.min(2.5,(p.scale??1)-Math.sign(e.deltaY)*0.05)).toFixed(2); applyImgPortrait(img,p); galInfoFor(it.key); }, {passive:false});
+    grid.appendChild(cell);
+  }
+  galInfoFor(cur().key);
+}
+document.getElementById('galReset').onclick=()=>{ (state.meta[cur().key] ||= {pockets:[]}).portrait={scale:1,x:0,y:0}; renderGallery(); };
 
 /* ---------- portrait tile framing ---------- */
 function curPortrait(){ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
@@ -303,33 +378,36 @@ document.getElementById('pReset').onclick=()=>{ state.meta[cur().key].portrait={
     applyPortrait(); });
   const end=()=>{ drag=null; }; art.addEventListener('pointerup',end); art.addEventListener('pointercancel',end);
 })();
-function setZoom(z){ state.zoom=Math.max(0.1,Math.min(z,3)); const pct=Math.round(state.zoom*100);
+function setZoom(z){ state.zoom=Math.max(0.1,Math.min(z,8)); const pct=Math.round(state.zoom*100);
   document.getElementById('zoom').value=pct; document.getElementById('zoomLbl').textContent=pct+'%'; applyZoom(); }
 function fitZoom(){ if(!state.natural.w) return; const wrap=document.getElementById('stageWrap'), pad=48;
   if (wrap.clientWidth<=0) return;
   setZoom(Math.min((wrap.clientWidth-pad)/state.natural.w,(wrap.clientHeight-pad)/state.natural.h)); }
 function applyZoom(){ const img=document.getElementById('img');
   img.style.width=(state.natural.w*state.zoom)+'px'; img.style.height=(state.natural.h*state.zoom)+'px'; drawDots(); drawReg(); }
-function drawReg(){ const dots=document.getElementById('dots'); const rec=state.meta[cur().key];
+function drawReg(){ const dots=document.getElementById('dots');
+  dots.querySelectorAll('.reg').forEach(n=>n.remove());   // single marker — clicking again MOVES it
+  const rec=state.meta[cur().key];
   if(!rec||!rec.reg) return;
   const d=document.createElement('div'); d.className='reg';
   d.style.left=(rec.reg[0]*state.natural.w*state.zoom)+'px';
   d.style.top =(rec.reg[1]*state.natural.h*state.zoom)+'px';
   dots.appendChild(d); }
 function drawDots(){ const dots=document.getElementById('dots'); dots.innerHTML='';
-  if (state.view!=='source') return;
-  curPockets().forEach((p,k)=>{ const d=document.createElement('div'); d.className='dot';
+  if (state.view==='source') curPockets().forEach((p,k)=>{ const d=document.createElement('div'); d.className='dot';
     d.style.left=(p[0]*state.zoom)+'px'; d.style.top=(p[1]*state.zoom)+'px'; d.innerHTML=`<span>${k+1}</span>`;
-    d.onclick=(e)=>{e.stopPropagation(); curPockets().splice(k,1); drawDots(); renderList();}; dots.appendChild(d); }); }
+    d.onclick=(e)=>{e.stopPropagation(); curPockets().splice(k,1); drawDots(); renderList();}; dots.appendChild(d); });
+  drawReg();   // the registry marker is redrawn on EVERY overlay refresh — a pocket click never clears it
+}
 
 document.getElementById('img').addEventListener('click',(e)=>{
   const r=e.target.getBoundingClientRect();
   const x=(e.clientX-r.left)/state.zoom, y=(e.clientY-r.top)/state.zoom;
   if (x<0||y<0||x>state.natural.w||y>state.natural.h) return;
-  if (state.regMode){                                   // set registration point (normalized) on ALL images
+  if (state.regMode){                                   // set THIS hero's registration point (normalized)
     const nx=+(x/state.natural.w).toFixed(4), ny=+(y/state.natural.h).toFixed(4);
-    for (const it of state.items){ (state.meta[it.key] ||= {pockets:[]}).reg=[nx,ny]; }
-    drawReg(); toast('registry '+nx.toFixed(2)+', '+ny.toFixed(2)+' → all'); return;
+    (state.meta[cur().key] ||= {pockets:[]}).reg=[nx,ny];   // per-hero; shared across its own assets
+    drawReg(); updateGameSize(); renderList(); toast('registry '+nx.toFixed(2)+', '+ny.toFixed(2)+' — '+cur().name); return;
   }
   if (state.view!=='source') return;
   curPockets().push([Math.round(x),Math.round(y)]); drawDots(); renderList(); });
@@ -337,8 +415,10 @@ document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>setView(b.
 document.getElementById('zoom').addEventListener('input',e=>{ state.zoom=e.target.value/100;
   document.getElementById('zoomLbl').textContent=e.target.value+'%'; applyZoom(); });
 document.getElementById('fit').onclick=fitZoom;
+document.getElementById('stage').addEventListener('wheel', e=>{   // mouse-wheel zoom (source/trimmed/256)
+  e.preventDefault(); setZoom(state.zoom * (e.deltaY<0 ? 1.12 : 1/1.12)); }, {passive:false});
 document.getElementById('undo').onclick=()=>{ curPockets().pop(); drawDots(); renderList(); };
-document.getElementById('clear').onclick=()=>{ state.meta[cur().key]={pockets:[]}; drawDots(); renderList(); };
+document.getElementById('clear').onclick=()=>{ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.pockets=[]; drawDots(); renderList(); };  // clears ONLY pockets — keeps reg + portrait
 document.getElementById('save').onclick=()=>save();
 document.getElementById('clipCur').onclick=()=>clip('current');
 document.getElementById('clipAll').onclick=()=>clip('all');
@@ -368,7 +448,7 @@ document.querySelectorAll('#tabbar .tab').forEach(b=>b.onclick=()=>switchTab(b.d
 /* ---------- registry point ---------- */
 document.getElementById('regBtn').onclick=()=>{ state.regMode=!state.regMode;
   document.getElementById('regBtn').classList.toggle('on',state.regMode);
-  toast(state.regMode?'Registry mode ON — click to set the anchor (applies to all)':'Registry mode off'); };
+  toast(state.regMode?'Registry mode ON — click to set THIS hero’s anchor (shared across its assets)':'Registry mode off'); };
 
 /* ---------- treatment editor ---------- */
 function renderTreat(){
@@ -396,15 +476,29 @@ document.getElementById('exportBtn').onclick = exportToGame;
 async function exportToGame(){
   if(!confirm('Export all hero 256×256 assets to the game?\n\nCopies art + registers assets, refreshes existing heroes, creates config + UI entries for new slugs (placeholder stats, tagged for tuning), and runs the build. Takes ~1–2 min.')) return;
   const btn=document.getElementById('exportBtn'), old=btn.textContent;
-  btn.disabled=true; btn.textContent='Exporting…'; toast('Exporting to game… (runs the build, ~1–2 min)');
+  btn.disabled=true; btn.textContent='Exporting…'; toast('Exporting… building (~1–2 min)');
   try{
-    const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-    const j=await res.json(); const r=j.result;
-    if(j.ok && r){ toast(`✓ export ok — refreshed ${r.refreshed.length}, created ${r.created.length}${r.errors&&r.errors.length?', '+r.errors.length+' errors':''}`); }
-    else { toast('✗ export failed'+(r&&r.errors&&r.errors.length?': '+r.errors[0].error:(j.error?': '+j.error:''))); }
-    console.log('[export]\n'+(j.output||''));
-  }catch(e){ toast('✗ export error: '+e); }
-  finally{ btn.disabled=false; btn.textContent=old; }
+    const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ meta: metaPayload() })});      // save-by-default (fill + reg + portrait + treatments)
+    const j=await res.json();
+    if(!j.started){ toast('✗ export failed to start'+(j.error?': '+j.error:'')); btn.disabled=false; btn.textContent=old; return; }
+    pollExport(btn, old);                                     // build runs in the background; poll for the result
+  }catch(e){ toast('✗ export error: '+e); btn.disabled=false; btn.textContent=old; }
+}
+async function pollExport(btn, old){
+  try{
+    const j=await (await fetch('/api/export-status')).json();
+    if(j.done){
+      const r=j.result;
+      if(j.returncode===0 && r){ toast(`✓ export ok — refreshed ${r.refreshed.length}, created ${r.created.length}`+
+        `${r.anchored?', '+r.anchored+' anchors':''}${r.portraited?', '+r.portraited+' portraits':''}`+
+        `${r.errors&&r.errors.length?', '+r.errors.length+' errors':''}`); state.ver++; }
+      else { toast('✗ export failed'+(r&&r.errors&&r.errors.length?': '+r.errors[0].error:' (see console)')); }
+      console.log('[export]\n'+(j.log||''));
+      btn.disabled=false; btn.textContent=old; return;
+    }
+  }catch(e){ /* transient — keep polling */ }
+  setTimeout(()=>pollExport(btn, old), 3000);
 }
 
 /* ---------- generate ---------- */

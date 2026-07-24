@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# CombatClean .app launcher — starts the Vite dev server (or reuses one) and
-# opens the browser. LSUIElement=true keeps it out of the dock.
+# CombatClean .app launcher — ALWAYS starts a FRESH Vite dev server, closing any
+# previous one first. LSUIElement=true keeps it out of the dock.
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 PORT=5175
 URL="http://localhost:$PORT/"
@@ -8,11 +8,14 @@ URL="http://localhost:$PORT/"
 PROJ="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$PROJ"
 
-# Already running? Just focus the browser and quit.
-if lsof -ti :"$PORT" >/dev/null 2>&1; then
-  open "$URL"
-  exit 0
-fi
+# Close EVERY previous CombatClean dev server (on any port) before starting, so the
+# new one re-bakes the config from disk. A reused server keeps serving the config it
+# baked at startup — stale after new assets/config are imported ("my freshly-imported
+# art isn't showing"). Scoped to THIS project's vite binary, so MergeCombat and other
+# node apps keep running. Then free the pinned port and wait for the OS to release it.
+pkill -f "$PROJ/node_modules/.bin/vite" 2>/dev/null || true
+PIDS="$(lsof -ti :"$PORT" 2>/dev/null || true)"; [ -n "$PIDS" ] && kill $PIDS 2>/dev/null || true
+for _ in 1 2 3 4 5 6; do lsof -ti :"$PORT" >/dev/null 2>&1 || break; sleep 0.5; done
 
 # First run only: install dependencies (logged — no terminal is attached).
 if [ ! -d node_modules ]; then

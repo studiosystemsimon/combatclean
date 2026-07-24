@@ -1,0 +1,10 @@
+using provided subject
+running gen.sh demon (FORCE=1)…
+  ..demon try 1 bg=MISS, retrying
+  ..demon try 2 bg=MISS, retrying
+  ..demon try 3 bg=MISS, retrying
+  ..demon try 4 bg=MISS, retrying
+WARN demon (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 41  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/demon.png

@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Heal",
 		"limit": "Sanctuary"
+	},
+	"portrait": {
+		"scale": 1.55,
+		"x": 0.007,
+		"y": -0.328
 	}
 }

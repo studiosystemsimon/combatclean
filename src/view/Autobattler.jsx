@@ -6,7 +6,7 @@
 // on top of the existing battle simulation + fx pipeline.
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
-import { heroAsset, resolve } from './assets.js';
+import { heroAsset, resolve, anchorStyle } from './assets.js';
 import Art from './Art.jsx';
 import HpBar from './HpBar.jsx';
 import { normalChargeFrac, limitChargeFrac, isLimitReady } from '../model/battle.js';
@@ -47,6 +47,7 @@ function HeroChip({ h, onLimit, fighting }) {
   const dead = h.hp <= 0;
   const lbReady = isLimitReady(h); // charged (from board orders) — drives the golden glow
   const canFire = lbReady && fighting; // actually TAPPABLE (fireLimitBreak needs status:fighting)
+  const ha = heroAsset(h.hero); // resolved once → art + registration-point placement
   return (
     <div className={`chip hero-chip ${dead ? 'dead' : ''} ${lbReady ? 'lb-ready' : ''}`} data-battle-hero={h.id}>
       <div className="hero-charge" aria-hidden="true">
@@ -55,7 +56,7 @@ function HeroChip({ h, onLimit, fighting }) {
         ))}
       </div>
       <div className="chip-art">
-        <Art a={heroAsset(h.hero)} className="chip-emoji" />
+        <Art a={ha} className="chip-emoji" style={anchorStyle(ha)} />
       </div>
       <HpBar frac={h.hp / h.maxHp} kind="hero" />
       <div className="bar normal">

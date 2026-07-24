@@ -1,0 +1,6 @@
+# ENEMY roster — one row per enemy:  <slug><TAB><subject>
+# The subject describes ONLY the creature (species/form, colour, notable features, pose).
+# Art STYLE is locked in gen.sh's STYLE= header — do NOT restate it here.
+# Example (uncomment + edit, real TAB between slug and subject):
+# slime	a small round green gelatinous blob monster with two beady eyes, wobbling, mid-hop
+# bat	a small purple fanged cave bat with tattered wings, screeching, wings spread

@@ -7,5 +7,10 @@
 		"basic": "Attack",
 		"normal": "Smite",
 		"limit": "Judgement"
+	},
+	"portrait": {
+		"scale": 1.8,
+		"x": -0.066,
+		"y": -0.385
 	}
 }
