@@ -16,7 +16,7 @@
  * Never edits existing logical entries; new stats are placeholders. Usage:
  *   node export-to-game.mjs [--no-build] [--dry-run] [--only <slug>] [--cat heroes|enemies]
  */
-import { readFileSync, writeFileSync, readdirSync, copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -45,7 +45,7 @@ const WEAPON_EMOJI = { bow: '🏹', magic: '🔮', blade: '⚔️' };
 // ── per-category contract ──────────────────────────────────────────────────
 const CATS = {
   heroes: {
-    prefix: 'hero', abilities: true, portrait: true,
+    prefix: 'hero', dir: 'heroes', abilities: true, portrait: true,
     gameArt: join(GAME, 'assets', 'combatclean', 'heroes'),
     logicalDir: join(GAME, 'src', 'data', 'config', 'game', 'heroes'),
     uiDir: join(GAME, 'src', 'data', 'config', 'ui', 'heroes'),
@@ -59,7 +59,7 @@ const CATS = {
     },
   },
   enemies: {
-    prefix: 'enemy', abilities: false, portrait: false,
+    prefix: 'enemy', dir: 'enemies', abilities: false, portrait: false,
     gameArt: join(GAME, 'assets', 'combatclean', 'enemies'),
     logicalDir: join(GAME, 'src', 'data', 'config', 'game', 'enemies'),
     uiDir: join(GAME, 'src', 'data', 'config', 'ui', 'enemies'),
@@ -98,11 +98,19 @@ function uiObject(cfg, id, slug, emoji, portrait) {
   return o;
 }
 
-// ── discover work per category ─────────────────────────────────────────────
-const catNames = Object.keys(CATS).filter(c => !ONLY_CAT || c === ONLY_CAT);
+// every enemy-area category (+ the generic 'enemies') maps to the flat enemy config; 'heroes' → hero config
+const ENEMY_CATS = new Set(['enemies', 'mossbog', 'gloomwood', 'boneyard', 'emberfall', 'frostvault', 'dragons-ascent']);
+const cfgFor = (cat) => cat === 'heroes' ? CATS.heroes : (ENEMY_CATS.has(cat) ? CATS.enemies : null);
+
+// ── discover work per category (any trim/assets subdir that maps to a config) ──
+const ASSETS_ROOT = join(PIPELINE, 'trim', 'assets');
+const catNames = readdirSync(ASSETS_ROOT).filter(c => {
+  try { return statSync(join(ASSETS_ROOT, c)).isDirectory() && cfgFor(c) && (!ONLY_CAT || c === ONLY_CAT); }
+  catch { return false; }
+});
 const work = {};   // cat -> [slugs]
 for (const cat of catNames) {
-  const src = join(PIPELINE, 'trim', 'assets', cat);
+  const src = join(ASSETS_ROOT, cat);
   if (!existsSync(src)) continue;
   let slugs = readdirSync(src).filter(f => f.endsWith('_256.png')).map(f => f.slice(0, -('_256.png'.length)));
   if (ONLY) slugs = slugs.filter(s => s === ONLY);
@@ -118,8 +126,8 @@ if (!Object.keys(work).length) {
 const existing = {};
 for (const cat of Object.keys(work)) {
   existing[cat] = {};
-  for (const f of readdirSync(CATS[cat].logicalDir).filter(f => f.endsWith('.json') && !f.startsWith('_'))) {
-    try { const d = JSON.parse(readFileSync(join(CATS[cat].logicalDir, f), 'utf8')); if (d.displayName) existing[cat][d.displayName] = d.id; } catch {}
+  for (const f of readdirSync(cfgFor(cat).logicalDir).filter(f => f.endsWith('.json') && !f.startsWith('_'))) {
+    try { const d = JSON.parse(readFileSync(join(cfgFor(cat).logicalDir, f), 'utf8')); if (d.displayName) existing[cat][d.displayName] = d.id; } catch {}
   }
 }
 
@@ -138,14 +146,14 @@ assets.assets ||= {};
 const refreshed = [], created = [], errors = []; let anchored = 0, portraited = 0;
 
 for (const cat of Object.keys(work)) {
-  const cfg = CATS[cat];
+  const cfg = cfgFor(cat);
   mkdirSync(cfg.uiDir, { recursive: true });
   for (const slug of work[cat]) {
     try {
       copyFileSync(join(PIPELINE, 'trim', 'assets', cat, `${slug}_256.png`), join(cfg.gameArt, `${slug}.png`));
       const anchor = anchorFor(cat, slug); if (anchor) anchored++;
       const portrait = cfg.portrait ? portraitFor(cat, slug) : null;
-      assets.assets[`${cfg.prefix}.${slug}`] = { type: 'image', file: `${cat}/${slug}.png`, ...(anchor ? { anchor } : {}) };
+      assets.assets[`${cfg.prefix}.${slug}`] = { type: 'image', file: `${cfg.dir}/${slug}.png`, ...(anchor ? { anchor } : {}) };
 
       let id = existing[cat][slug];
       if (id != null) {

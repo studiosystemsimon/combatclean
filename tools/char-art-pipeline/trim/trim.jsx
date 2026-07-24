@@ -29,7 +29,7 @@
   var SIZE_256    = 256;
   var RUNCTL      = "/Users/simonhill/combatclean/tools/char-art-pipeline/trim/trim_run.json";
   var DEFAULT_TREATMENT = [{ color: "#ffffff", width: 12 }];
-  var EXPORT_SIZES = { "heroes": SIZE_256 };
+  var EXPORT_SIZES = {};   // per-category size override; DEFAULT is SIZE_256 for EVERY category
 
   function readJson(p){ var f=new File(p); if(!f.exists) return null; f.encoding="UTF-8"; f.open("r"); var s=f.read(); f.close(); try{return eval('('+s+')');}catch(e){return null;} }
   function endsWith(s,suf){ return s.length>=suf.length && s.substr(s.length-suf.length)===suf; }
@@ -149,7 +149,7 @@
       var rawSubject=doc.activeLayer;
 
       // C+D. 256 size (from the RAW subject) THEN small treatment — for configured categories
-      var sz=EXPORT_SIZES[catName];
+      var sz=EXPORT_SIZES[catName]||SIZE_256;   // every category gets a 256 export by default
       if(sz){
         var dup=doc.duplicate();                       // copy of the raw subject
         try{

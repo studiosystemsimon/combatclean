@@ -15,8 +15,8 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-TSV="$ROOT/classes.tsv"
-REF="$ROOT/reference/enemy_color_ref.png,$ROOT/reference/enemy_style_ref.png"
+TSV="${TSV:-$ROOT/classes.tsv}"   # override with TSV=rosters/<area>.tsv for per-area generation
+REF="$ROOT/reference/enemy_ref_a.png,$ROOT/reference/enemy_ref_b.png"
 GEN="$ROOT/gen-image-fortis-ref.sh"
 CONC="${CONC:-8}"
 FORCE="${FORCE:-0}"
@@ -26,7 +26,7 @@ mkdir -p "$ROOT/raw" "$ROOT/logs" "$OUT"
 
 # Enemy STYLE — FORM/LINEWORK from reference/enemy_style_ref.png (loose hand-inked gritty cartoon),
 # COLOUR from reference/enemy_color_ref.png (rich saturated vibrant painterly). Iterate as we dial in.
-STYLE="Single fantasy MONSTER / ENEMY creature in the ZELDA: PHANTOM HOURGLASS art style, matching the FIRST reference image (the STYLE/COLOUR MASTER) closely. STYLE — clean, bold CEL-SHADING with crisp confident forms and smooth flat colour fills; a THICK dark outline; chunky, rounded, expressive character design that is charming but clearly menacing; a stocky slightly-chibi build with a large characterful head. COLOUR — RICH, SATURATED, VIBRANT hues with glossy highlights and deep shadows, exactly like the reference. CONTRAST — VERY HIGH so it pops. Keep the design BOLD and SIMPLE with a strong, instantly-readable SILHOUETTE — it appears TINY in-game, so MINIMISE busy fine detail (no tiny straps, buckles, filigree or intricate texture); use only a few big clear shapes. FACE — big, simple and menacing. Clearly a hostile enemy creature (fangs, claws, horns, glaring or glowing eyes as fitting). IMPORTANT — NO visual effects: no magic aura, glow, particles, sparkles, light bursts, smoke, swirls, flames, or motion streaks (a single small intrinsic glowing eye is fine). ONE creature only, WHOLE body visible, in a dynamic MENACING combat pose. NO ground, NO floor, NO floor texture, NO cast shadow beneath the creature, NO base or platform — the creature sits ALONE on pure empty white. Centered, isolated on a plain solid WHITE background. ABSOLUTELY NO text, NO name label, NO caption, NO signature, NO watermark, NO logo anywhere in the image. Subject: "
+STYLE="Single fantasy MONSTER / ENEMY creature drawn in ONE consistent house style, matching the TWO reference exemplar images EXACTLY. CONSISTENCY IS THE #1 RULE — it MUST look like it was drawn by the SAME artist for the SAME game set as the references: the SAME clean, bold, flat CEL-SHADING (smooth flat colour fills, NOT painterly, NOT rendered/airbrushed, NOT sketchy), the SAME even THICK dark ink outline of consistent weight, the SAME crisp finish, the SAME level of detail, and the SAME stocky slightly-chibi proportions with a large characterful head and short sturdy limbs. Do NOT invent a different rendering style. Match the exemplars' technique precisely; only the creature's shape and colour change. COLOUR — colour it to suit its own nature (biome-appropriate hues), RICH, SATURATED and HIGH-CONTRAST with clean cel highlights and deep shadows like the references. Keep the design BOLD and SIMPLE with a strong readable SILHOUETTE — it appears TINY in-game, so MINIMISE busy fine detail; a few big clear shapes only. FACE — big, simple, menacing. IMPORTANT — NO visual effects: no aura, glow, particles, sparkles, light bursts, smoke, swirls, flames, or motion streaks (a single small intrinsic glowing eye or molten crack is fine). ONE creature only, WHOLE body visible, dynamic MENACING pose. NO ground, floor, floor texture, cast shadow or base — ALONE on pure empty white. Centered, isolated on solid WHITE. ABSOLUTELY NO text, name label, caption, signature, watermark or logo. Subject: "
 
 corner_light() {  # $1 = png ; echoes LIGHT or DARK/MISS
   python3 - "$1" <<'PY' 2>/dev/null || echo MISS

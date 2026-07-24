@@ -582,6 +582,105 @@
         "x": 0,
         "y": -0.307
       }
+    },
+    "boneyard/banshee.png": {
+      "pockets": []
+    },
+    "boneyard/bone-colossus.png": {
+      "pockets": []
+    },
+    "boneyard/bone-hound.png": {
+      "pockets": []
+    },
+    "boneyard/bone-warrior.png": {
+      "pockets": []
+    },
+    "boneyard/crawling-hand.png": {
+      "pockets": []
+    },
+    "boneyard/grave-golem.png": {
+      "pockets": []
+    },
+    "boneyard/grave-wraith.png": {
+      "pockets": []
+    },
+    "boneyard/plague-corpse.png": {
+      "pockets": []
+    },
+    "boneyard/rotting-ghoul.png": {
+      "pockets": []
+    },
+    "boneyard/skeletal-archer.png": {
+      "pockets": []
+    },
+    "boneyard/tomb-guard.png": {
+      "pockets": []
+    },
+    "gloomwood/antler-wraith.png": {
+      "pockets": []
+    },
+    "gloomwood/boar-brute.png": {
+      "pockets": []
+    },
+    "gloomwood/dire-wolf.png": {
+      "pockets": []
+    },
+    "gloomwood/elder-treant.png": {
+      "pockets": []
+    },
+    "gloomwood/goblin-archer.png": {
+      "pockets": []
+    },
+    "gloomwood/moss-troll.png": {
+      "pockets": []
+    },
+    "gloomwood/mushroom-brute.png": {
+      "pockets": []
+    },
+    "gloomwood/shade-stalker.png": {
+      "pockets": []
+    },
+    "gloomwood/thorn-sprite.png": {
+      "pockets": []
+    },
+    "gloomwood/thornhound.png": {
+      "pockets": []
+    },
+    "gloomwood/treant-sapling.png": {
+      "pockets": []
+    },
+    "mossbog/bog-goblin.png": {
+      "pockets": []
+    },
+    "mossbog/bog-slime.png": {
+      "pockets": []
+    },
+    "mossbog/bog-zombie.png": {
+      "pockets": []
+    },
+    "mossbog/fen-lurcher.png": {
+      "pockets": []
+    },
+    "mossbog/giant-leech.png": {
+      "pockets": []
+    },
+    "mossbog/giant-toad.png": {
+      "pockets": []
+    },
+    "mossbog/marsh-behemoth.png": {
+      "pockets": []
+    },
+    "mossbog/mud-golem.png": {
+      "pockets": []
+    },
+    "mossbog/reed-lurker.png": {
+      "pockets": []
+    },
+    "mossbog/snapvine.png": {
+      "pockets": []
+    },
+    "mossbog/swamp-hag.png": {
+      "pockets": []
     }
   }
 }
