@@ -43,8 +43,9 @@ else
   log "using existing classes.tsv subject for '$SLUG'"
 fi
 
+[ -n "${GEN_OVERRIDES:-}" ] && log "overrides: ${GEN_OVERRIDES}"
 log "running gen.sh $SLUG (FORCE=${FORCE:-1})…"
-FORCE="${FORCE:-1}" bash "$ROOT/gen.sh" "$SLUG" 2>&1 | tee -a "$LOG"
+OVERRIDES="${GEN_OVERRIDES:-}" FORCE="${FORCE:-1}" bash "$ROOT/gen.sh" "$SLUG" 2>&1 | tee -a "$LOG"
 
 if [ -f "$OUT/$SLUG.png" ]; then log "DONE: $OUT/$SLUG.png"; exit 0; fi
 log "FAIL: no output produced"; exit 1

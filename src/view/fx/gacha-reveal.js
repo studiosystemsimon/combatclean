@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { GachaRevealEngine, rarityMeta as fxRarityMeta } from './reveal-engine.js';
-import { heroAsset } from '../assets.js';
+import { heroAsset, portraitStyle, anchorStyle } from '../assets.js';
 import { HEROES } from '../../data/heroes.js';
 import { HERO_RARITIES } from '../../data/rarities.js';
 import { STRINGS } from '../../data/strings.js';
@@ -54,15 +54,25 @@ function metaFor(res) {
   const r = HERO_RARITIES[res.rarity] || HERO_RARITIES.common;
   const glowR = (fxRarityMeta(res.rarity) || {}).glowR || 0;
   const ms = (fxRarityMeta(res.rarity) || {}).ms || 900;
-  return { id: res.id, rarity: res.rarity, name: (hero && hero.name) || asset.label || res.id, asset, r, glowR, ms };
+  return { id: res.id, rarity: res.rarity, name: (hero && hero.name) || asset.label || res.id, asset, portrait: hero && hero.portrait, r, glowR, ms };
 }
 
-function paintPortrait(el, m, emojiSize) {
+// mode 'portrait' → framed bust cropped to the box (same as the hero tile — used by the digest tiles);
+// 'anchor' (default) → the full character positioned by its REGISTRATION POINT (grounded), as used by
+// the big reveal. Both defeat Tailwind's img{max-width:100%} where needed via max-width:none.
+function paintPortrait(el, m, emojiSize, mode = 'anchor') {
   el.innerHTML = '';
   if (m.asset && m.asset.img) {
     const im = document.createElement('img');
     im.src = m.asset.img; im.draggable = false;
-    im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+    if (mode === 'portrait' && m.portrait) {
+      const ps = portraitStyle(m.portrait);
+      el.style.overflow = 'hidden';
+      im.style.cssText = `position:absolute;left:${ps.left};bottom:${ps.bottom};height:${ps.height};width:auto;max-width:none;transform:translateX(-50%);object-fit:contain;`;
+    } else {
+      const as = anchorStyle(m.asset); // registration-point placement (grounded bottom-centre)
+      im.style.cssText = `width:100%;height:100%;object-fit:contain;${as ? `transform:${as.transform};` : ''}`;
+    }
     el.appendChild(im);
   } else {
     el.textContent = (m.asset && m.asset.emoji) || '?';
@@ -322,7 +332,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
       trar.textContent = m.r.name;
       const tface = mk('position:absolute;top:12%;width:48px;height:48px;display:flex;align-items:center;'
         + 'justify-content:center;filter:drop-shadow(0 0 6px currentColor);z-index:2;');
-      paintPortrait(tface, m, 30);
+      paintPortrait(tface, m, 30, 'portrait');
       const tn = mk('font-size:9px;font-weight:800;padding:4px 3px 3px;text-align:center;line-height:1.1;'
         + 'width:100%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.65));z-index:3;color:#fff;');
       tn.textContent = m.name;

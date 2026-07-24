@@ -16,7 +16,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 TSV="$ROOT/classes.tsv"
-REF="$ROOT/reference/enemy_style_ref.png,$ROOT/reference/enemy_anchor.png"
+REF="$ROOT/reference/enemy_color_ref.png,$ROOT/reference/enemy_style_ref.png"
 GEN="$ROOT/gen-image-fortis-ref.sh"
 CONC="${CONC:-8}"
 FORCE="${FORCE:-0}"
@@ -24,9 +24,9 @@ FORCE="${FORCE:-0}"
 OUT="${OUT:-$(cd "$ROOT/.." && pwd)/char-art-pipeline/trim/assets/enemies}"
 mkdir -p "$ROOT/raw" "$ROOT/logs" "$OUT"
 
-# TODO(operator): DRAFT enemy style — refine + lock this like the hero STYLE was locked. It anchors to
-# reference/enemy_style_ref.png (the game's existing enemy art style). Adjust wording once you're happy.
-STYLE="Single fantasy MONSTER / CREATURE enemy, drawn as one of a matching set. STYLE — match the FIRST reference image (the ENEMY STYLE MASTER) EXACTLY: the same chibi-creature proportions, the same rendering treatment, the same overall size and framing; every enemy MUST share this identical style and scale. Keep the whole creature visible. Render it in a DYNAMIC, MENACING combat pose — mid-attack, hostile and full of energy. FORM — a bold, readable chibi monster silhouette with large expressive features; clearly a threatening enemy creature (fangs, claws, horns, spines, glaring eyes as the subject calls for). COLOUR — a RICH, DEEP, SATURATED palette. OUTLINES — a THICK BLACK OUTER contour, but every INNER line drawn in a DARKER shade of the LOCAL colour it borders (coloured line-art), NOT black. FLAT cel-shading. IMPORTANT — NO visual effects of any kind: no aura, glow, particles, sparkles, light bursts, smoke, swirls, or motion streaks; render ONLY the creature (effects are added later in post). Centered, isolated on a plain flat solid white background. No text, no watermark, no QR code, no logo. Subject: "
+# Enemy STYLE — FORM/LINEWORK from reference/enemy_style_ref.png (loose hand-inked gritty cartoon),
+# COLOUR from reference/enemy_color_ref.png (rich saturated vibrant painterly). Iterate as we dial in.
+STYLE="Single fantasy MONSTER / ENEMY creature in the ZELDA: PHANTOM HOURGLASS art style, matching the FIRST reference image (the STYLE/COLOUR MASTER) closely. STYLE — clean, bold CEL-SHADING with crisp confident forms and smooth flat colour fills; a THICK dark outline; chunky, rounded, expressive character design that is charming but clearly menacing; a stocky slightly-chibi build with a large characterful head. COLOUR — RICH, SATURATED, VIBRANT hues with glossy highlights and deep shadows, exactly like the reference. CONTRAST — VERY HIGH so it pops. Keep the design BOLD and SIMPLE with a strong, instantly-readable SILHOUETTE — it appears TINY in-game, so MINIMISE busy fine detail (no tiny straps, buckles, filigree or intricate texture); use only a few big clear shapes. FACE — big, simple and menacing. Clearly a hostile enemy creature (fangs, claws, horns, glaring or glowing eyes as fitting). IMPORTANT — NO visual effects: no magic aura, glow, particles, sparkles, light bursts, smoke, swirls, flames, or motion streaks (a single small intrinsic glowing eye is fine). ONE creature only, WHOLE body visible, in a dynamic MENACING combat pose. NO ground, NO floor, NO floor texture, NO cast shadow beneath the creature, NO base or platform — the creature sits ALONE on pure empty white. Centered, isolated on a plain solid WHITE background. ABSOLUTELY NO text, NO name label, NO caption, NO signature, NO watermark, NO logo anywhere in the image. Subject: "
 
 corner_light() {  # $1 = png ; echoes LIGHT or DARK/MISS
   python3 - "$1" <<'PY' 2>/dev/null || echo MISS
@@ -39,13 +39,16 @@ PY
 
 gen_one() {  # $1=slug  $2=subject
   local slug="$1" subj="$2" prompt="${STYLE}${2}" t st
+  # OVERRIDES = critical elements that outrank the base style (e.g. "lava skin, molten cracks")
+  [ -n "${OVERRIDES:-}" ] && prompt="${prompt} — CRITICAL OVERRIDES (ABSOLUTE priority over any conflicting detail above; they REPLACE the base defaults where they conflict): ${OVERRIDES}."
   for t in 1 2 3 4; do
     rm -f "$ROOT/raw/$slug.png"
     SKIP_SHRINK=1 "$GEN" "$ROOT/raw/$slug.png" "$prompt" "$REF" > "$ROOT/logs/$slug.log" 2>&1 || true
     if [ -f "$ROOT/raw/$slug.png" ]; then
       st="$(corner_light "$ROOT/raw/$slug.png")"
-      if [ "$st" = "LIGHT" ]; then cp "$ROOT/raw/$slug.png" "$OUT/$slug.png"; echo "OK   $slug"; return 0; fi
-      echo "  ..$slug try $t bg=$st, retrying"
+      # keep unless the bg is genuinely DARK; LIGHT or an un-checkable MISS are both fine (no wasted retries)
+      if [ "$st" != "DARK" ]; then cp "$ROOT/raw/$slug.png" "$OUT/$slug.png"; echo "OK   $slug ($st)"; return 0; fi
+      echo "  ..$slug try $t bg=DARK, retrying"
     else
       echo "  ..$slug try $t NO_IMAGE, retrying"
     fi

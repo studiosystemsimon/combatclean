@@ -29,7 +29,10 @@
 
   #list { width:280px; flex:0 0 280px; border-right:1px solid var(--line); overflow-y:auto; background:var(--panel); }
   #list h2 { margin:0; padding:12px 14px; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:#9aa0a6; border-bottom:1px solid var(--line); }
-  .cat { padding:9px 14px 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#7f868d; background:#212327; border-bottom:1px solid #2f3237; position:sticky; top:0; }
+  .cat { padding:9px 14px 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#7f868d; background:#212327; border-bottom:1px solid #2f3237; position:sticky; top:0; cursor:pointer; user-select:none; }
+  .cat:hover { background:#26282c; color:#9aa0a6; }
+  .cat.open { color:#e7e9ec; }
+  .cat .tw { display:inline-block; width:12px; color:#5b6169; }
   .cat .n { float:right; color:#5b6169; }
   .row { display:flex; align-items:center; gap:10px; padding:8px 12px 8px 20px; cursor:pointer; border-bottom:1px solid #2f3237; }
   .row:hover { background:#2c2f34; }
@@ -58,6 +61,9 @@
   .dot span { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; text-shadow:0 1px 2px #000; }
   #stageMsg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#7f868d; font-size:14px; display:none; }
   #bar #regBtn.on { background:#37d67a; border-color:#37d67a; color:#08131f; font-weight:600; }
+  #bar #delBtn { background:#5a3030; border-color:#6b3a3a; color:#ffc9c9; }
+  #bar #delBtn:hover { background:#6b3838; }
+  #genRegen { padding:9px 16px; margin-left:8px; }
   .reg { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%;
          border:2px solid #37d67a; box-shadow:0 0 0 1px rgba(0,0,0,.6); pointer-events:none; }
   .reg::before,.reg::after { content:""; position:absolute; background:#37d67a; }
@@ -139,7 +145,7 @@
   <div id="tabbar">
     <button class="tab on" data-tab="trim">Trim</button>
     <button class="tab" data-tab="gen">Generate</button>
-    <button id="exportBtn" class="exp">Export to game</button>
+    <button id="exportBtn" class="exp">Export category</button>
     <span class="brand">char-art trim tool</span>
   </div>
 
@@ -167,6 +173,7 @@
         <button id="save">Save</button>
         <button id="clipCur">Clip current</button>
         <button class="primary" id="clipAll">Clip all</button>
+        <button id="delBtn" title="Delete this character + all its assets">Delete</button>
       </div>
       <div id="hint">In <b>Source</b> view, click any area whose <b>internal fill needs removing</b>
         (e.g. a bow window). Click a point again to delete it. <b>0 points = default outer trim.</b>
@@ -209,7 +216,12 @@
         <label>Description (optional — leave blank to let Claude write the subject)</label>
         <textarea id="genSubject" placeholder="Only if you want to specify: gender, hair gradient, costume, weapon, pose. Style is locked."></textarea>
       </div>
+      <div class="field">
+        <label>Critical elements — override the base prompt (e.g. lava skin, cornrow hair)</label>
+        <input id="genOverrides" type="text" placeholder="comma-separated; these take priority over the locked base style" autocomplete="off">
+      </div>
       <button id="genGo" class="primary">Generate</button>
+      <button id="genRegen">Regenerate selected</button>
       <div class="jobs" id="jobs"></div>
     </div>
   </div>
@@ -257,25 +269,36 @@ async function refreshList(preserveKey) {
   buildFromList(list);
   renderList();
   const i = state.items.findIndex(it => it.key === keep);
-  if (i >= 0) select(i); else if (state.items.length && state.idx >= state.items.length) select(0);
+  if (i >= 0) select(i);
+  else if (state.items.length) select(Math.min(state.idx, state.items.length - 1));   // deleted current → pick a neighbour
 }
 
 function renderList() {
   const el = document.getElementById('list');
   el.querySelectorAll('.cat,.row').forEach(n => n.remove());
-  let gi = 0;
+  if (!state.openCat && state.cats.length) state.openCat = (cur() && cur().cat) || state.cats[0].name;
   for (const c of state.cats) {
-    const h = document.createElement('div'); h.className='cat';
-    h.innerHTML = `${c.name}<span class="n">${c.images.length}</span>`; el.appendChild(h);
+    const open = c.name === state.openCat;
+    const h = document.createElement('div'); h.className = 'cat' + (open ? ' open' : '');
+    h.innerHTML = `<span class="tw">${open ? '▾' : '▸'}</span>${c.name}<span class="n">${c.images.length}</span>`;
+    h.onclick = () => openCategory(c.name);
+    el.appendChild(h);
+    if (!open) continue;                                   // collapsed — header only
     for (const n of c.images) {
-      const idx=gi++, key=`${c.name}/${n}`, np=(state.meta[key]||{pockets:[]}).pockets.length;
-      const row=document.createElement('div');
-      row.className='row'+(idx===state.idx?' sel':'');
-      row.innerHTML=`<img src="/img/${c.name}/${encodeURIComponent(n)}">
+      const key = `${c.name}/${n}`, idx = state.items.findIndex(it => it.key === key);
+      const np = (state.meta[key] || {pockets:[]}).pockets.length;
+      const row = document.createElement('div');
+      row.className = 'row' + (idx === state.idx ? ' sel' : '');
+      row.innerHTML = `<img src="/img/${c.name}/${encodeURIComponent(n)}?v=${state.ver}">
         <span class="name">${n}</span><span class="badge ${np?'has':''}">${np}</span>`;
-      row.onclick=()=>select(idx); el.appendChild(row);
+      row.onclick = () => select(idx); el.appendChild(row);
     }
   }
+}
+function openCategory(name){
+  state.openCat = name;
+  const it = state.items.find(x => x.cat === name);
+  if (it) select(state.items.indexOf(it)); else renderList();   // select first of the opened category
 }
 function cur(){ return state.items[state.idx]; }
 function curPockets(){ return (state.meta[cur().key] ||= {pockets:[]}).pockets; }
@@ -283,7 +306,7 @@ function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
   if (state.view==='trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
   if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
-function select(i){ state.idx=i; document.getElementById('curName').textContent=cur().key;
+function select(i){ state.idx=i; state.openCat=cur().cat; document.getElementById('curName').textContent=cur().key;
   if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery(); else loadStage();
   renderList(); }
 function loadStage(){
@@ -422,16 +445,31 @@ document.getElementById('clear').onclick=()=>{ const rec=(state.meta[cur().key] 
 document.getElementById('save').onclick=()=>save();
 document.getElementById('clipCur').onclick=()=>clip('current');
 document.getElementById('clipAll').onclick=()=>clip('all');
+document.getElementById('delBtn').onclick=async ()=>{
+  if(!state.items.length) return;
+  const it=cur(), slug=it.name.replace(/\.png$/i,'');
+  if(!confirm(`Delete "${slug}" and ALL its assets?\n\nRemoves the source, _trim, _256, its metadata and its roster row.\nThis does NOT remove it from the game config (use the game's own removal for that).`)) return;
+  try{
+    const res=await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cat:it.cat,name:it.name})});
+    const j=await res.json();
+    if(j.ok){ delete state.meta[it.key]; toast('Deleted '+slug+' ('+(j.deleted||[]).length+' items)'); await refreshList(); }
+    else toast('✗ delete failed'+(j.error?': '+j.error:''));
+  }catch(e){ toast('✗ delete error: '+e); }
+};
 let _rt; window.addEventListener('resize',()=>{clearTimeout(_rt); _rt=setTimeout(fitZoom,120);});
 
 function metaPayload(){ return { generated_by:'asset_tool',
   treatmentLarge:state.treatment.large, treatmentSmall:state.treatment.small, images:state.meta }; }
 async function save(silent){ const res=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
   const j=await res.json(); if(!silent) toast(res.ok?('Saved → '+j.path):'Save failed'); return res.ok; }
-async function clip(scope){ const btns=document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
-  toast('Clipping '+scope+' in Photoshop…');
+async function clip(scope){
+  if(scope==='current' && !cur()) { toast('Nothing selected'); return; }
+  const only = scope==='current' ? cur().key : null;
+  const category = scope==='all' ? state.openCat : null;   // "clip all" = ONLY the open category
+  const btns=document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
+  toast(scope==='all' ? ('Clipping all of '+category+'…') : ('Clipping '+cur().name+'…'));
   try{ const res=await fetch('/api/clip',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({scope,only:cur().key,meta:metaPayload()})});
+      body:JSON.stringify({scope,only,category,meta:metaPayload()})});
     const j=await res.json(); toast(j.ok?('✓ '+(j.output||'done')):('✗ '+(j.error||j.stderr||'failed')));
     if(j.ok){ state.ver++; setView('trim'); }
   }catch(e){ toast('✗ '+e); } finally{ btns.forEach(b=>b.disabled=false); } }
@@ -474,12 +512,14 @@ document.getElementById('treatModal').addEventListener('click',e=>{ if(e.target.
 /* ---------- export to game ---------- */
 document.getElementById('exportBtn').onclick = exportToGame;
 async function exportToGame(){
-  if(!confirm('Export all hero 256×256 assets to the game?\n\nCopies art + registers assets, refreshes existing heroes, creates config + UI entries for new slugs (placeholder stats, tagged for tuning), and runs the build. Takes ~1–2 min.')) return;
+  const cat=state.openCat;
+  if(!cat){ toast('Open a category first'); return; }
+  if(!confirm(`Export the "${cat}" category to the game?\n\nCopies art + registers assets, refreshes existing entries, creates config + UI for new slugs (placeholder stats, tagged for tuning), and runs the build. Takes ~1–2 min.`)) return;
   const btn=document.getElementById('exportBtn'), old=btn.textContent;
-  btn.disabled=true; btn.textContent='Exporting…'; toast('Exporting… building (~1–2 min)');
+  btn.disabled=true; btn.textContent='Exporting…'; toast('Exporting '+cat+'… building (~1–2 min)');
   try{
     const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ meta: metaPayload() })});      // save-by-default (fill + reg + portrait + treatments)
+        body:JSON.stringify({ meta: metaPayload(), category: cat })});   // active category only; save-by-default
     const j=await res.json();
     if(!j.started){ toast('✗ export failed to start'+(j.error?': '+j.error:'')); btn.disabled=false; btn.textContent=old; return; }
     pollExport(btn, old);                                     // build runs in the background; poll for the result
@@ -508,17 +548,29 @@ nameEl.addEventListener('input',()=>{ const s=slugify(nameEl.value); slugPrev.te
 document.getElementById('genGo').onclick=startGen;
 nameEl.addEventListener('keydown',e=>{ if(e.key==='Enter') startGen(); });
 
+function genOverridesVal(){ return document.getElementById('genOverrides').value.trim(); }
 async function startGen(){
   const slug=slugify(nameEl.value);
   if(!slug){ toast('Enter a class name'); return; }
   const subject=document.getElementById('genSubject').value.trim();
   const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({slug,subject})});
+      body:JSON.stringify({slug,subject,overrides:genOverridesVal()})});
   const j=await res.json();
   if(!j.ok){ toast('✗ '+(j.error||'failed to start')); return; }
   nameEl.value=''; slugPrev.textContent=''; document.getElementById('genSubject').value='';
   makeJobCard(slug); pollGen(slug);
   toast('Generating '+slug+'…');
+}
+document.getElementById('genRegen').onclick=regenSelected;
+async function regenSelected(){
+  if(!state.items.length){ toast('Nothing selected'); return; }
+  const it=cur(), slug=it.name.replace(/\.png$/i,''), ov=genOverridesVal();
+  if(!confirm(`Regenerate "${slug}"? This overwrites its source art (FORCE).`+(ov?`\n\nCritical overrides: ${ov}`:''))) return;
+  const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({slug, overrides:ov})});   // no subject → keeps the existing roster subject (or Claude authors if none)
+  const j=await res.json();
+  if(!j.ok){ toast('✗ '+(j.error||'failed to start')); return; }
+  switchTab('gen'); makeJobCard(slug); pollGen(slug); toast('Regenerating '+slug+'…');
 }
 function makeJobCard(slug){
   let card=document.getElementById('job-'+slug);
@@ -538,17 +590,18 @@ async function pollGen(slug){
   try{
     const j=await (await fetch('/api/gen-status?slug='+encodeURIComponent(slug))).json();
     if(j.log) pre.textContent=j.log; pre.scrollTop=pre.scrollHeight;
-    if(j.done){
-      st.textContent='done'; st.className='st ok';
-      card.querySelector('.done img').src='/img/heroes/'+slug+'.png?v='+Date.now();
-      done.style.display='flex';
-      await refreshList('heroes/'+slug+'.png');   // so it's there in Trim immediately
-      toast('✓ '+slug+' ready');
-      return;
-    }
-    if(!j.running){   // process exited without producing output
-      st.textContent='failed'; st.className='st err';
-      toast('✗ '+slug+' failed (see log)');
+    if(j.done){                                    // the generate PROCESS finished
+      if(j.returncode===0 && j.outputExists){
+        st.textContent='done'; st.className='st ok';
+        card.querySelector('.done img').src='/img/heroes/'+slug+'.png?v='+Date.now();
+        done.style.display='flex';
+        state.ver++;                               // bust cache so a REGEN's new art actually shows
+        await refreshList('heroes/'+slug+'.png');  // so it's there in Trim immediately
+        toast('✓ '+slug+' ready');
+      } else {
+        st.textContent='failed'; st.className='st err';
+        toast('✗ '+slug+' failed (see log)');
+      }
       return;
     }
   }catch(e){ pre.textContent += '\n[status error] '+e; }

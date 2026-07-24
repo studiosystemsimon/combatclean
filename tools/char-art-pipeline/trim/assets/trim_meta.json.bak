@@ -17,518 +17,571 @@
     }
   ],
   "images": {
+    "enemies/cave-bat.png": {
+      "pockets": []
+    },
+    "enemies/giant-rat.png": {
+      "pockets": []
+    },
+    "enemies/goblin.png": {
+      "pockets": []
+    },
+    "enemies/imp.png": {
+      "pockets": []
+    },
+    "enemies/kobold.png": {
+      "pockets": []
+    },
+    "enemies/mushroom.png": {
+      "pockets": []
+    },
+    "enemies/orc.png": {
+      "pockets": []
+    },
+    "enemies/skeleton.png": {
+      "pockets": []
+    },
+    "enemies/slime.png": {
+      "pockets": []
+    },
+    "enemies/wraith.png": {
+      "pockets": []
+    },
+    "enemies/zombie.png": {
+      "pockets": []
+    },
     "heroes/alchemist.png": {
       "pockets": [],
+      "reg": [
+        0.5128,
+        0.963
+      ],
       "portrait": {
         "scale": 1.6,
         "x": 0.001,
         "y": -0.359
-      },
-      "reg": [
-        0.5128,
-        0.963
-      ]
+      }
     },
     "heroes/assassin.png": {
       "pockets": [],
+      "reg": [
+        0.5335,
+        0.972
+      ],
       "portrait": {
         "scale": 1.6,
         "x": -0.011,
         "y": -0.342
-      },
-      "reg": [
-        0.5335,
-        0.972
-      ]
+      }
     },
     "heroes/barbarian.png": {
       "pockets": [],
+      "reg": [
+        0.4904,
+        0.918
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.034,
         "y": -0.285
-      },
-      "reg": [
-        0.4904,
-        0.918
-      ]
+      }
     },
     "heroes/bard.png": {
       "pockets": [],
+      "reg": [
+        0.4936,
+        0.966
+      ],
       "portrait": {
         "scale": 1.55,
         "x": 0.006,
         "y": -0.298
-      },
-      "reg": [
-        0.4936,
-        0.966
-      ]
+      }
     },
     "heroes/beastmaster.png": {
       "pockets": [],
+      "reg": [
+        0.5383,
+        0.945
+      ],
       "portrait": {
         "scale": 1.55,
         "x": 0.097,
         "y": -0.296
-      },
-      "reg": [
-        0.5383,
-        0.945
-      ]
+      }
     },
     "heroes/berserker.png": {
       "pockets": [],
+      "reg": [
+        0.5144,
+        0.963
+      ],
       "portrait": {
         "scale": 1.45,
         "x": -0.003,
         "y": -0.193
-      },
-      "reg": [
-        0.5144,
-        0.963
-      ]
+      }
     },
     "heroes/cleric.png": {
       "pockets": [
         [
-          369,
-          601
+          388,
+          610
         ]
+      ],
+      "reg": [
+        0.5958,
+        0.984
       ],
       "portrait": {
         "scale": 1.55,
         "x": 0.007,
         "y": -0.328
-      },
-      "reg": [
-        0.5958,
-        0.984
-      ]
+      }
     },
     "heroes/dancer.png": {
       "pockets": [
         [
-          368,
+          346,
           542
         ],
         [
-          710,
-          536
+          692,
+          549
         ]
+      ],
+      "reg": [
+        0.527,
+        0.9315
       ],
       "portrait": {
         "scale": 1.7,
         "x": 0.016,
         "y": -0.399
-      },
-      "reg": [
-        0.527,
-        0.9315
-      ]
+      }
     },
     "heroes/dark-knight.png": {
       "pockets": [],
+      "reg": [
+        0.5527,
+        0.927
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.079,
         "y": -0.304
-      },
-      "reg": [
-        0.5527,
-        0.927
-      ]
+      }
+    },
+    "heroes/demon.png": {
+      "pockets": [],
+      "portrait": {
+        "scale": 1.75,
+        "x": -0.086,
+        "y": -0.495
+      }
     },
     "heroes/dragoon.png": {
       "pockets": [],
+      "reg": [
+        0.6085,
+        0.9765
+      ],
       "portrait": {
         "scale": 1.6,
         "x": -0.111,
         "y": -0.313
-      },
-      "reg": [
-        0.6085,
-        0.9765
-      ]
+      }
     },
     "heroes/druid.png": {
       "pockets": [],
+      "reg": [
+        0.567,
+        0.978
+      ],
       "portrait": {
         "scale": 1.95,
         "x": -0.055,
         "y": -0.387
-      },
-      "reg": [
-        0.567,
-        0.978
-      ]
+      }
     },
     "heroes/dwarf-warrior.png": {
       "pockets": [],
-      "portrait": {
-        "scale": 1.55,
-        "x": -0.117,
-        "y": -0.26
-      },
       "reg": [
         0.4985,
         0.924
-      ]
+      ],
+      "portrait": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
+      }
     },
     "heroes/elf-archer.png": {
       "pockets": [],
+      "reg": [
+        0.5435,
+        0.9735
+      ],
       "portrait": {
         "scale": 1.55,
         "x": 0.011,
         "y": -0.327
-      },
-      "reg": [
-        0.5435,
-        0.9735
-      ]
+      }
     },
     "heroes/geomancer.png": {
       "pockets": [],
+      "reg": [
+        0.5479,
+        0.909
+      ],
       "portrait": {
         "scale": 1.55,
         "x": 0.025,
         "y": -0.286
-      },
-      "reg": [
-        0.5479,
-        0.909
-      ]
+      }
     },
     "heroes/gladiator.png": {
       "pockets": [],
+      "reg": [
+        0.5128,
+        0.9525
+      ],
       "portrait": {
         "scale": 1.9,
         "x": 0.069,
         "y": -0.414
-      },
-      "reg": [
-        0.5128,
-        0.9525
-      ]
+      }
+    },
+    "heroes/golem.png": {
+      "pockets": [],
+      "portrait": {
+        "scale": 1.65,
+        "x": -0.106,
+        "y": -0.364
+      }
     },
     "heroes/gunslinger.png": {
       "pockets": [],
+      "reg": [
+        0.4936,
+        0.9555
+      ],
       "portrait": {
         "scale": 1.7,
         "x": 0.012,
         "y": -0.383
-      },
-      "reg": [
-        0.4936,
-        0.9555
-      ]
+      }
     },
     "heroes/inquisitor.png": {
       "pockets": [],
+      "reg": [
+        0.5271,
+        0.9765
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.013,
         "y": -0.305
-      },
-      "reg": [
-        0.5271,
-        0.9765
-      ]
+      }
     },
     "heroes/knight.png": {
       "pockets": [],
+      "reg": [
+        0.5686,
+        0.8745
+      ],
       "portrait": {
         "scale": 1.75,
         "x": -0.107,
         "y": -0.423
-      },
-      "reg": [
-        0.5686,
-        0.8745
-      ]
+      }
     },
     "heroes/lancer.png": {
       "pockets": [],
+      "reg": [
+        0.508,
+        0.912
+      ],
       "portrait": {
         "scale": 1.6,
         "x": -0.044,
         "y": -0.29
-      },
-      "reg": [
-        0.508,
-        0.912
-      ]
+      }
     },
     "heroes/mage.png": {
       "pockets": [],
+      "reg": [
+        0.5223,
+        0.9795
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.027,
         "y": -0.278
-      },
-      "reg": [
-        0.5223,
-        0.9795
-      ]
+      }
     },
     "heroes/monk.png": {
       "pockets": [],
+      "reg": [
+        0.5112,
+        0.951
+      ],
       "portrait": {
         "scale": 1.65,
         "x": 0.018,
         "y": -0.426
-      },
-      "reg": [
-        0.5112,
-        0.951
-      ]
+      }
     },
     "heroes/necromancer.png": {
       "pockets": [],
+      "reg": [
+        0.5431,
+        0.978
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.024,
         "y": -0.267
-      },
-      "reg": [
-        0.5431,
-        0.978
-      ]
+      }
     },
     "heroes/ninja.png": {
       "pockets": [],
+      "reg": [
+        0.5585,
+        0.939
+      ],
       "portrait": {
         "scale": 1.65,
         "x": -0.061,
         "y": -0.378
-      },
-      "reg": [
-        0.5585,
-        0.939
-      ]
+      }
+    },
+    "heroes/obsidia.png": {
+      "pockets": [],
+      "portrait": {
+        "scale": 1.45,
+        "x": -0.025,
+        "y": -0.248
+      }
     },
     "heroes/paladin.png": {
       "pockets": [],
+      "reg": [
+        0.5351,
+        0.924
+      ],
       "portrait": {
         "scale": 1.45,
         "x": -0.016,
         "y": -0.225
-      },
-      "reg": [
-        0.5351,
-        0.924
-      ]
+      }
     },
     "heroes/pirate.png": {
       "pockets": [],
+      "reg": [
+        0.488,
+        0.9615
+      ],
       "portrait": {
         "scale": 1.75,
         "x": 0.045,
         "y": -0.355
-      },
-      "reg": [
-        0.488,
-        0.9615
-      ]
+      }
     },
     "heroes/priest.png": {
       "pockets": [],
+      "reg": [
+        0.5225,
+        0.9495
+      ],
       "portrait": {
         "scale": 1.45,
         "x": -0.001,
         "y": -0.198
-      },
-      "reg": [
-        0.5225,
-        0.9495
-      ]
+      }
     },
     "heroes/ranger.png": {
       "pockets": [
         [
-          754,
-          414
-        ],
-        [
-          716,
-          646
+          722,
+          374
         ]
+      ],
+      "reg": [
+        0.4793,
+        0.9435
       ],
       "portrait": {
         "scale": 1.7,
         "x": 0.022,
         "y": -0.407
-      },
-      "reg": [
-        0.4793,
-        0.9435
-      ]
+      }
     },
     "heroes/rogue.png": {
       "pockets": [],
+      "reg": [
+        0.5543,
+        0.936
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.03,
         "y": -0.272
-      },
-      "reg": [
-        0.5543,
-        0.936
-      ]
+      }
     },
     "heroes/samurai.png": {
       "pockets": [],
+      "reg": [
+        0.5112,
+        0.957
+      ],
       "portrait": {
         "scale": 1.65,
         "x": 0.017,
         "y": -0.37
-      },
-      "reg": [
-        0.5112,
-        0.957
-      ]
+      }
     },
     "heroes/shaman.png": {
       "pockets": [
         [
-          443,
-          627
+          432,
+          636
         ]
+      ],
+      "reg": [
+        0.5615,
+        0.981
       ],
       "portrait": {
         "scale": 1.7,
         "x": -0.086,
         "y": -0.299
-      },
-      "reg": [
-        0.5615,
-        0.981
-      ]
+      }
     },
     "heroes/sorceress.png": {
       "pockets": [],
+      "reg": [
+        0.524,
+        0.9615
+      ],
       "portrait": {
         "scale": 1.55,
         "x": -0.021,
         "y": -0.3
-      },
-      "reg": [
-        0.524,
-        0.9615
-      ]
+      }
     },
     "heroes/spellblade.png": {
       "pockets": [],
-      "portrait": {
-        "scale": 1.7,
-        "x": -0.039,
-        "y": -0.348
-      },
       "reg": [
         0.584,
         0.9045
-      ]
+      ],
+      "portrait": {
+        "scale": 1.6,
+        "x": -0.025,
+        "y": -0.305
+      }
     },
     "heroes/summoner.png": {
       "pockets": [],
+      "reg": [
+        0.515,
+        0.951
+      ],
       "portrait": {
         "scale": 1.65,
         "x": 0.002,
         "y": -0.383
-      },
-      "reg": [
-        0.515,
-        0.951
-      ]
+      }
     },
     "heroes/templar.png": {
       "pockets": [],
+      "reg": [
+        0.5383,
+        0.96
+      ],
       "portrait": {
         "scale": 1.8,
         "x": -0.066,
         "y": -0.385
-      },
-      "reg": [
-        0.5383,
-        0.96
-      ]
+      }
     },
     "heroes/valkyrie.png": {
       "pockets": [],
+      "reg": [
+        0.5415,
+        0.9765
+      ],
       "portrait": {
         "scale": 1.5,
         "x": -0.011,
         "y": -0.242
-      },
-      "reg": [
-        0.5415,
-        0.9765
-      ]
+      }
     },
     "heroes/warlock.png": {
       "pockets": [],
+      "reg": [
+        0.5,
+        0.9495
+      ],
       "portrait": {
         "scale": 1.45,
         "x": 0.05,
         "y": -0.216
-      },
-      "reg": [
-        0.5,
-        0.9495
-      ]
+      }
     },
     "heroes/warlord.png": {
       "pockets": [],
-      "portrait": {
-        "scale": 2.05,
-        "x": -0.028,
-        "y": -0.563
-      },
       "reg": [
         0.5239,
         0.948
-      ]
+      ],
+      "portrait": {
+        "scale": 2.3,
+        "x": -0.043,
+        "y": -0.718
+      }
     },
     "heroes/warrior.png": {
       "pockets": [],
-      "portrait": {
-        "scale": 1.65,
-        "x": -0.025,
-        "y": -0.364
-      },
       "reg": [
         0.4984,
         0.9135
-      ]
+      ],
+      "portrait": {
+        "scale": 1.55,
+        "x": -0.117,
+        "y": -0.26
+      }
     },
     "heroes/witch.png": {
       "pockets": [
         [
-          329,
+          312,
           380
         ]
+      ],
+      "reg": [
+        0.527,
+        0.969
       ],
       "portrait": {
         "scale": 2.05,
         "x": -0.074,
         "y": -0.486
-      },
-      "reg": [
-        0.527,
-        0.969
-      ]
+      }
     },
     "heroes/wizard.png": {
       "pockets": [],
+      "reg": [
+        0.4856,
+        0.9555
+      ],
       "portrait": {
         "scale": 1.7,
         "x": 0,
         "y": -0.307
-      },
-      "reg": [
-        0.4856,
-        0.9555
-      ]
+      }
     }
   }
 }

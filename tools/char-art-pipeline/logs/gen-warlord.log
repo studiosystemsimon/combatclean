@@ -1,0 +1,11 @@
+deploying a Claude instance to author the subject for 'warlord'…
+subject: a MALE fantasy WARLORD with obsidian-black-to-molten-crimson root-to-tip gradient hair, an ornate Honkai-Impact-style layered battle costume of segmented dark plate over a high-collared crimson war-coat with gold filigree, flared armored pauldrons and trailing layered fabric, hoisting a massive banner-topped greataxe overhead in a commanding forward-charging mid-swing.
+running gen.sh warlord (FORCE=1)…
+  ..warlord try 1 bg=MISS, retrying
+  ..warlord try 2 bg=MISS, retrying
+  ..warlord try 3 bg=MISS, retrying
+  ..warlord try 4 bg=MISS, retrying
+WARN warlord (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 43  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/warlord.png

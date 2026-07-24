@@ -36,6 +36,8 @@ PY
 
 gen_one() {  # $1=slug  $2=subject
   local slug="$1" subj="$2" prompt="${STYLE}${2}" t st
+  # OVERRIDES = critical elements that outrank the base style (e.g. "lava skin, cornrow hair")
+  [ -n "${OVERRIDES:-}" ] && prompt="${prompt} — CRITICAL OVERRIDES (ABSOLUTE priority over any conflicting detail above; they REPLACE the base defaults where they conflict): ${OVERRIDES}."
   for t in 1 2 3 4; do
     rm -f "$ROOT/raw/$slug.png"
     SKIP_SHRINK=1 "$GEN" "$ROOT/raw/$slug.png" "$prompt" "$REF" > "$ROOT/logs/$slug.log" 2>&1 || true

@@ -724,6 +724,18 @@
 				"x": 0.527,
 				"y": 0.969
 			}
+		},
+		"hero.demon": {
+			"type": "image",
+			"file": "heroes/demon.png"
+		},
+		"hero.golem": {
+			"type": "image",
+			"file": "heroes/golem.png"
+		},
+		"hero.obsidia": {
+			"type": "image",
+			"file": "heroes/obsidia.png"
 		}
 	}
 }

@@ -35,8 +35,8 @@
   function endsWith(s,suf){ return s.length>=suf.length && s.substr(s.length-suf.length)===suf; }
   function totalWidth(t){ var s=0; for(var i=0;i<t.length;i++) s+=Number(t[i].width)||0; return s; }
 
-  var run = readJson(RUNCTL), ONLY = null;
-  if (run){ if(run.root) ROOT=run.root; if(run.only) ONLY=String(run.only); }
+  var run = readJson(RUNCTL), ONLY = null, ONLY_CAT = null;
+  if (run){ if(run.root) ROOT=run.root; if(run.only) ONLY=String(run.only); if(run.onlyCat) ONLY_CAT=String(run.onlyCat); }
   var meta = readJson(ROOT + "/trim_meta.json") || {};
   var TREAT_LARGE = (meta.treatmentLarge && meta.treatmentLarge.length) ? meta.treatmentLarge : DEFAULT_TREATMENT;
   var TREAT_SMALL = (meta.treatmentSmall && meta.treatmentSmall.length) ? meta.treatmentSmall : DEFAULT_TREATMENT;
@@ -101,6 +101,7 @@
 
   for(var c=0;c<cats.length;c++){
     var cat=cats[c], catName=decodeURI(cat.name);
+    if (ONLY_CAT && catName !== ONLY_CAT) continue;   // "clip all" is scoped to one category
     var files=cat.getFiles("*.png");
     for(var i=0;i<files.length;i++){
       if(!(files[i] instanceof File)) continue;

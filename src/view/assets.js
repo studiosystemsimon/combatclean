@@ -35,6 +35,18 @@ export function anchorStyle(a) {
   const dy = ((1 - ay) * 100).toFixed(2);        // align anchor.y to the box's bottom (ground line)
   return { transform: `translate(${dx}%, ${dy}%)` };
 }
+
+// PORTRAIT framing (authored by the char-art trim tool, stored on the hero as `portrait`): a scale
+// multiplier + normalized x/y offset over the base bottom-centre 82%-height art, cropped by an
+// overflow:hidden square box. Identical math to the trim tool's tile preview so the game frames the
+// bust 1:1. Consumed by the hero tile, the hero dialog, and the gacha digest. `undefined` when the
+// hero has no authored portrait. (The consuming element must also set `max-width:none` to defeat
+// Tailwind preflight's `img{max-width:100%}`, which would otherwise clamp the box non-square.)
+export function portraitStyle(p) {
+  if (!p) return undefined;
+  const s = p.scale ?? 1, x = p.x ?? 0, y = p.y ?? 0;
+  return { height: `${82 * s}%`, left: `calc(50% + ${x * 100}%)`, bottom: `calc(2px + ${y * 100}%)` };
+}
 export const assetFor = resolve;
 export const itemAsset = (chain, level) => resolve(`${chain}.${level}`);
 export const generatorAsset = (genId) => resolve(GENERATORS[genId].asset);

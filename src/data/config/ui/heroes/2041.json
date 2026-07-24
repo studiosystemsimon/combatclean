@@ -1,0 +1,16 @@
+{
+	"id": 2041,
+	"name": "Golem",
+	"iconAssetId": "hero.golem",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	},
+	"portrait": {
+		"scale": 1.65,
+		"x": -0.106,
+		"y": -0.364
+	}
+}

@@ -1,6 +1,12 @@
-# ENEMY roster — one row per enemy:  <slug><TAB><subject>
-# The subject describes ONLY the creature (species/form, colour, notable features, pose).
-# Art STYLE is locked in gen.sh's STYLE= header — do NOT restate it here.
-# Example (uncomment + edit, real TAB between slug and subject):
-# slime	a small round green gelatinous blob monster with two beady eyes, wobbling, mid-hop
-# bat	a small purple fanged cave bat with tattered wings, screeching, wings spread
+# ENEMY roster — <slug><TAB><subject>. Subject = the creature only; STYLE is locked in gen.sh.
+skeleton	a gaunt undead skeleton warrior in tattered leather scraps, a rusty jagged dagger and a battered round wooden shield, one glowing pale-blue eye socket, hunched aggressive stance
+zombie	a rotting grey-green zombie in torn peasant rags, jaw hanging, arms reaching forward, shambling lurch
+goblin	a small wiry green goblin with big pointed ears and a crude notched knife, crouched low, sneering
+orc	a hulking broad grey-green orc brute with jutting tusks and a heavy chipped cleaver, roaring, shoulders forward
+slime	a small round translucent green gelatinous blob with two beady eyes, mid-wobble
+giant-rat	a mangy oversized brown rat with yellow buck teeth and a scabby tail, hunched and hissing
+cave-bat	a small leathery dark-purple bat with sharp fangs and ragged wings spread wide, screeching
+imp	a small red horned demon imp with little bat wings and a barbed tail, cackling, claws raised
+wraith	a hooded tattered ghostly wraith, torn dark robes trailing, glowing eyes under the hood, skeletal claws outstretched
+mushroom	a walking toadstool creature with a spotted domed cap, an angry little face and stubby legs, stomping
+kobold	a small scaly lizard-dog kobold gripping a crude wooden spear, snarling, scrappy stance

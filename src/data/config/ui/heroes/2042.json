@@ -1,0 +1,16 @@
+{
+	"id": 2042,
+	"name": "Obsidia",
+	"iconAssetId": "hero.obsidia",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	},
+	"portrait": {
+		"scale": 1.45,
+		"x": -0.025,
+		"y": -0.248
+	}
+}

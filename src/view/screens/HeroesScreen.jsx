@@ -18,7 +18,7 @@ import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
 import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
-import { heroAsset, resolve } from '../assets.js';
+import { heroAsset, resolve, portraitStyle } from '../assets.js';
 import { heroPower, heroRarity, heroMaxLevel, canAscendChar, ascensionsDone, copiesOfHero, ownedHeroSet, ascendSelection } from '../../model/heroes.js';
 import {
   heroGearPower, gearPower, equippedInSlot, slotCandidates, canEquipBetter, canUpgradeHeroGear,
@@ -37,13 +37,6 @@ const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
 const gearColor = (rarity) => (GEAR_RARITY[rarity] || GEAR_RARITY.common).color;
 const slotEl = (id, slot) => document.querySelector(`.hs-gslot[data-hero-id="${id}"][data-slot="${slot}"]`);
 const tileEl = (id) => document.querySelector(`.hs-tile[data-hero-id="${id}"]`);
-// Portrait framing authored by the char-art trim tool (ui-config `portrait`): a scale multiplier +
-// normalized x/y offset (fraction of the tile), layered over the base bottom-centre 82%-height art.
-function portraitStyle(p) {
-  if (!p) return undefined;
-  const s = p.scale ?? 1, x = p.x ?? 0, y = p.y ?? 0;
-  return { height: `${82 * s}%`, left: `calc(50% + ${x * 100}%)`, bottom: `calc(2px + ${y * 100}%)` };
-}
 
 export default function HeroesScreen() {
   const { state, actions } = useGame();
@@ -440,7 +433,7 @@ export default function HeroesScreen() {
             <div className="ability-backdrop" onClick={() => setConfirmAsc(null)} />
             <div className="ability-pop" role="dialog" aria-label="Confirm ascension">
               <div className="hs-pop-head">
-                <div className="hs-ph-ic" style={{ '--rar': sacMeta.color }}><Art a={heroAsset(sac.hero)} className="hs-ph-art" /></div>
+                <div className="hs-ph-ic" style={{ '--rar': sacMeta.color }}><Art a={heroAsset(sac.hero)} className="hs-ph-art" style={portraitStyle(HEROES[sac.hero].portrait)} /></div>
                 <div>
                   <div className="hs-ph-nm">Consume this copy?</div>
                   <div className="hs-ph-sub">{HEROES[sac.hero].name} · Lv {sac.level} will be destroyed to ascend your {HEROES[keep.hero].name}.</div>
@@ -477,7 +470,7 @@ function Popup({ id, state, popState, selSlot, pos, popRef, setPopState, setSelS
   return (
     <div ref={popRef} className="hs-pop" style={{ left: pos.x, top: pos.y }} onClick={(e) => e.stopPropagation()}>
       <div className="hs-pop-head">
-        <div className="hs-ph-ic" style={{ '--rar': meta.color }}><Art a={heroAsset(st.hero)} className="hs-ph-art" /></div>
+        <div className="hs-ph-ic" style={{ '--rar': meta.color }}><Art a={heroAsset(st.hero)} className="hs-ph-art" style={portraitStyle(def.portrait)} /></div>
         <div>
           <div className="hs-ph-nm">{def.name} <span style={{ color: meta.color, fontWeight: 800 }}>{meta.name}</span></div>
           <div className="hs-ph-sub">Lv {st.level}/{cap} · <b>⚔ {fmt(powOf(id))}</b></div>

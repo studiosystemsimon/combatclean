@@ -27,12 +27,14 @@ JOBS = {}
 def slugify(name):
     return re.sub(r"[^a-z0-9]+", "-", (name or "").strip().lower()).strip("-")
 
-def start_generate(slug, subject):
+def start_generate(slug, subject, overrides=""):
     """Deploy generate.sh via a LOGIN shell (so claude / fortis-ai-gateway are on PATH),
-    detached. generate.sh writes logs/gen-<slug>.log and stages heroes/<slug>.png."""
+    detached. generate.sh writes logs/gen-<slug>.log and stages heroes/<slug>.png.
+    `overrides` = critical elements that outrank the base prompt (e.g. 'lava skin, cornrow hair')."""
     env = os.environ.copy()
     env["FORCE"] = "1"
     if subject: env["GEN_SUBJECT"] = subject
+    if overrides: env["GEN_OVERRIDES"] = overrides
     cmd = ["/bin/zsh", "-lc",
            'cd %s && exec bash generate.sh %s' % (_q(PIPELINE), _q(slug))]
     JOBS[slug] = subprocess.Popen(cmd, env=env, cwd=PIPELINE,
@@ -42,23 +44,70 @@ def start_generate(slug, subject):
 def _q(s):
     return "'" + str(s).replace("'", "'\\''") + "'"
 
+def _meta_meaningful(d):
+    """True if the metadata holds real per-image work (registration / portrait / pockets)."""
+    imgs = (d or {}).get("images", {}) or {}
+    return any((v or {}).get("reg") or (v or {}).get("portrait") or (v or {}).get("pockets")
+               for v in imgs.values())
+
 def write_meta(meta_path, data):
-    """Persist trim_meta.json, keeping a .bak of the previous contents so a bad/empty
-    write can always be recovered."""
+    """Persist trim_meta.json SAFELY.
+      1. HARD GUARD — refuse to overwrite a file that already holds per-image values with an
+         empty/valueless payload (this is what wiped work twice). Returns without writing.
+      2. one-time permanent `.rescue` snapshot of the last meaningful state.
+      3. rolling `.bak` -> `.bak2` so several bad writes in a row still can't destroy the data."""
+    import shutil
     try:
         if os.path.exists(meta_path):
-            import shutil; shutil.copyfile(meta_path, meta_path + ".bak")
-    except OSError:
+            try: cur = json.load(open(meta_path))
+            except Exception: cur = {}
+            if _meta_meaningful(cur) and not _meta_meaningful(data):
+                return {"ok": False, "skipped": "refused: empty payload would wipe existing metadata"}
+            if _meta_meaningful(cur) and not os.path.exists(meta_path + ".rescue"):
+                shutil.copyfile(meta_path, meta_path + ".rescue")
+            if os.path.exists(meta_path + ".bak"): shutil.copyfile(meta_path + ".bak", meta_path + ".bak2")
+            shutil.copyfile(meta_path, meta_path + ".bak")
+    except Exception:
         pass
     with open(meta_path, "w") as f:
         json.dump(data, f, indent=2)
+    return {"ok": True}
 
-def run_export(no_build, dry=False):
+def delete_character(root, meta_path, cat, name):
+    """Delete a character's TOOL assets: source png + _trim + _256, its trim_meta entry, and its
+    classes.tsv row. Does NOT touch the game config (that's export's domain)."""
+    cat = os.path.basename(cat); name = os.path.basename(name)
+    base = re.sub(r"\.png$", "", name, flags=re.I)
+    deleted = []
+    cdir = os.path.join(root, cat)
+    for fn in (base + ".png", base + "_trim.png", base + "_256.png"):
+        fp = os.path.normpath(os.path.join(cdir, fn))
+        if fp.startswith(os.path.normpath(root)) and os.path.isfile(fp):
+            try: os.remove(fp); deleted.append(cat + "/" + fn)
+            except OSError: pass
+    tsv = os.path.join(PIPELINE, "classes.tsv")   # drop its roster row so it isn't regenerated
+    try:
+        if os.path.exists(tsv):
+            lines = open(tsv).readlines()
+            kept = [ln for ln in lines if ln.split("\t", 1)[0].strip().lower() != base.lower()]
+            if len(kept) != len(lines):
+                open(tsv, "w").writelines(kept); deleted.append("classes.tsv row")
+    except OSError: pass
+    try:
+        if os.path.exists(meta_path):
+            meta = json.load(open(meta_path)); key = cat + "/" + base + ".png"
+            if isinstance(meta.get("images"), dict) and key in meta["images"]:
+                del meta["images"][key]; write_meta(meta_path, meta); deleted.append("meta " + key)
+    except Exception: pass
+    return {"ok": True, "deleted": deleted}
+
+def run_export(no_build, dry=False, category=None):
     """Run export-to-game.mjs via a LOGIN shell (node/npm/git-lfs on PATH). Parses the
     trailing 'RESULT {json}' summary line."""
     extra = ""
     if dry: extra += " --dry-run"
     elif no_build: extra += " --no-build"
+    extra += _cat_flag(category)
     cmd = ["/bin/zsh", "-lc", "cd %s && exec node export-to-game.mjs%s" % (_q(PIPELINE), extra)]
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
@@ -78,8 +127,11 @@ def run_export(no_build, dry=False):
 # background export (the build takes ~1-2 min — run detached + poll, don't hold the fetch open)
 EXPORT_LOG = "/tmp/combatclean_export.log"
 EXPORT = {"proc": None}
-def start_export(no_build):
-    extra = " --no-build" if no_build else ""
+def _cat_flag(category):
+    c = re.sub(r"[^a-z0-9_-]", "", str(category or "").lower())
+    return (" --cat " + c) if c else ""
+def start_export(no_build, category=None):
+    extra = (" --no-build" if no_build else "") + _cat_flag(category)
     cmd = ["/bin/zsh", "-lc",
            "cd %s && exec node export-to-game.mjs%s >%s 2>&1" % (_q(PIPELINE), extra, _q(EXPORT_LOG))]
     EXPORT["proc"] = subprocess.Popen(cmd, start_new_session=True)
@@ -111,8 +163,10 @@ def gen_status(root, slug):
             pass
     p = JOBS.get(slug)
     rc = p.poll() if p else None
+    # "done" = the generate PROCESS finished (NOT "png exists" — for a regen the png exists from the start)
     return {"slug": slug, "running": bool(p) and rc is None,
-            "returncode": rc, "done": os.path.exists(png), "log": log}
+            "returncode": rc, "done": bool(p) and rc is not None,
+            "outputExists": os.path.exists(png), "log": log}
 
 # suffixes this tool produces (excluded from the source list, servable for preview)
 OUT_SUFFIXES = ("_trim.png", "_256.png")
@@ -198,9 +252,10 @@ def build_handler(root, meta_path):
                 meta  = body.get("meta", {"images": {}})
                 scope = body.get("scope", "all")
                 only  = body.get("only") if scope == "current" else None
+                onlyCat = body.get("category") if scope != "current" else None   # "clip all" = one category
                 write_meta(meta_path, meta)   # treatments + pockets travel here
                 with open(RUNCTL, "w") as f:
-                    json.dump({"root": root, "only": only}, f, indent=2)
+                    json.dump({"root": root, "only": only, "onlyCat": onlyCat}, f, indent=2)
                 result = run_photoshop()
                 try: os.remove(RUNCTL)
                 except OSError: pass
@@ -213,16 +268,26 @@ def build_handler(root, meta_path):
                     return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
                 slug = slugify(body.get("slug", ""))
                 subject = (body.get("subject") or "").strip()
+                overrides = (body.get("overrides") or "").strip()
                 if not slug:
                     return self._send(400, "application/json", json.dumps({"ok": False, "error": "empty class name"}))
                 existing = JOBS.get(slug)
                 if existing and existing.poll() is None:
                     return self._send(200, "application/json", json.dumps({"ok": True, "slug": slug, "already": True}))
                 try:
-                    start_generate(slug, subject)
+                    start_generate(slug, subject, overrides)
                 except Exception as e:
                     return self._send(500, "application/json", json.dumps({"ok": False, "slug": slug, "error": str(e)}))
                 return self._send(200, "application/json", json.dumps({"ok": True, "slug": slug}))
+            if path == "/api/delete":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                cat, name = body.get("cat"), body.get("name")
+                if not cat or not name:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "cat + name required"}))
+                return self._send(200, "application/json", json.dumps(delete_character(root, meta_path, cat, name)))
             if path == "/api/export":
                 n = int(self.headers.get("Content-Length", 0))
                 body = {}
@@ -233,8 +298,8 @@ def build_handler(root, meta_path):
                 if isinstance(body.get("meta"), dict):          # save-by-default (fill + reg + portrait + treatments)
                     write_meta(meta_path, body["meta"])
                 if body.get("dry"):                              # quick synchronous dry classification
-                    return self._send(200, "application/json", json.dumps(run_export(False, True)))
-                start_export(bool(body.get("no_build")))         # real export runs in the BACKGROUND (poll /api/export-status)
+                    return self._send(200, "application/json", json.dumps(run_export(False, True, body.get("category"))))
+                start_export(bool(body.get("no_build")), body.get("category"))   # background; ACTIVE CATEGORY only
                 return self._send(200, "application/json", json.dumps({"ok": True, "started": True}))
             return self._send(404, "text/plain", "not found")
     return Handler

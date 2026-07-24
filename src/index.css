@@ -342,6 +342,11 @@ body {
 .chip { width: 72px; } /* slightly larger characters */
 .chip-art { height: 54px; }
 .art-emoji.chip-emoji { font-size: 38px; }
+/* Hero sprite +30% in gameplay (heroes only — enemies keep 54px). The bottom-anchored art grows
+   upward; the HP/charge bars keep their own sizes, so only the character gets bigger. 54 → 70.2,
+   38 → 49.4 (the emoji fallback, matched so it scales the same when a hero has no portrait). */
+.hero-chip .chip-art { height: 70.2px; }
+.hero-chip .art-emoji.chip-emoji { font-size: 49.4px; }
 
 /* Tap an enemy to focus-target it: pointer + gold highlight + reticle badge. */
 .enemy-chip { position: relative; cursor: pointer; }
@@ -1422,7 +1427,11 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-tile.r-mythic { box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5), 0 0 16px color-mix(in srgb, var(--rar) 60%, transparent); }
 .hs-tile.r-primal { box-shadow: 0 3px 14px rgba(0, 0, 0, 0.5), 0 0 20px color-mix(in srgb, var(--rar) 70%, transparent); border-color: transparent; }
 .hs-tile .hs-art { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); width: auto; height: 82%;
-  object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55)); z-index: 2; pointer-events: none; }
+  /* max-width:none overrides Tailwind preflight's `img { max-width:100% }`, which would otherwise clamp
+     the portrait to the tile width — making the box non-square so object-fit:contain shrinks the sprite
+     ("zoomed out"). With no clamp, width:auto tracks the height so the box is square and scale renders 1:1
+     with the trim tool (which has no Tailwind). */
+  max-width: none; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55)); z-index: 2; pointer-events: none; }
 .hs-tile span.hs-art { display: grid; place-items: center; font-size: 34px; }
 .hs-tile::before, .hs-tile::after { content: ''; position: absolute; width: 9px; height: 9px; border: 2px solid var(--rar); opacity: 0.5; z-index: 4; pointer-events: none; }
 .hs-tile::before { top: 3px; left: 3px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
@@ -1498,9 +1507,11 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 9px; box-shadow: 0 14px 44px rgba(0, 0, 0, 0.62); }
 .hs-pop-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .hs-ph-ic { --rar: #9aa7bd; width: 36px; height: 36px; border-radius: 9px; border: 1.5px solid var(--rar); overflow: hidden;
-  display: grid; place-items: center; flex: 0 0 auto;
+  position: relative; display: grid; place-items: center; flex: 0 0 auto;
   background: radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--rar) 40%, transparent), rgba(0, 0, 0, 0.3)); }
-.hs-ph-art { width: 100%; height: 100%; object-fit: contain; }
+/* Framed PORTRAIT (bust), same treatment as the hero tile — not the full body. max-width:none defeats
+   Tailwind preflight's img{max-width:100%} clamp (see .hs-tile .hs-art). */
+.hs-ph-art.art-img { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); width: auto; height: 82%; max-width: none; object-fit: contain; }
 .hs-pop .hs-ph-ic span.hs-ph-art { display: grid; place-items: center; font-size: 22px; }
 .hs-ph-nm { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 13px; line-height: 1; }
 .hs-ph-sub { font-size: 10px; opacity: 0.72; margin-top: 2px; }
