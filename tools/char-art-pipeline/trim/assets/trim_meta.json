@@ -3,17 +3,17 @@
   "treatmentLarge": [
     {
       "color": "#ffffff",
-      "width": 12
+      "width": 4
     }
   ],
   "treatmentSmall": [
     {
       "color": "#000000",
-      "width": 1
+      "width": 4
     },
     {
-      "color": "#ffffff",
-      "width": 6
+      "color": "#ff0000",
+      "width": 2
     }
   ],
   "images": {
@@ -596,10 +596,20 @@
       "pockets": []
     },
     "boneyard/crawling-hand.png": {
-      "pockets": []
+      "pockets": [],
+      "portrait": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
+      }
     },
     "boneyard/grave-golem.png": {
-      "pockets": []
+      "pockets": [],
+      "portrait": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
+      }
     },
     "boneyard/grave-wraith.png": {
       "pockets": []
@@ -611,10 +621,33 @@
       "pockets": []
     },
     "boneyard/skeletal-archer.png": {
-      "pockets": []
+      "pockets": [
+        [
+          589,
+          403
+        ],
+        [
+          564,
+          726
+        ],
+        [
+          446,
+          864
+        ]
+      ],
+      "portrait": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
+      }
     },
     "boneyard/tomb-guard.png": {
-      "pockets": []
+      "pockets": [
+        [
+          341,
+          704
+        ]
+      ]
     },
     "gloomwood/antler-wraith.png": {
       "pockets": []
@@ -680,6 +713,175 @@
       "pockets": []
     },
     "mossbog/swamp-hag.png": {
+      "pockets": []
+    },
+    "dragons-ascent/arcane-golem.png": {
+      "pockets": []
+    },
+    "dragons-ascent/cockatrice.png": {
+      "pockets": []
+    },
+    "dragons-ascent/dragon-whelp.png": {
+      "pockets": []
+    },
+    "dragons-ascent/dragonkin-warrior.png": {
+      "pockets": [
+        [
+          358,
+          636
+        ],
+        [
+          599,
+          607
+        ]
+      ]
+    },
+    "dragons-ascent/drake-hatchling.png": {
+      "pockets": []
+    },
+    "dragons-ascent/elder-wyrm.png": {
+      "pockets": [
+        [
+          180,
+          254
+        ]
+      ]
+    },
+    "dragons-ascent/gargoyle.png": {
+      "pockets": [
+        [
+          586,
+          656
+        ]
+      ]
+    },
+    "dragons-ascent/harpy.png": {
+      "pockets": [
+        [
+          362,
+          660
+        ],
+        [
+          534,
+          633
+        ]
+      ]
+    },
+    "dragons-ascent/storm-drake.png": {
+      "pockets": [
+        [
+          448,
+          522
+        ],
+        [
+          240,
+          278
+        ],
+        [
+          628,
+          236
+        ],
+        [
+          797,
+          434
+        ],
+        [
+          577,
+          671
+        ],
+        [
+          437,
+          429
+        ],
+        [
+          261,
+          686
+        ],
+        [
+          172,
+          394
+        ],
+        [
+          656,
+          633
+        ]
+      ]
+    },
+    "dragons-ascent/wyrmling-mage.png": {
+      "pockets": [
+        [
+          606,
+          726
+        ]
+      ]
+    },
+    "dragons-ascent/wyvern.png": {
+      "pockets": []
+    },
+    "emberfall/ash-wraith.png": {
+      "pockets": []
+    },
+    "emberfall/cinder-imp.png": {
+      "pockets": []
+    },
+    "emberfall/coal-brute.png": {
+      "pockets": []
+    },
+    "emberfall/ember-bat.png": {
+      "pockets": []
+    },
+    "emberfall/flame-skull.png": {
+      "pockets": []
+    },
+    "emberfall/hellhound.png": {
+      "pockets": []
+    },
+    "emberfall/infernal-tyrant.png": {
+      "pockets": []
+    },
+    "emberfall/lava-slug.png": {
+      "pockets": []
+    },
+    "emberfall/magma-golem.png": {
+      "pockets": []
+    },
+    "emberfall/molten-knight.png": {
+      "pockets": []
+    },
+    "emberfall/salamander.png": {
+      "pockets": []
+    },
+    "frostvault/crystal-golem.png": {
+      "pockets": []
+    },
+    "frostvault/frost-bat.png": {
+      "pockets": []
+    },
+    "frostvault/frost-wraith.png": {
+      "pockets": []
+    },
+    "frostvault/frostbite-ghoul.png": {
+      "pockets": []
+    },
+    "frostvault/frozen-zombie.png": {
+      "pockets": []
+    },
+    "frostvault/glacial-warden.png": {
+      "pockets": []
+    },
+    "frostvault/ice-golem.png": {
+      "pockets": []
+    },
+    "frostvault/ice-slime.png": {
+      "pockets": []
+    },
+    "frostvault/icicle-imp.png": {
+      "pockets": []
+    },
+    "frostvault/snow-wolf.png": {
+      "pockets": []
+    },
+    "frostvault/wendigo.png": {
       "pockets": []
     }
   }
