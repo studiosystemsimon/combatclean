@@ -1,0 +1,8 @@
+{
+	"key": "legendary",
+	"order": 3,
+	"tier": 3,
+	"pips": 4,
+	"statMul": 2.1,
+	"levelCap": 100
+}

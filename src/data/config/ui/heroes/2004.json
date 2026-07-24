@@ -1,0 +1,11 @@
+{
+	"id": 2004,
+	"name": "Berserker",
+	"iconAssetId": "hero.berserker",
+	"emoji": "😤",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Frenzy",
+		"limit": "Bloodrage"
+	}
+}

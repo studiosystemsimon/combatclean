@@ -1,0 +1,142 @@
+// Gacha: 3 compact banner cards (weights + pity + on-card summon buttons).
+import { useGame } from '../../controller/GameContext';
+import { HEROES } from '../../data/heroes.js';
+import { BANNERS, BANNER_ORDER } from '../../data/banners.js';
+import { HERO_RARITIES, HERO_RARITY_ORDER } from '../../data/rarities.js';
+import { heroAsset, resolve } from '../assets.js';
+import { ownedHeroSet } from '../../model/heroes.js';
+import { STRINGS } from '../../data/strings.js';
+import Art from '../Art.jsx';
+import PeekScroll from '../PeekScroll.jsx';
+
+function BannerCard({ banner, state, actions }) {
+  const canX1 = state.coins >= banner.cost;
+  const canX10 = state.coins >= banner.ten;
+  const pityState = state.pity[banner.id] || {};
+
+  const oddsKeys = Object.keys(banner.weights).filter((k) => HERO_RARITY_ORDER.includes(k));
+  const odds = oddsKeys.map((k) => {
+    const w = banner.weights[k];
+    const pct = w < 1 ? w : Math.round(w);
+    const meta = HERO_RARITIES[k];
+    return { key: k, pct, meta };
+  });
+
+  const pityEntries = banner.pity.map((p) => {
+    const cur = pityState[p.rarity] || 0;
+    const near = cur / p.max >= 0.8;
+    const meta = HERO_RARITIES[p.rarity];
+    return { rarity: p.rarity, cur, max: p.max, near, meta };
+  });
+
+  return (
+    <div className={`bcard ${banner.limited ? 'feat' : ''}`} style={{ '--bt': banner.theme + '33', '--bt2': banner.theme2 || banner.theme, '--btline': banner.theme + '88' }}>
+      {banner.limited ? <div className="bcard-glow" /> : null}
+      <div className="bcard-wash" />
+      <div className="bcard-shine" />
+      <div className="bcard-frame" />
+      <div className="bcard-body">
+        <div className="bcard-top">
+          <div className="bcard-art">
+            <div className="bcard-aura" />
+            <div className="bcard-face">{resolve(banner.faceAsset).emoji}</div>
+          </div>
+          <div className="bcard-head">
+            <div className="bcard-name">{banner.name}</div>
+            <div className="bcard-sub">{banner.sub}</div>
+            {banner.timer ? <span className="bcard-timer">{resolve('ui.timer').emoji} {banner.timer}</span> : null}
+          </div>
+          <div className="bcard-pity-col">
+            <span className="plabel">{STRINGS.gacha.pity}</span>
+            {pityEntries.map((p) => (
+              <span key={p.rarity} className={`ppill ${p.near ? 'near' : ''}`} style={{ color: p.meta.color }}>
+                <span className="pg">{resolve('ui.pity').emoji}</span>
+                <span className="cname" style={{ color: p.meta.color, fontWeight: 800 }}>{p.meta.name}</span>
+                <span className="pnum">{p.cur}/{p.max}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="bcard-odds">
+          {odds.map((o) => (
+            <span key={o.key} className="opill">
+              <span className="cdot" style={{ background: o.meta.color, boxShadow: `0 0 6px ${o.meta.color}` }} />
+              <span className="cpct">{o.pct}%</span>
+              <span className="cname" style={{ color: o.meta.color }}>{o.meta.name}</span>
+            </span>
+          ))}
+        </div>
+        <div className="bcard-btns">
+          <button
+            type="button"
+            className={`bcard-btn x1 ${canX1 ? '' : 'broke'}`}
+            style={{ background: `linear-gradient(135deg, ${banner.theme}, ${banner.theme2 || banner.theme})`, boxShadow: `0 8px 22px ${banner.theme}55, 0 0 0 1px rgba(255,255,255,.14) inset` }}
+            disabled={!canX1}
+            onClick={() => actions.summon(banner.id, 1)}
+          >
+            {STRINGS.gacha.summon}
+            <span className="bcost">
+              <span>{resolve('ui.coin').emoji}</span>
+              <span>{banner.cost}</span>
+            </span>
+            <span className="bgloss" />
+            <span className="bshine" />
+            {canX1 ? <span className="badot" /> : null}
+          </button>
+          <button
+            type="button"
+            className={`bcard-btn x10 ${canX10 ? '' : 'broke'}`}
+            style={{ background: `linear-gradient(135deg, ${banner.theme2 || banner.theme}, ${banner.theme})`, boxShadow: `0 8px 22px ${banner.theme}55, 0 0 0 1px rgba(255,255,255,.14) inset` }}
+            disabled={!canX10}
+            onClick={() => actions.summon(banner.id, 10)}
+          >
+            {STRINGS.gacha.ten}
+            <span className="bcost">
+              <span>{resolve('ui.coin').emoji}</span>
+              <span>{banner.ten}</span>
+              <span className="bdisc">{STRINGS.gacha.discount}</span>
+            </span>
+            <span className="bgloss" />
+            <span className="bshine" />
+            {canX10 ? <span className="badot" /> : null}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function GachaScreen() {
+  const { state, actions } = useGame();
+  const total = Object.keys(HEROES).length;
+  const owned = ownedHeroSet(state.heroes); // distinct HERO archetypes owned (≥1 Character)
+  const ownedCount = owned.size;
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '12px 12px 0' }}>
+      <div className="screen-head" style={{ flex: '0 0 auto' }}>
+        <span>{resolve('ui.summonMachine').emoji} {STRINGS.screens.summon}</span>
+        <span className="pool">{resolve('ui.coin').emoji} {state.coins}</span>
+      </div>
+
+      <PeekScroll>
+        <div className="banners-wrap">
+          {BANNER_ORDER.map((id) => (
+            <BannerCard key={id} banner={BANNERS[id]} state={state} actions={actions} />
+          ))}
+        </div>
+
+        <div className="collection-head" style={{ flex: '0 0 auto', marginTop: 16 }}>
+          {STRINGS.screens.collection} {ownedCount}/{total}
+        </div>
+        <div className="collection">
+          {Object.keys(HEROES).map((hero) => (
+            <div key={hero} className={`coll-cell ${owned.has(hero) ? 'owned' : 'locked'}`}>
+              {owned.has(hero) ? <Art a={heroAsset(hero)} className="coll-emoji" /> : <span className="coll-emoji">{resolve('ui.locked').emoji}</span>}
+            </div>
+          ))}
+        </div>
+      </PeekScroll>
+    </div>
+  );
+}

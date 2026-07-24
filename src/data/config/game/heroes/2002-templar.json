@@ -1,0 +1,22 @@
+{
+	"id": 2002,
+	"displayName": "templar",
+	"rarityKey": "rare",
+	"weaponChainKey": "blade",
+	"baseAtk": 14,
+	"baseHp": 285,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "burst",
+			"mult": 2
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "aoe",
+			"mult": 3.5
+		}
+	}
+}

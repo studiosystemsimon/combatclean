@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/* ── Device frame ──────────────────────────────────────────────────────────
+   The canvas + #ui-root live INSIDE #game-frame and are sized to its box, never
+   to the window — full-bleed on every host, including desktop. This block is
+   hand-written CSS, not Tailwind — it is structural, not a designer tunable.
+   For a desktop phone-bezel preview with a device picker, see the dev-only
+   src/preview module (not CSS — it wraps the whole page in an iframe). */
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0b0b10;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+#game-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* children opt back in with pointer-events:auto */
+}

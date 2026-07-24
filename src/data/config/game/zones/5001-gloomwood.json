@@ -1,0 +1,27 @@
+{
+	"id": 5001,
+	"displayName": "gloomwood",
+	"order": 1,
+	"enemyPoolConfigIds": [
+		3004,
+		3005,
+		3008,
+		3002,
+		3020
+	],
+	"bossConfigId": 3027,
+	"accompliceConfigId": 3004,
+	"crystalRarityKey": "rare",
+	"orderRarity": {
+		"common": 48,
+		"uncommon": 32,
+		"rare": 15,
+		"epic": 4,
+		"legendary": 1
+	},
+	"itemConfigIds": [
+		4012,
+		4013,
+		4014
+	]
+}

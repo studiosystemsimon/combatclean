@@ -1,0 +1,22 @@
+{
+	"id": 2015,
+	"displayName": "warlock",
+	"rarityKey": "rare",
+	"weaponChainKey": "magic",
+	"baseAtk": 16,
+	"baseHp": 150,
+	"normal": {
+		"chargeMs": 6500,
+		"effect": {
+			"type": "burst",
+			"mult": 2.4
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "aoe",
+			"mult": 5.5
+		}
+	}
+}

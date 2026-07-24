@@ -1,0 +1,10 @@
+{
+	"maxOfflineMs": 28800000,
+	"minReportMs": 60000,
+	"coinsPerHr": 120,
+	"coinsPerZone": 90,
+	"heroXpPerHr": 90,
+	"heroXpPerZone": 70,
+	"gearXpPerHr": 90,
+	"gearXpPerZone": 70
+}

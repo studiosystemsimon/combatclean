@@ -1,0 +1,22 @@
+{
+	"id": 2008,
+	"displayName": "ranger",
+	"rarityKey": "rare",
+	"weaponChainKey": "bow",
+	"baseAtk": 16,
+	"baseHp": 165,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "aoe",
+			"mult": 2
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "aoe",
+			"mult": 5
+		}
+	}
+}

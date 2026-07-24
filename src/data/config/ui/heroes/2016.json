@@ -1,0 +1,11 @@
+{
+	"id": 2016,
+	"name": "Necromancer",
+	"iconAssetId": "hero.necromancer",
+	"emoji": "💀",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Bone Spear",
+		"limit": "Army of Dead"
+	}
+}

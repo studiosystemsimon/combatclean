@@ -1,0 +1,10 @@
+{
+	"id": 5004,
+	"name": "Frostvault Crypt",
+	"iconAssetId": "zone.frostvault",
+	"biome": {
+		"from": "#16283a",
+		"to": "#08131f",
+		"accent": "#4ad9e0"
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"id": 5003,
+	"name": "Emberfall Keep",
+	"iconAssetId": "zone.emberfall",
+	"biome": {
+		"from": "#3a1710",
+		"to": "#1a0806",
+		"accent": "#ff9f45"
+	}
+}

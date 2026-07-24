@@ -1,0 +1,22 @@
+{
+	"id": 2006,
+	"displayName": "valkyrie",
+	"rarityKey": "epic",
+	"weaponChainKey": "blade",
+	"baseAtk": 18,
+	"baseHp": 277.5,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "aoe",
+			"mult": 2.2
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "aoe",
+			"mult": 5
+		}
+	}
+}

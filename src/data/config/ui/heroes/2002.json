@@ -1,0 +1,11 @@
+{
+	"id": 2002,
+	"name": "Templar",
+	"iconAssetId": "hero.templar",
+	"emoji": "⚜️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Smite",
+		"limit": "Judgement"
+	}
+}

@@ -1,0 +1,8 @@
+{
+	"key": "mythic",
+	"order": 4,
+	"tier": 4,
+	"pips": 5,
+	"statMul": 2.8,
+	"levelCap": 125
+}

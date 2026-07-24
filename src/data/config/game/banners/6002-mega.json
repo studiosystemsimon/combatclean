@@ -1,0 +1,25 @@
+{
+	"id": 6002,
+	"displayName": "mega",
+	"currencyConfigId": 1000,
+	"cost": 100,
+	"ten": 900,
+	"weights": {
+		"common": 60,
+		"rare": 28,
+		"epic": 10,
+		"legendary": 1.8,
+		"mythic": 0.18,
+		"primal": 0.04
+	},
+	"pity": [
+		{
+			"rarityKey": "epic",
+			"max": 15
+		},
+		{
+			"rarityKey": "legendary",
+			"max": 90
+		}
+	]
+}

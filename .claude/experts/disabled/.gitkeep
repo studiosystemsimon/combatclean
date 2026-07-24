@@ -1,0 +1,4 @@
+# Disabled experts land here (moved, never deleted) by `/disable-expert` /
+# `node .claude/experts/manage.mjs disable <name>`. Restore with `enable <name>`.
+# This folder is deliberately OUTSIDE .claude/agents/ so the harness stops
+# discovering a disabled expert as a subagent.

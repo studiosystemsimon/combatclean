@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# CombatClean .app launcher — starts the Vite dev server (or reuses one) and
+# opens the browser. LSUIElement=true keeps it out of the dock.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+PORT=5175
+URL="http://localhost:$PORT/"
+# .../CombatClean.app/Contents/MacOS/CombatClean  ->  project root is three up.
+PROJ="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$PROJ"
+
+# Already running? Just focus the browser and quit.
+if lsof -ti :"$PORT" >/dev/null 2>&1; then
+  open "$URL"
+  exit 0
+fi
+
+# First run only: install dependencies (logged — no terminal is attached).
+if [ ! -d node_modules ]; then
+  npm install >/tmp/combatclean-server.log 2>&1
+fi
+
+# Pin CombatClean to its own port so it never collides with MergeCombat (5173).
+# `npm run dev` already carries --open, so Vite opens the browser once it is
+# listening on this port — no second `open` here (that would spawn a 2nd tab).
+nohup npm run dev -- --port "$PORT" --strictPort >/tmp/combatclean-server.log 2>&1 &
+disown $!

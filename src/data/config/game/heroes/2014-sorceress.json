@@ -1,0 +1,22 @@
+{
+	"id": 2014,
+	"displayName": "sorceress",
+	"rarityKey": "legendary",
+	"weaponChainKey": "magic",
+	"baseAtk": 24,
+	"baseHp": 165,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "aoe",
+			"mult": 3
+		}
+	},
+	"limit": {
+		"orders": 10,
+		"effect": {
+			"type": "aoe",
+			"mult": 9
+		}
+	}
+}

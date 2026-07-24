@@ -1,0 +1,11 @@
+{
+	"id": 2018,
+	"name": "Cleric",
+	"iconAssetId": "hero.cleric",
+	"emoji": "✨",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Heal",
+		"limit": "Sanctuary"
+	}
+}

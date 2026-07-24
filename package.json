@@ -1,0 +1,54 @@
+{
+  "name": "combat-clean",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/bishop/*"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/lfs-setup.mjs && npm run build:packages",
+    "build:packages": "tsc -p packages/bishop/config-registry && tsc -p packages/bishop/render-contract && tsc -p packages/bishop/meta-contract && tsc -p packages/bishop/asset-registry && tsc -p packages/bishop/asset-types-2d && tsc -p packages/bishop/asset-processors && tsc -p packages/bishop/meta-client",
+    "dev": "vite --open",
+    "build": "npm run build:packages && tsc && vite build",
+    "build:cap": "npm run build:packages && tsc && vite build --mode capacitor",
+    "preview": "vite preview",
+    "scaffold": "node config/scaffold.mjs",
+    "game-config:validate": "node config/scaffold.mjs config validate",
+    "game-config:lint": "node config/scaffold.mjs config lint",
+    "visual-config:validate": "node config/scaffold.mjs visual validate",
+    "assets:validate": "node config/scaffold.mjs assets validate",
+    "cap:sync": "npm run build:cap && npx cap sync",
+    "cap:ios": "npm run cap:sync && npx cap open ios",
+    "cap:android:debug": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug",
+    "cap:android:studio": "npm run cap:sync && npx cap open android",
+    "adb:install": "adb install -r android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "adb:run": "npm run adb:install && adb shell am start -n com.simonhill.combatclean/com.simonhill.combatclean.MainActivity",
+    "cap:android:deploy": "npm run cap:android:debug && npm run adb:run"
+  },
+  "dependencies": {
+    "@bishop/asset-processors": "*",
+    "@bishop/asset-registry": "*",
+    "@bishop/asset-types-2d": "*",
+    "@bishop/config-registry": "*",
+    "@bishop/meta-client": "*",
+    "@bishop/meta-contract": "*",
+    "@bishop/render-contract": "*",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+	"id": 2009,
+	"name": "Elf Archer",
+	"iconAssetId": "hero.elf-archer",
+	"emoji": "🧝",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Piercing Shot",
+		"limit": "Moonfall"
+	}
+}

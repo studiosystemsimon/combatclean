@@ -1,0 +1,33 @@
+node_modules/
+dist/
+puppeteer/reports/
+*.local
+.DS_Store
+
+# Capacitor native projects (generated; add when you run `npx cap add`)
+android/
+ios/
+
+# Editor / OS
+.vscode/
+.idea/
+.vs/
+.gradle/
+*/.idea/
+
+# CircleCI
+.circleci/environment
+
+**/.autosave/
+/.cache
+
+# local-LLM tuning server logs
+.llama.log
+.vite-local.log
+
+# transient agent worktrees
+.claude/worktrees/
+
+# Generated asset manifests (re-run npm run assets:manifest)
+asset-manifest.js
+assets/skins/*/skin-manifest.js

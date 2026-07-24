@@ -1,0 +1,22 @@
+{
+	"id": 2009,
+	"displayName": "elf-archer",
+	"rarityKey": "epic",
+	"weaponChainKey": "bow",
+	"baseAtk": 20,
+	"baseHp": 150,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "burst",
+			"mult": 2.6
+		}
+	},
+	"limit": {
+		"orders": 7,
+		"effect": {
+			"type": "aoe",
+			"mult": 6
+		}
+	}
+}

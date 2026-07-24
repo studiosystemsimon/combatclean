@@ -1,0 +1,22 @@
+{
+	"hpBase": 180,
+	"hpGrowth": 1.16,
+	"atkBase": 8,
+	"atkGrowth": 1.12,
+	"enemiesBase": 3,
+	"enemiesPerStep": 1,
+	"enemyStepLevels": 5,
+	"maxWave": 5,
+	"bossEvery": 10,
+	"bossHpMul": 2.5,
+	"bossStepMul": 1.3,
+	"bossSpecialMs": 4200,
+	"bossTelegraphMs": 1400,
+	"bossSpecialMult": 1.6,
+	"bossAccompliceMul": 0.8,
+	"bossHealFrac": 0.005,
+	"bossHealMs": 700,
+	"bossRaiseEvery": 3,
+	"bossRaiseFrac": 0.6,
+	"bossAccompliceConfigId": 3006
+}

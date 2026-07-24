@@ -1,0 +1,15 @@
+{
+	"heroLevel": {
+		"maxLevel": 50,
+		"xpBase": 50,
+		"xpGrowth": 1.35,
+		"atkPerLevel": 0.06,
+		"hpPerLevel": 0.06
+	},
+	"heroUpgrade": {
+		"ascendLevelCapBonus": 2,
+		"ascendCrystalCost": 1,
+		"maxAscensions": 5
+	},
+	"abilityMulPerLevel": 0.12
+}

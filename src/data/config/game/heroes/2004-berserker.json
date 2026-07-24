@@ -1,0 +1,22 @@
+{
+	"id": 2004,
+	"displayName": "berserker",
+	"rarityKey": "rare",
+	"weaponChainKey": "blade",
+	"baseAtk": 16,
+	"baseHp": 225,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "burst",
+			"mult": 2.4
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "burst",
+			"mult": 6
+		}
+	}
+}

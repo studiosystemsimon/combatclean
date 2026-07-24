@@ -1,0 +1,22 @@
+{
+	"id": 2001,
+	"displayName": "paladin",
+	"rarityKey": "legendary",
+	"weaponChainKey": "blade",
+	"baseAtk": 22,
+	"baseHp": 315,
+	"normal": {
+		"chargeMs": 7000,
+		"effect": {
+			"type": "heal",
+			"frac": 0.12
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "heal",
+			"frac": 0.4
+		}
+	}
+}

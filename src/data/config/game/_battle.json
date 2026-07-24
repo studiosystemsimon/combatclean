@@ -1,0 +1,29 @@
+{
+	"tickMs": 200,
+	"attackMsByWeapon": {
+		"bow": 700,
+		"blade": 980,
+		"magic": 1260
+	},
+	"enemyAttackMs": 700,
+	"attackJitterSteps": 4,
+	"attackJitterMs": 70,
+	"critChance": 0.05,
+	"critMult": 2,
+	"comboMin": 2,
+	"startLevel": 1,
+	"orderPowerBonus": 0.05,
+	"clearPauseMs": 500,
+	"loseBannerMs": 1400,
+	"completeBannerMs": 1500,
+	"chestFallbackMs": 4500,
+	"introFallbackMs": 22000,
+	"reward": {
+		"heroXpBase": 18,
+		"heroXpPerLevel": 8,
+		"gearXpBase": 18,
+		"gearXpPerLevel": 8,
+		"coinsBase": 10,
+		"coinsPerLevel": 5
+	}
+}

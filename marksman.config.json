@@ -1,0 +1,12 @@
+{
+  "_comment": "Marksman dev tool config (dev-only). Read by the /__marksman/config endpoint and the audio feature. inboxDir/assetsDir are where captures land (kept in sync with vite.config.ts). doneWhen holds this game's real gate commands, emitted verbatim into each capture. Set features.audio=true (via `new-game.mjs --audio` or the interactive prompt) to enable voice transcription; recording.whisperDir/model then point at a local whisper.cpp install. See src/marksman/README.md.",
+  "doneWhen": [],
+  "inboxDir": ".cache/markdown",
+  "assetsDir": ".cache/markdown/assets",
+  "features": { "audio": false },
+  "recording": {
+    "vocabularyPrompt": "",
+    "whisperDir": "",
+    "model": ""
+  }
+}

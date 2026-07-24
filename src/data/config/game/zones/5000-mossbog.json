@@ -1,0 +1,27 @@
+{
+	"id": 5000,
+	"displayName": "mossbog",
+	"order": 0,
+	"enemyPoolConfigIds": [
+		3000,
+		3001,
+		3003,
+		3002,
+		3019
+	],
+	"bossConfigId": 3026,
+	"accompliceConfigId": 3000,
+	"crystalRarityKey": "common",
+	"orderRarity": {
+		"common": 60,
+		"uncommon": 28,
+		"rare": 10,
+		"epic": 2,
+		"legendary": 0
+	},
+	"itemConfigIds": [
+		4009,
+		4010,
+		4011
+	]
+}

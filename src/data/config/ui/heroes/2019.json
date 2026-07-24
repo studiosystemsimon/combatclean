@@ -1,0 +1,11 @@
+{
+	"id": 2019,
+	"name": "Bard",
+	"iconAssetId": "hero.bard",
+	"emoji": "🎵",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Inspire",
+		"limit": "Crescendo"
+	}
+}

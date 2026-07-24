@@ -1,0 +1,28 @@
+{
+	"id": 5005,
+	"displayName": "dragons-ascent",
+	"order": 5,
+	"enemyPoolConfigIds": [
+		3016,
+		3017,
+		3013,
+		3018,
+		3025,
+		3024
+	],
+	"bossConfigId": 3031,
+	"accompliceConfigId": 3013,
+	"crystalRarityKey": "legendary",
+	"orderRarity": {
+		"common": 10,
+		"uncommon": 22,
+		"rare": 34,
+		"epic": 23,
+		"legendary": 11
+	},
+	"itemConfigIds": [
+		4024,
+		4025,
+		4026
+	]
+}

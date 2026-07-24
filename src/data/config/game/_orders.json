@@ -1,0 +1,43 @@
+{
+	"active": 5,
+	"arrivalMs": 7000,
+	"itemCount": {
+		"one": 0.3,
+		"two": 0.85
+	},
+	"fillerMaxLevel": 3,
+	"costPerTierBase": 2,
+	"orderChains": [
+		"blade",
+		"bow",
+		"magic"
+	],
+	"dominantTier": {
+		"common": [
+			1,
+			2
+		],
+		"uncommon": [
+			3,
+			4
+		],
+		"rare": [
+			4,
+			5
+		],
+		"epic": [
+			6,
+			6
+		],
+		"legendary": [
+			7,
+			7
+		]
+	},
+	"reroll": {
+		"downNear": 10,
+		"downFar": 6,
+		"same": 2,
+		"up": 0.4
+	}
+}

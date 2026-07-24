@@ -1,0 +1,11 @@
+{
+	"id": 2013,
+	"name": "Wizard",
+	"iconAssetId": "hero.wizard",
+	"emoji": "🧙",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Fireball",
+		"limit": "Meteor"
+	}
+}

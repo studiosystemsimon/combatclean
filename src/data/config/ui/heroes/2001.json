@@ -1,0 +1,11 @@
+{
+	"id": 2001,
+	"name": "Paladin",
+	"iconAssetId": "hero.paladin",
+	"emoji": "🛡️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Consecrate",
+		"limit": "Divine Aegis"
+	}
+}

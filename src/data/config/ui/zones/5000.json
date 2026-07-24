@@ -1,0 +1,10 @@
+{
+	"id": 5000,
+	"name": "Mossbog Fens",
+	"iconAssetId": "zone.mossbog",
+	"biome": {
+		"from": "#173a2a",
+		"to": "#0a1a12",
+		"accent": "#5ad17a"
+	}
+}

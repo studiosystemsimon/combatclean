@@ -1,0 +1,22 @@
+{
+	"id": 2011,
+	"displayName": "rogue",
+	"rarityKey": "common",
+	"weaponChainKey": "bow",
+	"baseAtk": 12,
+	"baseHp": 150,
+	"normal": {
+		"chargeMs": 5500,
+		"effect": {
+			"type": "burst",
+			"mult": 2
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "burst",
+			"mult": 4.5
+		}
+	}
+}

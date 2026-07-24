@@ -1,0 +1,489 @@
+{
+	"version": 1,
+	"assets": {
+		"blade.0": {
+			"type": "image",
+			"file": "merge/blade-0.png"
+		},
+		"blade.1": {
+			"type": "image",
+			"file": "merge/blade-1.png"
+		},
+		"blade.2": {
+			"type": "image",
+			"file": "merge/blade-2.png"
+		},
+		"blade.3": {
+			"type": "image",
+			"file": "merge/blade-3.png"
+		},
+		"blade.4": {
+			"type": "image",
+			"file": "merge/blade-4.png"
+		},
+		"blade.5": {
+			"type": "image",
+			"file": "merge/blade-5.png"
+		},
+		"blade.6": {
+			"type": "image",
+			"file": "merge/blade-6.png"
+		},
+		"blade.7": {
+			"type": "image",
+			"file": "merge/blade-7.png"
+		},
+		"bow.0": {
+			"type": "image",
+			"file": "merge/bow-0.png"
+		},
+		"bow.1": {
+			"type": "image",
+			"file": "merge/bow-1.png"
+		},
+		"bow.2": {
+			"type": "image",
+			"file": "merge/bow-2.png"
+		},
+		"bow.3": {
+			"type": "image",
+			"file": "merge/bow-3.png"
+		},
+		"bow.4": {
+			"type": "image",
+			"file": "merge/bow-4.png"
+		},
+		"bow.5": {
+			"type": "image",
+			"file": "merge/bow-5.png"
+		},
+		"bow.6": {
+			"type": "image",
+			"file": "merge/bow-6.png"
+		},
+		"magic.0": {
+			"type": "image",
+			"file": "merge/magic-0.png"
+		},
+		"magic.1": {
+			"type": "image",
+			"file": "merge/magic-1.png"
+		},
+		"magic.2": {
+			"type": "image",
+			"file": "merge/magic-2.png"
+		},
+		"magic.3": {
+			"type": "image",
+			"file": "merge/magic-3.png"
+		},
+		"magic.4": {
+			"type": "image",
+			"file": "merge/magic-4.png"
+		},
+		"magic.5": {
+			"type": "image",
+			"file": "merge/magic-5.png"
+		},
+		"magic.6": {
+			"type": "image",
+			"file": "merge/magic-6.png"
+		},
+		"gen.blade": {
+			"type": "image",
+			"file": "merge/gen-blade.png"
+		},
+		"gen.bow": {
+			"type": "image",
+			"file": "merge/gen-bow.png"
+		},
+		"gen.magic": {
+			"type": "image",
+			"file": "merge/gen-magic.png"
+		},
+		"gear.weapon": {
+			"type": "image",
+			"file": "gear/weapon.png"
+		},
+		"gear.armor": {
+			"type": "image",
+			"file": "gear/armor.png"
+		},
+		"gear.trinket": {
+			"type": "image",
+			"file": "gear/trinket.png"
+		},
+		"hero.knight": {
+			"type": "image",
+			"file": "heroes/knight.png"
+		},
+		"hero.paladin": {
+			"type": "image",
+			"file": "heroes/paladin.png"
+		},
+		"hero.templar": {
+			"type": "image",
+			"file": "heroes/templar.png"
+		},
+		"hero.barbarian": {
+			"type": "image",
+			"file": "heroes/barbarian.png"
+		},
+		"hero.berserker": {
+			"type": "image",
+			"file": "heroes/berserker.png"
+		},
+		"hero.dwarf-warrior": {
+			"type": "image",
+			"file": "heroes/dwarf-warrior.png"
+		},
+		"hero.valkyrie": {
+			"type": "image",
+			"file": "heroes/valkyrie.png"
+		},
+		"hero.monk": {
+			"type": "image",
+			"file": "heroes/monk.png"
+		},
+		"hero.ranger": {
+			"type": "image",
+			"file": "heroes/ranger.png"
+		},
+		"hero.elf-archer": {
+			"type": "image",
+			"file": "heroes/elf-archer.png"
+		},
+		"hero.assassin": {
+			"type": "image",
+			"file": "heroes/assassin.png"
+		},
+		"hero.rogue": {
+			"type": "image",
+			"file": "heroes/rogue.png"
+		},
+		"hero.dragoon": {
+			"type": "image",
+			"file": "heroes/dragoon.png"
+		},
+		"hero.wizard": {
+			"type": "image",
+			"file": "heroes/wizard.png"
+		},
+		"hero.sorceress": {
+			"type": "image",
+			"file": "heroes/sorceress.png"
+		},
+		"hero.warlock": {
+			"type": "image",
+			"file": "heroes/warlock.png"
+		},
+		"hero.necromancer": {
+			"type": "image",
+			"file": "heroes/necromancer.png"
+		},
+		"hero.druid": {
+			"type": "image",
+			"file": "heroes/druid.png"
+		},
+		"hero.cleric": {
+			"type": "image",
+			"file": "heroes/cleric.png"
+		},
+		"hero.bard": {
+			"type": "image",
+			"file": "heroes/bard.png"
+		},
+		"enemy.slime": {
+			"type": "image",
+			"file": "enemies/slime.png"
+		},
+		"enemy.slime-cube": {
+			"type": "image",
+			"file": "enemies/slime-cube.png"
+		},
+		"enemy.bat": {
+			"type": "image",
+			"file": "enemies/bat.png"
+		},
+		"enemy.snake": {
+			"type": "image",
+			"file": "enemies/snake.png"
+		},
+		"enemy.goblin": {
+			"type": "image",
+			"file": "enemies/goblin.png"
+		},
+		"enemy.imp": {
+			"type": "image",
+			"file": "enemies/imp.png"
+		},
+		"enemy.skeleton": {
+			"type": "image",
+			"file": "enemies/skeleton.png"
+		},
+		"enemy.skeleton-archer": {
+			"type": "image",
+			"file": "enemies/skeleton-archer.png"
+		},
+		"enemy.spider": {
+			"type": "image",
+			"file": "enemies/spider.png"
+		},
+		"enemy.zombie": {
+			"type": "image",
+			"file": "enemies/zombie.png"
+		},
+		"enemy.ghost": {
+			"type": "image",
+			"file": "enemies/ghost.png"
+		},
+		"enemy.orc": {
+			"type": "image",
+			"file": "enemies/orc.png"
+		},
+		"enemy.mummy": {
+			"type": "image",
+			"file": "enemies/mummy.png"
+		},
+		"enemy.gargoyle": {
+			"type": "image",
+			"file": "enemies/gargoyle.png"
+		},
+		"enemy.wraith": {
+			"type": "image",
+			"file": "enemies/wraith.png"
+		},
+		"enemy.flaming-skull": {
+			"type": "image",
+			"file": "enemies/flaming-skull.png"
+		},
+		"enemy.minotaur": {
+			"type": "image",
+			"file": "enemies/minotaur.png"
+		},
+		"enemy.mimic": {
+			"type": "image",
+			"file": "enemies/mimic.png"
+		},
+		"enemy.lich": {
+			"type": "image",
+			"file": "enemies/lich.png"
+		},
+		"enemy.dragon-whelp": {
+			"type": "image",
+			"file": "enemies/dragon-whelp.png"
+		},
+		"enemy.bogling": {
+			"type": "image",
+			"file": "enemies/bogling.png"
+		},
+		"enemy.shroomling": {
+			"type": "image",
+			"file": "enemies/shroomling.png"
+		},
+		"enemy.grave-crawler": {
+			"type": "image",
+			"file": "enemies/grave-crawler.png"
+		},
+		"enemy.cinder-imp": {
+			"type": "image",
+			"file": "enemies/cinder-imp.png"
+		},
+		"enemy.frost-wisp": {
+			"type": "image",
+			"file": "enemies/frost-wisp.png"
+		},
+		"enemy.drake-hatchling": {
+			"type": "image",
+			"file": "enemies/drake-hatchling.png"
+		},
+		"enemy.marsh-hydra": {
+			"type": "image",
+			"file": "enemies/marsh-hydra.png"
+		},
+		"enemy.goblin-warlord": {
+			"type": "image",
+			"file": "enemies/goblin-warlord.png"
+		},
+		"enemy.bone-colossus": {
+			"type": "image",
+			"file": "enemies/bone-colossus.png"
+		},
+		"enemy.elder-dragon": {
+			"type": "image",
+			"file": "enemies/elder-dragon.png"
+		},
+		"enemy.boss-1": {
+			"type": "image",
+			"file": "enemies/boss-1.png"
+		},
+		"enemy.boss-2": {
+			"type": "image",
+			"file": "enemies/boss-2.png"
+		},
+		"enemy.boss-3": {
+			"type": "image",
+			"file": "enemies/boss-3.png"
+		},
+		"ui.energy": {
+			"type": "image",
+			"file": "ui/energy.png"
+		},
+		"ui.coin": {
+			"type": "image",
+			"file": "ui/coin.png"
+		},
+		"ui.gem": {
+			"type": "image",
+			"file": "ui/gem.png"
+		},
+		"ui.heroXp": {
+			"type": "image",
+			"file": "ui/heroXp.png"
+		},
+		"ui.gearXp": {
+			"type": "image",
+			"file": "ui/gearXp.png"
+		},
+		"ui.order": {
+			"type": "image",
+			"file": "ui/order.png"
+		},
+		"ui.reward": {
+			"type": "image",
+			"file": "ui/reward.png"
+		},
+		"ui.chest": {
+			"type": "image",
+			"file": "ui/chest.png"
+		},
+		"ui.chest.common": {
+			"type": "image",
+			"file": "ui/chest.png"
+		},
+		"ui.chest.uncommon": {
+			"type": "image",
+			"file": "ui/chest-uncommon.png"
+		},
+		"ui.chest.rare": {
+			"type": "image",
+			"file": "ui/chest-rare.png"
+		},
+		"ui.chest.epic": {
+			"type": "image",
+			"file": "ui/chest-epic.png"
+		},
+		"ui.chest.legendary": {
+			"type": "image",
+			"file": "ui/chest-legendary.png"
+		},
+		"ui.star": {
+			"type": "image",
+			"file": "ui/star.png"
+		},
+		"ui.power": {
+			"type": "image",
+			"file": "ui/power.png"
+		},
+		"ui.crystal": {
+			"type": "image",
+			"file": "standalone/gem-ruby.png"
+		},
+		"piece.u-lilypad-aegis": {
+			"type": "image",
+			"file": "standalone/shield.png"
+		},
+		"piece.u-mireblade": {
+			"type": "image",
+			"file": "standalone/sword-falchion.png"
+		},
+		"piece.u-bog-charm": {
+			"type": "image",
+			"file": "standalone/orb-arcane.png"
+		},
+		"piece.u-hunter-cowl": {
+			"type": "image",
+			"file": "standalone/helm.png"
+		},
+		"piece.u-gloomthorn": {
+			"type": "image",
+			"file": "standalone/staff.png"
+		},
+		"piece.u-thornweave": {
+			"type": "image",
+			"file": "standalone/scroll.png"
+		},
+		"piece.u-ossuary-plate": {
+			"type": "image",
+			"file": "standalone/shield.png"
+		},
+		"piece.u-bonereaper": {
+			"type": "image",
+			"file": "standalone/sword-falchion.png"
+		},
+		"piece.u-grave-sigil": {
+			"type": "image",
+			"file": "standalone/key-gold.png"
+		},
+		"piece.u-magma-guard": {
+			"type": "image",
+			"file": "standalone/shield.png"
+		},
+		"piece.u-cinderfang": {
+			"type": "image",
+			"file": "standalone/sword-knight.png"
+		},
+		"piece.u-ember-band": {
+			"type": "image",
+			"file": "standalone/orb-fire.png"
+		},
+		"piece.u-glacial-ward": {
+			"type": "image",
+			"file": "standalone/tome.png"
+		},
+		"piece.u-rimebrand": {
+			"type": "image",
+			"file": "standalone/staff.png"
+		},
+		"piece.u-frost-locket": {
+			"type": "image",
+			"file": "standalone/potion-blue.png"
+		},
+		"piece.u-scale-aegis": {
+			"type": "image",
+			"file": "standalone/helm.png"
+		},
+		"piece.u-wyrmblade": {
+			"type": "image",
+			"file": "standalone/sword-knight.png"
+		},
+		"piece.u-dragonheart": {
+			"type": "image",
+			"file": "standalone/potion-red.png"
+		},
+		"zone.mossbog": {
+			"type": "image",
+			"file": "zones/zone-mossbog.png"
+		},
+		"zone.gloomwood": {
+			"type": "image",
+			"file": "zones/zone-gloomwood.png"
+		},
+		"zone.boneyard": {
+			"type": "image",
+			"file": "zones/zone-boneyard.png"
+		},
+		"zone.emberfall": {
+			"type": "image",
+			"file": "zones/zone-emberfall.png"
+		},
+		"zone.frostvault": {
+			"type": "image",
+			"file": "zones/zone-frostvault.png"
+		},
+		"zone.dragons-ascent": {
+			"type": "image",
+			"file": "zones/zone-dragons-ascent.png"
+		}
+	}
+}

@@ -1,0 +1,56 @@
+{
+	"trailByChain": {
+		"blade": {
+			"color": "#dff0ff",
+			"tail": "#2a55ff",
+			"width": 7,
+			"length": 9
+		},
+		"bow": {
+			"color": "#dff0ff",
+			"tail": "#3466ff",
+			"width": 4,
+			"length": 20
+		},
+		"magic": {
+			"color": "#e7b6ff",
+			"tail": "#6619cc",
+			"width": 9,
+			"length": 9
+		}
+	},
+	"impactColor": {
+		"blade": "#8fd0ff",
+		"bow": "#9fe0ff",
+		"magic": "#d59bff"
+	},
+	"confettiColors": [
+		"#ffd45e",
+		"#ff5d6c",
+		"#5a8cff",
+		"#5ad17a",
+		"#b46bff",
+		"#ff9f45",
+		"#4ad9e0",
+		"#ff7ac0"
+	],
+	"combatColors": {
+		"deathDust": "#ffffff",
+		"waveClear": "#ffe08a",
+		"limitBreak": "#ff9a3c",
+		"enemyTrail": "#ff6a6a",
+		"enemyTail": "#b0202a",
+		"enemyImpact": "#ff5d6c",
+		"bossImpact": "#ff3c3c",
+		"bossTrail": "#ff9a3c",
+		"bossHitImpact": "#ff5d6c",
+		"bossFlash": "#ff3020",
+		"bossHealWisp": "#c6ffd9",
+		"bossHealTail": "#2ecc71",
+		"bossRaise": "#a25bff",
+		"limitFlash": "#ffe08a",
+		"currencyCoin": "#ffd45e",
+		"currencyHeroXp": "#7db0ff",
+		"currencyGearXp": "#9fe0b0"
+	}
+}

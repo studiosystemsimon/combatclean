@@ -1,0 +1,16 @@
+{
+	"schemaVersion": 0,
+	"refs": {
+		"coinsResourceId": 1000,
+		"heroXpResourceId": 1001,
+		"gearXpResourceId": 1002,
+		"energyResourceId": 1003,
+		"crystalCommonResourceId": 1004,
+		"crystalRareResourceId": 1005,
+		"crystalEpicResourceId": 1006,
+		"crystalLegendaryResourceId": 1007,
+		"crystalMythicResourceId": 1008,
+		"crystalPrimalResourceId": 1009,
+		"starterHeroConfigId": 2000
+	}
+}

@@ -1,0 +1,39 @@
+{
+	"fuse": {
+		"fodder": 2,
+		"coinBase": 25,
+		"coinPerTier": 25
+	},
+	"gen": {
+		"basePower": 6,
+		"perTier": 4
+	},
+	"level": {
+		"maxLevel": 30,
+		"xpBase": 30,
+		"xpGrowth": 1.35,
+		"powerPerLevel": 0.14
+	},
+	"chestTiers": [
+		{
+			"maxDifficulty": 2,
+			"rarity": "common"
+		},
+		{
+			"maxDifficulty": 4,
+			"rarity": "uncommon"
+		},
+		{
+			"maxDifficulty": 6,
+			"rarity": "rare"
+		},
+		{
+			"maxDifficulty": 9,
+			"rarity": "epic"
+		},
+		{
+			"maxDifficulty": null,
+			"rarity": "legendary"
+		}
+	]
+}

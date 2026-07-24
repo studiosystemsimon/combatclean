@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0b0b10" />
+    <title>Combat Clean</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <!-- #game-frame is the device viewport — full-bleed on every host (touch,
+         Capacitor, and desktop browser alike). The canvas AND the React UI both
+         live INSIDE the frame and are sized to it — never to
+         window.innerWidth/innerHeight. For a desktop phone-bezel preview with a
+         device picker, see the dev-only src/preview module. -->
+    <div id="game-frame">
+      <canvas id="game-canvas"></canvas>
+      <!-- React UI overlay — absolute within the frame, clipped to the phone
+           shape. pointer-events:none; children opt back in. -->
+      <div id="ui-root"></div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

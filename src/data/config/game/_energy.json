@@ -1,0 +1,6 @@
+{
+	"max": 100,
+	"start": 100,
+	"regenMs": 6000,
+	"regenAmount": 1
+}

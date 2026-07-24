@@ -1,0 +1,22 @@
+{
+	"id": 2013,
+	"displayName": "wizard",
+	"rarityKey": "epic",
+	"weaponChainKey": "magic",
+	"baseAtk": 20,
+	"baseHp": 142.5,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "aoe",
+			"mult": 2.4
+		}
+	},
+	"limit": {
+		"orders": 8,
+		"effect": {
+			"type": "aoe",
+			"mult": 7
+		}
+	}
+}

@@ -1,0 +1,52 @@
+{
+	"cols": 7,
+	"rows": 5,
+	"selectedSlots": 5,
+	"startLayout": {
+		"generators": [
+			"blade",
+			"bow",
+			"magic"
+		],
+		"seedItems": [
+			{
+				"chain": "blade",
+				"level": 0,
+				"cell": 7
+			},
+			{
+				"chain": "blade",
+				"level": 0,
+				"cell": 8
+			},
+			{
+				"chain": "bow",
+				"level": 0,
+				"cell": 9
+			},
+			{
+				"chain": "magic",
+				"level": 0,
+				"cell": 10
+			},
+			{
+				"chain": "blade",
+				"level": 1,
+				"locked": true,
+				"cell": 28
+			},
+			{
+				"chain": "bow",
+				"level": 1,
+				"locked": true,
+				"cell": 31
+			},
+			{
+				"chain": "magic",
+				"level": 1,
+				"locked": true,
+				"cell": 34
+			}
+		]
+	}
+}

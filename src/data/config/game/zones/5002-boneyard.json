@@ -1,0 +1,27 @@
+{
+	"id": 5002,
+	"displayName": "boneyard",
+	"order": 2,
+	"enemyPoolConfigIds": [
+		3006,
+		3007,
+		3009,
+		3010,
+		3021
+	],
+	"bossConfigId": 3028,
+	"accompliceConfigId": 3006,
+	"crystalRarityKey": "rare",
+	"orderRarity": {
+		"common": 36,
+		"uncommon": 34,
+		"rare": 22,
+		"epic": 7,
+		"legendary": 1
+	},
+	"itemConfigIds": [
+		4015,
+		4016,
+		4017
+	]
+}

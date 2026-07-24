@@ -1,0 +1,22 @@
+{
+	"id": 2016,
+	"displayName": "necromancer",
+	"rarityKey": "epic",
+	"weaponChainKey": "magic",
+	"baseAtk": 18,
+	"baseHp": 157.5,
+	"normal": {
+		"chargeMs": 6500,
+		"effect": {
+			"type": "aoe",
+			"mult": 2.2
+		}
+	},
+	"limit": {
+		"orders": 7,
+		"effect": {
+			"type": "aoe",
+			"mult": 6
+		}
+	}
+}

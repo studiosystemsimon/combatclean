@@ -1,0 +1,22 @@
+{
+	"id": 2005,
+	"displayName": "dwarf-warrior",
+	"rarityKey": "common",
+	"weaponChainKey": "blade",
+	"baseAtk": 12,
+	"baseHp": 300,
+	"normal": {
+		"chargeMs": 7000,
+		"effect": {
+			"type": "burst",
+			"mult": 1.8
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "burst",
+			"mult": 4
+		}
+	}
+}

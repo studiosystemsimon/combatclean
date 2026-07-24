@@ -1,0 +1,22 @@
+{
+	"id": 2019,
+	"displayName": "bard",
+	"rarityKey": "common",
+	"weaponChainKey": "magic",
+	"baseAtk": 12,
+	"baseHp": 172.5,
+	"normal": {
+		"chargeMs": 5500,
+		"effect": {
+			"type": "heal",
+			"frac": 0.1
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "aoe",
+			"mult": 3
+		}
+	}
+}

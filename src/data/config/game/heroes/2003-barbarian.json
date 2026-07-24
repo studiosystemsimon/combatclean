@@ -1,0 +1,22 @@
+{
+	"id": 2003,
+	"displayName": "barbarian",
+	"rarityKey": "common",
+	"weaponChainKey": "blade",
+	"baseAtk": 12,
+	"baseHp": 247.5,
+	"normal": {
+		"chargeMs": 7000,
+		"effect": {
+			"type": "aoe",
+			"mult": 1.6
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "aoe",
+			"mult": 3
+		}
+	}
+}

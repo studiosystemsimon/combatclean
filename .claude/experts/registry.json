@@ -1,0 +1,199 @@
+{
+  "$schema": "./registry.schema.md",
+  "_comment": "Single source of truth for this project's EXPERTS. Do NOT hand-edit the generated regions in run-changeset.mjs / SKILL.md / policy.md / README.md / CLAUDE.md / agents/*.md — edit this file and run `node .claude/experts/manage.mjs sync`. Use the /add-expert and /disable-expert skills for the common cases. See .claude/experts/README.md.",
+  "teams": {},
+  "experts": [
+    {
+      "name": "engineer",
+      "group": "execution",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Simulation & systems engineer",
+      "order": 1,
+      "routePriority": 5,
+      "routeHint": "mostly src/game|core|app|input (or src/data/types.ts)",
+      "owns": [
+        "src/game/**",
+        "src/core/**",
+        "src/app/**",
+        "src/input/**",
+        "src/data/types.ts"
+      ],
+      "ownsLabel": "`src/game`, `src/core`, `src/app`, `src/input`, `src/data/types.ts`",
+      "focus": "Simulation logic, systems/brains, DI/signals, core invariants. The default for logic work.",
+      "responsibilities": [
+        "Headless simulation logic, systems, and per-entity brains",
+        "DI wiring in the composition root; cross-module comms via signals",
+        "Core invariants (determinism, execution order, input/validation boundaries)"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "ui",
+      "group": "execution",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "React overlay UI expert",
+      "order": 2,
+      "routePriority": 3,
+      "routeHint": "mostly src/ui",
+      "owns": [
+        "src/ui/**"
+      ],
+      "ownsLabel": "`src/ui`",
+      "focus": "React overlay; reads via the `GameApp` facade + signals; Tailwind static-vs-dynamic-style rule.",
+      "responsibilities": [
+        "React overlay screens (menus / HUD / result) + reusable components",
+        "Reads simulation state only through the GameApp facade + signals",
+        "Tailwind static-value styling vs inline dynamic styling"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "game-tuning",
+      "group": "execution",
+      "enabled": true,
+      "model": "haiku",
+      "role": "Balance & feel tuning expert",
+      "order": 3,
+      "routePriority": 1,
+      "routeHint": "TUNING or all-sub-steps-in-src/data",
+      "owns": [
+        "src/data/*.json"
+      ],
+      "ownsLabel": "`src/data/*.json` (not `types.ts`)",
+      "focus": "Balance/feel numbers only, no code changes. Routes to `haiku`.",
+      "responsibilities": [
+        "Tuning-domain JSON values only (no code, no new keys)",
+        "Keeping related numbers coherent and inside sane ranges",
+        "Sanity-checking against the headless test/balance harness"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "tech-artist",
+      "group": "execution",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Technical artist",
+      "order": 4,
+      "routePriority": 4,
+      "routeHint": "mostly src/view or the asset-pipeline module",
+      "owns": [
+        "src/view/**"
+      ],
+      "ownsLabel": "`src/view`, the asset pipeline",
+      "focus": "Renderer + asset pipeline (slicer/registry/draw); view stays a pure reader; sheet sizes inferred, not hardcoded.",
+      "responsibilities": [
+        "Read-only Canvas renderer: camera, background, entity draw, effects",
+        "Asset pipeline: sprite-sheet slicer, registry, animation player, swappable services",
+        "View stays a pure reader; sheet frame sizes inferred, never hardcoded"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "artist",
+      "group": "creative",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Asset-generation artist",
+      "order": 5,
+      "routePriority": 2,
+      "routeHint": "asset generation (public/**, *.png)",
+      "owns": [
+        "public/**"
+      ],
+      "ownsLabel": "image assets under `public/**`",
+      "focus": "Search-before-generate; house diffusion; satisfy the project's asset-sheet contract. Broader than `icon-gen`; hands wiring to `tech-artist`.",
+      "responsibilities": [
+        "Generate real image assets (sprite sheets, key art, character/skin art) via the house diffusion pipeline",
+        "Search before generating; satisfy the project's asset-slicing contract",
+        "Never ship placeholder art; hand renderer wiring to tech-artist"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "product-owner",
+      "group": "advisory",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Product owner",
+      "order": 1,
+      "owns": [],
+      "consultFor": "Scoping, prioritisation, MVP cut-lines, acceptance criteria (against `plans/` + `CLAUDE.md`).",
+      "consultShort": "scoping / acceptance criteria",
+      "responsibilities": [
+        "Turn fuzzy requests into a prioritised, well-bounded list of changes",
+        "Write observable, testable acceptance criteria per change",
+        "Draw the MVP cut-line; name dependencies and sequencing"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "game-designer",
+      "group": "advisory",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Game designer",
+      "order": 2,
+      "owns": [],
+      "consultFor": "Mechanic / feel / loop design intent an execution expert then implements.",
+      "consultShort": "mechanic / feel intent",
+      "responsibilities": [
+        "Turn intent into concrete mechanic specs (rules, states, feel)",
+        "Design against the core loop and identity; preserve hard invariants",
+        "Describe feel changes in player-observable terms"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "qa",
+      "group": "gate",
+      "enabled": true,
+      "model": "sonnet",
+      "role": "Functional QA gate",
+      "owns": [],
+      "responsibilities": [
+        "Typecheck / build / test the integrated result",
+        "Run the headless harness + determinism smoke where relevant",
+        "Report PASS/FAIL; never edit code"
+      ],
+      "teams": [],
+      "references": []
+    },
+    {
+      "name": "merge-icon-author",
+      "group": "creative",
+      "enabled": true,
+      "model": "opus",
+      "role": "Merge-chain icon author",
+      "owns": [
+        "assets/combatclean/merge/**",
+        "src/data/config/game/chains/**",
+        "src/data/config/ui/chains/**",
+        "src/data/config/ui/generators/**",
+        "art/refs/**"
+      ],
+      "responsibilities": [
+        "Design + generate merge-item and generator icon ladders for the blade/bow/magic chains, enforcing the Three Cardinal Laws per-icon (clear differentiation, clear escalation, rising sophistication)",
+        "Run the sanctioned gen pipeline (reused FrogGame Fortis script with NO_REMBG + corner flood-fill; no local script; no backups) and self-review every chain on a contact sheet before wiring",
+        "Wire each tile/generator through the three registries — asset-registry manifest (assets.json), resolver defaults (src/data/assets.js), chain/generator presentation (config ui/chains + ui/generators) — never inlining a path or name",
+        "Gate the result on assets:validate + game-config:validate + build; defer drop-table tuning to game-tuning and renderer wiring to tech-artist"
+      ],
+      "teams": [],
+      "references": [],
+      "order": 6,
+      "routePriority": 2,
+      "routeHint": "mostly the merge chains — merge-item + generator icon ladders and their wiring (assets/combatclean/merge, config chains + ui/generators presentation, merge entries in assets.json / src/data/assets.js)",
+      "ownsLabel": "the merge chains (`assets/combatclean/merge`, `config …/chains`, `config ui/generators`, `art/refs`) + the merge/gen entries in the shared `assets.json` / `src/data/assets.js`",
+      "focus": "Merge-item + generator icon ladders: design (Three Cardinal Laws), generate, chroma-key, self-review, and wire art/labels through the three registries. Not drop-table tuning (`game-tuning`) or the renderer (`tech-artist`)."
+    }
+  ]
+}

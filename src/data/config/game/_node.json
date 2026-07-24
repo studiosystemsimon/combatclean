@@ -1,0 +1,20 @@
+{
+	"layout": {
+		"3": "treasure",
+		"5": "elite",
+		"7": "rest",
+		"8": "treasure"
+	},
+	"rewardMul": {
+		"combat": 1,
+		"treasure": 2.2,
+		"elite": 1.8,
+		"rest": 1,
+		"boss": 3
+	},
+	"eliteHpMul": 1.5,
+	"eliteAtkMul": 1.25,
+	"restCount": 2,
+	"restHpMul": 0.6,
+	"restAtkMul": 0.6
+}

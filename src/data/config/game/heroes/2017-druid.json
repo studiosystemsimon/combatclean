@@ -1,0 +1,22 @@
+{
+	"id": 2017,
+	"displayName": "druid",
+	"rarityKey": "rare",
+	"weaponChainKey": "magic",
+	"baseAtk": 14,
+	"baseHp": 180,
+	"normal": {
+		"chargeMs": 5500,
+		"effect": {
+			"type": "heal",
+			"frac": 0.1
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "heal",
+			"frac": 0.4
+		}
+	}
+}

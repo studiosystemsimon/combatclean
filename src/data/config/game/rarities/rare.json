@@ -1,0 +1,8 @@
+{
+	"key": "rare",
+	"order": 1,
+	"tier": 1,
+	"pips": 2,
+	"statMul": 1.25,
+	"levelCap": 60
+}

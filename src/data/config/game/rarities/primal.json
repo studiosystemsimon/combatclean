@@ -1,0 +1,9 @@
+{
+	"key": "primal",
+	"order": 5,
+	"tier": 5,
+	"pips": 6,
+	"statMul": 3.6,
+	"levelCap": 150,
+	"prismatic": true
+}

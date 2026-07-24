@@ -1,0 +1,22 @@
+{
+	"id": 2010,
+	"displayName": "assassin",
+	"rarityKey": "common",
+	"weaponChainKey": "bow",
+	"baseAtk": 14,
+	"baseHp": 142.5,
+	"normal": {
+		"chargeMs": 5500,
+		"effect": {
+			"type": "burst",
+			"mult": 2.2
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "burst",
+			"mult": 5
+		}
+	}
+}

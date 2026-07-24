@@ -1,0 +1,11 @@
+{
+	"id": 2017,
+	"name": "Druid",
+	"iconAssetId": "hero.druid",
+	"emoji": "🌿",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Regrowth",
+		"limit": "Wild Bloom"
+	}
+}

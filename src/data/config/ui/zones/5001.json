@@ -1,0 +1,10 @@
+{
+	"id": 5001,
+	"name": "Gloomwood",
+	"iconAssetId": "zone.gloomwood",
+	"biome": {
+		"from": "#223318",
+		"to": "#0e150a",
+		"accent": "#9bd15a"
+	}
+}

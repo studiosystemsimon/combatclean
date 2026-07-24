@@ -1,0 +1,11 @@
+{
+	"id": 2000,
+	"name": "Knight",
+	"iconAssetId": "hero.knight",
+	"emoji": "🤺",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Shield Bash",
+		"limit": "Valor Strike"
+	}
+}

@@ -1,0 +1,41 @@
+{
+	"name": "@bishop/asset-registry",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./node": {
+			"types": "./dist/node.d.ts",
+			"import": "./dist/node.js",
+			"default": "./dist/node.js"
+		},
+		"./vite": {
+			"types": "./dist/vite-plugin.d.ts",
+			"import": "./dist/vite-plugin.js",
+			"default": "./dist/vite-plugin.js"
+		}
+	},
+	"bin": {
+		"validate-assets": "bin/validate-assets.mjs"
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"validate": "node bin/validate-assets.mjs"
+	},
+	"dependencies": {
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.0",
+		"vitest": "^4.1.0"
+	}
+}

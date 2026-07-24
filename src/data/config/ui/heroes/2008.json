@@ -1,0 +1,11 @@
+{
+	"id": 2008,
+	"name": "Ranger",
+	"iconAssetId": "hero.ranger",
+	"emoji": "🏹",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Volley",
+		"limit": "Arrow Storm"
+	}
+}

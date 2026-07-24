@@ -1,0 +1,24 @@
+{
+	"key": "blade",
+	"chainKey": "blade",
+	"weapon": "blade",
+	"energyCost": 1,
+	"drops": [
+		{
+			"level": 0,
+			"weight": 70
+		},
+		{
+			"level": 1,
+			"weight": 20
+		},
+		{
+			"level": 2,
+			"weight": 8
+		},
+		{
+			"level": 3,
+			"weight": 2
+		}
+	]
+}

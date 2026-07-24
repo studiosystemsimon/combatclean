@@ -1,0 +1,11 @@
+{
+	"id": 2007,
+	"name": "Monk",
+	"iconAssetId": "hero.monk",
+	"emoji": "🥋",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Flurry",
+		"limit": "Inner Peace"
+	}
+}

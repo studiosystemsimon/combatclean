@@ -1,0 +1,33 @@
+{
+	"id": 6000,
+	"displayName": "exclusive",
+	"currencyConfigId": 1000,
+	"cost": 120,
+	"ten": 1080,
+	"limited": true,
+	"weights": {
+		"common": 44,
+		"rare": 30,
+		"epic": 16,
+		"legendary": 7,
+		"mythic": 2.5,
+		"primal": 0.5
+	},
+	"pity": [
+		{
+			"rarityKey": "epic",
+			"max": 14
+		},
+		{
+			"rarityKey": "legendary",
+			"max": 60
+		}
+	],
+	"heroPoolConfigIds": [
+		2014,
+		2001,
+		2012,
+		2006,
+		2013
+	]
+}

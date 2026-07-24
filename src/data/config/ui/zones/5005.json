@@ -1,0 +1,10 @@
+{
+	"id": 5005,
+	"name": "Dragon's Ascent",
+	"iconAssetId": "zone.dragons-ascent",
+	"biome": {
+		"from": "#2a1a36",
+		"to": "#110a1a",
+		"accent": "#b46bff"
+	}
+}

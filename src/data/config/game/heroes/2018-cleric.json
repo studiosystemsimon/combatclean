@@ -1,0 +1,22 @@
+{
+	"id": 2018,
+	"displayName": "cleric",
+	"rarityKey": "rare",
+	"weaponChainKey": "magic",
+	"baseAtk": 12,
+	"baseHp": 187.5,
+	"normal": {
+		"chargeMs": 5500,
+		"effect": {
+			"type": "heal",
+			"frac": 0.12
+		}
+	},
+	"limit": {
+		"orders": 6,
+		"effect": {
+			"type": "heal",
+			"frac": 0.45
+		}
+	}
+}
