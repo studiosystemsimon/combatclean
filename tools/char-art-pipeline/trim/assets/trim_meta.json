@@ -1,0 +1,17 @@
+{
+  "contract_px": 12,
+  "images": {
+    "heroes/ranger.png": {
+      "pockets": [
+        [
+          722,
+          382
+        ],
+        [
+          708,
+          637
+        ]
+      ]
+    }
+  }
+}

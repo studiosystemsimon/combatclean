@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Char-Art Trim Tool</title>
+<style>
+  :root { --bg:#1e1f22; --panel:#26282c; --line:#3a3d42; --accent:#4aa3ff; --dot:#ff3b57; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:#e7e9ec;
+              font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  #app { display:flex; height:100%; }
+
+  #list { width:280px; flex:0 0 280px; border-right:1px solid var(--line);
+          overflow-y:auto; background:var(--panel); }
+  #list h2 { margin:0; padding:12px 14px; font-size:12px; letter-spacing:.05em;
+             text-transform:uppercase; color:#9aa0a6; border-bottom:1px solid var(--line); }
+  .cat { padding:9px 14px 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+         color:#7f868d; background:#212327; border-bottom:1px solid #2f3237; position:sticky; top:0; }
+  .cat .n { float:right; color:#5b6169; }
+  .row { display:flex; align-items:center; gap:10px; padding:8px 12px 8px 20px;
+         cursor:pointer; border-bottom:1px solid #2f3237; }
+  .row:hover { background:#2c2f34; }
+  .row.sel { background:#33383f; box-shadow:inset 3px 0 0 var(--accent); }
+  .row img { width:38px; height:38px; object-fit:contain; background:#3a3d42; border-radius:4px; }
+  .row .name { flex:1; }
+  .badge { min-width:22px; text-align:center; padding:2px 7px; border-radius:10px;
+           font-size:11px; background:#3a3d42; color:#9aa0a6; }
+  .badge.has { background:var(--dot); color:#fff; }
+
+  #main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #bar { display:flex; align-items:center; gap:12px; padding:10px 14px;
+         border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
+  #bar .title { font-weight:600; }
+  #bar .spacer { flex:1; }
+  button { background:#343841; color:#e7e9ec; border:1px solid var(--line);
+           padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; }
+  button:hover { background:#3d424c; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#08131f; font-weight:600; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; }
+  .seg button.on { background:var(--accent); color:#08131f; font-weight:600; }
+  #zoomLbl { color:#9aa0a6; width:44px; }
+  .halo { color:#9aa0a6; }
+  .halo input { width:52px; background:#343841; color:#e7e9ec; border:1px solid var(--line);
+                border-radius:5px; padding:4px 6px; }
+  #hint { color:#9aa0a6; padding:6px 14px; border-bottom:1px solid var(--line); background:#212327; }
+  #stageWrap { flex:1; overflow:auto; display:flex; align-items:flex-start;
+               justify-content:center; padding:24px; position:relative; }
+  #stage { position:relative; line-height:0; box-shadow:0 4px 24px rgba(0,0,0,.4); }
+  #stage img { display:block; background:
+      repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/24px 24px; }
+  #dots { position:absolute; inset:0; pointer-events:none; }
+  .dot { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px;
+         border-radius:50%; background:var(--dot); border:2px solid #fff;
+         box-shadow:0 1px 4px rgba(0,0,0,.5); cursor:pointer; pointer-events:auto; }
+  .dot span { position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+              font-size:10px; color:#fff; text-shadow:0 1px 2px #000; }
+  #stageMsg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+              color:#7f868d; font-size:14px; display:none; }
+  #status { position:fixed; bottom:14px; right:16px; background:#111; color:#8f8;
+            padding:8px 12px; border-radius:6px; opacity:0; transition:opacity .2s; max-width:60vw; }
+  #status.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="list"><h2>Assets</h2></div>
+  <div id="main">
+    <div id="bar">
+      <span class="title" id="curName">—</span>
+      <div class="seg" id="viewSeg">
+        <button data-v="source" class="on">Source</button>
+        <button data-v="trim">Trimmed</button>
+        <button data-v="256">256</button>
+      </div>
+      <span class="spacer"></span>
+      <label id="zoomLbl">100%</label>
+      <input id="zoom" type="range" min="10" max="300" value="100" step="5">
+      <button id="fit">Fit</button>
+      <label class="halo">Halo <input id="halo" type="number" min="0" max="80" step="1" value="12"> px</label>
+      <button id="undo">Undo point</button>
+      <button id="clear">Clear points</button>
+      <button id="save">Save</button>
+      <button id="clipCur">Clip current</button>
+      <button class="primary" id="clipAll">Clip all</button>
+    </div>
+    <div id="hint">In <b>Source</b> view, click any area whose <b>internal fill needs removing</b>
+      (e.g. a bow window). Click a point again to delete it. <b>0 points = default outer trim.</b>
+      Use <b>Trimmed</b> / <b>256</b> to view the generated die-cut + square exports.</div>
+    <div id="stageWrap">
+      <div id="stage"><img id="img" alt=""><div id="dots"></div></div>
+      <div id="stageMsg"></div>
+    </div>
+  </div>
+</div>
+<div id="status"></div>
+
+<script>
+const state = { items: [], meta: {}, idx: 0, zoom: 1, natural:{w:0,h:0}, view:'source', ver:1 };
+
+async function boot() {
+  const list = await (await fetch('/api/list')).json();
+  state.cats = list.categories || [];
+  state.items = [];
+  for (const c of state.cats) for (const n of c.images)
+    state.items.push({ cat:c.name, name:n, key:`${c.name}/${n}` });
+  const meta = await (await fetch('/api/meta')).json();
+  state.meta = (meta && meta.images) ? meta.images : {};
+  for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
+  if (meta && meta.contract_px != null) document.getElementById('halo').value = meta.contract_px;
+  renderList();
+  if (state.items.length) select(0);
+}
+
+function renderList() {
+  const el = document.getElementById('list');
+  el.querySelectorAll('.cat,.row').forEach(n => n.remove());
+  let gi = 0;
+  for (const c of state.cats) {
+    const h = document.createElement('div'); h.className = 'cat';
+    h.innerHTML = `${c.name}<span class="n">${c.images.length}</span>`;
+    el.appendChild(h);
+    for (const n of c.images) {
+      const idx = gi++, key = `${c.name}/${n}`, np = state.meta[key].pockets.length;
+      const row = document.createElement('div');
+      row.className = 'row' + (idx === state.idx ? ' sel' : '');
+      row.innerHTML = `<img src="/img/${c.name}/${encodeURIComponent(n)}">
+        <span class="name">${n}</span><span class="badge ${np?'has':''}">${np}</span>`;
+      row.onclick = () => select(idx);
+      el.appendChild(row);
+    }
+  }
+}
+
+function cur() { return state.items[state.idx]; }
+function curPockets() { return state.meta[cur().key].pockets; }
+
+function stageURL() {
+  const it = cur(); const base = it.name.replace(/\.png$/i,'');
+  if (state.view === 'trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
+  if (state.view === '256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
+  return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`;
+}
+
+function select(i) {
+  state.idx = i;
+  document.getElementById('curName').textContent = cur().key;
+  loadStage();
+  renderList();
+}
+
+function loadStage() {
+  const img = document.getElementById('img'), msg = document.getElementById('stageMsg');
+  msg.style.display = 'none'; img.style.visibility = 'hidden';
+  img.onload  = () => { state.natural = {w:img.naturalWidth, h:img.naturalHeight};
+                        img.style.visibility='visible'; fitZoom(); };
+  img.onerror = () => { img.style.visibility='hidden';
+                        msg.textContent = state.view==='source' ? 'image missing'
+                          : 'not generated yet — click Clip'; msg.style.display='block';
+                        document.getElementById('dots').innerHTML=''; };
+  img.src = stageURL();
+}
+
+function setView(v) {
+  state.view = v;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v===v));
+  loadStage();
+}
+
+function setZoom(z) {
+  state.zoom = Math.max(0.1, Math.min(z, 3));
+  const pct = Math.round(state.zoom*100);
+  document.getElementById('zoom').value = pct;
+  document.getElementById('zoomLbl').textContent = pct + '%';
+  applyZoom();
+}
+function fitZoom() {
+  if (!state.natural.w) return;
+  const wrap = document.getElementById('stageWrap'), pad = 48;
+  setZoom(Math.min((wrap.clientWidth-pad)/state.natural.w, (wrap.clientHeight-pad)/state.natural.h));
+}
+function applyZoom() {
+  const img = document.getElementById('img');
+  img.style.width  = (state.natural.w*state.zoom)+'px';
+  img.style.height = (state.natural.h*state.zoom)+'px';
+  drawDots();
+}
+function drawDots() {
+  const dots = document.getElementById('dots'); dots.innerHTML='';
+  if (state.view !== 'source') return;               // points only meaningful on the source
+  curPockets().forEach((p,k) => {
+    const d = document.createElement('div'); d.className='dot';
+    d.style.left=(p[0]*state.zoom)+'px'; d.style.top=(p[1]*state.zoom)+'px';
+    d.innerHTML=`<span>${k+1}</span>`;
+    d.onclick=(e)=>{ e.stopPropagation(); curPockets().splice(k,1); drawDots(); renderList(); };
+    dots.appendChild(d);
+  });
+}
+
+document.getElementById('img').addEventListener('click', (e) => {
+  if (state.view !== 'source') return;
+  const r = e.target.getBoundingClientRect();
+  const x = Math.round((e.clientX-r.left)/state.zoom), y = Math.round((e.clientY-r.top)/state.zoom);
+  if (x<0||y<0||x>state.natural.w||y>state.natural.h) return;
+  curPockets().push([x,y]); drawDots(); renderList();
+});
+document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v));
+document.getElementById('zoom').addEventListener('input', e => {
+  state.zoom = e.target.value/100; document.getElementById('zoomLbl').textContent = e.target.value+'%'; applyZoom(); });
+document.getElementById('fit').onclick = fitZoom;
+document.getElementById('undo').onclick  = () => { curPockets().pop(); drawDots(); renderList(); };
+document.getElementById('clear').onclick = () => { state.meta[cur().key].pockets=[]; drawDots(); renderList(); };
+document.getElementById('save').onclick   = () => save();
+document.getElementById('clipCur').onclick = () => clip('current');
+document.getElementById('clipAll').onclick = () => clip('all');
+let _rt; window.addEventListener('resize', () => { clearTimeout(_rt); _rt=setTimeout(fitZoom,120); });
+
+function haloVal(){ return Math.max(0, parseInt(document.getElementById('halo').value||'12',10)); }
+function metaPayload(){ return { generated_by:'asset_tool', contract_px:haloVal(), images:state.meta }; }
+
+async function save(silent) {
+  const res = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
+  const j = await res.json();
+  if (!silent) toast(res.ok ? ('Saved → '+j.path) : 'Save failed');
+  return res.ok;
+}
+async function clip(scope) {
+  const btns = document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
+  toast('Clipping ' + scope + ' in Photoshop…');
+  try {
+    const res = await fetch('/api/clip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ scope, only: cur().key, meta: metaPayload() }) });
+    const j = await res.json();
+    toast(j.ok ? ('✓ '+(j.output||'done')) : ('✗ '+(j.error||j.stderr||'failed')));
+    if (j.ok) { state.ver++; setView('trim'); }        // show the result
+  } catch(e){ toast('✗ '+e); }
+  finally { btns.forEach(b=>b.disabled=false); }
+}
+function toast(m){ const s=document.getElementById('status'); s.textContent=m; s.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>s.classList.remove('show'),2600); }
+
+window.addEventListener('keydown', e => {
+  if (e.key==='ArrowDown'||e.key==='ArrowRight'){ if(state.idx<state.items.length-1) select(state.idx+1); }
+  if (e.key==='ArrowUp'||e.key==='ArrowLeft'){ if(state.idx>0) select(state.idx-1); }
+  if (e.key==='1') setView('source'); if (e.key==='2') setView('trim'); if (e.key==='3') setView('256');
+  if (e.key==='z'&&(e.metaKey||e.ctrlKey)){ curPockets().pop(); drawDots(); renderList(); }
+  if (e.key==='s'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); save(); }
+});
+
+boot();
+</script>
+</body>
+</html>

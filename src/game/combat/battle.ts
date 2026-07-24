@@ -178,6 +178,10 @@ export const battleTick = (battle: BattleState, dtMs: number, rng: Rng): TickRes
 
   const { heroes: heroesAfter, hits } = enemiesAttack(heroes, wave, dtMs, rng);
   heroes = heroesAfter;
+  // While recovering (a post-loss retry / map replay) heroes CANNOT die — floor HP at 1
+  // so the level can't be lost. They still take hits (bars sit low) and keep fighting,
+  // so the wave clears and RESOLVE_WIN advances to the next level.
+  if (battle.recovering) heroes = heroes.map((h) => (h.hp < 1 ? { ...h, hp: 1 } : h));
   const outcome = allDead(heroes) ? 'lose' : null;
   return { ...empty, battle: { ...battle, heroes, wave, comboUid, comboN, focusUid: survivingFocus(battle.focusUid, wave) }, outcome, firedNormals, firedBasics, enemyHits: hits, bossSpecial, bossTelegraph, bossHeal, bossRaise, enemyDamage, enemyDeaths, heals, crit, combo };
 };

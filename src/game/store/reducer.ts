@@ -117,7 +117,9 @@ export const reducer = (state: S, action: Act): S => {
       const target = Math.max(1, Math.min(Math.floor(action.level) || 1, state.furthestLevel));
       if (target === state.battle.level) return state;
       const { wave, heroes, id } = respawn(state, target, state.nextId);
-      return { ...state, battle: { ...state.battle, level: target, wave, heroes, status: 'fighting', recovering: true, focusUid: null }, nextId: id };
+      // Map level-select is a NORMAL (losable) level — recovering (the can't-die shield)
+      // is set ONLY by a loss (RESOLVE_LOSS), never by picking a level from the map.
+      return { ...state, battle: { ...state.battle, level: target, wave, heroes, status: 'fighting', recovering: false, focusUid: null }, nextId: id };
     }
     case A.COLLECT_AFK: {
       const a = state.pendingAfk; if (!a) return state;
@@ -275,11 +277,9 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.RESOLVE_WIN: {
       if (state.battle.status !== 'won') return state;
+      // A recovering win no longer loops the same level — it advances to the next level
+      // (a real, losable attempt again) via the normal path below, which clears recovering.
       const nextLevel = state.battle.level + 1;
-      if (state.battle.recovering) {
-        const { wave, heroes, id: id2 } = respawn(state, state.battle.level, state.nextId);
-        return { ...state, battle: { ...state.battle, wave, heroes, status: 'intro', recovering: true }, nextId: id2 };
-      }
       if (Map.isBossLevel(nextLevel)) {
         const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
         return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'gate', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, nextLevel) };

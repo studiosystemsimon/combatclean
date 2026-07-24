@@ -21,7 +21,8 @@
     .hero-zone       → src/view/screens/GearScreen.jsx top region (was combat-panel area)
     .carousel        → new <HeroCarousel> (all HEROES)
     .hero-info slots → hero.base + heroGearPower; rows reuse SmallEquipmentTile
-    .squadbar        → autoEquipAll / autoLevelAll / batch fuseGear (src/game/gear/gear.ts)
+    .squad (in header) → autoEquipAll / autoLevelAll / batch fuseGear (src/game/gear/gear.ts)
+    .hi-sel          → selected item shown in the hero dialog: equip / level / fuse (per-item)
     .equip-grid gtile→ reuse MediumEquipmentTile verbatim
     .equip-detail    → reuse GearSheet fields inline
   ─────────────────────────────────────────────────────────────────────────────
@@ -59,30 +60,66 @@ body{ font-family:'Uniform Condensed Bold', system-ui, sans-serif; color:var(--t
 .hero-zone{ flex:0 0 var(--combat-h); height:var(--combat-h); display:flex; min-height:0; border-bottom:2px solid rgba(255,208,94,.28); }
 
 /* left: vertical hero carousel */
-.carousel{ flex:0 0 82px; overflow-y:auto; padding:7px 6px; border-right:1px solid var(--panel-line); scroll-snap-type:y proximity; scrollbar-width:none; }
+.carousel{ flex:0 0 98px; overflow-y:auto; padding:8px 8px 10px; border-right:1px solid var(--panel-line); scroll-snap-type:y proximity; scrollbar-width:none; display:flex; flex-direction:column; gap:8px; }
 .carousel::-webkit-scrollbar{ display:none; }
-.hchip{ scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; gap:2px; padding:5px 2px; border-radius:12px; cursor:pointer; margin-bottom:5px; border:1px solid transparent; transition:background .12s ease; }
-.hchip:active{ background:rgba(255,255,255,.05); }
-.hchip.sel{ background:linear-gradient(180deg, rgba(255,208,94,.16), rgba(255,208,94,.03)); border-color:color-mix(in srgb,var(--gold) 45%,transparent); }
-.hchip .av{ width:48px; height:48px; border-radius:12px; display:grid; place-items:center; font-size:26px; border:2px solid var(--rar); position:relative;
-  background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--rar) 42%, transparent), rgba(0,0,0,.4)); }
-.hchip.sel .av{ box-shadow:0 0 12px color-mix(in srgb, var(--rar) 55%, transparent); }
-.hchip .nm{ font-size:8.5px; color:#cdd8ee; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hchip .pw{ font-size:8.5px; color:var(--gold); line-height:1; }
-.hchip .warn{ position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:50%; background:var(--red); color:#fff; font-size:8px; display:grid; place-items:center; border:1px solid #1b2540; }
+/* ── EXACT game hero tile — copied from src/index.css .hs-tile / .hs-gearrow ── */
+.hs-cell{ scroll-snap-align:center; display:flex; flex-direction:column; gap:2px; cursor:pointer; }
+.hs-tile{ --rar:#9aa7bd; position:relative; aspect-ratio:1/1; border-radius:11px; overflow:hidden; cursor:pointer; border:2px solid var(--rar); padding:0; width:100%;
+  background:radial-gradient(120% 76% at 50% 0%, color-mix(in srgb, var(--rar) 44%, transparent) 0%, transparent 62%), linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.44) 80%);
+  box-shadow:0 3px 9px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.35); transition:transform .1s ease; }
+.hs-tile:active{ transform:scale(.94); }
+.hs-tile.r-legendary{ box-shadow:0 3px 11px rgba(0,0,0,.5), 0 0 12px color-mix(in srgb, var(--rar) 45%, transparent); }
+.hs-tile .hs-art{ position:absolute; left:50%; bottom:2px; transform:translateX(-50%); width:auto; height:82%; object-fit:contain; filter:drop-shadow(0 3px 4px rgba(0,0,0,.55)); z-index:2; pointer-events:none; }
+.hs-tile::before,.hs-tile::after{ content:''; position:absolute; width:9px; height:9px; border:2px solid var(--rar); opacity:.5; z-index:4; pointer-events:none; }
+.hs-tile::before{ top:3px; left:3px; border-right:0; border-bottom:0; border-top-left-radius:6px; }
+.hs-tile::after{ bottom:3px; right:3px; border-left:0; border-top:0; border-bottom-right-radius:6px; }
+.hs-tile .fxwrap{ position:absolute; inset:0; z-index:3; overflow:hidden; pointer-events:none; }
+.hs-tile .hs-pow{ position:absolute; top:3px; left:3px; z-index:6; display:flex; align-items:center; gap:1px; font-family:'Uniform Condensed Bold',sans-serif; font-size:10px; line-height:1; color:var(--gold); background:rgba(4,7,14,.72); border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:2px 4px; text-shadow:0 1px 2px #000; }
+.hs-tile .hs-pow .hs-ic{ font-size:7px; }
+.hs-tile .hs-pips{ position:absolute; top:4px; right:4px; z-index:6; display:flex; gap:1.5px; }
+.hs-tile .hs-pips i{ width:3.5px; height:3.5px; border-radius:50%; background:rgba(255,255,255,.16); box-shadow:inset 0 0 0 1px rgba(0,0,0,.35); }
+.hs-tile .hs-pips i.on{ background:var(--rar); box-shadow:0 0 3px var(--rar); }
+.hs-tile .hs-btm{ position:absolute; left:0; right:0; bottom:0; height:24px; z-index:4; pointer-events:none; background:linear-gradient(180deg, transparent, rgba(4,7,14,.55) 45%, rgba(4,7,14,.92)); }
+.hs-tile .hs-name{ position:absolute; left:2px; right:2px; bottom:2px; z-index:5; text-align:center; font-family:'Uniform Condensed Bold',sans-serif; font-size:8.5px; color:#eaf0ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 2px #000; }
+.hs-tile .hs-lvl{ position:absolute; right:3px; bottom:2px; z-index:6; font-family:'Uniform Condensed Bold',sans-serif; font-size:10px; line-height:1; color:#fff; text-shadow:0 1px 2px #000; }
+.hs-tile .hs-lvl.max{ color:var(--gold); text-shadow:0 0 6px rgba(255,212,94,.7), 0 1px 2px #000; }
+.hs-tile .hs-lvl s{ font-size:6px; text-decoration:none; color:#9fb0cf; margin-right:1px; }
+.hs-gearrow{ display:flex; gap:3px; justify-content:center; }
+.hs-gslot{ flex:1; aspect-ratio:1; max-width:26px; border-radius:5px; display:grid; place-items:center; font-size:12px; position:relative; overflow:hidden; border:0; border-top:3px solid var(--gr, rgba(255,255,255,.16)); background:radial-gradient(circle at 50% 34%, rgba(255,255,255,.06), rgba(0,0,0,.36)); box-shadow:0 1px 3px rgba(0,0,0,.4); }
+.hs-gslot.hs-empty{ border-top-color:rgba(255,255,255,.12); color:rgba(255,255,255,.25); background:rgba(0,0,0,.24); }
+.hs-gslot .hs-gi{ line-height:1; }
+.hs-cell.hs-active .hs-tile{ outline:2px solid var(--gold); outline-offset:1px; }
 
 /* right: selected hero info + loadout */
-.hero-info{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; overflow-y:auto; scrollbar-width:none;
+.hero-info{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; overflow:hidden;
   background:radial-gradient(130% 90% at 15% 0%, color-mix(in srgb,var(--hero-rar,#4aa3ff) 18%, transparent), transparent 60%); }
 .hero-info::-webkit-scrollbar{ display:none; }
-.hi-head{ display:flex; align-items:center; gap:11px; padding:11px 12px 8px; }
-.hi-portrait{ width:58px; height:58px; border-radius:14px; flex:0 0 auto; display:grid; place-items:center; font-size:33px; border:2px solid var(--hero-rar,#4aa3ff);
+.hi-head{ flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:7px 10px 5px; }
+.hi-portrait{ width:46px; height:46px; border-radius:12px; flex:0 0 auto; display:grid; place-items:center; position:relative; font-size:26px; border:2px solid var(--hero-rar,#4aa3ff);
   background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--hero-rar,#4aa3ff) 45%, transparent), rgba(0,0,0,.42)); box-shadow:0 0 16px color-mix(in srgb,var(--hero-rar,#4aa3ff) 45%, transparent); }
-.hi-id{ margin-right:auto; min-width:0; } .hi-name{ font-size:18px; color:#fff; line-height:1.05; } .hi-role{ font-size:10px; color:#9fb0cf; letter-spacing:1.5px; text-transform:uppercase; }
-.hi-pow{ text-align:right; } .hi-pow .v{ font-family:'Uniform Bold'; font-size:26px; color:var(--gold); line-height:.9; text-shadow:0 0 14px rgba(255,208,94,.45),0 2px 2px #000; } .hi-pow .l{ font-size:9px; letter-spacing:2px; color:#9fb0cf; }
+.hi-id{ margin-right:auto; min-width:0; } .hi-name{ font-size:15px; color:#fff; line-height:1.05; } .hi-role{ font-size:10px; color:#9fb0cf; letter-spacing:1.5px; text-transform:uppercase; }
+.hi-pow{ text-align:right; } .hi-pow .v{ font-family:'Uniform Bold'; font-size:22px; color:var(--gold); line-height:.9; text-shadow:0 0 14px rgba(255,208,94,.45),0 2px 2px #000; } .hi-pow .l{ font-size:9px; letter-spacing:2px; color:#9fb0cf; }
 .hi-sub{ display:flex; align-items:center; justify-content:space-between; padding:0 12px 6px; }
 .hi-sub .l{ font-size:10px; letter-spacing:2px; color:#8393b3; }
-.hi-auto{ font-size:10px; color:var(--gold); background:rgba(255,208,94,.12); border:1px solid color-mix(in srgb,var(--gold) 40%,transparent); border-radius:999px; padding:3px 10px; cursor:pointer; }
+.hi-controls{ flex:0 0 auto; display:flex; gap:6px; padding:0 10px 6px; }
+.hi-btn{ flex:1; height:30px; border-radius:9px; border:1px solid var(--panel-line); cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center; gap:4px; font-size:10px; line-height:1.1; text-align:center; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.2)); transition:transform .1s ease, filter .12s ease; }
+.hi-slots{ flex:0 0 auto; display:flex; gap:6px; padding:2px 10px 8px; }
+.hslot{ flex:1; height:54px; border-radius:10px; position:relative; cursor:pointer; border:2px solid var(--rar,rgba(255,255,255,.16)); overflow:hidden; display:grid; place-items:center; background:radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--rar,#2a3350) 30%, transparent), transparent 62%), rgba(0,0,0,.3); transition:transform .1s ease; }
+.hslot:active{ transform:scale(.95); }
+.hslot.empty{ --rar:rgba(255,255,255,.18); border-style:dashed; }
+.hslot.sel-slot{ outline:2px solid var(--gold); outline-offset:1px; }
+.hslot .g{ font-size:22px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); } .hslot.empty .g{ opacity:.35; }
+.hslot .lbl{ position:absolute; top:2px; left:0; right:0; text-align:center; font-size:7px; letter-spacing:1px; color:#9fb0cf; text-transform:uppercase; }
+.hslot .pw{ position:absolute; bottom:1px; left:2px; right:0; text-align:center; font-size:9px; color:var(--gold); text-shadow:0 1px 2px #000; }
+.hslot .lv{ position:absolute; bottom:1px; right:3px; font-size:7.5px; color:#dfe8ff; }
+.hi-btn:active{ transform:scale(.97); filter:brightness(1.1); }
+.hi-btn.equip{ border-color:color-mix(in srgb,var(--gold) 50%,transparent); background:linear-gradient(180deg, rgba(255,208,94,.20), rgba(255,208,94,.05)); color:var(--gold); }
+.hi-btn.lvl{ border-color:color-mix(in srgb,var(--blue) 45%,transparent); background:linear-gradient(180deg, rgba(90,140,255,.20), rgba(90,140,255,.05)); }
+.hero-img{ position:absolute; inset:1px; width:calc(100% - 2px); height:calc(100% - 2px); object-fit:contain; border-radius:10px; }
+.hi-sel{ margin:0 10px 8px; border-radius:12px; border:1px solid var(--rar,var(--panel-line)); overflow:hidden;
+  background:radial-gradient(120% 120% at 12% 0%, color-mix(in srgb, var(--rar) 22%, transparent), transparent 60%), linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.26)); box-shadow:0 0 16px color-mix(in srgb, var(--rar) 26%, transparent); }
+.hi-sel-lbl{ font-size:9px; letter-spacing:2px; color:#8393b3; padding:6px 10px 0; }
+.eqrow.match{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
 .eqrows{ padding:0 10px 10px; display:flex; flex-direction:column; gap:7px; }
 .eqrow{ display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:12px; cursor:pointer; border:1px solid var(--panel-line);
   background:linear-gradient(90deg, color-mix(in srgb, var(--rar,#2a3350) 15%, transparent), transparent 55%), rgba(255,255,255,.03); }
@@ -98,10 +135,11 @@ body{ font-family:'Uniform Condensed Bold', system-ui, sans-serif; color:var(--t
 
 /* ══ BOTTOM ZONE (= context size) : EQUIPMENT LIST ═════════════════════════ */
 .equip{ flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
-.squadbar{ flex:0 0 auto; display:flex; gap:6px; padding:7px 8px 6px; }
-.sqbtn{ flex:1; height:40px; border-radius:10px; border:1px solid var(--panel-line); cursor:pointer; color:#eaf0ff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; line-height:1; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.2)); transition:transform .1s ease, filter .15s ease; }
-.sqbtn:active{ transform:scale(.97); filter:brightness(1.12); }
-.sqbtn .i{ font-size:14px; } .sqbtn .t{ font-size:8px; letter-spacing:.2px; } .sqbtn .s{ font-size:7.5px; color:#9fb0cf; }
+.equip-head{ flex:0 0 auto; display:flex; align-items:center; gap:5px; padding:0 8px; height:46px; border-bottom:1px solid rgba(255,255,255,.06); }
+.squad{ display:flex; gap:5px; margin-left:auto; align-self:stretch; }
+.sqbtn{ padding:0 10px; height:100%; border-radius:9px; border:1px solid var(--panel-line); cursor:pointer; color:#eaf0ff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; line-height:1.1; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.2)); transition:transform .1s ease, filter .15s ease; }
+.sqbtn:active{ transform:scale(.96); filter:brightness(1.12); }
+.sqbtn .t{ font-size:8.5px; letter-spacing:.2px; white-space:nowrap; } .sqbtn .s{ font-size:7px; color:#9fb0cf; }
 .sqbtn.equip{ border-color:color-mix(in srgb,var(--gold) 50%,transparent); background:linear-gradient(180deg, rgba(255,208,94,.20), rgba(255,208,94,.05)); color:var(--gold); }
 .sqbtn.level{ border-color:color-mix(in srgb,var(--blue) 45%,transparent); background:linear-gradient(180deg, rgba(90,140,255,.20), rgba(90,140,255,.05)); }
 .sqbtn.merge{ border-color:color-mix(in srgb,var(--purple) 45%,transparent); background:linear-gradient(180deg, rgba(180,107,255,.20), rgba(180,107,255,.05)); }
@@ -109,7 +147,7 @@ body{ font-family:'Uniform Condensed Bold', system-ui, sans-serif; color:var(--t
 .equip-bar .t{ font-size:10px; letter-spacing:2px; color:#8393b3; margin-right:2px; }
 .chip{ height:24px; padding:0 9px; border-radius:999px; border:1px solid var(--panel-line); background:rgba(255,255,255,.04); color:#c7d3ea; font-size:11px; cursor:pointer; display:flex; align-items:center; }
 .chip.on{ background:linear-gradient(180deg, rgba(255,208,94,.22), rgba(255,208,94,.06)); color:var(--gold); border-color:color-mix(in srgb, var(--gold) 55%, transparent); }
-.chip.sort{ margin-left:auto; }
+.chip.sort{ margin-right:4px; }
 .equip-detail{ flex:0 0 auto; margin:0 10px 6px; border-radius:12px; border:1px solid var(--rar,var(--panel-line)); overflow:hidden; display:none;
   background:radial-gradient(120% 120% at 12% 0%, color-mix(in srgb, var(--rar) 22%, transparent), transparent 60%), linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.26)); box-shadow:0 0 16px color-mix(in srgb, var(--rar) 26%, transparent); }
 .equip-detail.show{ display:block; }
@@ -184,20 +222,18 @@ body{ font-family:'Uniform Condensed Bold', system-ui, sans-serif; color:var(--t
 
     <!-- BOTTOM ZONE (context-sized): equipment list -->
     <div class="equip">
-      <div class="squadbar">
-        <button class="sqbtn equip" id="btnEquip"><span class="i">⚡</span><span class="t">EQUIP ALL BEST</span><span class="s" id="sEquip"></span></button>
-        <button class="sqbtn level" id="btnLevel"><span class="i">⬆</span><span class="t">LEVEL WEAPONS</span><span class="s" id="sLevel"></span></button>
-        <button class="sqbtn merge" id="btnMerge"><span class="i">✦</span><span class="t">MERGE ALL</span><span class="s" id="sMerge"></span></button>
-      </div>
-      <div class="equip-bar" id="equipBar">
-        <span class="t">ARMORY</span>
+      <div class="equip-head" id="equipBar">
+        <button class="chip sort" id="sortChip">↕ Power</button>
         <button class="chip on" data-slot="all">All</button>
         <button class="chip" data-slot="weapon">⚔️</button>
         <button class="chip" data-slot="armor">🛡️</button>
         <button class="chip" data-slot="trinket">💍</button>
-        <button class="chip sort" id="sortChip">↕ Power</button>
+        <div class="squad">
+          <button class="sqbtn equip" id="btnEquip"><span class="t">⚡ Equip All</span><span class="s" id="sEquip"></span></button>
+          <button class="sqbtn level" id="btnLevel"><span class="t">⬆ Lvl Wpns</span><span class="s" id="sLevel"></span></button>
+          <button class="sqbtn merge" id="btnMerge"><span class="t">✦ Merge All</span><span class="s" id="sMerge"></span></button>
+        </div>
       </div>
-      <div class="equip-detail" id="equipDetail"></div>
       <div class="equip-grid" id="grid"></div>
     </div>
   </div>
@@ -245,6 +281,12 @@ const HEROES=[
   {id:'cleric',name:'Cleric',role:'Support',em:'💠',rar:'uncommon',base:210},
   {id:'bard',name:'Bard',role:'Support',em:'🎵',rar:'common',base:200},
 ];
+const HERO_SLUG={dwarf:'dwarf-warrior',elf:'elf-archer',necro:'necromancer'};
+const heroSlug=h=>HERO_SLUG[h.id]||h.id;
+const HERO_MAX_ASC=5;
+const heroAsc=h=>({common:0,uncommon:0,rare:1,epic:2,legendary:3}[h.rar]||0);
+const heroLvl=h=>Math.min(30, 6+Math.round((h.base-200)/11));
+const heroImgTag=h=>`<img class="hero-img" src="../../assets/combatclean/heroes/${heroSlug(h)}.png" alt="" onerror="this.remove()">`;
 let uid=0;
 const G=(slot,rarity,level,base,name,opt={})=>({id:++uid,slot,rarity,level,base,name,equippedTo:null,unique:!!opt.unique});
 let GEAR=[
@@ -277,52 +319,67 @@ const anyMergeReady=()=>{for(const s of SLOTS)for(let i=0;i<RORDER.length-1;i++)
 
 // ── TOP: carousel + hero info ───────────────────────────────────────────────
 function renderCarousel(){
-  document.getElementById('carousel').innerHTML=HEROES.map(h=>`
-    <div class="hchip ${h.id===selHero?'sel':''}" data-h="${h.id}">
-      <div class="av" style="--rar:${RCOL[h.rar]}">${h.em}${emptyCount(h.id)?`<span class="warn">${emptyCount(h.id)}</span>`:''}</div>
-      <div class="nm">${h.name}</div><div class="pw">💪${heroPower(h.id)}</div>
-    </div>`).join('');
-  [...document.querySelectorAll('#carousel .hchip')].forEach(el=>el.onclick=()=>{ selHero=el.dataset.h; renderCarousel(); renderHeroInfo(); renderGrid(); });
-}
-function renderHeroInfo(flash){
-  const h=heroById(selHero), eq=equippedOf(selHero);
-  const rows=SLOTS.map(slot=>{ const g=eq[slot];
-    if(!g) return `<div class="eqrow empty" data-slot="${slot}"><div class="eq-ic"><span>${SLOT_ICON[slot]}</span></div>
-      <div class="eq-mid"><div class="eq-slot">${SLOT_NAME[slot]}</div><div class="eq-empty-t">Empty — pick below</div></div>
-      <div class="eq-right"><div class="eq-pow" style="color:#7f8dad">—</div></div></div>`;
-    return `<div class="eqrow ${g.rarity==='legendary'?'lg':''}" data-slot="${slot}" data-id="${g.id}" style="--rar:${RCOL[g.rarity]}">
-      <div class="eq-ic"><div class="sheen"></div><span>${SLOT_ICON[slot]}</span></div>
-      <div class="eq-mid"><div class="eq-slot">${SLOT_NAME[slot]}</div><div class="eq-nm">${g.unique?'💎 ':''}<span class="rr">${RNAME[g.rarity]}</span> ${g.name}</div></div>
-      <div class="eq-right"><div class="eq-pow"><span class="ic">💪</span>${gearPower(g)}${canFuseItem(g)?'<span class="eq-fuse">▲</span>':''}</div><div class="eq-lv">Lv ${g.level}</div></div></div>`;
+  document.getElementById('carousel').innerHTML=HEROES.map(h=>{
+    const eq=equippedOf(h.id);
+    const gear=SLOTS.map(slot=>{ const g=eq[slot];
+      return g?`<div class="hs-gslot" data-slot="${slot}" style="--gr:${RCOL[g.rarity]}"><span class="hs-gi">${SLOT_ICON[slot]}</span></div>`
+              :`<div class="hs-gslot hs-empty" data-slot="${slot}"><span class="hs-gi">+</span></div>`; }).join('');
+    const pips=Array.from({length:HERO_MAX_ASC},(_,k)=>`<i class="${k<heroAsc(h)?'on':''}"></i>`).join('');
+    const lv=heroLvl(h);
+    return `<div class="hs-cell${h.id===selHero?' hs-active':''}">
+      <button type="button" class="hs-tile r-${h.rar}" data-h="${h.id}" style="--rar:${RCOL[h.rar]}" title="${h.name}">
+        <div class="fxwrap"></div>
+        <img class="hs-art" src="../../assets/combatclean/heroes/${heroSlug(h)}.png" alt="" onerror="this.remove()">
+        <span class="hs-pow"><span class="hs-ic">⚔</span><b>${heroPower(h.id)}</b></span>
+        <span class="hs-pips">${pips}</span>
+        <div class="hs-btm"></div>
+        <span class="hs-name">${h.name}</span>
+        <span class="hs-lvl${lv>=30?' max':''}"><s>LV</s>${lv}</span>
+      </button>
+      <div class="hs-gearrow">${gear}</div>
+    </div>`;
   }).join('');
-  const el=document.getElementById('heroInfo'); el.style.setProperty('--hero-rar',RCOL[h.rar]);
-  el.innerHTML=`<div class="hi-head"><div class="hi-portrait">${h.em}</div>
-      <div class="hi-id"><div class="hi-name">${h.name}</div><div class="hi-role">${h.role}</div></div>
-      <div class="hi-pow"><div class="v" id="hiPow">${heroPower(selHero)}</div><div class="l">POWER</div></div></div>
-    <div class="hi-sub"><span class="l">EQUIPMENT</span><span class="hi-auto" id="hiAuto">⚡ Auto-equip</span></div>
-    <div class="eqrows">${rows}</div>`;
-  [...el.querySelectorAll('.eqrow')].forEach(r=>r.onclick=()=>{ setFilter(r.dataset.slot); if(r.dataset.id){ selItemId=+r.dataset.id; renderGrid(); renderDetail(); } });
-  document.getElementById('hiAuto').onclick=()=>{ autoEquipHero(selHero); redrawAll(true); toastMsg('⚡ Best gear equipped'); };
-  if(flash){ const p=document.getElementById('hiPow'); if(p){ p.classList.remove('flashpow'); void p.offsetWidth; p.classList.add('flashpow'); } }
+  [...document.querySelectorAll('#carousel .hs-tile')].forEach(el=>el.onclick=()=>{ selHero=el.dataset.h; selItemId=null; renderCarousel(); renderHeroInfo(); renderGrid(); });
 }
-
-// ── BOTTOM: item detail bar + grid ──────────────────────────────────────────
-function renderDetail(){
-  const d=document.getElementById('equipDetail'); const g=selItemId!=null?byId(selItemId):null;
-  if(!g){ d.classList.remove('show'); d.innerHTML=''; return; }
+function selCardHTML(g,h){
   const owner=g.equippedTo?heroById(g.equippedTo):null; const isEq=g.equippedTo===selHero; const nextR=RORDER[RORDER.indexOf(g.rarity)+1];
-  d.style.setProperty('--rar',RCOL[g.rarity]); d.classList.add('show');
-  d.innerHTML=`<div class="ed-top">
+  return `<div class="hi-sel" style="--rar:${RCOL[g.rarity]}">
+    <div class="hi-sel-lbl">SELECTED ${SLOT_NAME[g.slot].toUpperCase()}</div>
+    <div class="ed-top">
       <div class="ed-ic ${g.rarity==='legendary'?'lg':''}"><div class="sheen"></div><span>${SLOT_ICON[g.slot]}</span></div>
       <div class="ed-meta"><div class="ed-nm">${g.unique?'💎 ':''}<span class="rr">${RNAME[g.rarity]}</span> ${g.name}</div>
         <div class="ed-sub">${SLOT_NAME[g.slot]} · Lv <b>${g.level}</b>/30</div><div class="ed-own">${owner?('On '+owner.name):'In armory'}</div></div>
       <div class="ed-pv"><div class="v">${gearPower(g)}</div><div class="l">POWER</div></div></div>
     <div class="ed-actions">
-      <button class="ed-btn equip" data-act="equip">${isEq?'Unequip':'Equip → '+heroById(selHero).name}</button>
+      <button class="ed-btn equip" data-act="equip">${isEq?'Unequip':'Equip → '+h.name}</button>
       <button class="ed-btn level" data-act="level" ${g.level<30&&gxp>=levelCost(g.level)?'':'disabled'}><span>Level Up</span><span class="c">🔧 ${levelCost(g.level)}</span></button>
-      <button class="ed-btn fuse" data-act="fuse" ${canFuseItem(g)&&nextR&&coins>=fuseCoin(g.rarity)?'':'disabled'}>${nextR?`<span>Fuse</span><span class="c">→ ${RNAME[nextR]} · 🪙${fuseCoin(g.rarity)}</span>`:'<span>Max</span>'}</button></div>`;
-  [...d.querySelectorAll('.ed-btn')].forEach(b=>b.onclick=()=>doAct(b.dataset.act));
+      <button class="ed-btn fuse" data-act="fuse" ${canFuseItem(g)&&nextR&&coins>=fuseCoin(g.rarity)?'':'disabled'}>${nextR?`<span>Fuse</span><span class="c">→ ${RNAME[nextR]} · 🪙${fuseCoin(g.rarity)}</span>`:'<span>Max</span>'}</button></div></div>`;
 }
+function renderHeroInfo(flash){
+  const h=heroById(selHero), eq=equippedOf(selHero);
+  const selG=selItemId!=null?byId(selItemId):null; const selSlot=selG?selG.slot:null;
+  const slotsHTML=SLOTS.map(slot=>{ const g=eq[slot]; const mk=slot===selSlot?' sel-slot':'';
+    if(!g) return `<div class="hslot empty${mk}" data-slot="${slot}"><span class="lbl">${SLOT_NAME[slot]}</span><span class="g">${SLOT_ICON[slot]}</span></div>`;
+    return `<div class="hslot${mk}" data-slot="${slot}" data-id="${g.id}" style="--rar:${RCOL[g.rarity]}"><span class="lbl">${SLOT_NAME[slot]}</span><span class="g">${SLOT_ICON[slot]}</span><span class="pw">${gearPower(g)}</span><span class="lv">L${g.level}</span></div>`;
+  }).join('');
+  const el=document.getElementById('heroInfo'); el.style.setProperty('--hero-rar',RCOL[h.rar]);
+  el.innerHTML=`<div class="hi-head"><div class="hi-portrait">${h.em}${heroImgTag(h)}</div>
+      <div class="hi-id"><div class="hi-name">${h.name}</div><div class="hi-role">${h.role}</div></div>
+      <div class="hi-pow"><div class="v" id="hiPow">${heroPower(selHero)}</div><div class="l">POWER</div></div></div>
+    <div class="hi-controls">
+      <button class="hi-btn equip" id="hiEquip">⚡ Equip Best</button>
+      <button class="hi-btn lvl" id="hiLvl1">⬆ Level All +1</button>
+      <button class="hi-btn lvl" id="hiLvlMax">⏫ Level All Max</button>
+    </div>
+    <div class="hi-slots">${slotsHTML}</div>`;
+  [...el.querySelectorAll('.hslot')].forEach(s=>s.onclick=()=>{ setFilter(s.dataset.slot); });
+  document.getElementById('hiEquip').onclick=()=>{ autoEquipHero(selHero); redrawAll(true); toastMsg('⚡ Best gear equipped'); };
+  document.getElementById('hiLvl1').onclick=()=>{ const r=levelAllPlusOne(selHero); redrawAll(true); toastMsg(r.ups?`⬆ +1 on ${r.ups} items · 🔧 ${r.spent}`:'Not enough 🔧'); };
+  document.getElementById('hiLvlMax').onclick=()=>{ const r=levelAllMax(selHero); redrawAll(true); toastMsg(r.ups?`⏫ ${r.ups} level-ups · 🔧 ${r.spent}`:'Not enough 🔧'); };
+  if(flash){ const p=document.getElementById('hiPow'); if(p){ p.classList.remove('flashpow'); void p.offsetWidth; p.classList.add('flashpow'); } }
+}
+
+// ── BOTTOM: item detail bar + grid ──────────────────────────────────────────
 function renderGrid(){
   let list=GEAR.slice();
   if(filterSlot!=='all')list=list.filter(g=>g.slot===filterSlot);
@@ -337,7 +394,7 @@ function renderGrid(){
       <div class="gt-btm"></div><span class="gt-name">${g.name}</span><span class="gt-lvl"><s>LV</s>${g.level}</span>
       ${owner?`<span class="gt-owner">${owner.em}</span>`:''}</div>`;
   }).join('');
-  [...document.querySelectorAll('#grid .gtile')].forEach(el=>el.onclick=()=>{ selItemId=+el.dataset.id; renderGrid(); renderDetail(); });
+  [...document.querySelectorAll('#grid .gtile')].forEach(el=>el.onclick=()=>{ equipToggle(+el.dataset.id); });
 }
 function setFilter(slot){ filterSlot=slot; [...document.querySelectorAll('#equipBar .chip:not(.sort)')].forEach(c=>c.classList.toggle('on',c.dataset.slot===slot)); renderGrid(); }
 
@@ -349,13 +406,25 @@ function doAct(act){
     if(fodder.length>=2&&nextR&&coins>=fuseCoin(g.rarity)){ coins-=fuseCoin(g.rarity); GEAR=GEAR.filter(x=>!fodder.includes(x)); g.rarity=nextR; toastMsg(`✦ Fused → ${RNAME[nextR]}`); } }
   redrawAll(true);
 }
+function equipToggle(id){ const g=byId(id); if(!g) return;
+  if(g.equippedTo===selHero){ g.equippedTo=null; }              // click own gear → unequip
+  else { GEAR.forEach(x=>{ if(x.equippedTo===selHero&&x.slot===g.slot) x.equippedTo=null; }); g.equippedTo=selHero; } // equip to selected hero's slot
+  selItemId=id; redrawAll(true);
+}
+function levelAllPlusOne(id){ let spent=0,ups=0; GEAR.filter(g=>g.equippedTo===id&&g.level<30).forEach(g=>{ const c=levelCost(g.level); if(gxp-spent>=c){ spent+=c; g.level++; ups++; } }); gxp-=spent; return {spent,ups}; }
+function levelAllMax(id){ let spent=0,ups=0,guard=0; while(guard++<3000){ const c=GEAR.filter(g=>g.equippedTo===id&&g.level<30&&gxp-spent>=levelCost(g.level)).sort((a,b)=>levelCost(a.level)-levelCost(b.level)); if(!c.length)break; spent+=levelCost(c[0].level); c[0].level++; ups++; } gxp-=spent; return {spent,ups}; }
 function autoEquipHero(id){ SLOTS.forEach(slot=>{ const best=GEAR.filter(g=>g.slot===slot&&(!g.equippedTo||g.equippedTo===id)).sort((a,b)=>gearPower(b)-gearPower(a))[0];
   if(best){ GEAR.forEach(x=>{if(x.equippedTo===id&&x.slot===slot)x.equippedTo=null;}); best.equippedTo=id; } }); }
 function equipAllBest(){
-  const before=HEROES.reduce((s,h)=>s+heroGearPower(h.id),0);
-  const ranked=[...HEROES].sort((a,b)=>b.base-a.base).map(h=>h.id); GEAR.forEach(g=>g.equippedTo=null);
-  SLOTS.forEach(slot=>{ const pool=GEAR.filter(g=>g.slot===slot).sort((a,b)=>gearPower(b)-gearPower(a)); ranked.forEach((hid,i)=>{if(pool[i])pool[i].equippedTo=hid;}); });
-  const gained=HEROES.reduce((s,h)=>s+heroGearPower(h.id),0)-before; redrawAll(true); toastMsg(`⚡ Squad optimized · +${gained} power`);
+  // ONLY the loose pool → fill EMPTY slots; never strip gear already on a hero.
+  let equipped=0, gained=0;
+  const ranked=[...HEROES].sort((a,b)=>b.base-a.base);
+  ranked.forEach(h=>{ const eq=equippedOf(h.id);
+    SLOTS.forEach(slot=>{ if(eq[slot]) return; // already equipped → leave it
+      const best=GEAR.filter(g=>g.slot===slot&&!g.equippedTo).sort((a,b)=>gearPower(b)-gearPower(a))[0];
+      if(best){ best.equippedTo=h.id; equipped++; gained+=gearPower(best); } });
+  });
+  redrawAll(true); toastMsg(equipped?`⚡ Equipped ${equipped} loose items · +${gained} power`:'No loose gear to equip');
 }
 function levelWeapons(){
   let spent=0,ups=0,guard=0;
@@ -372,7 +441,7 @@ function mergeAll(){
     if(!done)break; }
   redrawAll(true); toastMsg(merges?`✦ ${merges} merges complete`:'Nothing to merge');
 }
-function redrawAll(flash){ if(selItemId!=null&&!byId(selItemId))selItemId=null; syncCur(); renderCarousel(); renderHeroInfo(flash); renderGrid(); renderDetail(); }
+function redrawAll(flash){ if(selItemId!=null&&!byId(selItemId))selItemId=null; syncCur(); renderCarousel(); renderHeroInfo(flash); renderGrid(); }
 
 function syncCur(){ document.getElementById('coins').textContent=coins.toLocaleString(); document.getElementById('gxp').textContent=gxp; refreshHints(); }
 function refreshHints(){
@@ -389,7 +458,7 @@ document.getElementById('btnMerge').onclick=mergeAll;
 [...document.querySelectorAll('#equipBar .chip:not(.sort)')].forEach(el=>el.onclick=()=>setFilter(el.dataset.slot));
 document.getElementById('sortChip').onclick=()=>{ sortMode=sortMode==='power'?'rarity':'power'; document.getElementById('sortChip').textContent='↕ '+(sortMode==='power'?'Power':'Rarity'); renderGrid(); };
 
-renderCarousel(); renderHeroInfo(); renderGrid(); renderDetail(); refreshHints();
+renderCarousel(); renderHeroInfo(); renderGrid(); refreshHints();
 </script>
 </body>
 </html>
