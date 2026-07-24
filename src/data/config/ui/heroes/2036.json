@@ -1,0 +1,11 @@
+{
+	"id": 2036,
+	"name": "Summoner",
+	"iconAssetId": "hero.summoner",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

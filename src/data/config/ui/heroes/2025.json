@@ -1,0 +1,11 @@
+{
+	"id": 2025,
+	"name": "Gladiator",
+	"iconAssetId": "hero.gladiator",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

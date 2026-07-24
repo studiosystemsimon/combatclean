@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Contact sheet of ALL classes in classes.tsv, from final/ UNTRIMMED frames (white bg), labeled.
+"""Contact sheet of ALL classes in classes.tsv, from the trim heroes UNTRIMMED frames (white bg), labeled.
 Usage: python3 sheet.py [out.png] [cols]"""
 import sys, pathlib
 from PIL import Image, ImageDraw, ImageFont
 ROOT = pathlib.Path(__file__).resolve().parent
-SRC = ROOT / "final"
+SRC = ROOT / "trim" / "assets" / "heroes"   # generator now stages here (was final/)
 OUTP = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "contact_sheet.png"
 COLS = int(sys.argv[2]) if len(sys.argv) > 2 else 8
 slugs = [ln.split("\t",1)[0].strip() for ln in (ROOT/"classes.tsv").read_text().splitlines() if ln.strip() and not ln.startswith("#")]

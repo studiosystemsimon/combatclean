@@ -1,0 +1,11 @@
+{
+	"id": 2033,
+	"name": "Samurai",
+	"iconAssetId": "hero.samurai",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

@@ -8,109 +8,228 @@
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; background:var(--bg); color:#e7e9ec;
               font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-  #app { display:flex; height:100%; }
+  body { display:flex; flex-direction:column; }
 
-  #list { width:280px; flex:0 0 280px; border-right:1px solid var(--line);
-          overflow-y:auto; background:var(--panel); }
-  #list h2 { margin:0; padding:12px 14px; font-size:12px; letter-spacing:.05em;
-             text-transform:uppercase; color:#9aa0a6; border-bottom:1px solid var(--line); }
-  .cat { padding:9px 14px 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-         color:#7f868d; background:#212327; border-bottom:1px solid #2f3237; position:sticky; top:0; }
+  /* top tab bar */
+  #tabbar { display:flex; align-items:center; gap:6px; padding:8px 12px;
+            background:#1a1b1e; border-bottom:1px solid var(--line); flex:0 0 auto; }
+  #tabbar .tab { background:transparent; border:1px solid transparent; color:#9aa0a6;
+                 padding:7px 16px; border-radius:7px; cursor:pointer; font-size:13px; font-weight:600; }
+  #tabbar .tab:hover { background:#26282c; }
+  #tabbar .tab.on { background:#33383f; color:#e7e9ec; box-shadow:inset 0 -2px 0 var(--accent); }
+  #tabbar .exp { margin-left:auto; background:#2f5137; border:1px solid #3c6b48; color:#bff0cf;
+                 font-weight:600; padding:7px 14px; border-radius:7px; cursor:pointer; font-size:13px; }
+  #tabbar .exp:hover { background:#356045; } #tabbar .exp:disabled { opacity:.5; cursor:default; }
+  #tabbar .brand { margin-left:12px; color:#5b6169; font-size:12px; }
+
+  .view { flex:1 1 auto; min-height:0; }
+  #trimView { display:flex; }
+  #genView { display:none; overflow:auto; }
+  #genView.on, #trimView.on { }
+
+  #list { width:280px; flex:0 0 280px; border-right:1px solid var(--line); overflow-y:auto; background:var(--panel); }
+  #list h2 { margin:0; padding:12px 14px; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:#9aa0a6; border-bottom:1px solid var(--line); }
+  .cat { padding:9px 14px 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#7f868d; background:#212327; border-bottom:1px solid #2f3237; position:sticky; top:0; }
   .cat .n { float:right; color:#5b6169; }
-  .row { display:flex; align-items:center; gap:10px; padding:8px 12px 8px 20px;
-         cursor:pointer; border-bottom:1px solid #2f3237; }
+  .row { display:flex; align-items:center; gap:10px; padding:8px 12px 8px 20px; cursor:pointer; border-bottom:1px solid #2f3237; }
   .row:hover { background:#2c2f34; }
   .row.sel { background:#33383f; box-shadow:inset 3px 0 0 var(--accent); }
   .row img { width:38px; height:38px; object-fit:contain; background:#3a3d42; border-radius:4px; }
-  .row .name { flex:1; }
-  .badge { min-width:22px; text-align:center; padding:2px 7px; border-radius:10px;
-           font-size:11px; background:#3a3d42; color:#9aa0a6; }
+  .row .name { flex:1; } .row .name.gen { color:#7dd3a0; }
+  .badge { min-width:22px; text-align:center; padding:2px 7px; border-radius:10px; font-size:11px; background:#3a3d42; color:#9aa0a6; }
   .badge.has { background:var(--dot); color:#fff; }
 
   #main { flex:1; display:flex; flex-direction:column; min-width:0; }
-  #bar { display:flex; align-items:center; gap:12px; padding:10px 14px;
-         border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
-  #bar .title { font-weight:600; }
-  #bar .spacer { flex:1; }
-  button { background:#343841; color:#e7e9ec; border:1px solid var(--line);
-           padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; }
-  button:hover { background:#3d424c; }
-  button:disabled { opacity:.5; cursor:default; }
+  #bar { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
+  #bar .title { font-weight:600; } #bar .spacer { flex:1; }
+  button { background:#343841; color:#e7e9ec; border:1px solid var(--line); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; }
+  button:hover { background:#3d424c; } button:disabled { opacity:.5; cursor:default; }
   button.primary { background:var(--accent); border-color:var(--accent); color:#08131f; font-weight:600; }
   .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-  .seg button { border:0; border-radius:0; }
-  .seg button.on { background:var(--accent); color:#08131f; font-weight:600; }
+  .seg button { border:0; border-radius:0; } .seg button.on { background:var(--accent); color:#08131f; font-weight:600; }
   #zoomLbl { color:#9aa0a6; width:44px; }
-  .halo { color:#9aa0a6; }
-  .halo input { width:52px; background:#343841; color:#e7e9ec; border:1px solid var(--line);
-                border-radius:5px; padding:4px 6px; }
+  .halo { color:#9aa0a6; } .halo input { width:52px; background:#343841; color:#e7e9ec; border:1px solid var(--line); border-radius:5px; padding:4px 6px; }
   #hint { color:#9aa0a6; padding:6px 14px; border-bottom:1px solid var(--line); background:#212327; }
-  #stageWrap { flex:1; overflow:auto; display:flex; align-items:flex-start;
-               justify-content:center; padding:24px; position:relative; }
+  #stageWrap { flex:1; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:24px; position:relative; }
   #stage { position:relative; line-height:0; box-shadow:0 4px 24px rgba(0,0,0,.4); }
-  #stage img { display:block; background:
-      repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/24px 24px; }
+  #stage img { display:block; background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/24px 24px; }
   #dots { position:absolute; inset:0; pointer-events:none; }
-  .dot { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px;
-         border-radius:50%; background:var(--dot); border:2px solid #fff;
-         box-shadow:0 1px 4px rgba(0,0,0,.5); cursor:pointer; pointer-events:auto; }
-  .dot span { position:absolute; top:-18px; left:50%; transform:translateX(-50%);
-              font-size:10px; color:#fff; text-shadow:0 1px 2px #000; }
-  #stageMsg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-              color:#7f868d; font-size:14px; display:none; }
-  #status { position:fixed; bottom:14px; right:16px; background:#111; color:#8f8;
-            padding:8px 12px; border-radius:6px; opacity:0; transition:opacity .2s; max-width:60vw; }
+  .dot { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:var(--dot); border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.5); cursor:pointer; pointer-events:auto; }
+  .dot span { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; text-shadow:0 1px 2px #000; }
+  #stageMsg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#7f868d; font-size:14px; display:none; }
+  #bar #regBtn.on { background:#37d67a; border-color:#37d67a; color:#08131f; font-weight:600; }
+  .reg { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%;
+         border:2px solid #37d67a; box-shadow:0 0 0 1px rgba(0,0,0,.6); pointer-events:none; }
+  .reg::before,.reg::after { content:""; position:absolute; background:#37d67a; }
+  .reg::before { left:50%; top:-7px; width:2px; height:30px; margin-left:-1px; }
+  .reg::after  { top:50%; left:-7px; height:2px; width:30px; margin-top:-1px; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal[hidden] { display:none; }
+  .modal-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; min-width:520px; max-width:90vw; }
+  .modal-card .mh { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); font-weight:600; }
+  .modal-card .mh button { background:transparent; border:0; color:#9aa0a6; font-size:16px; cursor:pointer; }
+  .tcols { display:flex; gap:16px; padding:16px; } .tcol { flex:1; }
+  .tcol h4 { margin:0 0 8px; color:#9aa0a6; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .tlist { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .trow { display:flex; align-items:center; gap:8px; color:#9aa0a6; }
+  .trow input[type=color] { width:34px; height:28px; padding:0; border:1px solid var(--line); border-radius:5px; background:#343841; }
+  .trow input[type=number] { width:56px; background:#343841; color:#e7e9ec; border:1px solid var(--line); border-radius:5px; padding:5px 7px; }
+  .trow .trm { background:#3a3d42; border:1px solid var(--line); color:#cbd0d6; border-radius:5px; padding:4px 8px; cursor:pointer; }
+  .addOutline { background:#343841; color:#e7e9ec; border:1px dashed var(--line); border-radius:6px; padding:6px 10px; cursor:pointer; width:100%; }
+  .modal-card .mf { padding:0 16px 14px; color:#7f868d; font-size:11px; }
+  #tileEditor { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:8px; }
+  .mocktile { position:relative; width:300px; height:300px; border-radius:14px; overflow:hidden;
+              background:linear-gradient(160deg,#2b2f36,#1c1f24); box-shadow:0 6px 24px rgba(0,0,0,.5); }
+  .mocktile #tileArt { position:absolute; left:50%; bottom:2px; height:82%; width:auto; transform:translateX(-50%);
+                       cursor:grab; user-select:none; -webkit-user-drag:none; }
+  .mocktile #tileArt:active { cursor:grabbing; }
+  .mocktile .mt-frame { position:absolute; inset:0; border:1px solid rgba(255,255,255,.14); border-radius:14px; pointer-events:none; }
+  .mocktile .mt-frame::before,.mocktile .mt-frame::after { content:""; position:absolute; width:12px; height:12px; border:2px solid rgba(255,255,255,.35); }
+  .mocktile .mt-frame::before { top:5px; left:5px; border-right:0; border-bottom:0; border-top-left-radius:7px; }
+  .mocktile .mt-frame::after { bottom:5px; right:5px; border-left:0; border-top:0; border-bottom-right-radius:7px; }
+  .tilectrls { display:flex; align-items:center; gap:14px; color:#9aa0a6; }
+  .tilectrls input[type=range] { width:180px; }
+  .tilehint { color:#7f868d; font-size:12px; }
+
+  /* generate tab */
+  #genWrap { max-width:760px; margin:0 auto; padding:28px 24px 60px; }
+  #genWrap h3 { margin:0 0 4px; font-size:16px; }
+  #genWrap p.sub { margin:0 0 20px; color:#7f868d; }
+  .field { margin-bottom:14px; } .field label { display:block; margin-bottom:5px; color:#9aa0a6; font-size:12px; }
+  .field input, .field textarea { width:100%; background:#26282c; color:#e7e9ec; border:1px solid var(--line);
+       border-radius:7px; padding:9px 11px; font:inherit; }
+  .field textarea { min-height:64px; resize:vertical; }
+  #slugPreview { color:#7dd3a0; font-size:12px; margin-left:6px; }
+  #genGo { padding:9px 20px; }
+  .jobs { margin-top:26px; display:flex; flex-direction:column; gap:14px; }
+  .job { border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden; }
+  .job .jh { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  .job .jh .s { flex:1; font-weight:600; }
+  .job .st { font-size:11px; padding:3px 9px; border-radius:10px; background:#3a3d42; color:#cbd0d6; }
+  .job .st.run { background:#3a4a63; color:#bcd6ff; } .job .st.ok { background:#2f5137; color:#bff0cf; } .job .st.err { background:#5a3030; color:#ffc9c9; }
+  .job pre { margin:0; padding:10px 14px; max-height:150px; overflow:auto; font:11px/1.45 ui-monospace,Menlo,monospace; color:#aab0b6; white-space:pre-wrap; }
+  .job .done { display:none; align-items:center; gap:14px; padding:12px 14px; border-top:1px solid var(--line); }
+  .job .done img { width:96px; height:96px; object-fit:contain; border-radius:6px;
+       background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/14px 14px; }
+
+  #status { position:fixed; bottom:14px; right:16px; background:#111; color:#8f8; padding:8px 12px; border-radius:6px; opacity:0; transition:opacity .2s; max-width:60vw; }
   #status.show { opacity:1; }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="list"><h2>Assets</h2></div>
-  <div id="main">
-    <div id="bar">
-      <span class="title" id="curName">—</span>
-      <div class="seg" id="viewSeg">
-        <button data-v="source" class="on">Source</button>
-        <button data-v="trim">Trimmed</button>
-        <button data-v="256">256</button>
+  <div id="tabbar">
+    <button class="tab on" data-tab="trim">Trim</button>
+    <button class="tab" data-tab="gen">Generate</button>
+    <button id="exportBtn" class="exp">Export to game</button>
+    <span class="brand">char-art trim tool</span>
+  </div>
+
+  <!-- TRIM VIEW -->
+  <div id="trimView" class="view on">
+    <div id="list"><h2>Assets</h2></div>
+    <div id="main">
+      <div id="bar">
+        <span class="title" id="curName">—</span>
+        <div class="seg" id="viewSeg">
+          <button data-v="source" class="on">Source</button>
+          <button data-v="trim">Trimmed</button>
+          <button data-v="256">256</button>
+          <button data-v="tile">Tile</button>
+        </div>
+        <span class="spacer"></span>
+        <label id="zoomLbl">100%</label>
+        <input id="zoom" type="range" min="10" max="300" value="100" step="5">
+        <button id="fit">Fit</button>
+        <button id="treatBtn">Treatment</button>
+        <button id="regBtn" title="Registry/anchor point — click to set, applies to all">◎ Registry</button>
+        <button id="undo">Undo point</button>
+        <button id="clear">Clear points</button>
+        <button id="save">Save</button>
+        <button id="clipCur">Clip current</button>
+        <button class="primary" id="clipAll">Clip all</button>
       </div>
-      <span class="spacer"></span>
-      <label id="zoomLbl">100%</label>
-      <input id="zoom" type="range" min="10" max="300" value="100" step="5">
-      <button id="fit">Fit</button>
-      <label class="halo">Halo <input id="halo" type="number" min="0" max="80" step="1" value="12"> px</label>
-      <button id="undo">Undo point</button>
-      <button id="clear">Clear points</button>
-      <button id="save">Save</button>
-      <button id="clipCur">Clip current</button>
-      <button class="primary" id="clipAll">Clip all</button>
-    </div>
-    <div id="hint">In <b>Source</b> view, click any area whose <b>internal fill needs removing</b>
-      (e.g. a bow window). Click a point again to delete it. <b>0 points = default outer trim.</b>
-      Use <b>Trimmed</b> / <b>256</b> to view the generated die-cut + square exports.</div>
-    <div id="stageWrap">
-      <div id="stage"><img id="img" alt=""><div id="dots"></div></div>
-      <div id="stageMsg"></div>
+      <div id="hint">In <b>Source</b> view, click any area whose <b>internal fill needs removing</b>
+        (e.g. a bow window). Click a point again to delete it. <b>0 points = default outer trim.</b>
+        Use <b>Trimmed</b> / <b>256</b> to view the generated die-cut + square exports.</div>
+      <div id="stageWrap">
+        <div id="stage"><img id="img" alt=""><div id="dots"></div></div>
+        <div id="stageMsg"></div>
+        <div id="tileEditor" hidden>
+          <div class="mocktile" id="mockTile"><img id="tileArt" alt=""><span class="mt-frame"></span></div>
+          <div class="tilectrls">
+            <label>Scale <input id="pScale" type="range" min="0.4" max="2.5" step="0.02" value="1"></label>
+            <span id="pRead">scale 1.00 · x 0.00 · y 0.00</span>
+            <button id="pReset">Reset</button>
+          </div>
+          <div class="tilehint">Drag the portrait to position · slider to zoom · saved per hero · exported to the hero tile</div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-<div id="status"></div>
+
+  <!-- GENERATE VIEW -->
+  <div id="genView" class="view">
+    <div id="genWrap">
+      <h3>Generate a hero</h3>
+      <p class="sub">Deploys a Claude instance to author the class in the locked chibi style, generates it
+        via the pipeline, and stages it into <b>heroes/</b> — it appears here (and in Trim) when ready.</p>
+      <div class="field">
+        <label>Class name <span id="slugPreview"></span></label>
+        <input id="genName" type="text" placeholder="e.g. spellblade, frost-witch, dragoon" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Description (optional — leave blank to let Claude write the subject)</label>
+        <textarea id="genSubject" placeholder="Only if you want to specify: gender, hair gradient, costume, weapon, pose. Style is locked."></textarea>
+      </div>
+      <button id="genGo" class="primary">Generate</button>
+      <div class="jobs" id="jobs"></div>
+    </div>
+  </div>
+
+  <div id="treatModal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="mh"><span>Treatment — outlines stroked after sizing (top = innermost)</span><button id="treatClose">✕</button></div>
+      <div class="tcols">
+        <div class="tcol"><h4>Large trim</h4><div id="tLarge" class="tlist"></div><button class="addOutline" data-t="large">+ outline</button></div>
+        <div class="tcol"><h4>256 export</h4><div id="tSmall" class="tlist"></div><button class="addOutline" data-t="small">+ outline</button></div>
+      </div>
+      <div class="mf">Each outline = colour + width (px), stroked outward from the silhouette. Default = one 12px white outline (the classic halo). Large and 256 are independent; applied to the raw cut after sizing.</div>
+    </div>
+  </div>
+
+  <div id="status"></div>
 
 <script>
-const state = { items: [], meta: {}, idx: 0, zoom: 1, natural:{w:0,h:0}, view:'source', ver:1 };
+const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1,
+  regMode:false, treatment:{ large:[{color:'#ffffff',width:12}], small:[{color:'#ffffff',width:12}] } };
 
-async function boot() {
-  const list = await (await fetch('/api/list')).json();
+/* ---------- shared list building ---------- */
+function buildFromList(list) {
   state.cats = list.categories || [];
   state.items = [];
   for (const c of state.cats) for (const n of c.images)
     state.items.push({ cat:c.name, name:n, key:`${c.name}/${n}` });
+  for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
+}
+async function boot() {
+  const list = await (await fetch('/api/list')).json();
+  buildFromList(list);
   const meta = await (await fetch('/api/meta')).json();
   state.meta = (meta && meta.images) ? meta.images : {};
   for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
-  if (meta && meta.contract_px != null) document.getElementById('halo').value = meta.contract_px;
+  if (meta && meta.treatmentLarge && meta.treatmentLarge.length) state.treatment.large = meta.treatmentLarge;
+  if (meta && meta.treatmentSmall && meta.treatmentSmall.length) state.treatment.small = meta.treatmentSmall;
+  renderTreat();
   renderList();
   if (state.items.length) select(0);
+}
+async function refreshList(preserveKey) {
+  const keep = preserveKey || (state.items[state.idx] && state.items[state.idx].key);
+  const list = await (await fetch('/api/list')).json();
+  buildFromList(list);
+  renderList();
+  const i = state.items.findIndex(it => it.key === keep);
+  if (i >= 0) select(i); else if (state.items.length && state.idx >= state.items.length) select(0);
 }
 
 function renderList() {
@@ -118,136 +237,245 @@ function renderList() {
   el.querySelectorAll('.cat,.row').forEach(n => n.remove());
   let gi = 0;
   for (const c of state.cats) {
-    const h = document.createElement('div'); h.className = 'cat';
-    h.innerHTML = `${c.name}<span class="n">${c.images.length}</span>`;
-    el.appendChild(h);
+    const h = document.createElement('div'); h.className='cat';
+    h.innerHTML = `${c.name}<span class="n">${c.images.length}</span>`; el.appendChild(h);
     for (const n of c.images) {
-      const idx = gi++, key = `${c.name}/${n}`, np = state.meta[key].pockets.length;
-      const row = document.createElement('div');
-      row.className = 'row' + (idx === state.idx ? ' sel' : '');
-      row.innerHTML = `<img src="/img/${c.name}/${encodeURIComponent(n)}">
+      const idx=gi++, key=`${c.name}/${n}`, np=(state.meta[key]||{pockets:[]}).pockets.length;
+      const row=document.createElement('div');
+      row.className='row'+(idx===state.idx?' sel':'');
+      row.innerHTML=`<img src="/img/${c.name}/${encodeURIComponent(n)}">
         <span class="name">${n}</span><span class="badge ${np?'has':''}">${np}</span>`;
-      row.onclick = () => select(idx);
-      el.appendChild(row);
+      row.onclick=()=>select(idx); el.appendChild(row);
     }
   }
 }
+function cur(){ return state.items[state.idx]; }
+function curPockets(){ return (state.meta[cur().key] ||= {pockets:[]}).pockets; }
+function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
+  if (state.view==='trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
+  if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
+  return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
+function select(i){ state.idx=i; document.getElementById('curName').textContent=cur().key; loadStage(); renderList(); }
+function loadStage(){
+  const img=document.getElementById('img'), msg=document.getElementById('stageMsg');
+  msg.style.display='none'; img.style.visibility='hidden';
+  img.onload=()=>{ state.natural={w:img.naturalWidth,h:img.naturalHeight}; img.style.visibility='visible'; fitZoom(); };
+  img.onerror=()=>{ img.style.visibility='hidden';
+    msg.textContent=state.view==='source'?'image missing':'not generated yet — click Clip'; msg.style.display='block';
+    document.getElementById('dots').innerHTML=''; };
+  img.src=stageURL();
+}
+function setView(v){ state.view=v;
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  const isTile = v==='tile';
+  document.getElementById('stage').style.display = isTile?'none':'';
+  if(!isTile) document.getElementById('stageMsg').style.display='none';
+  document.getElementById('tileEditor').hidden = !isTile;
+  if(isTile) renderTile(); else loadStage(); }
 
-function cur() { return state.items[state.idx]; }
-function curPockets() { return state.meta[cur().key].pockets; }
+/* ---------- portrait tile framing ---------- */
+function curPortrait(){ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
+function renderTile(){
+  const it=cur(), base=it.name.replace(/\.png$/i,'');
+  const art=document.getElementById('tileArt'), msg=document.getElementById('stageMsg');
+  art.onerror=()=>{ art.style.visibility='hidden'; msg.textContent='no 256 yet — Clip this hero first'; msg.style.display='block'; };
+  art.onload =()=>{ art.style.visibility='visible'; msg.style.display='none'; applyPortrait(); };
+  art.src=`/img/${it.cat}/${base}_256.png?v=${state.ver}`;
+  document.getElementById('pScale').value = (curPortrait().scale ?? 1);
+  applyPortrait();
+}
+function applyPortrait(){
+  const p=curPortrait(), art=document.getElementById('tileArt');
+  const s=p.scale??1, x=p.x??0, y=p.y??0;
+  art.style.height=(82*s)+'%';
+  art.style.left=`calc(50% + ${x*100}%)`;
+  art.style.bottom=`calc(2px + ${y*100}%)`;
+  document.getElementById('pRead').textContent=`scale ${s.toFixed(2)} · x ${x.toFixed(2)} · y ${y.toFixed(2)}`;
+}
+document.getElementById('pScale').oninput=e=>{ curPortrait().scale=+parseFloat(e.target.value).toFixed(2); applyPortrait(); };
+document.getElementById('pReset').onclick=()=>{ state.meta[cur().key].portrait={scale:1,x:0,y:0}; document.getElementById('pScale').value=1; applyPortrait(); };
+(function(){ let drag=null; const art=document.getElementById('tileArt'), mt=document.getElementById('mockTile');
+  art.addEventListener('pointerdown',e=>{ drag={sx:e.clientX,sy:e.clientY,p:{...curPortrait()},w:mt.clientWidth||300,h:mt.clientHeight||300};
+    try{ art.setPointerCapture(e.pointerId); }catch(_){}; e.preventDefault(); });
+  art.addEventListener('pointermove',e=>{ if(!drag) return; const p=curPortrait();
+    p.x=+((drag.p.x??0)+(e.clientX-drag.sx)/drag.w).toFixed(3);
+    p.y=+((drag.p.y??0)-(e.clientY-drag.sy)/drag.h).toFixed(3);   // drag up = raise
+    applyPortrait(); });
+  const end=()=>{ drag=null; }; art.addEventListener('pointerup',end); art.addEventListener('pointercancel',end);
+})();
+function setZoom(z){ state.zoom=Math.max(0.1,Math.min(z,3)); const pct=Math.round(state.zoom*100);
+  document.getElementById('zoom').value=pct; document.getElementById('zoomLbl').textContent=pct+'%'; applyZoom(); }
+function fitZoom(){ if(!state.natural.w) return; const wrap=document.getElementById('stageWrap'), pad=48;
+  if (wrap.clientWidth<=0) return;
+  setZoom(Math.min((wrap.clientWidth-pad)/state.natural.w,(wrap.clientHeight-pad)/state.natural.h)); }
+function applyZoom(){ const img=document.getElementById('img');
+  img.style.width=(state.natural.w*state.zoom)+'px'; img.style.height=(state.natural.h*state.zoom)+'px'; drawDots(); drawReg(); }
+function drawReg(){ const dots=document.getElementById('dots'); const rec=state.meta[cur().key];
+  if(!rec||!rec.reg) return;
+  const d=document.createElement('div'); d.className='reg';
+  d.style.left=(rec.reg[0]*state.natural.w*state.zoom)+'px';
+  d.style.top =(rec.reg[1]*state.natural.h*state.zoom)+'px';
+  dots.appendChild(d); }
+function drawDots(){ const dots=document.getElementById('dots'); dots.innerHTML='';
+  if (state.view!=='source') return;
+  curPockets().forEach((p,k)=>{ const d=document.createElement('div'); d.className='dot';
+    d.style.left=(p[0]*state.zoom)+'px'; d.style.top=(p[1]*state.zoom)+'px'; d.innerHTML=`<span>${k+1}</span>`;
+    d.onclick=(e)=>{e.stopPropagation(); curPockets().splice(k,1); drawDots(); renderList();}; dots.appendChild(d); }); }
 
-function stageURL() {
-  const it = cur(); const base = it.name.replace(/\.png$/i,'');
-  if (state.view === 'trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
-  if (state.view === '256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
-  return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`;
-}
-
-function select(i) {
-  state.idx = i;
-  document.getElementById('curName').textContent = cur().key;
-  loadStage();
-  renderList();
-}
-
-function loadStage() {
-  const img = document.getElementById('img'), msg = document.getElementById('stageMsg');
-  msg.style.display = 'none'; img.style.visibility = 'hidden';
-  img.onload  = () => { state.natural = {w:img.naturalWidth, h:img.naturalHeight};
-                        img.style.visibility='visible'; fitZoom(); };
-  img.onerror = () => { img.style.visibility='hidden';
-                        msg.textContent = state.view==='source' ? 'image missing'
-                          : 'not generated yet — click Clip'; msg.style.display='block';
-                        document.getElementById('dots').innerHTML=''; };
-  img.src = stageURL();
-}
-
-function setView(v) {
-  state.view = v;
-  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v===v));
-  loadStage();
-}
-
-function setZoom(z) {
-  state.zoom = Math.max(0.1, Math.min(z, 3));
-  const pct = Math.round(state.zoom*100);
-  document.getElementById('zoom').value = pct;
-  document.getElementById('zoomLbl').textContent = pct + '%';
-  applyZoom();
-}
-function fitZoom() {
-  if (!state.natural.w) return;
-  const wrap = document.getElementById('stageWrap'), pad = 48;
-  setZoom(Math.min((wrap.clientWidth-pad)/state.natural.w, (wrap.clientHeight-pad)/state.natural.h));
-}
-function applyZoom() {
-  const img = document.getElementById('img');
-  img.style.width  = (state.natural.w*state.zoom)+'px';
-  img.style.height = (state.natural.h*state.zoom)+'px';
-  drawDots();
-}
-function drawDots() {
-  const dots = document.getElementById('dots'); dots.innerHTML='';
-  if (state.view !== 'source') return;               // points only meaningful on the source
-  curPockets().forEach((p,k) => {
-    const d = document.createElement('div'); d.className='dot';
-    d.style.left=(p[0]*state.zoom)+'px'; d.style.top=(p[1]*state.zoom)+'px';
-    d.innerHTML=`<span>${k+1}</span>`;
-    d.onclick=(e)=>{ e.stopPropagation(); curPockets().splice(k,1); drawDots(); renderList(); };
-    dots.appendChild(d);
-  });
-}
-
-document.getElementById('img').addEventListener('click', (e) => {
-  if (state.view !== 'source') return;
-  const r = e.target.getBoundingClientRect();
-  const x = Math.round((e.clientX-r.left)/state.zoom), y = Math.round((e.clientY-r.top)/state.zoom);
+document.getElementById('img').addEventListener('click',(e)=>{
+  const r=e.target.getBoundingClientRect();
+  const x=(e.clientX-r.left)/state.zoom, y=(e.clientY-r.top)/state.zoom;
   if (x<0||y<0||x>state.natural.w||y>state.natural.h) return;
-  curPockets().push([x,y]); drawDots(); renderList();
-});
-document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v));
-document.getElementById('zoom').addEventListener('input', e => {
-  state.zoom = e.target.value/100; document.getElementById('zoomLbl').textContent = e.target.value+'%'; applyZoom(); });
-document.getElementById('fit').onclick = fitZoom;
-document.getElementById('undo').onclick  = () => { curPockets().pop(); drawDots(); renderList(); };
-document.getElementById('clear').onclick = () => { state.meta[cur().key].pockets=[]; drawDots(); renderList(); };
-document.getElementById('save').onclick   = () => save();
-document.getElementById('clipCur').onclick = () => clip('current');
-document.getElementById('clipAll').onclick = () => clip('all');
-let _rt; window.addEventListener('resize', () => { clearTimeout(_rt); _rt=setTimeout(fitZoom,120); });
+  if (state.regMode){                                   // set registration point (normalized) on ALL images
+    const nx=+(x/state.natural.w).toFixed(4), ny=+(y/state.natural.h).toFixed(4);
+    for (const it of state.items){ (state.meta[it.key] ||= {pockets:[]}).reg=[nx,ny]; }
+    drawReg(); toast('registry '+nx.toFixed(2)+', '+ny.toFixed(2)+' → all'); return;
+  }
+  if (state.view!=='source') return;
+  curPockets().push([Math.round(x),Math.round(y)]); drawDots(); renderList(); });
+document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+document.getElementById('zoom').addEventListener('input',e=>{ state.zoom=e.target.value/100;
+  document.getElementById('zoomLbl').textContent=e.target.value+'%'; applyZoom(); });
+document.getElementById('fit').onclick=fitZoom;
+document.getElementById('undo').onclick=()=>{ curPockets().pop(); drawDots(); renderList(); };
+document.getElementById('clear').onclick=()=>{ state.meta[cur().key]={pockets:[]}; drawDots(); renderList(); };
+document.getElementById('save').onclick=()=>save();
+document.getElementById('clipCur').onclick=()=>clip('current');
+document.getElementById('clipAll').onclick=()=>clip('all');
+let _rt; window.addEventListener('resize',()=>{clearTimeout(_rt); _rt=setTimeout(fitZoom,120);});
 
-function haloVal(){ return Math.max(0, parseInt(document.getElementById('halo').value||'12',10)); }
-function metaPayload(){ return { generated_by:'asset_tool', contract_px:haloVal(), images:state.meta }; }
+function metaPayload(){ return { generated_by:'asset_tool',
+  treatmentLarge:state.treatment.large, treatmentSmall:state.treatment.small, images:state.meta }; }
+async function save(silent){ const res=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
+  const j=await res.json(); if(!silent) toast(res.ok?('Saved → '+j.path):'Save failed'); return res.ok; }
+async function clip(scope){ const btns=document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
+  toast('Clipping '+scope+' in Photoshop…');
+  try{ const res=await fetch('/api/clip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({scope,only:cur().key,meta:metaPayload()})});
+    const j=await res.json(); toast(j.ok?('✓ '+(j.output||'done')):('✗ '+(j.error||j.stderr||'failed')));
+    if(j.ok){ state.ver++; setView('trim'); }
+  }catch(e){ toast('✗ '+e); } finally{ btns.forEach(b=>b.disabled=false); } }
 
-async function save(silent) {
-  const res = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
-  const j = await res.json();
-  if (!silent) toast(res.ok ? ('Saved → '+j.path) : 'Save failed');
-  return res.ok;
+/* ---------- tabs ---------- */
+function switchTab(t){
+  document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  document.getElementById('trimView').style.display = t==='trim' ? 'flex' : 'none';
+  document.getElementById('genView').style.display  = t==='gen'  ? 'block' : 'none';
+  if (t==='trim') setTimeout(fitZoom, 30);
 }
-async function clip(scope) {
-  const btns = document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
-  toast('Clipping ' + scope + ' in Photoshop…');
-  try {
-    const res = await fetch('/api/clip',{method:'POST',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ scope, only: cur().key, meta: metaPayload() }) });
-    const j = await res.json();
-    toast(j.ok ? ('✓ '+(j.output||'done')) : ('✗ '+(j.error||j.stderr||'failed')));
-    if (j.ok) { state.ver++; setView('trim'); }        // show the result
-  } catch(e){ toast('✗ '+e); }
-  finally { btns.forEach(b=>b.disabled=false); }
+document.querySelectorAll('#tabbar .tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+/* ---------- registry point ---------- */
+document.getElementById('regBtn').onclick=()=>{ state.regMode=!state.regMode;
+  document.getElementById('regBtn').classList.toggle('on',state.regMode);
+  toast(state.regMode?'Registry mode ON — click to set the anchor (applies to all)':'Registry mode off'); };
+
+/* ---------- treatment editor ---------- */
+function renderTreat(){
+  for (const which of ['large','small']){
+    const box=document.getElementById(which==='large'?'tLarge':'tSmall'); if(!box) continue;
+    box.innerHTML='';
+    state.treatment[which].forEach((o,idx)=>{
+      const row=document.createElement('div'); row.className='trow';
+      row.innerHTML=`<input type="color" value="${o.color}"><input type="number" min="0" max="80" step="1" value="${o.width}"><span>px</span><button class="trm">✕</button>`;
+      const ins=row.querySelectorAll('input');
+      ins[0].oninput=()=>{ o.color=ins[0].value; };
+      ins[1].oninput=()=>{ o.width=Math.max(0,parseInt(ins[1].value||'0',10)); };
+      row.querySelector('.trm').onclick=()=>{ state.treatment[which].splice(idx,1); renderTreat(); };
+      box.appendChild(row);
+    });
+  }
 }
+document.querySelectorAll('.addOutline').forEach(b=>b.onclick=()=>{ state.treatment[b.dataset.t].push({color:'#000000',width:3}); renderTreat(); });
+document.getElementById('treatBtn').onclick=()=>{ document.getElementById('treatModal').hidden=false; };
+document.getElementById('treatClose').onclick=()=>{ document.getElementById('treatModal').hidden=true; };
+document.getElementById('treatModal').addEventListener('click',e=>{ if(e.target.id==='treatModal') e.currentTarget.hidden=true; });
+
+/* ---------- export to game ---------- */
+document.getElementById('exportBtn').onclick = exportToGame;
+async function exportToGame(){
+  if(!confirm('Export all hero 256×256 assets to the game?\n\nCopies art + registers assets, refreshes existing heroes, creates config + UI entries for new slugs (placeholder stats, tagged for tuning), and runs the build. Takes ~1–2 min.')) return;
+  const btn=document.getElementById('exportBtn'), old=btn.textContent;
+  btn.disabled=true; btn.textContent='Exporting…'; toast('Exporting to game… (runs the build, ~1–2 min)');
+  try{
+    const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const j=await res.json(); const r=j.result;
+    if(j.ok && r){ toast(`✓ export ok — refreshed ${r.refreshed.length}, created ${r.created.length}${r.errors&&r.errors.length?', '+r.errors.length+' errors':''}`); }
+    else { toast('✗ export failed'+(r&&r.errors&&r.errors.length?': '+r.errors[0].error:(j.error?': '+j.error:''))); }
+    console.log('[export]\n'+(j.output||''));
+  }catch(e){ toast('✗ export error: '+e); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+}
+
+/* ---------- generate ---------- */
+function slugify(s){ return (s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+const nameEl=document.getElementById('genName'), slugPrev=document.getElementById('slugPreview');
+nameEl.addEventListener('input',()=>{ const s=slugify(nameEl.value); slugPrev.textContent = s?('→ heroes/'+s+'.png'):''; });
+document.getElementById('genGo').onclick=startGen;
+nameEl.addEventListener('keydown',e=>{ if(e.key==='Enter') startGen(); });
+
+async function startGen(){
+  const slug=slugify(nameEl.value);
+  if(!slug){ toast('Enter a class name'); return; }
+  const subject=document.getElementById('genSubject').value.trim();
+  const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({slug,subject})});
+  const j=await res.json();
+  if(!j.ok){ toast('✗ '+(j.error||'failed to start')); return; }
+  nameEl.value=''; slugPrev.textContent=''; document.getElementById('genSubject').value='';
+  makeJobCard(slug); pollGen(slug);
+  toast('Generating '+slug+'…');
+}
+function makeJobCard(slug){
+  let card=document.getElementById('job-'+slug);
+  if(card){ card.remove(); }
+  card=document.createElement('div'); card.className='job'; card.id='job-'+slug;
+  card.innerHTML=`<div class="jh"><span class="s">${slug}</span><span class="st run">running</span></div>
+    <pre>starting…</pre>
+    <div class="done"><img alt=""><div><div style="color:#bff0cf;font-weight:600;margin-bottom:6px">Ready</div>
+      <button class="open primary">Open in Trim</button></div></div>`;
+  document.getElementById('jobs').prepend(card);
+  card.querySelector('.open').onclick=()=>openInTrim(slug);
+  return card;
+}
+async function pollGen(slug){
+  let card=document.getElementById('job-'+slug) || makeJobCard(slug);
+  const st=card.querySelector('.st'), pre=card.querySelector('pre'), done=card.querySelector('.done');
+  try{
+    const j=await (await fetch('/api/gen-status?slug='+encodeURIComponent(slug))).json();
+    if(j.log) pre.textContent=j.log; pre.scrollTop=pre.scrollHeight;
+    if(j.done){
+      st.textContent='done'; st.className='st ok';
+      card.querySelector('.done img').src='/img/heroes/'+slug+'.png?v='+Date.now();
+      done.style.display='flex';
+      await refreshList('heroes/'+slug+'.png');   // so it's there in Trim immediately
+      toast('✓ '+slug+' ready');
+      return;
+    }
+    if(!j.running){   // process exited without producing output
+      st.textContent='failed'; st.className='st err';
+      toast('✗ '+slug+' failed (see log)');
+      return;
+    }
+  }catch(e){ pre.textContent += '\n[status error] '+e; }
+  setTimeout(()=>pollGen(slug), 3000);
+}
+function openInTrim(slug){
+  switchTab('trim');
+  const i=state.items.findIndex(it=>it.key==='heroes/'+slug+'.png');
+  if(i>=0){ select(i); setView('source'); } else refreshList('heroes/'+slug+'.png').then(()=>setView('source'));
+}
+
 function toast(m){ const s=document.getElementById('status'); s.textContent=m; s.classList.add('show');
-  clearTimeout(toast._t); toast._t=setTimeout(()=>s.classList.remove('show'),2600); }
+  clearTimeout(toast._t); toast._t=setTimeout(()=>s.classList.remove('show'),2800); }
 
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown',e=>{
+  if (document.getElementById('genView').style.display==='block') return; // don't hijack typing in gen tab
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (e.key==='ArrowDown'||e.key==='ArrowRight'){ if(state.idx<state.items.length-1) select(state.idx+1); }
   if (e.key==='ArrowUp'||e.key==='ArrowLeft'){ if(state.idx>0) select(state.idx-1); }
   if (e.key==='1') setView('source'); if (e.key==='2') setView('trim'); if (e.key==='3') setView('256');
-  if (e.key==='z'&&(e.metaKey||e.ctrlKey)){ curPockets().pop(); drawDots(); renderList(); }
-  if (e.key==='s'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); save(); }
 });
-
 boot();
 </script>
 </body>

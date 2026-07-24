@@ -484,6 +484,86 @@
 		"zone.dragons-ascent": {
 			"type": "image",
 			"file": "zones/zone-dragons-ascent.png"
+		},
+		"hero.alchemist": {
+			"type": "image",
+			"file": "heroes/alchemist.png"
+		},
+		"hero.beastmaster": {
+			"type": "image",
+			"file": "heroes/beastmaster.png"
+		},
+		"hero.dancer": {
+			"type": "image",
+			"file": "heroes/dancer.png"
+		},
+		"hero.dark-knight": {
+			"type": "image",
+			"file": "heroes/dark-knight.png"
+		},
+		"hero.geomancer": {
+			"type": "image",
+			"file": "heroes/geomancer.png"
+		},
+		"hero.gladiator": {
+			"type": "image",
+			"file": "heroes/gladiator.png"
+		},
+		"hero.gunslinger": {
+			"type": "image",
+			"file": "heroes/gunslinger.png"
+		},
+		"hero.inquisitor": {
+			"type": "image",
+			"file": "heroes/inquisitor.png"
+		},
+		"hero.lancer": {
+			"type": "image",
+			"file": "heroes/lancer.png"
+		},
+		"hero.mage": {
+			"type": "image",
+			"file": "heroes/mage.png"
+		},
+		"hero.ninja": {
+			"type": "image",
+			"file": "heroes/ninja.png"
+		},
+		"hero.pirate": {
+			"type": "image",
+			"file": "heroes/pirate.png"
+		},
+		"hero.priest": {
+			"type": "image",
+			"file": "heroes/priest.png"
+		},
+		"hero.samurai": {
+			"type": "image",
+			"file": "heroes/samurai.png"
+		},
+		"hero.shaman": {
+			"type": "image",
+			"file": "heroes/shaman.png"
+		},
+		"hero.spellblade": {
+			"type": "image",
+			"file": "heroes/spellblade.png"
+		},
+		"hero.summoner": {
+			"type": "image",
+			"file": "heroes/summoner.png"
+		},
+		"hero.warlord": {
+			"type": "image",
+			"file": "heroes/warlord.png"
+		},
+		"hero.warrior": {
+			"type": "image",
+			"file": "heroes/warrior.png"
+		},
+		"hero.witch": {
+			"type": "image",
+			"file": "heroes/witch.png"
 		}
 	}
 }

@@ -1,0 +1,11 @@
+{
+	"id": 2022,
+	"name": "Dancer",
+	"iconAssetId": "hero.dancer",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"id": 2034,
+	"name": "Shaman",
+	"iconAssetId": "hero.shaman",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

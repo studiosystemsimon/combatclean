@@ -1,0 +1,11 @@
+{
+	"id": 2023,
+	"name": "Dark Knight",
+	"iconAssetId": "hero.dark-knight",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

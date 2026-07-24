@@ -1,17 +1,6 @@
 {
-  "contract_px": 12,
-  "images": {
-    "heroes/ranger.png": {
-      "pockets": [
-        [
-          722,
-          382
-        ],
-        [
-          708,
-          637
-        ]
-      ]
-    }
-  }
+  "generated_by": "asset_tool",
+  "treatmentLarge": [{ "color": "#ffffff", "width": 12 }],
+  "treatmentSmall": [{ "color": "#ffffff", "width": 12 }],
+  "images": {}
 }

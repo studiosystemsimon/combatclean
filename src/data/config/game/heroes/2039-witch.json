@@ -1,0 +1,26 @@
+{
+	"id": 2039,
+	"displayName": "witch",
+	"rarityKey": "rare",
+	"weaponChainKey": "magic",
+	"baseAtk": 16,
+	"baseHp": 160,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "burst",
+			"mult": 2
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "burst",
+			"mult": 5
+		}
+	},
+	"tags": {
+		"origin": "char-art-export",
+		"tuning": "placeholder"
+	}
+}

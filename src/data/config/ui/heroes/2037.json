@@ -1,0 +1,11 @@
+{
+	"id": 2037,
+	"name": "Warlord",
+	"iconAssetId": "hero.warlord",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

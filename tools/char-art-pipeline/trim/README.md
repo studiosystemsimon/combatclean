@@ -8,7 +8,7 @@ It is a standalone click tool: you drop points only where an asset needs an **in
 save that as metadata, and the Photoshop step runs off the metadata. **0 points = default trim.**
 
 ## Launch
-- Double-click **`Trim Tool.app`** (first run: right-click → Open to clear Gatekeeper), or
+- Double-click **`TrimTool.app`** (first run: right-click → Open to clear Gatekeeper), or
 - `bash launch_tool.sh` — opens <http://localhost:8790>.
 
 Requires Adobe Photoshop 2022 and `/usr/bin/python3` (server is stdlib-only). First **Clip** may ask
@@ -26,7 +26,7 @@ trim/
   asset_tool_server.py
   trim.jsx           <- the Photoshop script (fit → outside-trim → pockets → square export)
   launch_tool.sh
-  Trim Tool.app
+  TrimTool.app
 ```
 Outputs are written **alongside each source** in its category folder:
 - `<name>_trim.png` — transparent die-cut with the halo border

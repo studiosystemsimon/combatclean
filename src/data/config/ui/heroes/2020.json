@@ -1,0 +1,11 @@
+{
+	"id": 2020,
+	"name": "Alchemist",
+	"iconAssetId": "hero.alchemist",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

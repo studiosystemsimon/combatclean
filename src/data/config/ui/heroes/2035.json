@@ -1,0 +1,11 @@
+{
+	"id": 2035,
+	"name": "Spellblade",
+	"iconAssetId": "hero.spellblade",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

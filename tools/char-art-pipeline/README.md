@@ -2,8 +2,9 @@
 
 A faithful port of the `rpg-characters` generation pipeline. **RAW CHARACTER GENERATION ONLY — no
 animation.** Produces one untrimmed, flat-white-background character PNG per class in the operator's
-locked chibi style, staged in `final/`. Owned by the `hero-art-pipeline` subagent
-(`.claude/agents/hero-art-pipeline.md`).
+locked chibi style, staged in `trim/assets/heroes/` — the input folder for the **trim stage**
+(`trim/README.md`), which turns these into transparent die-cut + square assets. Owned by the
+`hero-art-pipeline` subagent (`.claude/agents/hero-art-pipeline.md`).
 
 ## Requirements
 - `fortis-ai-gateway` logged in (`fortis-ai-gateway status` → OK). Generation runs on
@@ -17,7 +18,7 @@ locked chibi style, staged in `final/`. Owned by the `hero-art-pipeline` subagen
 | `gen-image-fortis-ref.sh` | Low-level Gemini-endpoint wrapper (multi-reference, comma-separated). Self-contained copy — no dependency on the froggame repo. |
 | `classes.tsv` | The roster: `<slug>⇥<subject>`. A subject describes **only** gender / hair-colour gradient / costume / weapon / pose. **Style is NOT restated here** — it lives in `gen.sh`'s header. |
 | `reference/` | The style anchors (**do not delete**). |
-| `sheet.py` | Builds `contact_sheet.png` from `final/` for review. |
+| `sheet.py` | Builds `contact_sheet.png` from `trim/assets/heroes/` for review. |
 
 ### reference/ anchors
 - `proportion_master.png` — **THE proportion + style master** (the "mage"). Every gen anchors to
@@ -28,18 +29,18 @@ locked chibi style, staged in `final/`. Owned by the `hero-art-pipeline` subagen
 ## Usage
 ```bash
 cd tools/char-art-pipeline
-bash gen.sh                 # generate every class in classes.tsv missing from final/
+bash gen.sh                 # generate every class in classes.tsv missing from trim/assets/heroes/
 bash gen.sh knight wizard   # only these slugs
-FORCE=1 bash gen.sh         # regenerate all (overwrite final/)
+FORCE=1 bash gen.sh         # regenerate all (overwrite trim/assets/heroes/)
 python3 sheet.py            # rebuild contact_sheet.png for review
 ```
-Output: `final/<slug>.png` — ~1024px, **flat white background, UNTRIMMED**.
+Output: `trim/assets/heroes/<slug>.png` — ~1024px, **flat white background, UNTRIMMED**.
 
 ## Delivery conventions (operator hard rules)
 - **NO VFX** in the art (no auras / glow / particles / energy). VFX is added later in post.
 - **Do NOT trim, crop, or make transparent** — deliver untrimmed on a flat white bg. The operator
   does transparency/trimming.
-- **Idempotent** — `gen.sh` skips a class already present in `final/` unless `FORCE=1`.
+- **Idempotent** — `gen.sh` skips a class already present in `trim/assets/heroes/` unless `FORCE=1`.
 
 ## The locked style (summary — full text is the `STYLE=` block in `gen.sh`)
 2:3 head:body chibi (2.5 heads) · thick **black outer outline**, inner lines = a darker shade of the
@@ -51,12 +52,12 @@ in revealing combat outfits, men broad/muscular · dynamic action poses.
 ## Adding / editing a class
 Add or edit a row in `classes.tsv`: `slug⇥subject` (tab-separated). Keep the subject to
 gender + hair-colour gradient + costume + weapon + pose. Then `bash gen.sh <slug>` (or delete
-`final/<slug>.png` / use `FORCE=1`) to regenerate.
+`trim/assets/heroes/<slug>.png` / use `FORCE=1`) to regenerate.
 
 ## combatclean integration (separate, operator-driven)
 Hero configs live in `src/data/config/game/heroes/*.json`; hero **art** belongs under
 `assets/combatclean/heroes/` (surfaced via the Visual registry + `virtual:asset-registry`). This
-pipeline **only STAGES art in `final/`**. Wiring staged art into the game's asset registry is a
+pipeline **only STAGES art in `trim/assets/heroes/`**. Wiring staged art into the game's asset registry is a
 separate change that must go through combatclean's changeset workflow — this pipeline never edits
 game code or registries.
 

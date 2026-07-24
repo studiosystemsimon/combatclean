@@ -1,0 +1,11 @@
+{
+	"id": 2039,
+	"name": "Witch",
+	"iconAssetId": "hero.witch",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"id": 2030,
+	"name": "Ninja",
+	"iconAssetId": "hero.ninja",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

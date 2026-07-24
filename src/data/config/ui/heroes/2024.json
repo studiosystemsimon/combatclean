@@ -1,0 +1,11 @@
+{
+	"id": 2024,
+	"name": "Geomancer",
+	"iconAssetId": "hero.geomancer",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

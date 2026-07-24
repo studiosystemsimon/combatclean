@@ -1,0 +1,11 @@
+{
+	"id": 2032,
+	"name": "Priest",
+	"iconAssetId": "hero.priest",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

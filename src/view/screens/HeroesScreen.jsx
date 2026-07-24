@@ -37,6 +37,13 @@ const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
 const gearColor = (rarity) => (GEAR_RARITY[rarity] || GEAR_RARITY.common).color;
 const slotEl = (id, slot) => document.querySelector(`.hs-gslot[data-hero-id="${id}"][data-slot="${slot}"]`);
 const tileEl = (id) => document.querySelector(`.hs-tile[data-hero-id="${id}"]`);
+// Portrait framing authored by the char-art trim tool (ui-config `portrait`): a scale multiplier +
+// normalized x/y offset (fraction of the tile), layered over the base bottom-centre 82%-height art.
+function portraitStyle(p) {
+  if (!p) return undefined;
+  const s = p.scale ?? 1, x = p.x ?? 0, y = p.y ?? 0;
+  return { height: `${82 * s}%`, left: `calc(50% + ${x * 100}%)`, bottom: `calc(2px + ${y * 100}%)` };
+}
 
 export default function HeroesScreen() {
   const { state, actions } = useGame();
@@ -352,7 +359,7 @@ export default function HeroesScreen() {
         >
           <span className="hs-prism" />
           <div className="fxwrap" />
-          <Art a={heroAsset(st.hero)} className="hs-art" />
+          <Art a={heroAsset(st.hero)} className="hs-art" style={portraitStyle(def.portrait)} />
           <span className="hs-pow"><span className="hs-ic">⚔</span><b>{fmt(power)}</b></span>
           {/* Dots = ASCENSION level: one per possible tier (maxAscensions), filled up to
               ascensionsDone, empty for the rest. Rarity is shown by the tile frame colour. */}

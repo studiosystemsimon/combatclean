@@ -1,11 +1,11 @@
 {
 	"id": 2005,
-	"name": "Dwarf Warrior",
-	"iconAssetId": "hero.dwarf-warrior",
-	"emoji": "🧔",
+	"name": "Warrior",
+	"iconAssetId": "hero.warrior",
+	"emoji": "⚔️",
 	"abilityNames": {
 		"basic": "Attack",
-		"normal": "Hammer Blow",
-		"limit": "Avalanche"
+		"normal": "Skill",
+		"limit": "Ultimate"
 	}
 }

@@ -1,0 +1,11 @@
+{
+	"id": 2028,
+	"name": "Lancer",
+	"iconAssetId": "hero.lancer",
+	"emoji": "⚔️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

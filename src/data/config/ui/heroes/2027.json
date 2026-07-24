@@ -1,0 +1,11 @@
+{
+	"id": 2027,
+	"name": "Inquisitor",
+	"iconAssetId": "hero.inquisitor",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

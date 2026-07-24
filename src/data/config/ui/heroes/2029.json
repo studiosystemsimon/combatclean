@@ -1,0 +1,11 @@
+{
+	"id": 2029,
+	"name": "Mage",
+	"iconAssetId": "hero.mage",
+	"emoji": "🔮",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Skill",
+		"limit": "Ultimate"
+	}
+}

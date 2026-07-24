@@ -11,13 +11,73 @@ Run:  python3 asset_tool_server.py                 # root = ./assets, port 8790
       python3 asset_tool_server.py --root assets --port 8790
 Then open http://localhost:8790
 """
-import argparse, json, os, sys, subprocess, http.server, socketserver
-from urllib.parse import urlparse, unquote
+import argparse, json, os, re, sys, subprocess, http.server, socketserver
+from urllib.parse import urlparse, unquote, parse_qs
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../trim
+PIPELINE = os.path.dirname(ROOT_DIR)                            # .../char-art-pipeline
+GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
 RUNCTL  = os.path.join(ROOT_DIR, "trim_run.json")
 PS_APP  = "Adobe Photoshop 2022"
+
+# in-flight generation jobs: slug -> subprocess.Popen
+JOBS = {}
+
+def slugify(name):
+    return re.sub(r"[^a-z0-9]+", "-", (name or "").strip().lower()).strip("-")
+
+def start_generate(slug, subject):
+    """Deploy generate.sh via a LOGIN shell (so claude / fortis-ai-gateway are on PATH),
+    detached. generate.sh writes logs/gen-<slug>.log and stages heroes/<slug>.png."""
+    env = os.environ.copy()
+    env["FORCE"] = "1"
+    if subject: env["GEN_SUBJECT"] = subject
+    cmd = ["/bin/zsh", "-lc",
+           'cd %s && exec bash generate.sh %s' % (_q(PIPELINE), _q(slug))]
+    JOBS[slug] = subprocess.Popen(cmd, env=env, cwd=PIPELINE,
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                  start_new_session=True)
+
+def _q(s):
+    return "'" + str(s).replace("'", "'\\''") + "'"
+
+def run_export(no_build, dry=False):
+    """Run export-to-game.mjs via a LOGIN shell (node/npm/git-lfs on PATH). Parses the
+    trailing 'RESULT {json}' summary line."""
+    extra = ""
+    if dry: extra += " --dry-run"
+    elif no_build: extra += " --no-build"
+    cmd = ["/bin/zsh", "-lc", "cd %s && exec node export-to-game.mjs%s" % (_q(PIPELINE), extra)]
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+        out = (p.stdout or "") + (p.stderr or "")
+        result = None
+        for line in reversed(out.strip().splitlines()):
+            if line.startswith("RESULT "):
+                try: result = json.loads(line[len("RESULT "):]);
+                except Exception: pass
+                break
+        return {"ok": p.returncode == 0, "result": result, "output": out[-4000:]}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "export timed out"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def gen_status(root, slug):
+    png = os.path.join(root, "heroes", slug + ".png")
+    logf = os.path.join(PIPELINE, "logs", "gen-%s.log" % slug)
+    log = ""
+    if os.path.exists(logf):
+        try:
+            with open(logf, errors="replace") as f:
+                log = "".join(f.readlines()[-40:])
+        except OSError:
+            pass
+    p = JOBS.get(slug)
+    rc = p.poll() if p else None
+    return {"slug": slug, "running": bool(p) and rc is None,
+            "returncode": rc, "done": os.path.exists(png), "log": log}
 
 # suffixes this tool produces (excluded from the source list, servable for preview)
 OUT_SUFFIXES = ("_trim.png", "_256.png")
@@ -75,6 +135,10 @@ def build_handler(root, meta_path):
                 if os.path.exists(meta_path):
                     with open(meta_path) as f: return self._send(200, "application/json", f.read())
                 return self._send(200, "application/json", json.dumps({"images": {}}))
+            if path == "/api/gen-status":
+                q = parse_qs(urlparse(self.path).query)
+                slug = slugify((q.get("slug", [""])[0]))
+                return self._send(200, "application/json", json.dumps(gen_status(root, slug)))
             if path.startswith("/img/"):
                 fp = self._safe(path[len("/img/"):])
                 if fp and os.path.isfile(fp):
@@ -97,14 +161,41 @@ def build_handler(root, meta_path):
                 meta  = body.get("meta", {"images": {}})
                 scope = body.get("scope", "all")
                 only  = body.get("only") if scope == "current" else None
-                contract = meta.get("contract_px", 12)
-                with open(meta_path, "w") as f: json.dump(meta, f, indent=2)
+                with open(meta_path, "w") as f: json.dump(meta, f, indent=2)   # treatments + pockets travel here
                 with open(RUNCTL, "w") as f:
-                    json.dump({"root": root, "only": only, "contract_px": contract}, f, indent=2)
+                    json.dump({"root": root, "only": only}, f, indent=2)
                 result = run_photoshop()
                 try: os.remove(RUNCTL)
                 except OSError: pass
                 return self._send(200, "application/json", json.dumps(result))
+            if path == "/api/generate":
+                n = int(self.headers.get("Content-Length", 0))
+                try:
+                    body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                slug = slugify(body.get("slug", ""))
+                subject = (body.get("subject") or "").strip()
+                if not slug:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "empty class name"}))
+                existing = JOBS.get(slug)
+                if existing and existing.poll() is None:
+                    return self._send(200, "application/json", json.dumps({"ok": True, "slug": slug, "already": True}))
+                try:
+                    start_generate(slug, subject)
+                except Exception as e:
+                    return self._send(500, "application/json", json.dumps({"ok": False, "slug": slug, "error": str(e)}))
+                return self._send(200, "application/json", json.dumps({"ok": True, "slug": slug}))
+            if path == "/api/export":
+                n = int(self.headers.get("Content-Length", 0))
+                body = {}
+                if n:
+                    try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                    except Exception: body = {}
+                # save-by-default: persist fill + registration points before exporting
+                if isinstance(body.get("meta"), dict):
+                    with open(meta_path, "w") as f: json.dump(body["meta"], f, indent=2)
+                return self._send(200, "application/json", json.dumps(run_export(bool(body.get("no_build")), bool(body.get("dry")))))
             return self._send(404, "text/plain", "not found")
     return Handler
 
