@@ -5,8 +5,8 @@
 	"emoji": "🔮",
 	"abilityNames": {
 		"basic": "Attack",
-		"normal": "Skill",
-		"limit": "Ultimate"
+		"normal": "Arcane Bolt",
+		"limit": "Meteor"
 	},
 	"portrait": {
 		"scale": 1.55,

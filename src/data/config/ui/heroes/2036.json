@@ -5,8 +5,8 @@
 	"emoji": "🔮",
 	"abilityNames": {
 		"basic": "Attack",
-		"normal": "Skill",
-		"limit": "Ultimate"
+		"normal": "Summon Swarm",
+		"limit": "Cataclysm"
 	},
 	"portrait": {
 		"scale": 1.65,

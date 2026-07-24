@@ -16,6 +16,8 @@ from urllib.parse import urlparse, unquote, parse_qs
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../trim
 PIPELINE = os.path.dirname(ROOT_DIR)                            # .../char-art-pipeline
+ENEMY_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "enemy-art-pipeline")   # sibling enemy gen pipeline
+ENEMY_AREAS = {"mossbog", "gloomwood", "boneyard", "emberfall", "frostvault", "dragons-ascent"}
 GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
 RUNCTL  = os.path.join(ROOT_DIR, "trim_run.json")
@@ -151,6 +153,33 @@ def export_status():
     return {"started": bool(p), "running": bool(p) and rc is None,
             "done": bool(p) and rc is not None, "returncode": rc, "result": result, "log": log}
 
+# batch regen (whole enemy area, or a checked subset) — routes to the enemy pipeline
+REGEN_LOG = "/tmp/combatclean_regen.log"
+REGEN = {"proc": None, "label": ""}
+def start_regen(root, category, slugs, overrides=""):
+    slugs = [slugify(s) for s in (slugs or []) if slugify(s)]
+    slug_args = "".join(" " + _q(s) for s in slugs)
+    env = os.environ.copy(); env["FORCE"] = "1"
+    if overrides: env["OVERRIDES"] = overrides   # enemy gen.sh reads OVERRIDES directly
+    if category in ENEMY_AREAS:
+        env["TSV"] = "rosters/%s.tsv" % category      # per-area roster
+        env["OUT"] = os.path.join(root, category)     # the shared tool's area folder
+        cwd = ENEMY_PIPELINE
+    else:                                             # heroes → the hero gen pipeline (classes.tsv)
+        cwd = PIPELINE
+    cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh%s >%s 2>&1" % (_q(cwd), slug_args, _q(REGEN_LOG))]
+    REGEN["proc"] = subprocess.Popen(cmd, env=env, start_new_session=True)
+    REGEN["label"] = category + ((" (%d)" % len(slugs)) if slugs else " (all)")
+    return {"ok": True, "started": True, "label": REGEN["label"]}
+def regen_status():
+    p = REGEN["proc"]; log = ""
+    try:
+        with open(REGEN_LOG, errors="replace") as f: log = f.read()[-4000:]
+    except OSError: pass
+    rc = p.poll() if p else None
+    return {"running": bool(p) and rc is None, "done": bool(p) and rc is not None,
+            "returncode": rc, "label": REGEN.get("label", ""), "log": log}
+
 def gen_status(root, slug):
     png = os.path.join(root, "heroes", slug + ".png")
     logf = os.path.join(PIPELINE, "logs", "gen-%s.log" % slug)
@@ -230,6 +259,8 @@ def build_handler(root, meta_path):
                 return self._send(200, "application/json", json.dumps(gen_status(root, slug)))
             if path == "/api/export-status":
                 return self._send(200, "application/json", json.dumps(export_status()))
+            if path == "/api/regen-status":
+                return self._send(200, "application/json", json.dumps(regen_status()))
             if path.startswith("/img/"):
                 fp = self._safe(path[len("/img/"):])
                 if fp and os.path.isfile(fp):
@@ -279,6 +310,17 @@ def build_handler(root, meta_path):
                 except Exception as e:
                     return self._send(500, "application/json", json.dumps({"ok": False, "slug": slug, "error": str(e)}))
                 return self._send(200, "application/json", json.dumps({"ok": True, "slug": slug}))
+            if path == "/api/regen":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                cat = body.get("category")
+                if not cat:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "category required"}))
+                if REGEN["proc"] and REGEN["proc"].poll() is None:
+                    return self._send(200, "application/json", json.dumps({"ok": False, "error": "a regen is already running"}))
+                return self._send(200, "application/json", json.dumps(start_regen(root, cat, body.get("slugs"), (body.get("overrides") or "").strip())))
             if path == "/api/delete":
                 n = int(self.headers.get("Content-Length", 0))
                 try: body = json.loads(self.rfile.read(n).decode("utf-8"))

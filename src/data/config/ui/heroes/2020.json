@@ -5,8 +5,8 @@
 	"emoji": "🔮",
 	"abilityNames": {
 		"basic": "Attack",
-		"normal": "Skill",
-		"limit": "Ultimate"
+		"normal": "Acid Flask",
+		"limit": "Transmute"
 	},
 	"portrait": {
 		"scale": 1.6,

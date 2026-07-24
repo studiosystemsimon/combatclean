@@ -1,26 +1,22 @@
 {
 	"id": 2023,
 	"displayName": "dark-knight",
-	"rarityKey": "rare",
+	"rarityKey": "mythic",
 	"weaponChainKey": "blade",
 	"baseAtk": 16,
-	"baseHp": 160,
+	"baseHp": 285,
 	"normal": {
 		"chargeMs": 6000,
 		"effect": {
 			"type": "burst",
-			"mult": 2
+			"mult": 2.2
 		}
 	},
 	"limit": {
-		"orders": 5,
+		"orders": 4,
 		"effect": {
 			"type": "burst",
-			"mult": 5
+			"mult": 5.5
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

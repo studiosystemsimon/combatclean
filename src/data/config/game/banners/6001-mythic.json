@@ -5,9 +5,10 @@
 	"cost": 180,
 	"ten": 1620,
 	"weights": {
-		"epic": 82,
-		"legendary": 14.5,
-		"mythic": 3,
+		"rare": 62,
+		"epic": 24,
+		"legendary": 10,
+		"mythic": 3.5,
 		"primal": 0.5
 	},
 	"pity": [

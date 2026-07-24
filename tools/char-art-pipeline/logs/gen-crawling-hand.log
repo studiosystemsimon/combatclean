@@ -1,0 +1,11 @@
+deploying a Claude instance to author the subject for 'crawling-hand'…
+subject: female, charcoal-black hair bleeding to pale bone-white at the tips, ornate layered battle-suit of glossy black lacquered plate and lilac silk with skeletal finger-bone shoulder guards, articulated claw-gauntlet sleeves and buckled thigh wraps, wielding a razor-clawed skeletal gauntlet trailing a reanimated crawling hand on a slender chain-tether, twisting low mid-lunge with one clawed hand thrust forward to unleash a grasping strike
+running gen.sh crawling-hand (FORCE=1)…
+  ..crawling-hand try 1 bg=MISS, retrying
+  ..crawling-hand try 2 bg=MISS, retrying
+  ..crawling-hand try 3 bg=MISS, retrying
+  ..crawling-hand try 4 bg=MISS, retrying
+WARN crawling-hand (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 44  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/crawling-hand.png

@@ -1,26 +1,22 @@
 {
 	"id": 2025,
 	"displayName": "gladiator",
-	"rarityKey": "rare",
+	"rarityKey": "epic",
 	"weaponChainKey": "blade",
-	"baseAtk": 16,
-	"baseHp": 160,
+	"baseAtk": 15,
+	"baseHp": 260,
 	"normal": {
-		"chargeMs": 6000,
+		"chargeMs": 6500,
 		"effect": {
-			"type": "burst",
-			"mult": 2
+			"type": "aoe",
+			"mult": 1.5
 		}
 	},
 	"limit": {
 		"orders": 5,
 		"effect": {
-			"type": "burst",
-			"mult": 5
+			"type": "aoe",
+			"mult": 3.5
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

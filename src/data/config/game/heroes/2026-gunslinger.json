@@ -3,24 +3,20 @@
 	"displayName": "gunslinger",
 	"rarityKey": "rare",
 	"weaponChainKey": "bow",
-	"baseAtk": 16,
-	"baseHp": 160,
+	"baseAtk": 18,
+	"baseHp": 150,
 	"normal": {
-		"chargeMs": 6000,
+		"chargeMs": 5500,
 		"effect": {
 			"type": "burst",
-			"mult": 2
+			"mult": 2.4
 		}
 	},
 	"limit": {
 		"orders": 5,
 		"effect": {
-			"type": "burst",
-			"mult": 5
+			"type": "aoe",
+			"mult": 3
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

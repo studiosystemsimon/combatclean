@@ -1,22 +1,22 @@
 {
 	"id": 2012,
 	"displayName": "dragoon",
-	"rarityKey": "epic",
+	"rarityKey": "mythic",
 	"weaponChainKey": "bow",
 	"baseAtk": 18,
 	"baseHp": 195,
 	"normal": {
-		"chargeMs": 6500,
+		"chargeMs": 5500,
 		"effect": {
 			"type": "burst",
-			"mult": 2.5
+			"mult": 2.4
 		}
 	},
 	"limit": {
-		"orders": 8,
+		"orders": 4,
 		"effect": {
-			"type": "burst",
-			"mult": 7
+			"type": "aoe",
+			"mult": 3
 		}
 	}
 }

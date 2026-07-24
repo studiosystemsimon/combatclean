@@ -1,26 +1,22 @@
 {
 	"id": 2042,
 	"displayName": "obsidia",
-	"rarityKey": "rare",
+	"rarityKey": "primal",
 	"weaponChainKey": "blade",
-	"baseAtk": 16,
-	"baseHp": 160,
+	"baseAtk": 19,
+	"baseHp": 290,
 	"normal": {
-		"chargeMs": 6000,
+		"chargeMs": 5500,
 		"effect": {
-			"type": "burst",
-			"mult": 2
+			"type": "aoe",
+			"mult": 2.6
 		}
 	},
 	"limit": {
-		"orders": 5,
+		"orders": 4,
 		"effect": {
-			"type": "burst",
-			"mult": 5
+			"type": "aoe",
+			"mult": 6.5
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

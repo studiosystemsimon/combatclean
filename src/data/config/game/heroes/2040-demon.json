@@ -1,26 +1,22 @@
 {
 	"id": 2040,
 	"displayName": "demon",
-	"rarityKey": "rare",
+	"rarityKey": "mythic",
 	"weaponChainKey": "blade",
-	"baseAtk": 16,
-	"baseHp": 160,
+	"baseAtk": 18,
+	"baseHp": 265,
 	"normal": {
 		"chargeMs": 6000,
 		"effect": {
-			"type": "burst",
-			"mult": 2
+			"type": "aoe",
+			"mult": 2.2
 		}
 	},
 	"limit": {
-		"orders": 5,
+		"orders": 4,
 		"effect": {
-			"type": "burst",
-			"mult": 5
+			"type": "aoe",
+			"mult": 5.5
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

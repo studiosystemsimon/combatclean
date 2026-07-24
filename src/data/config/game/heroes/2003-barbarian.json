@@ -6,17 +6,17 @@
 	"baseAtk": 12,
 	"baseHp": 247.5,
 	"normal": {
-		"chargeMs": 7000,
+		"chargeMs": 6500,
 		"effect": {
 			"type": "aoe",
-			"mult": 1.6
+			"mult": 1.5
 		}
 	},
 	"limit": {
 		"orders": 5,
 		"effect": {
 			"type": "aoe",
-			"mult": 3
+			"mult": 3.5
 		}
 	}
 }

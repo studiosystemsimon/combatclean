@@ -1,26 +1,22 @@
 {
 	"id": 2027,
 	"displayName": "inquisitor",
-	"rarityKey": "rare",
+	"rarityKey": "legendary",
 	"weaponChainKey": "magic",
-	"baseAtk": 16,
-	"baseHp": 160,
+	"baseAtk": 20,
+	"baseHp": 162,
 	"normal": {
-		"chargeMs": 6000,
+		"chargeMs": 6500,
 		"effect": {
-			"type": "burst",
-			"mult": 2
+			"type": "aoe",
+			"mult": 1.8
 		}
 	},
 	"limit": {
 		"orders": 5,
 		"effect": {
-			"type": "burst",
-			"mult": 5
+			"type": "aoe",
+			"mult": 4
 		}
-	},
-	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
 	}
 }

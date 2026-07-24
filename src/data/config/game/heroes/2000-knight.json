@@ -9,14 +9,14 @@
 		"chargeMs": 6000,
 		"effect": {
 			"type": "burst",
-			"mult": 2
+			"mult": 2.2
 		}
 	},
 	"limit": {
 		"orders": 5,
 		"effect": {
 			"type": "burst",
-			"mult": 5
+			"mult": 5.5
 		}
 	}
 }

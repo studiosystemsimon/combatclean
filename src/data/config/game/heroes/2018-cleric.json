@@ -6,17 +6,17 @@
 	"baseAtk": 12,
 	"baseHp": 187.5,
 	"normal": {
-		"chargeMs": 5500,
+		"chargeMs": 6000,
 		"effect": {
 			"type": "heal",
 			"frac": 0.12
 		}
 	},
 	"limit": {
-		"orders": 6,
+		"orders": 5,
 		"effect": {
 			"type": "heal",
-			"frac": 0.45
+			"frac": 0.35
 		}
 	}
 }
