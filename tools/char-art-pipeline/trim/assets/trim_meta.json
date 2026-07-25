@@ -1510,6 +1510,30 @@
       "combat": {
         "scale": 1.35
       }
+    },
+    "blade/blade-1.png": {
+      "pockets": []
+    },
+    "blade/blade-2.png": {
+      "pockets": []
+    },
+    "blade/blade-3.png": {
+      "pockets": []
+    },
+    "blade/blade-4.png": {
+      "pockets": []
+    },
+    "blade/blade-5.png": {
+      "pockets": []
+    },
+    "blade/blade-6.png": {
+      "pockets": []
+    },
+    "blade/blade-7.png": {
+      "pockets": []
+    },
+    "blade/blade-8.png": {
+      "pockets": []
     }
   }
 }
