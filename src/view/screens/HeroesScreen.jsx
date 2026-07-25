@@ -350,7 +350,7 @@ export default function HeroesScreen() {
           onPointerDown={(e) => onTilePointerDown(e, id)}
           onClick={() => {
             if (performance.now() - dragEnd.current < HS.dragClickSuppressMs) return; // this click trailed a drag
-            active ? closePop() : openPop(id);
+            actions.setHeroMenu(id); // open the full-screen hero menu (replaces the old side popup)
           }}
         >
           <span className="hs-prism" />

@@ -98,6 +98,9 @@ export const STRINGS = {
     level: 'Level',
     boss: 'BOSS',
     next: 'NEXT',
+    areaComplete: 'AREA COMPLETE',
+    areaContinue: 'CONTINUE',
+    unlocked: 'unlocked!', // suffix after a newly-unlocked generator name in the AREA COMPLETE popup
     // ── Intros ──
     lvAbbr: 'LV',
     introLevel: 'LEVEL',

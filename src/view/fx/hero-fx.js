@@ -184,3 +184,74 @@ export function fxHeroFuse(tileEl, count, color, onCommit) {
     particleBurst(tx, ty, true);
   }, landMs);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FULL-SCREEN HERO MENU VFX — same primitives (particleBurst/floatText/burstInto/
+// tween/maxedOut), targeting the menu's OWN nodes (passed in). Distinct from the
+// roster-tile fx above only in WHICH elements they play on. Portal floats/particles
+// are body-level (render fine over the overlay). No fx-engine dependency → safe with
+// FxLayer unmounted (which it is while the menu is open).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A one-shot, UNCLIPPED fixed host centred on (cx,cy) for the hero starburst.
+function menuHostAt(cx, cy, w, h) {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;left:${cx - w / 2}px;top:${cy - h / 2}px;width:${w}px;height:${h}px;pointer-events:none;z-index:9998`;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1300); return el;
+}
+
+// Hero level-up: `nodes` = { hero, lv, pow, hp, atk, def } DOM refs; before/after = stat snapshots.
+// Each +delta rises UP from its real value node; every value counts up in place.
+export function fxMenuHeroLevelUp(nodes, before, after, cap) {
+  const heroEl = nodes.hero; if (!heroEl) return;
+  const levels = after.lv - before.lv, multi = levels > 1;
+  heroEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${multi ? 1.12 : 1.09})`, offset: 0.3 }, { transform: 'scale(.99)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: multi ? 620 : 520, easing: 'cubic-bezier(.2,1.4,.3,1)' });
+  const c = centerOf(heroEl);
+  burstInto(menuHostAt(c.x, c.y, 260, 300));
+  particleBurst(c.x, c.y, multi);
+  tween(nodes.lv, before.lv, after.lv, multi ? 900 : 500);
+  tween(nodes.pow, before.pow, after.pow, multi ? 900 : 720);
+  tween(nodes.hp, before.hp, after.hp, multi ? 900 : 720);
+  tween(nodes.atk, before.atk, after.atk, multi ? 900 : 720);
+  tween(nodes.def, before.def, after.def, multi ? 900 : 720);
+  const rise = (node, d, cls, delay) => { if (!node || d <= 0) return; const p = centerOf(node); floatText(p.x, p.y, '+' + d, 'stat ' + cls, delay); };
+  const dp = after.pow - before.pow, dh = after.hp - before.hp, da = after.atk - before.atk, dd = after.def - before.def;
+  if (!multi) {
+    floatText(c.x, c.y - 4, 'LEVEL UP!', 'hd', 0);
+    rise(nodes.pow, dp, 'pwr', 210); rise(nodes.hp, dh, 'hp', 330); rise(nodes.atk, da, 'atk', 450); rise(nodes.def, dd, 'def', 570);
+    if (after.lv >= cap) setTimeout(() => maxedOut(heroEl), 320);
+  } else {
+    const st = Math.max(55, Math.min(150, Math.round(900 / levels)));
+    for (let k = 0; k < levels; k++) { floatText(c.x + (Math.random() * 22 - 11), c.y, 'LEVEL UP', 'lvup', k * st); if (k % 3 === 0) particleBurst(c.x, c.y, false); }
+    const aft = levels * st + 150;
+    rise(nodes.pow, dp, 'pwr', aft); rise(nodes.hp, dh, 'hp', aft + 120); rise(nodes.atk, da, 'atk', aft + 240); rise(nodes.def, dd, 'def', aft + 360);
+    if (after.lv >= cap) setTimeout(() => maxedOut(heroEl), aft + 120);
+  }
+}
+
+// Gear level-up burst: starburst MASKED inside the gear tile (fxHost → clipped .gfx) + gold
+// particles + "LEVEL UP" (both escape via the body portal). Call once per levelled tile.
+export function fxMenuGearBurst(gearEl) {
+  if (!gearEl) return;
+  gearEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.2,1.4,.3,1)' });
+  burstInto(fxHost(gearEl));
+  const c = centerOf(gearEl); particleBurst(c.x, c.y, false);
+  floatText(c.x, c.y - 6, 'LEVEL UP', 'lvup', 0);
+}
+// Power count-up on the menu's power node + a single "+N PWR" float rising from it.
+export function fxMenuPow(powNode, fromPow, toPow) {
+  if (!powNode) return;
+  tween(powNode, fromPow, toPow, 640);
+  const d = toPow - fromPow;
+  if (d > 0) { const c = centerOf(powNode); floatText(c.x, c.y, '+' + d + ' PWR', 'stat pwr', 120); }
+}
+
+// Equip a specific item: swap pop on the gear tile + power count-up.
+export function fxMenuEquip(gearEl, powNode, fromPow, toPow) {
+  if (gearEl) {
+    gearEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(.7) rotate(-8deg)', offset: 0.3 }, { transform: 'scale(1.18) rotate(5deg)', offset: 0.72 }, { transform: 'scale(1)' }], { duration: 460, easing: 'cubic-bezier(.2,1.25,.3,1)' });
+    const flash = document.createElement('div'); flash.className = 'lvfx-flash'; fxHost(gearEl).appendChild(flash);
+    flash.animate([{ opacity: 0 }, { opacity: 0.95, offset: 0.45 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' }).onfinish = () => flash.remove();
+  }
+  if (powNode) setTimeout(() => tween(powNode, fromPow, toPow, 520), 200);
+}

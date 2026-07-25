@@ -19,6 +19,12 @@ import { ANIM } from '../data/config.js';
 const AB = ANIM.autobattler;
 const nextIsBoss = (level) => isBossLevel(level + 1);
 
+// Combat sprite base heights — MUST mirror asset_tool.html's applyChipImg `baseH` (the 1:1 trim-tool
+// contract): the in-combat sprite renders at baseH × cooked combat.scale, bottom-anchored on the
+// baseline, width auto with NO clamp. This is a locked render contract with the tool, not a tunable.
+const COMBAT_BASE_H = 54;        // enemy
+const COMBAT_BASE_H_BOSS = 108;  // boss (2×)
+
 // Ambient embers — presentation constants in _anim (no runtime randomness so it stays a
 // pure render). Each entry {l:left%, d:delay s, dur:duration s, s:size px}; a handful of
 // always-on animating DOM nodes spread across the width read as ambient life cheaply.
@@ -32,7 +38,7 @@ function LevelTrack({ level }) {
     const lv = start + i;
     const boss = isBossLevel(lv);
     const cls = ['ldot', boss && 'boss', lv < level && 'past', lv === level && 'current'].filter(Boolean).join(' ');
-    dots.push(<span key={lv} className={cls} title={`Level ${lv}${boss ? ' (Boss)' : ''}`} />);
+    dots.push(<span key={lv} className={cls} title={`Level ${lv}${boss ? ' (Boss)' : ''}`}>{lv === level ? <b>{lv}</b> : null}</span>);
   }
   return (
     <div className="level-track">
@@ -86,12 +92,12 @@ function EnemyChip({ e, focused, onFocus, art, scale = 1, gone, conceal, lv, onD
       onAnimationEnd={(ev) => { if (ev.animationName === 'enemyDecay') onDecayEnd(e.uid); }}
     >
       <span className="lv-badge"><s>{STRINGS.combat.lvAbbr}</s>{lv}</span>
-      {/* SIZE = the authored combat.scale (CSS `scale` on the chip-art box, matching the combat-editor);
-          composes with the sway animation. POSITION = the img's registration-point anchor below. */}
-      <div className="chip-art" style={scale !== 1 ? { scale: String(scale) } : undefined}>
-        {/* Regular enemies stand on their authored registration point (anchor), like heroes. Bosses
-            are hand-positioned by the boss-mode CSS transform, so they skip the inline anchor. */}
-        <Art a={art} className="chip-emoji" style={boss ? undefined : anchorStyle(art)} />
+      {/* Rendered 1:1 with the trim tool's combat lineup (asset_tool.html applyChipImg): the sprite
+          HEIGHT is baseH × cooked combat.scale (54 enemy / 108 boss), width auto with NO clamp,
+          bottom-anchored on the baseline, then translated by its registration-point anchor. The size
+          lives in the img height (NOT a box scale) so it matches the tool exactly for every enemy/boss. */}
+      <div className="chip-art">
+        <Art a={art} className="chip-emoji" style={{ ...(anchorStyle(art) || {}), height: `${(boss ? COMBAT_BASE_H_BOSS : COMBAT_BASE_H) * scale}px` }} />
       </div>
       <HpBar frac={e.hp / e.maxHp} kind="enemy" />
       {conceal && <span className="conceal-q" aria-hidden="true">?</span>}
@@ -202,9 +208,8 @@ export default function Autobattler() {
           above the cinematic bg but stays behind the fighters (rows are z:1-3). */}
       <div className="bg biome-tint" />
 
+      <LevelTrack level={battle.level} />
       <div className="battle-top">
-        <div className="battle-level-main">{STRINGS.combat.level} <b>{battle.level}</b><span className="battle-zone">{STRINGS.zones[zone.nameKey]}</span></div>
-        <LevelTrack level={battle.level} />
         <div className="battle-right">
           {showButton && (
             <button
@@ -216,6 +221,7 @@ export default function Autobattler() {
             </button>
           )}
         </div>
+        <div className="zone-name">{STRINGS.zones[zone.nameKey]}</div>
       </div>
 
       <div className="arena">
@@ -266,6 +272,26 @@ export default function Autobattler() {
       {battle.status === 'won' && (
         <div className="win-banner">
           <span className="win-word">{STRINGS.combat.complete}</span>
+        </div>
+      )}
+      {/* AREA COMPLETE gate — the game is stopped (status 'areaComplete', no auto-timer) until the
+          player accepts; then the next area is entered. `zone` is still the just-cleared area (level
+          hasn't advanced yet). Any generator unlocks earned by clearing this area are announced here. */}
+      {battle.status === 'areaComplete' && (
+        <div className="area-complete" role="dialog" aria-label={STRINGS.combat.areaComplete}>
+          <div className="ac-card">
+            <div className="ac-title">{STRINGS.combat.areaComplete}</div>
+            <div className="ac-zone">{zone.name}</div>
+            {state.pendingArea && state.pendingArea.unlocked && state.pendingArea.unlocked.length ? (
+              <div className="ac-unlocks">
+                {state.pendingArea.unlocked.map((g) => {
+                  const a = resolve(`gen.${g}`);
+                  return <div key={g} className="ac-unlock"><span className="ac-uic">{a.emoji}</span> {a.label} {STRINGS.combat.unlocked}</div>;
+                })}
+              </div>
+            ) : null}
+            <button type="button" className="ac-accept" onClick={actions.acceptAreaComplete}>{STRINGS.combat.areaContinue}</button>
+          </div>
         </div>
       )}
     </section>

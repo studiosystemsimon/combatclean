@@ -16,6 +16,7 @@ export const zZoneConfig = zConfig
     crystalRarityKey: stringConfigRef('rarities', 'key').describe('Which ascension-crystal tier drops here (→ rarities.key).'),
     orderRarity: configRecord('gearRarities', 'key', z.number()).describe('Order reward-rarity weights (map keys → gearRarities).'),
     itemConfigIds: z.array(configRef('gearPieces')).describe('Zone unique gear pieces in the chest pool (→ gearPieces).'),
+    unlocksGeneratorKeys: z.array(stringConfigRef('generators', 'key')).default([]).describe('Generators UNLOCKED when this area is FIRST completed (→ generators.key). Empty = none. Systemic: any number of generators per zone; the unlocked set drives board placement + order eligibility.'),
     // Biome colour tint (from/to/accent) is presentation → the UI zone entry, not here.
   })
   .strict();

@@ -23,9 +23,11 @@ export const heroStats = (hero: string, char: Character | null, ordersCompleted:
   const orderMul = 1 + C.BATTLE.orderPowerBonus * ordersCompleted;
   const atkMul = 1 + C.HERO_LEVEL.atkPerLevel * (level - 1);
   const hpMul = 1 + C.HERO_LEVEL.hpPerLevel * (level - 1);
+  const defMul = 1 + C.HERO_LEVEL.defPerLevel * (level - 1);
   return {
     atk: Math.max(1, Math.round((def.baseAtk * atkMul * rarMul + gearPow * C.HERO_COMBAT.gearAtkWeight) * orderMul)),
     maxHp: Math.max(1, Math.round((def.baseHp * hpMul * rarMul + gearPow * C.HERO_COMBAT.gearHpWeight) * orderMul)),
+    def: Math.max(0, Math.round((def.baseDef * defMul * rarMul + gearPow * C.HERO_COMBAT.gearDefWeight) * orderMul)),
   };
 };
 

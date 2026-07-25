@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import marksmanEndpoint from './src/marksman/endpoint.mjs';
 import { audioRoutes } from './src/marksman/features/audio/server.mjs';
+import { configEditorEndpoint } from './src/config-editor/endpoint.mjs';
 
 // The data-driven engine wiring (@bishop/*):
 //  - virtual:game-config    ← the merged, validated logical config + singletons + UI + visual registries.
@@ -138,6 +139,8 @@ export default defineConfig(({ mode }) => ({
       },
     }),
     marksmanEndpoint({ features: marksmanAudioEnabled() ? [audioRoutes] : [] }),
+    // Dev-only config editor endpoint (config-editor.html). Reuses the real schemas + validateMerged.
+    configEditorEndpoint({ gameDir: GAME_DIR, uiDir: UI_DIR, visualDir: VISUAL_DIR, assetsRoot: ASSETS_ROOT, categories: CATEGORIES, uiSchema: zUIConfig, visualSchema: zVisualConfig }),
   ],
   server: {
     port: 5274,

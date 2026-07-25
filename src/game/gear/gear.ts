@@ -122,6 +122,10 @@ export const slotCandidates = (gearMap: GearMap, heroId: string, slot: string) =
   const cur = equippedInSlot(gearMap, heroId, slot);
   return Object.values(gearMap).filter((g) => g.slot === slot && (g.equippedTo === null || g.equippedTo === heroId) && (!cur || g.id !== cur.id)).sort((a, b) => gearPower(b) - gearPower(a));
 };
+// Items of this slot currently worn by OTHER heroes — offered AFTER the free pool. equipItem moves
+// them off the other hero on equip; the view gates that behind a confirm dialog.
+export const otherHeroSlotItems = (gearMap: GearMap, heroId: string, slot: string) =>
+  Object.values(gearMap).filter((g) => g.slot === slot && g.equippedTo && g.equippedTo !== heroId).sort((a, b) => gearPower(b) - gearPower(a));
 export const equipItem = (gearMap: GearMap, id: string, heroId: string): GearMap => {
   const g = gearMap[id];
   if (!g) return gearMap;

@@ -18,6 +18,8 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../trim
 PIPELINE = os.path.dirname(ROOT_DIR)                            # .../char-art-pipeline
 ENEMY_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "enemy-art-pipeline")   # sibling enemy gen pipeline
 ENEMY_AREAS = {"mossbog", "gloomwood", "boneyard", "emberfall", "frostvault", "dragons-ascent"}
+MERGE_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "merge-icon-pipeline")  # sibling merge-icon gen pipeline
+MERGE_CATS = {"magic", "blade", "range"}
 GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
 RUNCTL  = os.path.join(ROOT_DIR, "trim_run.json")
@@ -165,6 +167,10 @@ def start_regen(root, category, slugs, overrides=""):
         env["TSV"] = "rosters/%s.tsv" % category      # per-area roster
         env["OUT"] = os.path.join(root, category)     # the shared tool's area folder
         cwd = ENEMY_PIPELINE
+    elif category in MERGE_CATS:
+        env["TSV"] = "rosters/%s.tsv" % category      # per-chain roster (magic/blade/range)
+        env["OUT"] = os.path.join(root, category)     # the shared tool's chain folder
+        cwd = MERGE_PIPELINE
     else:                                             # heroes → the hero gen pipeline (classes.tsv)
         cwd = PIPELINE
     cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh%s >%s 2>&1" % (_q(cwd), slug_args, _q(REGEN_LOG))]

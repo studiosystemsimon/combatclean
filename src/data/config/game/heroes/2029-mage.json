@@ -5,6 +5,7 @@
 	"weaponChainKey": "magic",
 	"baseAtk": 21,
 	"baseHp": 150,
+	"baseDef": 8,
 	"normal": {
 		"chargeMs": 6500,
 		"effect": {

@@ -1,6 +1,7 @@
 // === actions — the reducer action-type map (ported from MergeCombat controller/actions.js) ===
 export const A = {
   SET_SCREEN: 'SET_SCREEN',
+  SET_HERO_MENU: 'SET_HERO_MENU',
   SET_BATTLE_LEVEL: 'SET_BATTLE_LEVEL',
   COLLECT_AFK: 'COLLECT_AFK',
   RESUME_AFK: 'RESUME_AFK',
@@ -21,6 +22,7 @@ export const A = {
   RESOLVE_CHEST: 'RESOLVE_CHEST',
   START_COMBAT: 'START_COMBAT',
   CHALLENGE_NEXT: 'CHALLENGE_NEXT',
+  ACCEPT_AREA_COMPLETE: 'ACCEPT_AREA_COMPLETE',
   SWAP_HEROES: 'SWAP_HEROES',
   SUMMON: 'SUMMON',
   ASCEND_HERO: 'ASCEND_HERO',

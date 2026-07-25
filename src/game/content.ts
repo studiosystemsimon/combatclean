@@ -60,7 +60,7 @@ export function createContent(bundle: GameConfigBundle) {
 
   // ── heroes ──
   const HEROES = Object.fromEntries((b.heroes ?? []).map((h: Row) => [h.displayName, {
-    id: h.displayName, rarity: h.rarityKey, weapon: h.weaponChainKey, baseAtk: h.baseAtk, baseHp: h.baseHp,
+    id: h.displayName, rarity: h.rarityKey, weapon: h.weaponChainKey, baseAtk: h.baseAtk, baseHp: h.baseHp, baseDef: h.baseDef,
     normal: h.normal, limit: h.limit,
   }]));
 
@@ -75,6 +75,7 @@ export function createContent(bundle: GameConfigBundle) {
     bossId: sid(enemyIdToSlug, z.bossConfigId), accompliceId: sid(enemyIdToSlug, z.accompliceConfigId),
     crystal: z.crystalRarityKey, orderRarity: z.orderRarity,
     items: (z.itemConfigIds ?? []).map((id: number) => sid(pieceIdToSlug, id)),
+    unlocksGenerators: (z.unlocksGeneratorKeys ?? []) as string[], // generator keys unlocked on first clearing this area
   }));
 
   // ── banners (ordered by id; pools mapped id→slug) ──
@@ -103,6 +104,8 @@ export function createContent(bundle: GameConfigBundle) {
     // derived: fresh-crystal wallet (all rarities zero) + the starter hero roster + well-known refs
     EMPTY_CRYSTALS: Object.fromEntries(HERO_RARITY_ORDER.map((k: string) => [k, 0])) as Record<string, number>,
     STARTER_HEROES: [heroIdToSlug[(b.refs || {}).starterHeroConfigId]].filter(Boolean) as string[],
+    STARTING_GENERATORS: ((b.board?.startLayout?.startingGeneratorKeys ?? []) as string[]), // generators unlocked at boot; grows as areas are cleared
+
     REFS: (b.refs || {}) as Record<string, number>,
     // UI registry (presentation) — so view-side barrels can re-combine logical + name/colour into the
     // shape the view reads (single source: the registries; NOT a parallel data copy).

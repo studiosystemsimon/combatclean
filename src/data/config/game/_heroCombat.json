@@ -1,6 +1,7 @@
 {
 	"gearAtkWeight": 1,
 	"gearHpWeight": 4.5,
+	"gearDefWeight": 0.5,
 	"powerAtkWeight": 2,
 	"powerHpDivisor": 5
 }

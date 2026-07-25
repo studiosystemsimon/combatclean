@@ -4,7 +4,8 @@
 		"xpBase": 50,
 		"xpGrowth": 1.35,
 		"atkPerLevel": 0.06,
-		"hpPerLevel": 0.06
+		"hpPerLevel": 0.06,
+		"defPerLevel": 0.06
 	},
 	"heroUpgrade": {
 		"ascendLevelCapBonus": 2,

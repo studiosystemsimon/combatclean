@@ -28,16 +28,20 @@ export const rerollRarity = (cur: string, rng: Rng): string => {
   return rollWeighted(w, rng);
 };
 
-export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, forcedRarity: string | null = null): Order => {
+// `eligibleChains` restricts which chains an order may request — the caller passes the chains whose
+// generator is currently UNLOCKED, so no order asks for an item the player can't yet produce (e.g. no
+// magic orders until the magic generator is unlocked). Defaults to the full order-chain list.
+export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null): Order => {
+  const chains = eligibleChains.length ? eligibleChains : C.ORDER_CHAINS;
   const rarity = forcedRarity || rollWeighted(weights, rng);
   const r = rng();
   const n = r < C.ORDER_CONFIG.itemCount.one ? 1 : r < C.ORDER_CONFIG.itemCount.two ? 2 : C.ORDER_CONFIG.itemCount.max;
   const [dlo, dhi] = C.ORDER_DOMINANT_TIER[rarity];
   const items: OrderItem[] = [];
-  const c0 = pick(C.ORDER_CHAINS, rng);
+  const c0 = pick(chains, rng);
   items.push({ chain: c0, level: Math.min(randInt(dlo, dhi, rng), C.CHAINS[c0].tiers - 1) });
   for (let i = 1; i < n; i++) {
-    const c = pick(C.ORDER_CHAINS, rng);
+    const c = pick(chains, rng);
     items.push({ chain: c, level: randInt(0, Math.min(C.ORDER_CONFIG.fillerMaxLevel, C.CHAINS[c].tiers - 1), rng) });
   }
   return { id, items, difficulty: tileTotal(items), rarity };

@@ -20,6 +20,7 @@ export const zHeroConfig = zConfig
     weaponChainKey: stringConfigRef('chains', 'key').describe('Weapon/merge chain this hero wields (→ chains.key); picks the trail colour.'),
     baseAtk: z.number().positive().describe('Base attack at level 1, rarity floor.'),
     baseHp: z.number().positive().describe('Base HP at level 1, rarity floor (includes the folded HP scale).'),
+    baseDef: z.number().positive().describe('Base defense at level 1, rarity floor.'),
     normal: z.object({
       chargeMs: z.number().describe('Milliseconds of combat to auto-charge the normal ability.'),
       effect: zEffect,

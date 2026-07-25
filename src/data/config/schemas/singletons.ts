@@ -51,7 +51,8 @@ export const zBoardConfig = z.object({
     bestHintMs: num, waveIdleMs: num, waveGapMs: num, waveGapRandMs: num, pollMs: num, waveColStaggerMs: num,
   }).strict().describe('Idle best-merge hint + ambient wave-bob timing.'),
   startLayout: z.object({
-    generators: z.array(z.object({ generator: stringConfigRef('generators', 'key'), cell: int }).strict()).describe('Generators placed on a fresh board: each generator (→ generators.key) at its board cell.'),
+    startingGeneratorKeys: z.array(stringConfigRef('generators', 'key')).default([]).describe('Generators UNLOCKED at boot (→ generators.key). Others in `generators` are placed only once their unlocking area is cleared. Drives board placement + order eligibility.'),
+    generators: z.array(z.object({ generator: stringConfigRef('generators', 'key'), cell: int }).strict()).describe('Board cell layout for EVERY generator (→ generators.key); only currently-unlocked ones are placed.'),
     seedItems: z.array(z.object({
       chain: stringConfigRef('chains', 'key'), level: int, cell: int, locked: z.boolean().optional(),
     }).strict()),
@@ -81,7 +82,7 @@ export const zBattleConfig = z.object({
 
 // heroCombat — the exposed hero stat-formula weights (gear→stat, power metric).
 export const zHeroCombatConfig = z.object({
-  gearAtkWeight: num, gearHpWeight: num, powerAtkWeight: num, powerHpDivisor: num,
+  gearAtkWeight: num, gearHpWeight: num, gearDefWeight: num, powerAtkWeight: num, powerHpDivisor: num,
 }).strict();
 
 // levelScaling — enemy HP/ATK growth + boss + accomplice knobs (all exposed).
@@ -112,7 +113,7 @@ export const zUniqueDropConfig = z.object({ chance: num }).strict();
 
 // progression — hero leveling + ascension economy.
 export const zProgressionConfig = z.object({
-  heroLevel: z.object({ maxLevel: int, xpBase: num, xpGrowth: num, atkPerLevel: num, hpPerLevel: num }).strict(),
+  heroLevel: z.object({ maxLevel: int, xpBase: num, xpGrowth: num, atkPerLevel: num, hpPerLevel: num, defPerLevel: num }).strict(),
   heroUpgrade: z.object({ ascendLevelCapBonus: int, ascendCrystalCost: int, maxAscensions: int }).strict(),
   abilityMulPerLevel: num.describe('+ability effect strength per ascension level.'),
 }).strict();

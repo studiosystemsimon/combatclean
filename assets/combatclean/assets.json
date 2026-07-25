@@ -277,6 +277,10 @@
 			"type": "image",
 			"file": "ui/energy.png"
 		},
+		"ui.hero-bg": {
+			"type": "image",
+			"file": "ui/hero-bg.png"
+		},
 		"ui.coin": {
 			"type": "image",
 			"file": "ui/coin.png"

@@ -24,6 +24,27 @@ type Act = any;
 
 const squadOf = (order: string[]) => order.slice(0, C.BOARD.selectedSlots);
 
+// Order eligibility: which order-chains are requestable given the currently-unlocked generators. A
+// chain is eligible only if a generator that produces it is unlocked (so no magic orders pre-unlock).
+const orderChainsFor = (unlocked: string[]): string[] =>
+  C.ORDER_CHAINS.filter((chain: string) => unlocked.some((g) => C.GENERATORS[g] && C.GENERATORS[g].chain === chain));
+
+// Backfill the unlocked-generator set from furthestLevel (for saves without an explicit set): start
+// with STARTING_GENERATORS + every generator whose unlocking area has already been fully cleared.
+const deriveUnlockedGenerators = (furthestLevel: number): string[] => {
+  const set = new Set<string>(C.STARTING_GENERATORS);
+  C.ZONES.forEach((z: any, i: number) => {
+    if (furthestLevel > (i + 1) * C.ZONE_LEN) (z.unlocksGenerators || []).forEach((g: string) => set.add(g));
+  });
+  return [...set];
+};
+
+// Place a generator on the board at its configured start-layout cell (used at boot + on area unlock).
+const placeGenerator = (board: any, genKey: string, id: number): any => {
+  const g = C.BOARD.startLayout.generators.find((x: any) => x.generator === genKey);
+  return g ? Board.withCell(board, g.cell, Board.makeGenerator(id, genKey)) : board;
+};
+
 const battleStatsFor = (heroesMap: any, gearMap: any, ordersCompleted: number) => (cid: string) => {
   const char = heroesMap[cid];
   return { ...heroStats(char.hero, char, ordersCompleted, Gear.heroGearPower(gearMap, cid)), abilityMul: heroAbilityMul(char), hero: char.hero };
@@ -71,13 +92,18 @@ export const initState = (now: number, saved: any = null): S => {
   for (const hero of C.STARTER_HEROES) { const c = `c${cid++}`; heroes[c] = newCharacter(c, hero, C.HEROES[hero].rarity); order.push(c); }
   const gear: any = {}; const ordersCompleted = 0;
 
+  // Only UNLOCKED generators are placed at boot; e.g. the magic generator appears only once the fens is beaten.
+  const unlockedGenerators = C.STARTING_GENERATORS;
   let board = Board.emptyBoard();
-  C.BOARD.startLayout.generators.forEach((g: { generator: string; cell: number }) => { board = Board.withCell(board, g.cell, Board.makeGenerator(id++, g.generator)); });
+  C.BOARD.startLayout.generators
+    .filter((g: { generator: string; cell: number }) => unlockedGenerators.includes(g.generator))
+    .forEach((g: { generator: string; cell: number }) => { board = Board.withCell(board, g.cell, Board.makeGenerator(id++, g.generator)); });
   C.BOARD.startLayout.seedItems.forEach((s: any) => { board = Board.withCell(board, s.cell, Board.makeItem(id++, s.chain, s.level, s.locked)); });
 
   const startWeights = Map.zoneForLevel(C.BATTLE.startLevel).orderRarity;
+  const eligibleChains = orderChainsFor(unlockedGenerators);
   const orders: any[] = [];
-  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights));
+  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains));
 
   const built = buildBattle(heroes, gear, order, ordersCompleted, C.BATTLE.startLevel, id, 'intro');
   id = built.nextId;
@@ -92,6 +118,9 @@ export const initState = (now: number, saved: any = null): S => {
     nextId: id, nextCid: cid, fx: [], lastPull: null,
     furthestLevel: C.BATTLE.startLevel, pendingAfk: null,
     crystals: { ...C.EMPTY_CRYSTALS },
+    menuHeroId: null, // UI-only: cid whose full-screen hero menu is open (unpersisted)
+    unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
+    pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
   };
   if (!saved) return fresh;
 
@@ -105,13 +134,18 @@ export const initState = (now: number, saved: any = null): S => {
   const showAdd = add.ms >= C.AFK.minReportMs && (add.coins || add.heroXp || add.gearXp);
   const pendingAfk = prior ? (showAdd ? sumAfk(prior, add) : prior) : (showAdd ? add : null);
   const crystals = { ...C.EMPTY_CRYSTALS, ...(saved.crystals || {}) };
-  return { ...merged, battle: rebuilt.battle, nextId: rebuilt.nextId, furthestLevel, pendingAfk, crystals };
+  // Restore the unlocked-generator set; backfill from furthestLevel for saves predating this field.
+  const loadedUnlocked = (saved.unlockedGenerators && saved.unlockedGenerators.length) ? saved.unlockedGenerators : deriveUnlockedGenerators(furthestLevel);
+  return { ...merged, battle: rebuilt.battle, nextId: rebuilt.nextId, furthestLevel, pendingAfk, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
 };
 
 export const reducer = (state: S, action: Act): S => {
   switch (action.type) {
     case A.SET_SCREEN:
       return { ...state, screen: action.screen };
+    case A.SET_HERO_MENU:
+      // Opening clears the fx queue so no stale combat VFX flashes when FxLayer remounts on close.
+      return { ...state, menuHeroId: action.heroId, fx: action.heroId ? [] : state.fx };
     case A.SET_BATTLE_LEVEL: {
       const target = Math.max(1, Math.min(Math.floor(action.level) || 1, state.furthestLevel));
       if (target === state.battle.level) return state;
@@ -214,7 +248,8 @@ export const reducer = (state: S, action: Act): S => {
       if (!slot) return state;
       let id = state.nextId;
       const weights = Map.zoneForLevel(state.battle.level).orderRarity;
-      const orders = state.orders.map((o: any) => (o.id === action.orderId ? Orders.rollOrder(id++, rng, weights) : o));
+      const eligibleChains = orderChainsFor(state.unlockedGenerators);
+      const orders = state.orders.map((o: any) => (o.id === action.orderId ? Orders.rollOrder(id++, rng, weights, eligibleChains) : o));
       return { ...state, orders, nextId: id };
     }
     case A.EMPTY_ORDER: {
@@ -230,7 +265,7 @@ export const reducer = (state: S, action: Act): S => {
       if (!order || order.pending || order.fulfilling) return state;
       const weights = Map.zoneForLevel(state.battle.level).orderRarity;
       const next = Orders.rerollRarity(order.rarity, rng);
-      const rolled = Orders.rollOrder(order.id, rng, weights, next);
+      const rolled = Orders.rollOrder(order.id, rng, weights, orderChainsFor(state.unlockedGenerators), next);
       const orders = state.orders.map((o: any) => (o.id === order.id ? rolled : o));
       return { ...state, orders };
     }
@@ -279,12 +314,38 @@ export const reducer = (state: S, action: Act): S => {
       // A recovering win no longer loops the same level — it advances to the next level
       // (a real, losable attempt again) via the normal path below, which clears recovering.
       const nextLevel = state.battle.level + 1;
+      // AREA COMPLETE: beating the last level of a zone crosses into the next area. On the FIRST clear
+      // (new furthest progress) STOP and gate — grant this area's generator unlocks, then wait for the
+      // player to accept the popup (A.ACCEPT_AREA_COMPLETE) before the next area is entered.
+      const fromZone = Map.zoneIndexForLevel(state.battle.level);
+      const toZone = Map.zoneIndexForLevel(nextLevel);
+      if (toZone > fromZone && nextLevel > state.furthestLevel) {
+        const zone = C.ZONES[fromZone];
+        const newlyUnlocked = ((zone && zone.unlocksGenerators) || []).filter((g: string) => !state.unlockedGenerators.includes(g));
+        const unlockedGenerators = newlyUnlocked.length ? [...state.unlockedGenerators, ...newlyUnlocked] : state.unlockedGenerators;
+        return {
+          ...state, unlockedGenerators,
+          furthestLevel: Math.max(state.furthestLevel, nextLevel),
+          battle: { ...state.battle, status: 'areaComplete', recovering: false },
+          pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked },
+        };
+      }
       if (Map.isBossLevel(nextLevel)) {
         const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
         return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'gate', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, nextLevel) };
       }
       const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
       return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, nextLevel) };
+    }
+    case A.ACCEPT_AREA_COMPLETE: {
+      if (state.battle.status !== 'areaComplete' || !state.pendingArea) return state;
+      const { nextLevel, unlocked } = state.pendingArea;
+      let id = state.nextId;
+      // Place any newly-unlocked generators on the board at their configured start-layout cell.
+      let board = state.board;
+      for (const gk of unlocked) board = placeGenerator(board, gk, id++);
+      const { wave, heroes, id: id2 } = respawn(state, nextLevel, id);
+      return { ...state, board, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, pendingArea: null };
     }
     case A.RESOLVE_LOSS: {
       if (state.battle.status !== 'lost') return state;

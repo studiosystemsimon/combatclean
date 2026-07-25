@@ -20,6 +20,7 @@ export function pickPersistable(state: any) {
     ordersCompleted: state.ordersCompleted, orders: state.orders, pity: state.pity,
     nextId: state.nextId, nextCid: state.nextCid, battle: { level: state.battle.level },
     furthestLevel: state.furthestLevel, crystals: state.crystals, pendingAfk: state.pendingAfk,
+    unlockedGenerators: state.unlockedGenerators,
     lastSeen: state.now,
   };
 }
@@ -47,6 +48,7 @@ export function toBlob(slice: any): ClientAccountView {
     resources, unlocks: [], items,
     profile: {
       order: slice.order, ordersCompleted: slice.ordersCompleted, pity: slice.pity,
+      unlockedGenerators: slice.unlockedGenerators,
       furthestLevel: slice.furthestLevel, pendingAfk: slice.pendingAfk, screen: slice.screen,
       nextId: slice.nextId, nextCid: slice.nextCid, lastSeen: slice.lastSeen,
       energyLastRegenAt: slice.energy.lastRegenAt,
@@ -73,6 +75,7 @@ export function fromBlob(blob: ClientAccountView): any {
     heroes, gear, order: p.order || [], ordersCompleted: p.ordersCompleted || 0, orders: f.merge?.orders || [],
     pity: p.pity || {}, nextId: p.nextId || 1, nextCid: p.nextCid || 1, battle: { level: f.battle?.level || 1 },
     furthestLevel: p.furthestLevel || 1, crystals, pendingAfk: p.pendingAfk || null, lastSeen: p.lastSeen,
+    unlockedGenerators: p.unlockedGenerators, // may be undefined for old saves → initState backfills from furthestLevel
   };
 }
 

@@ -19,6 +19,14 @@
   #tabbar .tab.on { background:#33383f; color:#e7e9ec; box-shadow:inset 0 -2px 0 var(--accent); }
   #catTabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   #tabbar .cat-tab { padding:6px 12px; }
+  /* second-level subcategory strip */
+  #subTabs { display:flex; gap:7px; flex-wrap:wrap; align-items:center; padding:7px 12px;
+             background:#202226; border-bottom:1px solid var(--line); flex:0 0 auto; }
+  .subtab { background:transparent; border:1px solid var(--line); color:#9aa0a6; padding:5px 13px; border-radius:14px;
+            cursor:pointer; font-size:12px; font-weight:600; }
+  .subtab:hover { background:#2a2d32; color:#cbd0d6; }
+  .subtab.on { background:var(--accent); border-color:var(--accent); color:#08131f; }
+  .subtab .sn { opacity:.6; margin-left:4px; font-weight:400; }
   #tabbar .exp { margin-left:auto; background:#2f5137; border:1px solid #3c6b48; color:#bff0cf;
                  font-weight:600; padding:7px 14px; border-radius:7px; cursor:pointer; font-size:13px; }
   #tabbar .exp:hover { background:#356045; } #tabbar .exp:disabled { opacity:.5; cursor:default; }
@@ -207,6 +215,9 @@
     <span class="brand">char-art trim tool</span>
   </div>
 
+  <!-- second-level: subcategories of the selected group (e.g. enemy areas) -->
+  <div id="subTabs" style="display:none"></div>
+
   <!-- TRIM VIEW -->
   <div id="trimView" class="view on">
     <div id="list"><h2>Assets</h2></div>
@@ -334,15 +345,29 @@
   <div id="status"></div>
 
 <script>
-const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1, tab:'trim',
+const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1, tab:'trim', group:'',
   regMode:false, checked:new Set(), bosses:{}, presets:{},
   treatment:{ large:[{color:'#ffffff',width:12}], small:[{color:'#ffffff',width:12}] } };
 const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent']);
+const MERGE_CATS = new Set(['magic','blade','range']);
+const MERGE_ORDER = ['magic','blade','range'];
+function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
   emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
 const COMBAT_BG = 'linear-gradient(rgb(255, 36, 255), rgb(11, 15, 255))';   // combat mockup backdrop
 function labelFor(slug){ return String(slug||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(String(name).replace(/\.png$/i,''))); }
+
+/* ---------- two-level grouping: top = Hero/Enemy/…, second = subcategories ---------- */
+const AREA_ORDER = ['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent','enemies'];
+function groupOf(cat){ if(cat==='heroes') return 'Hero'; if(ENEMY_AREAS.has(cat)||cat==='enemies') return 'Enemy'; return labelFor(cat); }
+function countOf(cat){ const c=state.cats.find(x=>x.name===cat); return c?c.images.length:0; }
+function groupsMap(){ const m={}; for(const c of state.cats){ const g=groupOf(c.name); (m[g] ||= []).push(c.name); }
+  if(m['Enemy']) m['Enemy'].sort((a,b)=>{ const ia=AREA_ORDER.indexOf(a), ib=AREA_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+  return m; }
+function catsInGroup(g){ return groupsMap()[g] || []; }
+function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy'];
+  return [...pref.filter(n=>names.includes(n)), ...names.filter(n=>!pref.includes(n)).sort()]; }
 
 /* ---------- shared list building ---------- */
 function buildFromList(list) {
@@ -369,7 +394,8 @@ async function boot() {
   renderPresets();
   renderTabs();
   renderList();
-  if (state.items.length) select(0);
+  if (state.items.length){ const g=groupOrder()[0]; state.group=g; const first=catsInGroup(g)[0];
+    if(first) openCategory(first); else select(0); }
 }
 async function refreshList(preserveKey) {
   const keep = preserveKey || (state.items[state.idx] && state.items[state.idx].key);
@@ -381,23 +407,49 @@ async function refreshList(preserveKey) {
   else if (state.items.length) select(Math.min(state.idx, state.items.length - 1));   // deleted current → pick a neighbour
 }
 
-/* ---------- category tabs (top bar) ---------- */
+/* ---------- top tabs = GROUPS (Hero / Enemy / …); second row = subcategories ---------- */
 function renderTabs(){
   const box = document.getElementById('catTabs'); if(!box) return;
   box.innerHTML='';
-  for (const c of state.cats){
+  const groups = groupOrder();
+  if (state.tab==='trim' && (!state.group || !groups.includes(state.group))) state.group = groupOf(state.openCat||'');
+  for (const g of groups){
     const b=document.createElement('button');
-    b.className='tab cat-tab'+(state.tab==='trim' && c.name===state.openCat ? ' on' : '');
-    b.dataset.cat=c.name;
-    b.innerHTML=`${labelFor(c.name)} <span class="n" style="color:#5b6169">${c.images.length}</span>`;
-    b.onclick=()=>selectCategoryTab(c.name);
+    b.className='tab cat-tab'+(state.tab==='trim' && g===state.group ? ' on' : '');
+    b.textContent=g;
+    b.onclick=()=>selectGroup(g);
     box.appendChild(b);
   }
   const gen=document.querySelector('#tabbar .tab[data-tab="gen"]');
   if(gen) gen.classList.toggle('on', state.tab==='gen');
+  renderSubTabs();
+}
+function renderSubTabs(){
+  const bar=document.getElementById('subTabs'); if(!bar) return;
+  const cats = state.tab==='trim' ? catsInGroup(state.group) : [];
+  const show = cats.length>1;                 // heroes (single subset) → no second row
+  bar.style.display = show ? 'flex' : 'none';
+  bar.innerHTML='';
+  if(!show) return;
+  for(const c of cats){
+    const b=document.createElement('button');
+    b.className='subtab'+(c===state.openCat?' on':'');
+    b.innerHTML=`${labelFor(c)} <span class="sn">${countOf(c)}</span>`;
+    b.onclick=()=>selectCategoryTab(c);
+    bar.appendChild(b);
+  }
+}
+function selectGroup(g){
+  state.tab='trim'; state.group=g;
+  document.getElementById('trimView').style.display='flex';
+  document.getElementById('genView').style.display='none';
+  const cats=catsInGroup(g);
+  const target = cats.includes(state.openCat) ? state.openCat : cats[0];   // keep current if still in-group, else first subset
+  if(target) openCategory(target); else { renderTabs(); renderList(); }
+  setTimeout(fitZoom,30);
 }
 function selectCategoryTab(name){
-  state.tab='trim';
+  state.tab='trim'; state.group=groupOf(name);
   document.getElementById('trimView').style.display='flex';
   document.getElementById('genView').style.display='none';
   openCategory(name);                        // sets openCat + selects first + renders list/tabs
@@ -451,7 +503,7 @@ function updateSegLabels(){                         // 4th seg button = Tile (he
   const tb=document.querySelector('#viewSeg button[data-v="tile"]'); if(tb) tb.textContent = enemy?'Combat':'Tile';
   const ab=document.querySelector('#viewSeg button[data-v="all"]'); if(ab) ab.style.display = enemy?'none':'';  // gallery = heroes only
 }
-function select(i){ state.idx=i; state.openCat=cur().cat; document.getElementById('curName').textContent=cur().key;
+function select(i){ state.idx=i; state.openCat=cur().cat; state.group=groupOf(cur().cat); document.getElementById('curName').textContent=cur().key;
   updateSegLabels();
   if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery();
   else if(state.view==='combat') renderCombat(); else loadStage();

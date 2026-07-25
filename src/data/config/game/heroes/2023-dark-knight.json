@@ -5,6 +5,7 @@
 	"weaponChainKey": "blade",
 	"baseAtk": 16,
 	"baseHp": 285,
+	"baseDef": 16,
 	"normal": {
 		"chargeMs": 6000,
 		"effect": {

@@ -19,14 +19,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     try { return initState(Date.now(), loadSaved()); } catch { return initState(Date.now()); }
   });
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   useEffect(() => {
-    const id = setInterval(() => dispatch({ type: A.REGEN_TICK, now: Date.now() }), C.RUNTIME.regenTickMs);
+    const id = setInterval(() => { if (stateRef.current.menuHeroId) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
     return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (stateRef.current.menuHeroId) return; // paused while the full-screen hero menu is open (no render underneath)
       dispatch({ type: A.BATTLE_TICK, dt: C.BATTLE.tickMs });
     }, C.BATTLE.tickMs);
     return () => clearInterval(id);
@@ -42,8 +46,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return undefined;
   }, [state.battle.status]);
 
-  const stateRef = useRef(state);
-  stateRef.current = state;
   const lastSaveRef = useRef(0);
   useEffect(() => {
     const t = Date.now();
@@ -63,6 +65,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const actions = useMemo(() => ({
     setScreen: (screen: string) => dispatch({ type: A.SET_SCREEN, screen }),
+    setHeroMenu: (heroId: string | null) => dispatch({ type: A.SET_HERO_MENU, heroId }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
     collectAfk: () => dispatch({ type: A.COLLECT_AFK }),
     tapGenerator: (index: number) => dispatch({ type: A.TAP_GENERATOR, index, now: Date.now() }),
@@ -74,6 +77,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     tapLimit: (heroId: string) => dispatch({ type: A.TAP_LIMIT, heroId }),
     setFocusTarget: (uid: number) => dispatch({ type: A.SET_FOCUS_TARGET, uid }),
     challengeNext: () => dispatch({ type: A.CHALLENGE_NEXT }),
+    acceptAreaComplete: () => dispatch({ type: A.ACCEPT_AREA_COMPLETE }),
     startCombat: () => dispatch({ type: A.START_COMBAT }),
     pauseChest: () => dispatch({ type: A.PAUSE_CHEST }),
     resolveChest: () => dispatch({ type: A.RESOLVE_CHEST }),

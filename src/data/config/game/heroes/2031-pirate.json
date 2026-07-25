@@ -5,6 +5,7 @@
 	"weaponChainKey": "bow",
 	"baseAtk": 18,
 	"baseHp": 152,
+	"baseDef": 8,
 	"normal": {
 		"chargeMs": 5500,
 		"effect": {
