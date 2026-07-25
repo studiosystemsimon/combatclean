@@ -3,18 +3,36 @@
 	"chainKey": "magic",
 	"weapon": "magic",
 	"energyCost": 1,
-	"drops": [
-		{
-			"level": 0,
-			"weight": 72
-		},
-		{
-			"level": 1,
-			"weight": 22
-		},
-		{
-			"level": 2,
-			"weight": 6
-		}
+	"dropsByLevel": [
+		[
+			{ "level": 0, "weight": 72 },
+			{ "level": 1, "weight": 22 },
+			{ "level": 2, "weight": 6 }
+		],
+		[
+			{ "level": 0, "weight": 50 },
+			{ "level": 1, "weight": 30 },
+			{ "level": 2, "weight": 15 },
+			{ "level": 3, "weight": 5 }
+		],
+		[
+			{ "level": 1, "weight": 45 },
+			{ "level": 2, "weight": 32 },
+			{ "level": 3, "weight": 18 },
+			{ "level": 4, "weight": 5 }
+		],
+		[
+			{ "level": 2, "weight": 42 },
+			{ "level": 3, "weight": 33 },
+			{ "level": 4, "weight": 20 },
+			{ "level": 5, "weight": 5 }
+		],
+		[
+			{ "level": 3, "weight": 40 },
+			{ "level": 4, "weight": 32 },
+			{ "level": 5, "weight": 20 },
+			{ "level": 6, "weight": 6 },
+			{ "level": 7, "weight": 2 }
+		]
 	]
 }

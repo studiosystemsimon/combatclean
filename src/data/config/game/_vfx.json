@@ -99,7 +99,7 @@
 		"heroAttack": { "stagger": 140, "trailDelay": 160, "trailSpeed": 1500, "trailR": 3, "impactCrit": 6, "impactNormal": 4, "splashDelay": 300, "deathDustDelay": 150, "critShake": 2.5 },
 		"deathDust": { "r": 6 },
 		"limitPulse": { "brightness": 2.2, "scale": 1.12, "offset": 0.35, "ms": 380 },
-		"limitCharge": { "stagger": 90, "trail": { "width": 3, "length": 8, "speed": 1150, "r": 3 }, "impactR": 5 },
+		"limitCharge": { "stagger": 90, "trail": { "width": 3, "length": 14, "speed": 1150, "r": 3 }, "impactR": 5, "sparkleCount": 6, "sparklePower": 0.7 },
 		"orderChest": { "fallbackY": 0.3, "trailSpeed": 1300, "impactR": 7, "tileStagger": 70, "baseDelay": 340 },
 		"waveClear": { "impactR": 12, "shake": 3 },
 		"levelComplete": { "originY": 0.42, "confettiX": 0.5, "confettiY": 0.34, "confettiCount": 90, "flashOpacity": 0.22, "flashMs": 220 },

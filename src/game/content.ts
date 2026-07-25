@@ -38,7 +38,7 @@ export function createContent(bundle: GameConfigBundle) {
 
   // ── chains / generators ──
   const CHAINS = Object.fromEntries((b.chains ?? []).map((c: Row) => [c.key, { id: c.key, tiers: c.tiers }]));
-  const GENERATORS = Object.fromEntries((b.generators ?? []).map((g: Row) => [g.key, { id: g.key, chain: g.chainKey, weapon: g.weapon, energyCost: g.energyCost, drops: g.drops }]));
+  const GENERATORS = Object.fromEntries((b.generators ?? []).map((g: Row) => [g.key, { id: g.key, chain: g.chainKey, weapon: g.weapon, energyCost: g.energyCost, dropsByLevel: g.dropsByLevel }]));
 
   // ── rarities (hero) ──
   const rar: Row[] = (b.rarities ?? []).slice().sort((a: Row, z: Row) => a.order - z.order);

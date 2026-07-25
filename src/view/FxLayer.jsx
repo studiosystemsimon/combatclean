@@ -198,12 +198,16 @@ function pulseLimitBar(bar) {
   );
 }
 function handleLimitCharge(ev) {
-  // Source: the fulfilled order card (still in the DOM, marked fulfilling). Fallback
-  // to the top of the combat panel if the card can't be found.
-  const card = ev.orderId != null
-    ? Array.from(document.querySelectorAll('.orders .order')).find((c) => c.getAttribute('data-order-id') === String(ev.orderId))
-    : null;
-  let from = card ? fx.elCenter(card) : null;
+  // Source: for an ORDER, the fulfilled order card (still in the DOM, marked fulfilling); for a
+  // MERGE, the merged board cell — so the limit energy visibly flies FROM where the merge happened.
+  // Fallback to the combat-panel centre if neither anchor resolves.
+  let from = null;
+  if (ev.orderId != null) {
+    const card = Array.from(document.querySelectorAll('.orders .order')).find((c) => c.getAttribute('data-order-id') === String(ev.orderId));
+    from = card ? fx.elCenter(card) : null;
+  } else if (ev.cell != null) {
+    from = fx.cellCenter(ev.cell);
+  }
   if (!from) {
     const b = document.querySelector('.battle');
     const c = b ? fx.elCenter(b) : null;
@@ -218,7 +222,12 @@ function handleLimitCharge(ev) {
     setTimeout(() => {
       fx.spawnTrail(from, to, {
         color: CC.limitFlash, tail: CC.limitBreak, ...CB.limitCharge.trail,
-        onHit: (x, y) => { fx.impact(x, y, { tier: 'normal', color: CC.limitFlash, r: CB.limitCharge.impactR }); pulseLimitBar(bar); },
+        onHit: (x, y) => {
+          fx.impact(x, y, { tier: 'normal', color: CC.limitFlash, r: CB.limitCharge.impactR });
+          // A small sparkle pop as the energy lands on the bar (reuses the confetti particle system).
+          fx.confetti(x, y, { colors: [CC.limitFlash, CC.limitBreak], count: CB.limitCharge.sparkleCount, power: CB.limitCharge.sparklePower });
+          pulseLimitBar(bar);
+        },
       });
     }, i * CB.limitCharge.stagger); // stagger so each hero's mote reads distinctly
   });

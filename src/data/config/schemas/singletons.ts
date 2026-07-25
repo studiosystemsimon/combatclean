@@ -304,7 +304,7 @@ export const zVfxConfig = z.object({
     heroAttack: z.object({ stagger: num, trailDelay: num, trailSpeed: num, trailR: num, impactCrit: num, impactNormal: num, splashDelay: num, deathDustDelay: num, critShake: num }).strict(),
     deathDust: z.object({ r: num }).strict(),
     limitPulse: z.object({ brightness: num, scale: num, offset: num, ms: num }).strict(),
-    limitCharge: z.object({ stagger: num, trail: zTrail, impactR: num }).strict(),
+    limitCharge: z.object({ stagger: num, trail: zTrail, impactR: num, sparkleCount: int, sparklePower: num }).strict(),
     orderChest: z.object({ fallbackY: num, trailSpeed: num, impactR: num, tileStagger: num, baseDelay: num }).strict(),
     waveClear: z.object({ impactR: num, shake: num }).strict(),
     levelComplete: z.object({ originY: num, confettiX: num, confettiY: num, confettiCount: int, flashOpacity: num, flashMs: num }).strict(),

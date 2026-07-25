@@ -1,3 +1,3 @@
 # merge — merge rules — can two cells combine, resulting tier, max level
 
-**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config).
+**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config). Two merge predicates, same shape: `canMerge` (ITEMS — same chain + level, below `maxLevel(chain)`) and `canMergeGenerator` (GENERATORS — same `genId` + level, below `maxGenLevel(genId)`). Both yield a level+1 result of the same kind; the reducer's `MOVE_OR_MERGE` applies whichever matches, and the view's `pair()` is their union so generators drag-merge exactly like items.

@@ -1,3 +1,3 @@
-# generator — generator tiles — tap cost, weighted drops onto the board
+# generator — generator tiles — tap cost, per-level weighted drops onto the board
 
-**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config).
+**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config). Generators are LEVELLED (1-based): drops come from `C.GENERATORS[genId].dropsByLevel[level-1]`, and `maxGenLevel(genId)` = that array's length. `rollDropLevel(genId, level, rng)` selects the level's table (undefined/legacy level → treated as 1). Levelling itself (two same-level generators merging up) lives in the `merge` module + reducer, not here.

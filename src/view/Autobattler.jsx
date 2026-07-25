@@ -6,7 +6,7 @@
 // on top of the existing battle simulation + fx pipeline.
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
-import { heroAsset, resolve, anchorStyle } from './assets.js';
+import { heroAsset, resolve, anchorStyle, generatorAsset } from './assets.js';
 import Art from './Art.jsx';
 import HpBar from './HpBar.jsx';
 import { normalChargeFrac, limitChargeFrac, isLimitReady } from '../model/battle.js';
@@ -14,6 +14,7 @@ import { isBossLevel } from '../model/map.js';
 import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: biome/keyArt/nameKey), not the logical sim selector
 import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
 import { HEROES } from '../data/heroes.js'; // per-hero combatScale (in-combat avatar size) + name/asset
+import { GENERATORS } from '../data/generators.js'; // generator display name for the area-unlock card
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
 import { fmtK as fmt } from './fmt.js';
@@ -315,11 +316,11 @@ export default function Autobattler() {
             {state.pendingArea && state.pendingArea.unlocked && state.pendingArea.unlocked.length ? (
               <div className="ac-unlocks">
                 {state.pendingArea.unlocked.map((g) => {
-                  const a = resolve(`gen.${g}`);
+                  const a = generatorAsset(g); // awarded at level 1 → gen.<g>.1
                   return (
                     <div key={g} className="ac-unlock">
                       <span className="ac-uart"><Art a={a} className="ac-uimg" /></span>
-                      <span className="ac-utext"><b className="ac-uname">{a.label}</b><span className="ac-usub">{STRINGS.combat.unlocked}</span></span>
+                      <span className="ac-utext"><b className="ac-uname">{GENERATORS[g]?.name ?? g}</b><span className="ac-usub">{STRINGS.combat.unlocked}</span></span>
                     </div>
                   );
                 })}

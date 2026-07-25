@@ -9,7 +9,7 @@
 	"defaultAttackMs": 900,
 	"defaultLimitOrders": 5,
 	"limitEnergy": {
-		"mergeMinTier": 4,
+		"mergeMinTier": 3,
 		"mergeBase": 0.34,
 		"mergePerTier": 0.22,
 		"mergeTargets": [1, 3, 99, 99, 99],

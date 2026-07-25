@@ -15,12 +15,26 @@ const cfg = summary();
 const DATA_SOURCE = `cfg#${cfg.schemaVersion} · ${cfg.categories.length} categories · ${cfg.entries} entries · ${assetRegistry.size} assets`;
 console.log(`[boot] Combat Clean — ${DATA_SOURCE} — categories: ${cfg.categories.join(', ')}`);
 
+// Fade out the pre-bootstrap loading screen (#app-loader, inlined in index.html). Held for a
+// minimum on-screen time so a fast boot doesn't flash it. See index.html's inline loader block.
+function hideLoader(minMs: number): void {
+  const el = document.getElementById('app-loader');
+  if (!el) return;
+  const start = (window as unknown as { __ldStart?: number }).__ldStart ?? 0;
+  const wait = Math.max(0, minMs - (performance.now() - start));
+  window.setTimeout(() => {
+    el.classList.add('done');
+    window.setTimeout(() => el.remove(), 600);
+  }, wait);
+}
+
 // Dev-only device-frame preview (src/preview) — iframes a fresh load in a phone bezel. Never ships.
 // When it's active the OUTER (top-window) copy of the game must NOT render: the preview iframes a
 // fresh load of this page and THAT inner copy (window.self !== window.top) is the real, visible game.
 const usingPreview = import.meta.env.DEV && window.self === window.top;
 if (usingPreview) {
   import('./preview').then(({ mountDevicePreview }) => mountDevicePreview());
+  hideLoader(0); // the preview bezel is the visible surface here — drop the loader at once
 }
 // Dev-only Marksman overlay (src/marksman) — mounts inside the preview iframe (self !== top). Never ships.
 if (import.meta.env.DEV && window.self !== window.top) {
@@ -39,4 +53,6 @@ if (!usingPreview) {
       <Game />
     </GameProvider>,
   );
+  // Reveal the game once React has painted its first frame; hold the loader ~900ms minimum.
+  requestAnimationFrame(() => requestAnimationFrame(() => hideLoader(900)));
 }

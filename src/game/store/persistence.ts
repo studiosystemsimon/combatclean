@@ -8,7 +8,9 @@ import { createLocalStore } from '../../account/store.ts';
 import { RES, ACCOUNT_DOC } from '../../account/account.ts';
 import { C } from '../content.ts';
 
-const SCHEMA_VERSION = 1;
+// v2: generators became levelled board tiles (BoardGenerator gained `level`); bumping discards
+// pre-v2 saves whose board could hold level-less generators or stale pre-migration chains.
+const SCHEMA_VERSION = 2;
 const store = createLocalStore();
 
 // The persistable runtime slice (exactly MergeCombat's pickPersistable set).

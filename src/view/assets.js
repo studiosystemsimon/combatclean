@@ -64,5 +64,6 @@ export function portraitStyle(p) {
 }
 export const assetFor = resolve;
 export const itemAsset = (chain, level) => resolve(`${chain}.${level}`);
-export const generatorAsset = (genId) => resolve(GENERATORS[genId].asset);
+// Generators are levelled (1-based) — art keyed `gen.<genId>.<level>`, mirroring item ladders.
+export const generatorAsset = (genId, level = 1) => resolve(`gen.${genId}.${level}`);
 export const heroAsset = (id) => resolve(HEROES[id].asset);

@@ -80,15 +80,17 @@
 			{ "chain": "blade", "level": 0, "cell": 8 },
 			{ "chain": "range", "level": 0, "cell": 9 },
 			{ "chain": "range", "level": 0, "cell": 10 },
-			{ "chain": "blade", "level": 1, "locked": true, "cell": 21 },
-			{ "chain": "range", "level": 1, "locked": true, "cell": 23 },
-			{ "chain": "blade", "level": 0, "locked": true, "cell": 25 },
+			{ "chain": "range", "level": 3, "locked": true, "cell": 13 },
+			{ "chain": "magic", "level": 2, "locked": true, "cell": 19 },
+			{ "chain": "magic", "level": 4, "locked": true, "cell": 20 },
+			{ "chain": "magic", "level": 0, "locked": true, "cell": 24 },
+			{ "chain": "magic", "level": 5, "locked": true, "cell": 27 },
 			{ "chain": "blade", "level": 1, "locked": true, "cell": 28 },
-			{ "chain": "blade", "level": 0, "locked": true, "cell": 29 },
-			{ "chain": "range", "level": 0, "locked": true, "cell": 30 },
-			{ "chain": "range", "level": 1, "locked": true, "cell": 31 },
-			{ "chain": "blade", "level": 1, "locked": true, "cell": 32 },
-			{ "chain": "range", "level": 1, "locked": true, "cell": 33 }
+			{ "chain": "range", "level": 2, "locked": true, "cell": 29 },
+			{ "chain": "blade", "level": 4, "locked": true, "cell": 31 },
+			{ "chain": "range", "level": 5, "locked": true, "cell": 32 },
+			{ "chain": "blade", "level": 6, "locked": true, "cell": 33 },
+			{ "chain": "magic", "level": 6, "locked": true, "cell": 34 }
 		]
 	}
 }

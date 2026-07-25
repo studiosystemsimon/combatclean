@@ -14,6 +14,7 @@ function BannerCard({ banner, state, actions }) {
   const canX1 = state.coins >= banner.cost;
   const canX10 = state.coins >= banner.ten;
   const pityState = state.pity[banner.id] || {};
+  const bgImg = banner.bgAsset ? resolve(banner.bgAsset).img : null; // tile-background splash art
 
   const oddsKeys = Object.keys(banner.weights).filter((k) => HERO_RARITY_ORDER.includes(k));
   const odds = oddsKeys.map((k) => {
@@ -33,6 +34,7 @@ function BannerCard({ banner, state, actions }) {
   return (
     <div className={`bcard ${banner.limited ? 'feat' : ''}`} style={{ '--bt': banner.theme + '33', '--bt2': banner.theme2 || banner.theme, '--btline': banner.theme + '88' }}>
       {banner.limited ? <div className="bcard-glow" /> : null}
+      {bgImg ? <div className="bcard-bg" style={{ backgroundImage: `url(${bgImg})` }} /> : null}
       <div className="bcard-wash" />
       <div className="bcard-shine" />
       <div className="bcard-frame" />

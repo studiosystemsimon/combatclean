@@ -16,7 +16,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
 import { BOARD, TIER_PRESENTATION } from '../data/config.js';
-import { canMerge, maxLevel } from '../model/merge.js';
+import { canMerge, canMergeGenerator, maxLevel } from '../model/merge.js';
 import { STRINGS } from '../data/strings.js';
 import { itemAsset, generatorAsset, mergeStyle } from './assets.js';
 import { fx } from './fx/fx-engine.js';
@@ -31,8 +31,9 @@ const rarity = (t) => RARITY[Math.min(t, RARITY.length - 1)];
 const tierName = (t) => TIER_NAME[Math.min(t, TIER_NAME.length - 1)];
 const intensity = (t) => (t >= MG.critTier ? 'crit' : t >= MG.heavyTier ? 'heavy' : 'normal');
 const RM = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Two items are a merge pair iff the model says so (same chain + level, not maxed).
-const pair = (a, b) => canMerge(a, b);
+// Two tiles are a merge pair iff the model says so — items (same chain + level, not maxed) OR
+// generators (same generator + level, below max). Generators merge the same way merge items do.
+const pair = (a, b) => canMerge(a, b) || canMergeGenerator(a, b);
 
 export default function Board() {
   const { state, actions } = useGame();
@@ -77,18 +78,18 @@ export default function Board() {
     const el = document.createElement('div');
     const isGen = cell.kind === 'generator';
     el.className = `mb-tile${isGen ? ' mb-gen' : ''}${cell.locked ? ' mb-locked' : ''}`;
-    const a = isGen ? generatorAsset(cell.genId) : itemAsset(cell.chain, cell.level);
+    const a = isGen ? generatorAsset(cell.genId, cell.level) : itemAsset(cell.chain, cell.level);
     const bob = document.createElement('div'); bob.className = 'mb-bob';
     const inner = document.createElement('div'); inner.className = 'mb-inner';
     if (a && a.img) {
       const im = document.createElement('img'); im.src = a.img; im.className = 'mb-art'; im.draggable = false;
-      if (!isGen) { const ms = mergeStyle(a); if (ms) Object.assign(im.style, ms); } // merge icon: reg→centre + scale + rotation (1:1 with the tile)
+      const ms = mergeStyle(a); if (ms) Object.assign(im.style, ms); // reg→centre + scale + rotation (1:1 with the tile) — items AND generators
       inner.appendChild(im);
     } else {
       const sp = document.createElement('span'); sp.className = 'mb-emoji'; sp.textContent = (a && a.emoji) || '?'; inner.appendChild(sp);
     }
     bob.appendChild(inner); el.appendChild(bob);
-    if (isGen) { const p = document.createElement('span'); p.className = 'mb-plus'; p.textContent = '⚙'; el.appendChild(p); }
+    if (isGen) { const p = document.createElement('span'); p.className = 'mb-plus'; p.textContent = '⚙'; el.appendChild(p); } // generators: art only — no rarity tint
     else {
       el.style.setProperty('--mb-rc', rarity(cell.level));
       el.style.setProperty('--mb-tilt', `${((cell.id * 41) % (2 * BOARD.tiltMaxDeg + 1)) - BOARD.tiltMaxDeg}deg`); // deterministic tilt in [-tiltMaxDeg, +tiltMaxDeg] (41 = hash prime)
@@ -371,7 +372,7 @@ export default function Board() {
       if (over >= 0 && over !== d.from) {
         const o = boardRef.current[over]; const src = boardRef.current[d.from];
         if (o === null) { if (cellEls.current[over]) cellEls.current[over].classList.add('mb-dropok'); }
-        else if (!d.isGen && pair(src, o)) { const rec = tiles.current.get(o.id); if (rec) rec.el.classList.add('mb-hovok'); }
+        else if (pair(src, o)) { const rec = tiles.current.get(o.id); if (rec) rec.el.classList.add('mb-hovok'); } // items AND generators show the merge-target highlight
       }
     };
     const onUp = (e) => {
@@ -380,7 +381,28 @@ export default function Board() {
       const over = cellAt(e.clientX, e.clientY);
       const src = boardRef.current[d.from];
 
-      // generator: a tap (barely moved) dispenses; a drag onto an empty cell relocates it.
+      // Slam the dragged tile into its twin, then commit the merge at contact. Shared verbatim by
+      // merge ITEMS and merge-able GENERATORS — one path, not two.
+      const slamMerge = (o) => {
+        busy.current = true;
+        const gTo = geo.current[over]; const targetRec = tiles.current.get(o.id);
+        if (gTo) { d.el.style.transition = `transform ${MG.slamMs}ms ${MG.slamCurve}`; placeAt(d.el, over); }
+        const dInner = d.el.querySelector('.mb-inner'); if (dInner) dInner.style.transform = `scale(${MG.pushScale})`;
+        if (targetRec && !RM && targetRec.inner.animate) targetRec.inner.animate([{ transform: 'scale(1)' }, { transform: `scaleX(${MG.squashPeak[0]}) scaleY(${MG.squashPeak[1]})`, offset: 0.45 }, { transform: 'scale(1)' }], { duration: MG.squashMs, easing: 'ease-out' });
+        setTimeout(() => {
+          mergeBurst(over, src.level + 1); // VFX punch fires at contact
+          if (src.locked || o.locked) floatLabel(over, STRINGS.board.unlocked, FL.unlockColor, false); // cobweb freed → feedback (items only)
+          pending.current = { type: 'merge', to: over };
+          // Reducer flips → reconcile removes sources + births the result. It ALSO emits a
+          // haptic-only 'merge' fx event (drained by FxLayer → hapticForFx) — the merge
+          // haptic rides the shared fx bus, not a view side-channel.
+          actions.moveOrMerge(d.from, over);
+          setTimeout(() => { busy.current = false; }, MG.safetyReleaseMs); // safety release
+        }, MG.slamMs);
+      };
+
+      // generator: a tap (barely moved) dispenses; a drag onto an empty cell relocates it; a drag onto a
+      // same-generator, same-level twin MERGES it to the next level (same as merge items).
       if (d.isGen) {
         if (!d.moved) {
           d.el.classList.remove('mb-recoil'); void d.el.offsetWidth; d.el.classList.add('mb-recoil');
@@ -391,8 +413,11 @@ export default function Board() {
             setTimeout(() => { if (pending.current && pending.current.type === 'spawn') pending.current = null; }, SP.spawnClearMs); // clear if energy-gated (no reconcile)
           }
           snapBack(d);
-        } else if (over >= 0 && over !== d.from && boardRef.current[over] === null) {
-          actions.moveOrMerge(d.from, over); // reducer relocates the generator → reconcile FLIPs it
+        } else if (over >= 0 && over !== d.from) {
+          const o = boardRef.current[over];
+          if (o === null) actions.moveOrMerge(d.from, over); // relocate → reconcile FLIPs it
+          else if (pair(src, o)) slamMerge(o);               // two same-level generators → next level
+          else { snapBack(d); invalid(over); }
         } else {
           snapBack(d);
         }
@@ -403,26 +428,9 @@ export default function Board() {
       const o = boardRef.current[over];
       if (o === null) { actions.moveOrMerge(d.from, over); return; } // move → reconcile FLIP
       if (o.kind === 'generator') { snapBack(d); invalid(over); return; }
-      if (pair(src, o)) {
-        // MERGE — slam the dragged tile into the twin, then commit at contact.
-        busy.current = true;
-        const gTo = geo.current[over]; const targetRec = tiles.current.get(o.id);
-        if (gTo) { d.el.style.transition = `transform ${MG.slamMs}ms ${MG.slamCurve}`; placeAt(d.el, over); }
-        const dInner = d.el.querySelector('.mb-inner'); if (dInner) dInner.style.transform = `scale(${MG.pushScale})`;
-        if (targetRec && !RM && targetRec.inner.animate) targetRec.inner.animate([{ transform: 'scale(1)' }, { transform: `scaleX(${MG.squashPeak[0]}) scaleY(${MG.squashPeak[1]})`, offset: 0.45 }, { transform: 'scale(1)' }], { duration: MG.squashMs, easing: 'ease-out' });
-        setTimeout(() => {
-          mergeBurst(over, src.level + 1); // VFX punch fires at contact (110ms)
-          if (src.locked || o.locked) floatLabel(over, STRINGS.board.unlocked, FL.unlockColor, false); // cobweb freed → feedback
-          pending.current = { type: 'merge', to: over };
-          // Reducer flips → reconcile removes sources + births result. It ALSO emits a
-          // haptic-only 'merge' fx event (drained by FxLayer → hapticForFx) — the merge
-          // haptic rides the shared fx bus, not a view side-channel.
-          actions.moveOrMerge(d.from, over);
-          setTimeout(() => { busy.current = false; }, MG.safetyReleaseMs); // safety release
-        }, MG.slamMs);
-      } else {
-        actions.moveOrMerge(d.from, over); // swap → reconcile FLIP
-      }
+      if (pair(src, o)) slamMerge(o);                       // MERGE — slam into the twin, commit at contact
+      else if (o.locked) { snapBack(d); invalid(over); }    // cobweb tile: immovable — can't be swapped/displaced
+      else actions.moveOrMerge(d.from, over);               // swap → reconcile FLIP
     };
     const onCancel = () => { const d = drag.current; if (!d) return; drag.current = null; clearDragUI(d); snapBack(d); };
     tilesEl.addEventListener('pointerdown', onDown);

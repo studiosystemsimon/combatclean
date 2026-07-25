@@ -1193,6 +1193,11 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .banners-wrap { display: flex; flex-direction: column; gap: 12px; padding: 0 0 8px; }
 .bcard { position: relative; flex: 0 0 auto; border-radius: 18px; overflow: hidden; isolation: isolate;
   border: 1px solid rgba(255,255,255,.09); background: #12151d; box-shadow: 0 8px 24px rgba(0,0,0,.42); }
+/* Tile-background splash art (behind the theme wash + content). A readability scrim (darker on the
+   left/bottom where the name/odds/buttons sit) keeps text legible while the art shows through on the right. */
+.bcard-bg { position: absolute; inset: 0; z-index: 0; border-radius: 18px; background-size: cover; background-position: center right; }
+.bcard-bg::after { content: ''; position: absolute; inset: 0; border-radius: 18px;
+  background: linear-gradient(90deg, rgba(6,8,18,.86) 26%, rgba(6,8,18,.42) 100%), linear-gradient(180deg, transparent 42%, rgba(6,8,18,.66) 100%); }
 .bcard-wash { position: absolute; inset: 0; z-index: 0;
   background:
     radial-gradient(90% 120% at 0% 0%, var(--bt, rgba(255,158,46,.2)) 0%, transparent 55%),
@@ -1331,7 +1336,8 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 
 /* cobwebbed / locked tiles — freed ONLY by merging that exact tile */
 .mb-tile.mb-locked { cursor: grab; }
-.mb-tile.mb-locked .mb-art { filter: grayscale(0.92) brightness(0.5) contrast(0.9); }
+/* Cobwebbed: muted + dimmed so the web reads, but the item keeps some of its chain colour (not fully grey). */
+.mb-tile.mb-locked .mb-art { filter: grayscale(0.5) brightness(0.72) contrast(0.95); }
 .mb-tile.mb-locked .mb-inner { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14), inset 0 0 20px rgba(0, 0, 0, 0.5); }
 .mb-tile.mb-locked .mb-inner::after { content: '🕸️'; position: absolute; inset: 0; display: grid; place-items: center;
   font-size: 44px; opacity: 0.45; pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }

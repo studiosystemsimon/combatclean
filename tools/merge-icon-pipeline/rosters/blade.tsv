@@ -1,11 +1,10 @@
-# blade merge chain — 8 tiers. THEME: forged steel → FIRE / SOLAR. Large SWORD + matching SHIELD, sword always in front, gentle 3/4, no shadow.
-# Shield shape: round (1-5) → KITE (6-7) → TOWER (8); shield + sword share each tier's material/coloring. Last 3 shift silhouette + colour.
-# Names (ref): 1 Rustbit · 2 Mended Iron · 3 Soldier's Steel · 4 Knight's Gilded · 5 Emberforged · 6 Runeflame · 7 Phoenix King's · 8 Solar Sovereign
-blade-1	a crude rusted iron shortsword crossed in front of a large round wooden shield with an iron rim and rust spots
-blade-2	a mended cool-grey iron sword with a riveted patch, crossed in front of a large round iron shield with rivets and a central boss
+# blade merge chain — 8 tiers. THEME: naked blade → forged steel → FIRE / SOLAR. SWORD alone at tier 1, SWORD + SHIELD from tier 2 up, no shadow.
+# Shield shape: round (2-5) → KITE (6-7) → TOWER (8). 1 Naked Blade · 2 Rustbit · 3 Soldier's Steel · 4 Knight's Gilded · 5 Emberforged · 6 Runeflame · 7 Phoenix King's · 8 Solar Sovereign
+blade-1	a crude rusted iron shortsword, a single bare naked blade with a chipped edge, a plain wooden grip and a small round pommel, NO shield — just the sword alone
+blade-2	a crude rusted iron shortsword crossed in front of a large round wooden shield with an iron rim and rust spots
 blade-3	a bigger polished bright steel sword with a fuller, crossed in front of a large round polished steel shield with a raised boss
 blade-4	a steel sword with gold guard accents and a jewel pommel, crossed in front of a large round steel-and-gold shield with an engraved emblem and a gem
 blade-5	a dark forged sword with molten lava cracks glowing orange inside the blade, crossed in front of a large round dark-iron shield with glowing ember cracks
 blade-6	a flaming runeflame sword wreathed in orange flames with glowing runes, crossed in front of a large dark KITE shield rimmed with fire and etched with glowing runes
 blade-7	a grand phoenix sword with fiery feathered edges and a molten core, crossed in front of a large ornate red-and-gold winged KITE shield bearing a glowing phoenix crest
-blade-8	a radiant golden solar sword with a sun-core, crossed in front of a large golden TOWER shield with a radiant sun emblem and a restrained solar glow
+blade-8	TWO crossed radiant golden holy swords forming an X in front of a large ornate ANGELIC HOLY shield — white-and-gold with feathered angel wings spread behind it and a glowing halo emblem, radiant divine holy light, the ultimate angelic holy blade set

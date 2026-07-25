@@ -11,6 +11,68 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Combat Clean</title>
     <link rel="stylesheet" href="/src/styles/main.css" />
+    <!-- Pre-bootstrap loading screen. Inlined here (not in the bundle) so it paints on the
+         first frame, before /src/main.tsx parses + boots content/config/React. main.tsx fades
+         and removes #app-loader once the app has mounted. -->
+    <style>
+      @font-face {
+        font-family: 'Uniform Loader';
+        src: url('/fonts/Uniform-Bold.ttf') format('truetype');
+        font-weight: 700; font-display: swap;
+      }
+      #app-loader {
+        position: fixed; inset: 0; z-index: 99999; overflow: hidden;
+        background: #07060c; opacity: 1; transition: opacity .55s ease;
+      }
+      #app-loader.done { opacity: 0; pointer-events: none; }
+      #app-loader .ld-art {
+        position: absolute; inset: 0;
+        background: #07060c url('/loading.jpg') center 40% / cover no-repeat;
+        animation: ldZoom 16s ease-in-out infinite alternate;
+      }
+      #app-loader .ld-vig {
+        position: absolute; inset: 0;
+        background: radial-gradient(125% 90% at 50% 36%, transparent 52%, rgba(0,0,0,.6) 100%);
+      }
+      #app-loader .ld-scrim {
+        position: absolute; left: 0; right: 0; bottom: 0; height: 44%;
+        background: linear-gradient(180deg, transparent, rgba(5,4,10,.94) 76%);
+      }
+      #app-loader .ld-foot {
+        position: absolute; left: 0; right: 0;
+        bottom: calc(7% + env(safe-area-inset-bottom, 0px));
+        text-align: center; padding: 0 24px;
+      }
+      #app-loader .ld-title {
+        font-family: 'Uniform Loader', system-ui, sans-serif;
+        font-size: 36px; letter-spacing: 2px; line-height: 1;
+        text-transform: uppercase; color: #ffe6a2;
+        text-shadow: 0 2px 0 #000, 0 0 26px rgba(255,190,60,.55);
+        -webkit-text-stroke: 1px rgba(0,0,0,.55);
+        animation: ldPulse 2.6s ease-in-out infinite;
+      }
+      #app-loader .ld-bar {
+        position: relative; width: min(240px, 62%); height: 6px;
+        margin: 18px auto 11px; border-radius: 99px;
+        background: rgba(255,255,255,.13); overflow: hidden;
+      }
+      #app-loader .ld-bar span {
+        position: absolute; top: 0; bottom: 0; left: -42%; width: 42%; border-radius: 99px;
+        background: linear-gradient(90deg, transparent, #ffd45e, #fff3cc, #ffd45e, transparent);
+        animation: ldSweep 1.15s ease-in-out infinite;
+      }
+      #app-loader .ld-tip {
+        font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: 1.6px;
+        text-transform: uppercase; color: #b9c2d8; opacity: .82;
+      }
+      @keyframes ldZoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+      @keyframes ldSweep { to { left: 100%; } }
+      @keyframes ldPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+      @media (prefers-reduced-motion: reduce) {
+        #app-loader .ld-art, #app-loader .ld-title { animation: none; }
+      }
+    </style>
+    <script>window.__ldStart = performance.now();</script>
   </head>
   <body>
     <!-- #game-frame is the device viewport — full-bleed on every host (touch,

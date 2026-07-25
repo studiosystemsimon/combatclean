@@ -1,3 +1,3 @@
 # board — the merge-board grid: cells, placement, drag/move geometry
 
-**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config).
+**Invariants** — pure functions; reads config via `../content.ts` (`C`); any randomness comes from an injected `rng`. No DOM, no game numbers as literals (all tuning is config). A `BoardGenerator` carries a 1-based `level` (`makeGenerator(id, genId, level = 1)`) — generators are levelled, mergeable board tiles; the level rides the persisted cell object, so no persistence change is needed.

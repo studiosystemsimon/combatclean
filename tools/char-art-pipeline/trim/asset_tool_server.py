@@ -20,6 +20,7 @@ ENEMY_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "enemy-art-pipeline")  
 ENEMY_AREAS = {"mossbog", "gloomwood", "boneyard", "emberfall", "frostvault", "dragons-ascent"}
 MERGE_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "merge-icon-pipeline")  # sibling merge-icon gen pipeline
 MERGE_CATS = {"magic", "blade", "range", "blade-gen", "range-gen", "magic-gen"}
+GAME_ROOT = os.path.dirname(os.path.dirname(PIPELINE))          # repo root (for the post-merge-export build)
 GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
 RUNCTL  = os.path.join(ROOT_DIR, "trim_run.json")
@@ -108,11 +109,18 @@ def delete_character(root, meta_path, cat, name):
 def run_export(no_build, dry=False, category=None):
     """Run export-to-game.mjs via a LOGIN shell (node/npm/git-lfs on PATH). Parses the
     trailing 'RESULT {json}' summary line."""
-    extra = ""
-    if dry: extra += " --dry-run"
-    elif no_build: extra += " --no-build"
-    extra += _cat_flag(category)
-    cmd = ["/bin/zsh", "-lc", "cd %s && exec node export-to-game.mjs%s" % (_q(PIPELINE), extra)]
+    # merge/gen categories route to the sibling merge-icon pipeline (all chains, no per-slug classification).
+    if category in MERGE_CATS:
+        if dry:
+            return {"ok": True, "result": {"refreshed": [], "created": [], "anchored": 0, "errors": []}}
+        build = "" if no_build else " && cd %s && npm run build" % _q(GAME_ROOT)
+        cmd = ["/bin/zsh", "-lc", "cd %s && node export-to-game.mjs%s" % (_q(MERGE_PIPELINE), build)]
+    else:
+        extra = ""
+        if dry: extra += " --dry-run"
+        elif no_build: extra += " --no-build"
+        extra += _cat_flag(category)
+        cmd = ["/bin/zsh", "-lc", "cd %s && exec node export-to-game.mjs%s" % (_q(PIPELINE), extra)]
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         out = (p.stdout or "") + (p.stderr or "")
@@ -135,25 +143,35 @@ def _cat_flag(category):
     c = re.sub(r"[^a-z0-9_-]", "", str(category or "").lower())
     return (" --cat " + c) if c else ""
 def start_export(no_build, category=None):
-    extra = (" --no-build" if no_build else "") + _cat_flag(category)
-    cmd = ["/bin/zsh", "-lc",
-           "cd %s && exec node export-to-game.mjs%s >%s 2>&1" % (_q(PIPELINE), extra, _q(EXPORT_LOG))]
+    # merge/gen categories → sibling merge-icon pipeline (copies art + rewrites assets.json for ALL
+    # chains), then the game build so the asset registry validates + bakes. Others → char-art export.
+    if category in MERGE_CATS:
+        build = "" if no_build else " && cd %s && npm run build" % _q(GAME_ROOT)
+        inner = "cd %s && node export-to-game.mjs%s" % (_q(MERGE_PIPELINE), build)
+    else:
+        extra = (" --no-build" if no_build else "") + _cat_flag(category)
+        inner = "cd %s && node export-to-game.mjs%s" % (_q(PIPELINE), extra)
+    # Wrap the whole chain in a group so the redirect captures EVERY command's output (the export's
+    # RESULT line + the build) — a trailing `>LOG` would otherwise bind only to the last command.
+    cmd = ["/bin/zsh", "-lc", "{ %s ; } >%s 2>&1" % (inner, _q(EXPORT_LOG))]
     EXPORT["proc"] = subprocess.Popen(cmd, start_new_session=True)
 def export_status():
     p = EXPORT["proc"]
-    log = ""
+    full = ""
     try:
-        with open(EXPORT_LOG, errors="replace") as f: log = f.read()[-4000:]
+        with open(EXPORT_LOG, errors="replace") as f: full = f.read()
     except OSError: pass
     result = None
-    for line in reversed(log.strip().splitlines()):
+    # Scan the WHOLE log for the RESULT line — the merge export emits it before the (voluminous)
+    # build output, so a 4000-char tail would miss it. The client still gets a capped `log`.
+    for line in reversed(full.strip().splitlines()):
         if line.startswith("RESULT "):
             try: result = json.loads(line[len("RESULT "):])
             except Exception: pass
             break
     rc = p.poll() if p else None
     return {"started": bool(p), "running": bool(p) and rc is None,
-            "done": bool(p) and rc is not None, "returncode": rc, "result": result, "log": log}
+            "done": bool(p) and rc is not None, "returncode": rc, "result": result, "log": full[-4000:]}
 
 # batch regen (whole enemy area, or a checked subset) — routes to the enemy pipeline
 REGEN_LOG = "/tmp/combatclean_regen.log"

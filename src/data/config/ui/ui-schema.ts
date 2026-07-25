@@ -28,6 +28,7 @@ export const zUIConfig = z
     }).strict().optional().describe('zones: biome colour tint (backdrop gradient + accent).'),
     theme: z.string().optional().describe('banners: primary theme colour.'),
     theme2: z.string().optional().describe('banners: secondary theme colour.'),
+    bgAsset: z.string().optional().describe('banners: asset-registry id for the tile background splash art (never a path).'),
     portrait: z.object({
       scale: z.number().optional(), x: z.number().optional(), y: z.number().optional(),
     }).strict().optional().describe('heroes: portrait framing in the hero tile — scale multiplier + normalized x/y offset (fraction of the tile). Authored by the char-art trim tool.'),

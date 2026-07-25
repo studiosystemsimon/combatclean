@@ -10,7 +10,7 @@ export default function Cell({ index, cell, dragging, over, onPointerDown }) {
       a = itemAsset(cell.chain, cell.level);
       cls += ' cell-item';
     } else if (cell.kind === 'generator') {
-      a = generatorAsset(cell.genId);
+      a = generatorAsset(cell.genId, cell.level);
       cls += ' cell-generator';
     }
   }
@@ -21,9 +21,9 @@ export default function Cell({ index, cell, dragging, over, onPointerDown }) {
     <div className={cls} data-cell-index={index} onPointerDown={cell ? (e) => onPointerDown(e, index) : undefined}>
       {a && (
         <span key={cell.id} className="cell-art">
-          {/* Merge items render 1:1 with the trim tool: reg-point → tile centre + per-icon scale +
-              rotation (mergeStyle). Generators fill the box as before. */}
-          <Art a={a} className="cell-emoji" style={cell.kind === 'item' ? mergeStyle(a) : undefined} />
+          {/* Merge items AND generators render 1:1 with the trim tool: reg-point → tile centre +
+              per-icon scale + rotation (mergeStyle). */}
+          <Art a={a} className="cell-emoji" style={mergeStyle(a)} />
         </span>
       )}
       {cell && cell.kind === 'generator' && <span className="cell-badge">⚡</span>}

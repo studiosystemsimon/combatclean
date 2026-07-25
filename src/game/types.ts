@@ -6,7 +6,7 @@ import type { Signal } from '../core/events/signal.ts';
 
 // ── merge board ──
 export interface BoardItem { id: number; kind: 'item'; chain: string; level: number; locked?: boolean }
-export interface BoardGenerator { id: number; kind: 'generator'; genId: string }
+export interface BoardGenerator { id: number; kind: 'generator'; genId: string; level: number }
 export type BoardCell = BoardItem | BoardGenerator | null;
 
 // ── orders ──

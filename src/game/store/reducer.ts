@@ -181,7 +181,7 @@ export const reducer = (state: S, action: Act): S => {
       if (!Energy.canSpend(energyNow, cost)) return state;
       const empty = Board.firstEmptyIndex(state.board);
       if (empty < 0) return state;
-      const level = Gen.rollDropLevel(cell.genId, rng);
+      const level = Gen.rollDropLevel(cell.genId, cell.level, rng);
       const chain = Gen.generatorChain(cell.genId);
       let id = state.nextId;
       const board = Board.withCell(state.board, empty, Board.makeItem(id++, chain, level));
@@ -195,9 +195,18 @@ export const reducer = (state: S, action: Act): S => {
       const a = state.board[from]; if (!a) return state;
       const b = state.board[to];
       if (a.kind === 'generator') {
-        if (b !== null) return state;
-        let gb = Board.withCell(state.board, to, a); gb = Board.withCell(gb, from, null);
-        return { ...state, board: gb };
+        if (b === null) { // relocate to an empty cell
+          let gb = Board.withCell(state.board, to, a); gb = Board.withCell(gb, from, null);
+          return { ...state, board: gb };
+        }
+        if (Merge.canMergeGenerator(a, b)) { // two same-generator, same-level tiles → next level
+          let id = state.nextId;
+          const merged = Board.makeGenerator(id++, a.genId, a.level + 1);
+          let board = Board.withCell(state.board, to, merged); board = Board.withCell(board, from, null);
+          const fx = [...state.fx, { id: id++, type: 'merge', tier: a.level + 1 }]; // shared merge burst + haptic
+          return { ...state, board, nextId: id, fx };
+        }
+        return state; // occupied by a non-mergeable cell → no-op (view snaps the generator back)
       }
       if (a.kind !== 'item') return state;
       if (a.locked) return state;
@@ -215,10 +224,12 @@ export const reducer = (state: S, action: Act): S => {
         const heroes = Battle.grantMergeEnergy(state.battle.heroes, tier);
         const chargedIds = heroes.filter((h: any, i: number) => (h.limitEnergy || 0) !== (state.battle.heroes[i].limitEnergy || 0)).map((h: any) => h.id);
         const fx = [...state.fx, { id: id++, type: 'merge', tier },
-          ...(chargedIds.length ? [{ id: id++, type: 'limitCharge', heroIds: chargedIds }] : [])];
+          ...(chargedIds.length ? [{ id: id++, type: 'limitCharge', heroIds: chargedIds, cell: to }] : [])];
         return { ...state, board, nextId: id, fx, battle: { ...state.battle, heroes } };
       }
-      if (b.kind !== 'item') return state;
+      // Cobwebbed (locked) tiles can't be displaced by a swap either — dropping a non-matching tile
+      // onto one is a no-op (they're freed only by merging a MATCHING tile onto them, handled above).
+      if (b.kind !== 'item' || b.locked) return state;
       let board = Board.withCell(state.board, to, a); board = Board.withCell(board, from, b);
       return { ...state, board };
     }

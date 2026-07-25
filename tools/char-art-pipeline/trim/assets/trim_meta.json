@@ -1585,79 +1585,92 @@
     "blade/blade-1.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.85
+        "scale": 1.05
       }
     },
     "blade/blade-2.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.1,
+        "scale": 1,
         "rot": 5
       }
     },
     "blade/blade-3.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.05
-      }
+        "scale": 1.15
+      },
+      "reg": [
+        0.504,
+        0.5129
+      ]
     },
     "blade/blade-4.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.05
+        "scale": 1.15
       }
     },
     "blade/blade-5.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15,
+        "scale": 1.2,
         "rot": 6
       }
     },
     "blade/blade-6.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.1,
+        "scale": 1.15,
         "rot": 3
       },
       "reg": [
-        0.4985,
-        0.5021
+        0.479,
+        0.5169
       ]
     },
     "blade/blade-7.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.2,
+        "scale": 1.15,
         "rot": 4
       },
       "reg": [
-        0.4604,
-        0.5242
+        0.4865,
+        0.5334
       ]
     },
     "blade/blade-8.png": {
-      "pockets": [],
+      "pockets": [
+        [
+          516,
+          182
+        ],
+        [
+          308,
+          535
+        ]
+      ],
       "combat": {
-        "scale": 1.15,
+        "scale": 1.1,
         "rot": 1
       },
       "reg": [
-        0.4545,
-        0.5291
+        0.491,
+        0.5036
       ]
     },
     "magic/magic-1.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.85,
+        "scale": 0.75,
         "rot": -30
       }
     },
     "magic/magic-2.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.85,
+        "scale": 0.75,
         "rot": -9
       },
       "reg": [
@@ -1668,7 +1681,7 @@
     "magic/magic-3.png": {
       "pockets": [],
       "combat": {
-        "scale": 1,
+        "scale": 0.9,
         "rot": 0
       }
     },
@@ -1687,7 +1700,7 @@
     "magic/magic-6.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.05,
+        "scale": 0.9,
         "rot": -16
       },
       "reg": [
@@ -1715,7 +1728,7 @@
         ]
       ],
       "combat": {
-        "scale": 1.15,
+        "scale": 1.05,
         "rot": -10
       },
       "reg": [
@@ -1726,14 +1739,14 @@
     "magic/magic-8.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15,
+        "scale": 1,
         "rot": -1
       }
     },
     "range/range-1.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.2,
+        "scale": 1.05,
         "rot": 15
       },
       "reg": [
@@ -1744,7 +1757,7 @@
     "range/range-2.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15,
+        "scale": 1,
         "rot": 4
       },
       "reg": [

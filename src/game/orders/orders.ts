@@ -51,7 +51,8 @@ export const findMatchCells = (board: BoardCell[], order: Order): number[] | nul
   const used = new Set<number>();
   const cells: number[] = [];
   for (const it of order.items) {
-    const idx = board.findIndex((c, i) => !used.has(i) && c && c.kind === 'item' && c.chain === it.chain && c.level === it.level);
+    // Cobwebbed (locked) tiles are ineligible for orders — they can never be consumed to fulfil one.
+    const idx = board.findIndex((c, i) => !used.has(i) && c && c.kind === 'item' && !c.locked && c.chain === it.chain && c.level === it.level);
     if (idx < 0) return null;
     used.add(idx);
     cells.push(idx);

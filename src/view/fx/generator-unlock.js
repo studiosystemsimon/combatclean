@@ -7,7 +7,7 @@
 // Decoupled + fire-and-forget: it does NOT touch board state. The generator is committed to the board
 // on ACCEPT (CONTINUE); this is the celebratory delivery on top. Timings come from ANIM.areaComplete.
 // ─────────────────────────────────────────────────────────────────────────────
-import { resolve } from '../assets.js';
+import { generatorAsset } from '../assets.js';
 import { ANIM } from '../../data/config.js';
 
 const AC = ANIM.areaComplete;
@@ -28,7 +28,7 @@ function findCell(cell, cb) {
 export function playGeneratorUnlock(overlay, ev, onDone) {
   const done = () => { onDone && onDone(); };
   if (!overlay || ev.cell == null) { done(); return; }
-  const a = resolve(`gen.${ev.genKey}`);
+  const a = generatorAsset(ev.genKey); // awarded generators appear at level 1 → gen.<genKey>.1
 
   const root = mk('gu-fx', 'position:absolute;inset:0;pointer-events:none;z-index:6;');
   overlay.appendChild(root);
@@ -40,8 +40,8 @@ export function playGeneratorUnlock(overlay, ev, onDone) {
   const rays = mk('gu-rays', '');
   const ring = mk('gu-ring', '');
   const art = mk('gu-art', '');
-  if (a.img) { const im = document.createElement('img'); im.src = a.img; im.className = 'gu-img'; im.draggable = false; art.appendChild(im); }
-  else { art.textContent = a.emoji; art.classList.add('gu-emoji'); }
+  if (a && a.img) { const im = document.createElement('img'); im.src = a.img; im.className = 'gu-img'; im.draggable = false; art.appendChild(im); }
+  else if (a && a.emoji) { art.textContent = a.emoji; art.classList.add('gu-emoji'); }
   stage.append(rays, ring, art);
   root.appendChild(stage);
 
