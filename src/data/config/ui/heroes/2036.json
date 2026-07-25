@@ -9,8 +9,8 @@
 		"limit": "Cataclysm"
 	},
 	"portrait": {
-		"scale": 1.65,
-		"x": 0.002,
-		"y": -0.383
+		"scale": 1.8,
+		"x": 0.072,
+		"y": -0.43
 	}
 }

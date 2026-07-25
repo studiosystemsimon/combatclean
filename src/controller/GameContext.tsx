@@ -46,6 +46,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return undefined;
   }, [state.battle.status]);
 
+  // AREA COMPLETE with a BOARD AWARD (a generator unlock): route to the merge tab so the generator can
+  // dramatically fly onto the board (the combat panel keeps showing the earnings synopsis on top). No
+  // route/cinematic for a plain clear. The generatorUnlock cinematic (FxLayer) waits for the board to mount.
+  useEffect(() => {
+    if (state.battle.status === 'areaComplete' && state.pendingArea && state.pendingArea.unlocked && state.pendingArea.unlocked.length && state.screen !== 'merge') {
+      dispatch({ type: A.SET_SCREEN, screen: 'merge' });
+    }
+  }, [state.battle.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const lastSaveRef = useRef(0);
   useEffect(() => {
     const t = Date.now();

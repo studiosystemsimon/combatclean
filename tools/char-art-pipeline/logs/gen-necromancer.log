@@ -1,0 +1,11 @@
+using existing classes.tsv subject for 'necromancer'
+overrides: bone mask on head. Tight single ponytail, black and green hair. big breasts female.
+running gen.sh necromancer (FORCE=1)…
+  ..necromancer try 1 bg=MISS, retrying
+  ..necromancer try 2 bg=MISS, retrying
+  ..necromancer try 3 bg=MISS, retrying
+  ..necromancer try 4 bg=MISS, retrying
+WARN necromancer (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 43  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/necromancer.png

@@ -149,22 +149,56 @@ body {
   z-index: 30; animation: pop 0.25s ease-out;
 }
 
-/* AREA COMPLETE gate — full-panel modal over the battle; the game is paused until CONTINUE. */
-.area-complete { position: absolute; inset: 0; z-index: 31; display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(120% 90% at 50% 40%, rgba(10, 16, 34, 0.78), rgba(5, 7, 15, 0.94)); animation: pop 0.25s ease-out; }
-.ac-card { text-align: center; padding: 22px 26px; border-radius: 18px; max-width: 82%;
-  background: linear-gradient(180deg, rgba(30, 40, 70, 0.55), rgba(12, 17, 34, 0.7));
-  border: 1px solid rgba(255, 212, 94, 0.35); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4) inset; }
+/* AREA CLEARED synopsis — full-panel reward payoff over the battle; paused until CONTINUE. */
+.area-complete { position: absolute; inset: 0; z-index: 31; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 40%, rgba(10, 16, 34, 0.82), rgba(5, 7, 15, 0.96)); animation: pop 0.25s ease-out; }
+.ac-rays { position: absolute; width: 160%; aspect-ratio: 1; left: 50%; top: 46%; transform: translate(-50%, -50%); pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 8deg, rgba(255, 212, 94, 0.14) 8deg 12deg, transparent 12deg 20deg);
+  -webkit-mask: radial-gradient(circle, #000 0%, #000 30%, transparent 62%); mask: radial-gradient(circle, #000 0%, #000 30%, transparent 62%);
+  animation: acRays 14s linear infinite; }
+.ac-card { position: relative; text-align: center; padding: 22px 26px; border-radius: 18px; max-width: 84%; min-width: 240px;
+  background: linear-gradient(180deg, rgba(30, 40, 70, 0.6), rgba(12, 17, 34, 0.78));
+  border: 1px solid rgba(255, 212, 94, 0.4); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 200, 80, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+  animation: acCardIn 0.42s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
 .ac-title { font-family: 'Uniform Bold', system-ui, sans-serif; font-weight: 900; font-size: 26px; letter-spacing: 3px; color: var(--gold);
   text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 0 16px rgba(255, 212, 94, 0.5); }
 .ac-zone { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 15px; letter-spacing: 1px; color: #cfe0ff; margin-top: 4px; opacity: 0.9; }
-.ac-unlocks { margin: 14px 0 4px; display: flex; flex-direction: column; gap: 6px; }
-.ac-unlock { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 14px; color: #8bf0ac; }
-.ac-unlock .ac-uic { font-size: 18px; vertical-align: middle; }
+.ac-rewards { margin: 14px auto 4px; display: flex; flex-direction: column; gap: 6px; width: fit-content; }
+.ac-row { display: flex; align-items: center; gap: 8px; }
+.ac-row .ac-ic { font-size: 18px; width: 22px; text-align: center; }
+.ac-num { font-family: 'Uniform Bold', system-ui, sans-serif; font-size: 20px; font-weight: 900; color: #fff; min-width: 56px; text-align: left;
+  text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000; }
+.ac-unlocks { margin: 14px 0 2px; display: flex; flex-direction: column; gap: 8px; }
+.ac-unlock { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 12px; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(60, 220, 120, 0.14), rgba(20, 60, 40, 0.2)); border: 1px solid rgba(139, 240, 172, 0.4);
+  animation: acPulse 1.6s ease-in-out infinite; }
+.ac-uart { width: 44px; height: 44px; display: grid; place-items: center; filter: drop-shadow(0 0 8px rgba(139, 240, 172, 0.6)); }
+.ac-uart .art-img { width: 100%; height: 100%; object-fit: contain; }
+.ac-uart .art-emoji { font-size: 30px; }
+.ac-utext { display: flex; flex-direction: column; align-items: flex-start; }
+.ac-uname { font-family: 'Uniform Bold', system-ui, sans-serif; font-size: 15px; color: #fff; }
+.ac-usub { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #8bf0ac; }
 .ac-accept { margin-top: 16px; width: min(80%, 240px); cursor: pointer; border: none; border-radius: 12px; padding: 12px 0;
   font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-weight: 900; letter-spacing: 1px; font-size: 15px; text-transform: uppercase; color: #241a02;
   background: linear-gradient(180deg, #ffe79a, #ffca44); box-shadow: 0 8px 22px rgba(255, 200, 80, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2) inset; }
 .ac-accept:active { transform: scale(0.97); }
+@keyframes acRays { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes acCardIn { from { opacity: 0; transform: translateY(14px) scale(0.86); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes acPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(139, 240, 172, 0); } 50% { box-shadow: 0 0 18px 2px rgba(139, 240, 172, 0.35); } }
+
+/* Generator-unlock cinematic (overlay clone: materialize → arc → slam onto the board cell). */
+.gu-stage { position: absolute; display: grid; place-items: center; will-change: transform, opacity; }
+.gu-art { position: relative; z-index: 2; width: 100%; height: 100%; display: grid; place-items: center;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 20px rgba(255, 212, 94, 0.6)); }
+.gu-img { width: 100%; height: 100%; object-fit: contain; }
+.gu-emoji { font-size: 96px; line-height: 1; }
+.gu-rays { position: absolute; inset: -60%; z-index: 0; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 10deg, rgba(255, 235, 170, 0.5) 10deg 13deg, transparent 13deg 24deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, transparent 60%); mask: radial-gradient(circle, #000 8%, transparent 60%);
+  animation: guRays 3.5s linear infinite; }
+.gu-ring { position: absolute; inset: 0; z-index: 1; border-radius: 50%; border: 4px solid rgba(255, 235, 170, 0.9); box-shadow: 0 0 24px rgba(255, 212, 94, 0.7); }
+.gu-shock { position: absolute; border-radius: 50%; border: 3px solid rgba(255, 235, 170, 0.9); box-shadow: 0 0 30px 6px rgba(255, 212, 94, 0.6); pointer-events: none; z-index: 6; }
+@keyframes guRays { to { transform: rotate(360deg); } }
 
 /* ── Orders tray ──────────────────────────────────────────────────────────── */
 /* Section height LOCKED to the shipped orders-bar height: 84px (68px card + 8/8
@@ -1760,7 +1794,11 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
    All selectors scoped under .hero-menu to avoid clashing with global classes.
    Reuses the existing @font-face (Uniform) + .lvfx-*/.hero-float*/.pburst* fx.
    ═══════════════════════════════════════════════════════════════════════════ */
-.hero-menu { position: absolute; inset: 0; z-index: 200; display: flex; flex-direction: column; overflow: hidden;
+/* A normal context-panel screen filling the whole context area (below currency bar, above nav).
+   GRID with an explicit middle row (not flex) so the body track ALWAYS fills: header pinned top,
+   hero in the middle track, stats/buttons pinned bottom. minmax(0,1fr) lets it fill AND shrink.
+   position:relative anchors the absolute bg/scrim/sheets. */
+.hero-menu { position: relative; height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden;
   background: #0c0e14; --rar: #4aa3ff; font-family: 'Uniform Condensed Bold', system-ui, sans-serif; }
 .hero-menu .hm-bg { position: absolute; inset: 0; z-index: 0; background: #0c0e14 center/cover no-repeat; transform: scale(1.06); }
 .hero-menu .hm-tint { position: absolute; inset: 0; z-index: 0; mix-blend-mode: screen; opacity: .7;

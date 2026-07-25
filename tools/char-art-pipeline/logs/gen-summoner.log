@@ -1,0 +1,12 @@
+deploying a Claude instance to author the subject for 'summoner'…
+subject: a MALE fantasy SUMMONER with emerald-green-to-gold root-to-tip gradient hair, an ornate Honkai-Impact-style layered battle costume of segmented jade-and-silver plate over a high-collared teal ritual war-coat with gold filigree, flared armored pauldrons and trailing layered fabric, thrusting forward an ornate summoning scepter topped with a caged spirit-orb in a dynamic mid-summon lunge.
+overrides: very sexy woman, big breasts, close to naked but covered, summoners crown, hair hangin on body straight
+running gen.sh summoner (FORCE=1)…
+  ..summoner try 1 bg=MISS, retrying
+  ..summoner try 2 bg=MISS, retrying
+  ..summoner try 3 bg=MISS, retrying
+  ..summoner try 4 bg=MISS, retrying
+WARN summoner (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 43  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/summoner.png

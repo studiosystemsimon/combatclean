@@ -1,0 +1,11 @@
+using existing classes.tsv subject for 'valkyrie'
+overrides: straight hair long
+running gen.sh valkyrie (FORCE=1)…
+  ..valkyrie try 1 bg=MISS, retrying
+  ..valkyrie try 2 bg=MISS, retrying
+  ..valkyrie try 3 bg=MISS, retrying
+  ..valkyrie try 4 bg=MISS, retrying
+WARN valkyrie (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 43  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/valkyrie.png

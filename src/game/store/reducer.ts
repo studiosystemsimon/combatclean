@@ -142,7 +142,8 @@ export const initState = (now: number, saved: any = null): S => {
 export const reducer = (state: S, action: Act): S => {
   switch (action.type) {
     case A.SET_SCREEN:
-      return { ...state, screen: action.screen };
+      // Changing the active screen (e.g. a nav-bar tap) also closes any open hero menu sub-view.
+      return { ...state, screen: action.screen, menuHeroId: null };
     case A.SET_HERO_MENU:
       // Opening clears the fx queue so no stale combat VFX flashes when FxLayer remounts on close.
       return { ...state, menuHeroId: action.heroId, fx: action.heroId ? [] : state.fx };
@@ -323,11 +324,19 @@ export const reducer = (state: S, action: Act): S => {
         const zone = C.ZONES[fromZone];
         const newlyUnlocked = ((zone && zone.unlocksGenerators) || []).filter((g: string) => !state.unlockedGenerators.includes(g));
         const unlockedGenerators = newlyUnlocked.length ? [...state.unlockedGenerators, ...newlyUnlocked] : state.unlockedGenerators;
+        // Board-award cinematic: emit one generatorUnlock fx per newly-unlocked generator (FxLayer plays
+        // the appear→fly→land onto its board cell). `reward` = the boss-clear reward, for the synopsis card.
+        let id = state.nextId;
+        const fx = [...state.fx];
+        for (const gk of newlyUnlocked) {
+          const g = C.BOARD.startLayout.generators.find((x: any) => x.generator === gk);
+          fx.push({ id: id++, type: 'generatorUnlock', genKey: gk, cell: g ? g.cell : null });
+        }
         return {
-          ...state, unlockedGenerators,
+          ...state, unlockedGenerators, fx, nextId: id,
           furthestLevel: Math.max(state.furthestLevel, nextLevel),
           battle: { ...state.battle, status: 'areaComplete', recovering: false },
-          pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked },
+          pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked, reward: winReward(state.battle.level) },
         };
       }
       if (Map.isBossLevel(nextLevel)) {

@@ -1,7 +1,10 @@
-# blade merge chain — PLACEHOLDER tiers (slug<TAB>subject). Replace/extend during iteration.
-# Cardinal laws: clear differentiation · clear escalation · rising power & sophistication per tier.
-blade-1	a small crude rusty iron dagger, plain and worn
-blade-2	a simple straight steel shortsword
-blade-3	a sturdy steel longsword with a leather-wrapped grip and iron crossguard
-blade-4	a broad polished knight's greatsword with an engraved fuller and brass crossguard
-blade-5	an ornate golden hero's greatsword with a jewelled pommel and etched blade
+# blade merge chain — 8 tiers (slug<TAB>subject). DRAFT — refine against references.
+# Laws: clear differentiation · clear escalation · rising power. Distinct-hue material ramp, no redundant greys.
+blade-1	a crude wooden training sword, plain straight blade, rough wrapped grip, tan wood, no ornament
+blade-2	a brass shortsword, warm golden metal, simple straight guard, slightly leaf-shaped blade
+blade-3	a cool-grey iron broadsword, wider heavier blade, riveted crossguard, worn leather grip
+blade-4	a bright silver-blue steel longsword, a small blue gem set in the pommel, clean fuller, wrapped grip
+blade-5	a rich-gold ceremonial sword, engraved blade, gemmed crossguard with a red gem, ornate pommel
+blade-6	a pale silver-blue mythril blade, slender elegant silhouette, filigree guard, a green gem, refined
+blade-7	a black obsidian greatsword, jagged wide blade, dark ornate winged guard, a violet gem, faint glow
+blade-8	a radiant white crystal greatsword, glowing translucent blade, winged crossguard, a brilliant central gem, holy glow, legendary

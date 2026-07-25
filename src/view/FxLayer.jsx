@@ -16,6 +16,7 @@ import { fx } from './fx/fx-engine.js';
 import { currencyBurst } from './fx/currency-pickup.js';
 import { runOrderChest } from './fx/chest-smash.js';
 import { playGachaReveal } from './fx/gacha-reveal.js';
+import { playGeneratorUnlock } from './fx/generator-unlock.js';
 import { startPerfProbe } from './fx/perf-probe.js';
 import { runIntro, showGate, clearIntro } from './fx/intro-director.js';
 import { resolve } from './assets.js';
@@ -627,6 +628,7 @@ export default function FxLayer() {
       else if (ev.type === 'levelComplete') handleLevelComplete(ev);
       else if (ev.type === 'limitBreak') handleLimitBreak(ev);
       else if (ev.type === 'gachaReveal') handleGachaReveal(ev, overlayRef.current);
+      else if (ev.type === 'generatorUnlock') playGeneratorUnlock(overlayRef.current, ev);
     }
     actions.clearFx(ids);
   }, [state.fx, actions]);

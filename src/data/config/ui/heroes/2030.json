@@ -9,8 +9,8 @@
 		"limit": "Shadow Strike"
 	},
 	"portrait": {
-		"scale": 1.65,
-		"x": -0.061,
-		"y": -0.378
+		"scale": 2,
+		"x": 0.02,
+		"y": -0.463
 	}
 }

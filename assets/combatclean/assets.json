@@ -497,16 +497,16 @@
 			"type": "image",
 			"file": "heroes/inquisitor.png",
 			"anchor": {
-				"x": 0.5271,
-				"y": 0.9765
+				"x": 0.5149,
+				"y": 0.8995
 			}
 		},
 		"hero.lancer": {
 			"type": "image",
 			"file": "heroes/lancer.png",
 			"anchor": {
-				"x": 0.508,
-				"y": 0.912
+				"x": 0.5497,
+				"y": 0.9797
 			}
 		},
 		"hero.mage": {
@@ -521,8 +521,8 @@
 			"type": "image",
 			"file": "heroes/ninja.png",
 			"anchor": {
-				"x": 0.5585,
-				"y": 0.939
+				"x": 0.5317,
+				"y": 0.9181
 			}
 		},
 		"hero.pirate": {
@@ -569,8 +569,8 @@
 			"type": "image",
 			"file": "heroes/summoner.png",
 			"anchor": {
-				"x": 0.515,
-				"y": 0.951
+				"x": 0.5261,
+				"y": 0.9778
 			}
 		},
 		"hero.warlord": {

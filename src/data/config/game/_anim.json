@@ -19,5 +19,6 @@
 	"orders": { "flipMs": 280, "wipeInMs": 160, "wipeOutMs": 220, "wipeSwapMs": 150 },
 	"heroes": { "dragHoldMs": 220, "dragScrollTol": 10, "dragMoveTol": 8, "dragLiftFrac": 0.5, "dragAvatarScale": 1.06, "dragGlideMs": 190, "dragSwapMs": 180, "dragClickSuppressMs": 350, "popGap": 8, "popMargin": 6 },
 	"gear": { "powFlashMs": 600 },
-	"gacha": { "pityNearFrac": 0.8 }
+	"gacha": { "pityNearFrac": 0.8 },
+	"areaComplete": { "countUpMs": 900, "appearMs": 520, "holdMs": 650, "flyMs": 640, "landMs": 260 }
 }

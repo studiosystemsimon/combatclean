@@ -360,13 +360,16 @@ function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(Stri
 
 /* ---------- two-level grouping: top = Hero/Enemy/…, second = subcategories ---------- */
 const AREA_ORDER = ['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent','enemies'];
-function groupOf(cat){ if(cat==='heroes') return 'Hero'; if(ENEMY_AREAS.has(cat)||cat==='enemies') return 'Enemy'; return labelFor(cat); }
+function groupOf(cat){ if(cat==='heroes') return 'Hero'; if(ENEMY_AREAS.has(cat)||cat==='enemies') return 'Enemy';
+  if(MERGE_CATS.has(cat)) return 'Merge Icons'; return labelFor(cat); }
 function countOf(cat){ const c=state.cats.find(x=>x.name===cat); return c?c.images.length:0; }
+function orderBy(list, order){ return list.slice().sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); }); }
 function groupsMap(){ const m={}; for(const c of state.cats){ const g=groupOf(c.name); (m[g] ||= []).push(c.name); }
-  if(m['Enemy']) m['Enemy'].sort((a,b)=>{ const ia=AREA_ORDER.indexOf(a), ib=AREA_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+  if(m['Enemy']) m['Enemy'] = orderBy(m['Enemy'], AREA_ORDER);
+  if(m['Merge Icons']) m['Merge Icons'] = orderBy(m['Merge Icons'], MERGE_ORDER);
   return m; }
 function catsInGroup(g){ return groupsMap()[g] || []; }
-function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy'];
+function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy','Merge Icons'];
   return [...pref.filter(n=>names.includes(n)), ...names.filter(n=>!pref.includes(n)).sort()]; }
 
 /* ---------- shared list building ---------- */
@@ -465,8 +468,8 @@ function renderList() {
   if (!c) { if (h2) h2.textContent = 'Assets'; renderTabs(); return; }
   if (h2) {                                                // header = the selected category + count (+ area regen)
     h2.innerHTML = `${labelFor(c.name)} <span style="color:#5b6169;font-weight:400">${c.images.length}</span>`;
-    if (ENEMY_AREAS.has(c.name)) {
-      const rb = document.createElement('button'); rb.className='catregen'; rb.textContent='⟳ area'; rb.title='Regen this whole area';
+    if (isRosterCat(c.name)) {
+      const rb = document.createElement('button'); rb.className='catregen'; rb.textContent='⟳ all'; rb.title='Regen this whole chain/area';
       rb.onclick = (e) => { e.stopPropagation(); regenArea(c.name); };
       h2.appendChild(rb);
     }
@@ -902,8 +905,8 @@ document.getElementById('genRegen').onclick=regenSelected;
 async function regenSelected(){
   if(!state.items.length){ toast('Nothing selected'); return; }
   const it=cur(), slug=it.name.replace(/\.png$/i,''), ov=genOverridesVal();
-  if(ENEMY_AREAS.has(it.cat)){                              // ENEMY → enemy pipeline (distinct flow)
-    if(!confirm(`Regenerate enemy "${slug}" (${it.cat})? Overwrites its source art (FORCE).`+(ov?`\nOverrides: ${ov}`:''))) return;
+  if(isRosterCat(it.cat)){                                  // ENEMY / MERGE-ICON → their roster pipeline (distinct flow)
+    if(!confirm(`Regenerate "${slug}" (${it.cat})? Overwrites its source art (FORCE).`+(ov?`\nOverrides: ${ov}`:''))) return;
     startRegen(it.cat, [slug], ov); return;
   }
   // HERO → hero pipeline
@@ -919,7 +922,7 @@ async function regenSelected(){
 function updateRegenChecked(){ const b=document.getElementById('regenChk'); if(!b) return;
   const n=state.checked.size; b.textContent='Regen checked'+(n?` (${n})`:''); b.disabled=!n; }
 async function regenArea(area){
-  if(!confirm(`Regenerate the WHOLE "${area}" area (its full roster)? Overwrites source art (FORCE).`)) return;
+  if(!confirm(`Regenerate the WHOLE "${area}" roster? Overwrites source art (FORCE).`)) return;
   startRegen(area, null, '');
 }
 async function regenChecked(){

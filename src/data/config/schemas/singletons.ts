@@ -239,6 +239,13 @@ export const zAnimConfig = z.object({
   }).strict().describe('Roster drag-swap gesture + popup placement tuning.'),
   gear: z.object({ powFlashMs: num.describe('Gear-sheet power-number flash duration (ms).') }).strict(),
   gacha: z.object({ pityNearFrac: num.describe('Pity progress fraction at which a pity pill highlights as "near".') }).strict(),
+  areaComplete: z.object({
+    countUpMs: num.describe('AREA CLEARED synopsis reward count-up duration (ms).'),
+    appearMs: num.describe('Generator burst-in (materialize) duration (ms).'),
+    holdMs: num.describe('Generator centre-stage hold before it flies to the board (ms).'),
+    flyMs: num.describe('Generator arc-to-board-cell flight duration (ms).'),
+    landMs: num.describe('Generator landing slam/pop duration (ms).'),
+  }).strict().describe('AREA COMPLETE board-award cinematic feel timings.'),
 }).strict();
 
 // tierPresentation — merge-tier colour ramp (global presentation tuning; not per-entity).

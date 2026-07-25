@@ -9,8 +9,8 @@
 		"limit": "Dragon Lance"
 	},
 	"portrait": {
-		"scale": 1.6,
-		"x": -0.044,
-		"y": -0.29
+		"scale": 1.75,
+		"x": -0.062,
+		"y": -0.382
 	}
 }

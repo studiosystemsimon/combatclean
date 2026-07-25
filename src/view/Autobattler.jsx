@@ -15,8 +15,26 @@ import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: b
 import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
+import { fmtK as fmt } from './fmt.js';
 
 const AB = ANIM.autobattler;
+const AC = ANIM.areaComplete;
+
+// Reward count-up for the AREA CLEARED synopsis — ease-out cubic to the target over AC.countUpMs.
+function CountUp({ to }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf; const t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / AC.countUpMs);
+      setV(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return <b className="ac-num">{fmt(v)}</b>;
+}
 const nextIsBoss = (level) => isBossLevel(level + 1);
 
 // Combat sprite base heights — MUST mirror asset_tool.html's applyChipImg `baseH` (the 1:1 trim-tool
@@ -279,14 +297,27 @@ export default function Autobattler() {
           hasn't advanced yet). Any generator unlocks earned by clearing this area are announced here. */}
       {battle.status === 'areaComplete' && (
         <div className="area-complete" role="dialog" aria-label={STRINGS.combat.areaComplete}>
+          <div className="ac-rays" aria-hidden="true" />
           <div className="ac-card">
             <div className="ac-title">{STRINGS.combat.areaComplete}</div>
             <div className="ac-zone">{zone.name}</div>
+            {state.pendingArea && state.pendingArea.reward ? (
+              <div className="ac-rewards">
+                <div className="ac-row"><span className="ac-ic">{resolve('ui.coin').emoji}</span><CountUp to={state.pendingArea.reward.coins} /></div>
+                <div className="ac-row"><span className="ac-ic">{resolve('ui.heroXp').emoji}</span><CountUp to={state.pendingArea.reward.heroXp} /></div>
+                <div className="ac-row"><span className="ac-ic">{resolve('ui.gearXp').emoji}</span><CountUp to={state.pendingArea.reward.gearXp} /></div>
+              </div>
+            ) : null}
             {state.pendingArea && state.pendingArea.unlocked && state.pendingArea.unlocked.length ? (
               <div className="ac-unlocks">
                 {state.pendingArea.unlocked.map((g) => {
                   const a = resolve(`gen.${g}`);
-                  return <div key={g} className="ac-unlock"><span className="ac-uic">{a.emoji}</span> {a.label} {STRINGS.combat.unlocked}</div>;
+                  return (
+                    <div key={g} className="ac-unlock">
+                      <span className="ac-uart"><Art a={a} className="ac-uimg" /></span>
+                      <span className="ac-utext"><b className="ac-uname">{a.label}</b><span className="ac-usub">{STRINGS.combat.unlocked}</span></span>
+                    </div>
+                  );
                 })}
               </div>
             ) : null}

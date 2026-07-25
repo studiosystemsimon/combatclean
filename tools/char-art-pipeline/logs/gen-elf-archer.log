@@ -1,0 +1,11 @@
+using existing classes.tsv subject for 'elf-archer'
+overrides: tight hair in two ponytails, leaf crown, gem on forehead
+running gen.sh elf-archer (FORCE=1)…
+  ..elf-archer try 1 bg=MISS, retrying
+  ..elf-archer try 2 bg=MISS, retrying
+  ..elf-archer try 3 bg=MISS, retrying
+  ..elf-archer try 4 bg=MISS, retrying
+WARN elf-archer (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 43  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/elf-archer.png
