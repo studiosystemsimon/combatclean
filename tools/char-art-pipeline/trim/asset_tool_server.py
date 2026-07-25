@@ -204,6 +204,22 @@ def is_source(fn):
     fl = fn.lower()
     return fl.endswith(".png") and not any(fl.endswith(s) for s in OUT_SUFFIXES)
 
+def boss_slugs(cat):
+    """Boss slugs for an enemy area = roster rows whose subject contains 'BOSS'."""
+    p = os.path.join(ENEMY_PIPELINE, "rosters", cat + ".tsv")
+    out = []
+    try:
+        for ln in open(p):
+            ln = ln.rstrip("\n")
+            if not ln or ln.startswith("#"):
+                continue
+            parts = ln.split("\t", 1)
+            if len(parts) == 2 and "BOSS" in parts[1]:
+                out.append(parts[0])
+    except OSError:
+        pass
+    return out
+
 def run_photoshop():
     osa = (f'tell application "{PS_APP}"\n    activate\n'
            f'    do javascript (file (POSIX file "{JSX}"))\nend tell')
@@ -247,7 +263,8 @@ def build_handler(root, meta_path):
                                   if os.path.isdir(os.path.join(root, d))):
                     cdir = os.path.join(root, cat)
                     imgs = sorted(f for f in os.listdir(cdir) if is_source(f))
-                    cats.append({"name": cat, "images": imgs})
+                    cats.append({"name": cat, "images": imgs,
+                                 "bosses": boss_slugs(cat) if cat in ENEMY_AREAS else []})
                 return self._send(200, "application/json", json.dumps({"root": root, "categories": cats}))
             if path == "/api/meta":
                 if os.path.exists(meta_path):

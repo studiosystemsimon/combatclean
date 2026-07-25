@@ -88,7 +88,9 @@ function EnemyChip({ e, focused, onFocus, art, gone, conceal, lv, onDecayEnd }) 
     >
       <span className="lv-badge"><s>{STRINGS.combat.lvAbbr}</s>{lv}</span>
       <div className="chip-art">
-        <Art a={art} className="chip-emoji" />
+        {/* Regular enemies stand on their authored registration point (anchor), like heroes. Bosses
+            are hand-positioned by the boss-mode CSS transform, so they skip the inline anchor. */}
+        <Art a={art} className="chip-emoji" style={boss ? undefined : anchorStyle(art)} />
       </div>
       <HpBar frac={e.hp / e.maxHp} kind="enemy" />
       {conceal && <span className="conceal-q" aria-hidden="true">?</span>}

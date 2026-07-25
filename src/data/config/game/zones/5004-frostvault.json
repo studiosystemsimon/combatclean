@@ -3,14 +3,19 @@
 	"displayName": "frostvault",
 	"order": 4,
 	"enemyPoolConfigIds": [
-		3012,
-		3014,
-		3018,
-		3010,
-		3023
+		3074,
+		3075,
+		3076,
+		3077,
+		3078,
+		3079,
+		3080,
+		3081,
+		3082,
+		3083
 	],
-	"bossConfigId": 3030,
-	"accompliceConfigId": 3010,
+	"bossConfigId": 3084,
+	"accompliceConfigId": 3074,
 	"crystalRarityKey": "epic",
 	"orderRarity": {
 		"common": 16,

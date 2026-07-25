@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Hardcoded Values Audit</title>
+<style>
+  :root{
+    --bg:#0b0e17; --panel:#141926; --panel2:#1b2233; --line:#26304a; --text:#e7ecf7; --dim:#93a0bd;
+    --hacky:#ff5d6c; --data:#ffc24b; --ok:#5b6b8c;
+    --logic:#5a8cff; --view:#b46bff; --vfx:#33c6a6;
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:28px 22px 80px}
+  h1{font-size:22px;margin:0 0 2px}
+  .sub{color:var(--dim);margin:0 0 20px;font-size:13px}
+  .rule{color:var(--dim);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--data);border-radius:8px;padding:10px 14px;margin:0 0 22px;max-width:1100px}
+  .rule b{color:var(--text)}
+  /* summary tiles */
+  .tiles{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 18px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:120px}
+  .tile .n{font-size:26px;font-weight:800;line-height:1}
+  .tile .l{color:var(--dim);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+  .tile.h{border-color:var(--hacky)} .tile.h .n{color:var(--hacky)}
+  .tile.d{border-color:var(--data)} .tile.d .n{color:var(--data)}
+  /* key findings */
+  .key{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 22px;max-width:1100px}
+  .key h2{font-size:14px;margin:0 0 8px;color:var(--hacky);text-transform:uppercase;letter-spacing:.05em}
+  .key ul{margin:0;padding-left:18px} .key li{margin:4px 0;color:var(--dim)} .key li b{color:var(--text)}
+  .key code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;color:#cfe0ff;font-size:12px}
+  /* controls */
+  .ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
+  select,input[type=search]{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:13px system-ui}
+  input[type=search]{min-width:230px}
+  .count{color:var(--dim);font-size:13px;margin-left:auto}
+  .breakdown{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+  .chip{font-size:11.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--dim);cursor:pointer;user-select:none}
+  .chip:hover{border-color:var(--dim)} .chip.on{background:var(--panel2);color:var(--text);border-color:var(--dim)}
+  /* table */
+  table{border-collapse:collapse;width:100%;max-width:1300px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{position:sticky;top:0;background:var(--bg);color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;white-space:nowrap;z-index:2}
+  th:hover{color:var(--text)}
+  td.loc{font-family:var(--mono);font-size:12px;color:#cfe0ff;white-space:nowrap}
+  td.val{font-family:var(--mono);font-size:12px;color:#ffd9a0;max-width:230px;word-break:break-word}
+  tr.hacky{background:rgba(255,93,108,.06)}
+  tr.hacky td.val{color:#ffb3ba}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  .b-hacky{background:rgba(255,93,108,.16);color:var(--hacky)}
+  .b-data{background:rgba(255,194,75,.14);color:var(--data)}
+  .b-ok{background:rgba(91,107,140,.18);color:var(--ok)}
+  .ly{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .ly-logic{color:var(--logic)} .ly-view{color:var(--view)} .ly-vfx{color:var(--vfx)}
+  .cat{color:var(--dim);font-size:12px}
+  .ctrl{color:var(--dim)}
+  footer{color:var(--dim);font-size:12px;margin-top:24px;max-width:1100px}
+</style>
+</head>
+<body>
+<h1>Combat Clean — Hardcoded Values Audit</h1>
+<p class="sub" id="stamp">Static sweep of <code style="font-family:var(--mono)">src/game · src/view · src/controller · src/core</code> for tuning literals, magic multipliers, offsets, and hacky constants. Excludes <code style="font-family:var(--mono)">src/data</code> (the sanctioned home), dev-only <code style="font-family:var(--mono)">preview/marksman</code>, and vendored <code style="font-family:var(--mono)">packages/bishop</code>.</p>
+
+<div class="rule">Project hard rule (<b>CLAUDE.md · "All tuning is data"</b>): every gameplay number, threshold, duration, speed, rate, count, or colour <b>must</b> live in <b>src/data/*.json</b> and be read via the store/config — magic literals in game/view/ui/input are violations. Structural constants (0/1, indices, <code>Math.PI</code>, <code>-1</code> sentinels, pure drawing primitives) are allowed. <b>SHOULD-BE-DATA</b> = tunable value living in code · <b>HACKY</b> = magic/fudge constant or a value that fights the data layer · <b>STRUCTURAL-OK</b> = allowed, listed for completeness.</div>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="key">
+  <h2>Highest-signal findings</h2>
+  <ul>
+    <li><b>The entire VFX layer reads zero values from data.</b> There is no <code>vfx.json</code>/store for <code>src/view/fx/**</code> — every duration, multiplier, offset, and colour is inline. Biggest single source of violations (~120).</li>
+    <li><b>Data layer silently overridden:</b> <code>FxLayer.jsx:154</code> hardcodes hero-trail <code>width:3, length:6</code> even though <code>_vfx.json</code> already defines per-chain <code>width/length</code> (7/9, 4/20, 9/9). The value exists in data but is bypassed.</li>
+    <li><b>Combat-math defaults baked into logic:</b> <code>battle.ts:50/82</code> <code>|| 900</code> (default hero/enemy attack cadence ms) and <code>battle.ts:220</code> <code>|| 5</code> (default limit orders-to-charge) — real tuning as inline fallbacks.</li>
+    <li><b>Genuinely hacky magic:</b> shake/drag decay bases <code>Math.pow(0.0015,dt)</code> / <code>Math.pow(0.10,dt)</code>; <code>intro-director.js:131</code> <code>+44px</code> "moves down then up" glitch-fix drift; <code>chest-smash.js</code> <code>-100</code> off-screen staging (comment: stranded chests); <code>hero-fx.js:76</code> invented <code>0.13</code>/<code>0.9</code> display stat splits; <code>arc(...,0,7)</code> used as 2π in ~8 places; non-canonical <code>easeOutBack c=1.9</code>.</li>
+    <li><b>Logic layer is otherwise clean</b> — <code>battle.ts</code>/<code>heroes.ts</code>/economy read their scalars from <code>C.BATTLE</code>/<code>C.HERO_*</code>/<code>C.LEVEL_SCALING</code>. The concentration is in <b>view</b> (Board, FxLayer, HpBar, screens) and <b>VFX</b>.</li>
+  </ul>
+</div>
+
+<div class="ctrls">
+  <select id="fLayer"><option value="">All layers</option><option value="logic">logic</option><option value="view">view</option><option value="vfx">vfx</option></select>
+  <select id="fVerdict"><option value="">All verdicts</option><option value="hacky">HACKY</option><option value="data">SHOULD-BE-DATA</option><option value="ok">STRUCTURAL-OK</option></select>
+  <select id="fCat"><option value="">All categories</option></select>
+  <input type="search" id="fSearch" placeholder="search file / value / control…" />
+  <span class="count" id="count"></span>
+</div>
+<div class="breakdown" id="breakdown"></div>
+
+<table id="tbl">
+  <thead><tr>
+    <th data-k="verdict">Verdict</th><th data-k="layer">Layer</th><th data-k="file">File : line</th>
+    <th data-k="value">Value(s)</th><th data-k="controls">What it controls</th><th data-k="cat">Category</th>
+  </tr></thead>
+  <tbody id="body"></tbody>
+</table>
+
+<footer>
+  Generated by a three-way static sweep (logic / view / VFX). Findings are grouped at the granularity reported by the scan — a single row may cover several adjacent literals in one effect block. Line numbers reflect the source at audit time; re-run after edits. Not exhaustive of purely-structural constants. This is a read-only report — nothing in the codebase was changed.
+</footer>
+
+<script>
+// [file, line, value, controls, category, verdict, layer]
+const D = [
+// ── LOGIC ──────────────────────────────────────────────────────────────────
+["src/game/combat/battle.ts","50","|| 900","default hero basic-attack cadence (ms) when weapon missing from attackMsByWeapon","duration","data","logic"],
+["src/game/combat/battle.ts","82","|| 900","default enemy attack interval (ms) when enemyAttackMs unset","duration","data","logic"],
+["src/game/combat/battle.ts","220","|| 5","default limit-break orders-to-charge when hero.limit.orders unset","count","data","logic"],
+["src/game/store/reducer.ts","75","[1, 3, 5]","board columns the 3 starting generators are placed in (hardcoded cells)","offset","data","logic"],
+["src/game/store/reducer.ts","327","=== 10 ? 10 : 1","gacha multi-pull (ten-pull) count","count","data","logic"],
+["src/game/store/reducer.ts","328","count === 10","multi-pull size gate selecting banner.ten vs banner.cost","count","data","logic"],
+["src/game/gear/gear.ts","36","randInt(0, 3)","±variance added to rolled gear base power","rng","data","logic"],
+["src/game/gear/gear.ts","45","randInt(0, 3)","±variance for unique gear base power","rng","data","logic"],
+["src/game/orders/orders.ts","34","? 1 : … ? 2 : 3","max items requested per order (count outcomes inline)","count","data","logic"],
+["src/controller/GameContext.tsx","25","1000","REGEN_TICK setInterval cadence (ms) — energy-regen recompute","duration","data","logic"],
+["src/controller/GameContext.tsx","13","2000 (PERSIST_THROTTLE_MS)","throttle window between saves (ms); named const, not from store","duration","data","logic"],
+["src/game/map/map.ts","35","3600000","ms→hours unit conversion for AFK earnings","size","ok","logic"],
+["src/game/progression/progression.ts","13","1000","while-loop safety guard (max level-up iterations)","count","ok","logic"],
+["src/game/gear/gear.ts","74","5000","while-loop safety guard (max auto-level iterations)","count","ok","logic"],
+["src/game/rng.ts","12-23","mulberry32 consts, * 31","canonical PRNG + string-hash algorithm constants","rng","ok","logic"],
+["src/game/store/persistence.ts","11","1 (SCHEMA_VERSION)","save-blob schema version sentinel","rng","ok","logic"],
+
+// ── VIEW (non-fx) ──────────────────────────────────────────────────────────
+["src/view/Board.jsx","95","41, 13, 6  ((cell.id*41)%13-6)","deterministic tile-tilt pseudo-random magic","hacky","hacky","view"],
+["src/view/Board.jsx","333","{w:56, h:56}","fallback tile size when geometry missing","size","hacky","view"],
+["src/view/Board.jsx","423","700","merge 'safety release' busy-flag timer","duration","hacky","view"],
+["src/view/FxLayer.jsx","154","width:3, length:6","hero trail geom — OVERRIDES per-chain width/length in _vfx.json","size","hacky","view"],
+["src/view/FxLayer.jsx","288","460, 800","fallback canvas W/H (dup of world size)","size","hacky","view"],
+["src/view/Board.jsx","31","1.5 (JUICE)","global multiplier on every merge burst radius","multiplier","data","view"],
+["src/view/Board.jsx","296","0.92, 0.92","drop-cell hit-tolerance factor of cell w/h","multiplier","data","view"],
+["src/view/Board.jsx","30","t>=6, t>=4","merge intensity crit/heavy tier thresholds","threshold","data","view"],
+["src/view/Board.jsx","108","170, scale(.4)","tile fade-out duration + end scale","duration","data","view"],
+["src/view/Board.jsx","116","24/17, -6","float-label font sizes + top offset","size","data","view"],
+["src/view/Board.jsx","119","1300","float-label lifetime","duration","data","view"],
+["src/view/Board.jsx","127","12/9/6","merge burst radii by tier","size","data","view"],
+["src/view/Board.jsx","130","3/2, tier>=6, >=5","epic-merge shake amp + thresholds","threshold","data","view"],
+["src/view/Board.jsx","131","0.85, 130","elite-merge flash opacity + duration","duration","data","view"],
+["src/view/Board.jsx","132","'#ffffff','#ffd45e', 36, 0.85","confetti inline colours/count/power (bypasses data confettiColors)","color","data","view"],
+["src/view/Board.jsx","160","1.12, 0.6, 300, cubic-bezier","tile spawn pop scale/offset/duration","duration","data","view"],
+["src/view/Board.jsx","165",".18s, cubic-bezier","tile move transition","duration","data","view"],
+["src/view/Board.jsx","182","obj.level>=6","'big label' tier threshold","threshold","data","view"],
+["src/view/Board.jsx","184","40","birth-result reveal delay","duration","data","view"],
+["src/view/Board.jsx","191","70 (-70)","gen-throw arc apex height","offset","data","view"],
+["src/view/Board.jsx","194-197","200deg,1.18/.82,360deg,460,.5,.9","gen-throw keyframes rot/squash/duration","duration","data","view"],
+["src/view/Board.jsx","257","15000","idle time before best-merge hint","duration","data","view"],
+["src/view/Board.jsx","259","4000/4000/5000","idle wave delay + random window","duration","data","view"],
+["src/view/Board.jsx","262","400","idle/wave poll interval","duration","data","view"],
+["src/view/Board.jsx","277","90 (col*90)","idle-wave per-column stagger","duration","data","view"],
+["src/view/Board.jsx","318",".22s, cubic-bezier(.34,1.56,.64,1)","snap-back transition","duration","data","view"],
+["src/view/Board.jsx","354-359","4000","hold time before green match hint","duration","data","view"],
+["src/view/Board.jsx","365","8","drag-start movement threshold","threshold","data","view"],
+["src/view/Board.jsx","392","90","spawn-pending clear timeout","duration","data","view"],
+["src/view/Board.jsx","411",".11s, cubic-bezier(.55,.06,.9,.3)","merge slam duration","duration","data","view"],
+["src/view/Board.jsx","412-413","1.12/1.28/.72/.45, 120","merge squash scales/duration","size","data","view"],
+["src/view/Board.jsx","414","110","merge contact/VFX delay","duration","data","view"],
+["src/view/Board.jsx","416","'#ffffff'","cobweb-unlock label colour","color","data","view"],
+["src/view/HpBar.jsx","18","0.5","ghost catch-up duration","duration","data","view"],
+["src/view/HpBar.jsx","19","0.24","whole-bar flash duration","duration","data","view"],
+["src/view/HpBar.jsx","20","0.6","pink trailing flash duration","duration","data","view"],
+["src/view/HpBar.jsx","21","0.06","white blip duration","duration","data","view"],
+["src/view/HpBar.jsx","74","2.2, 1.5, 7","flash brightness/saturate/drop-shadow magnitudes","multiplier","data","view"],
+["src/view/HpBar.jsx","75","rgba(255,255,255,0.95)","flash drop-shadow colour","color","data","view"],
+["src/view/HpBar.jsx","84","1.2, 1.5","pink-flash brightness/saturate magnitudes","multiplier","data","view"],
+["src/view/HpBar.jsx","103","'#B00063', '#FF007C'","HP ghost (lost-HP) colours enemy/hero","color","data","view"],
+["src/view/Autobattler.jsx","29","15 (N)","number of level-track dots","count","data","view"],
+["src/view/Autobattler.jsx","30","5 (level-5)","how many past levels the level-track shows","offset","data","view"],
+["src/view/Autobattler.jsx","54","[0..6]","hero charge-pip count (7)","count","data","view"],
+["src/view/Autobattler.jsx","146",".42s, cubic-bezier(0.25,0.46,0.45,0.94)","enemy realign FLIP duration + easing","duration","data","view"],
+["src/view/Autobattler.jsx","24-25","4.6/5.4/3/2 … ember l/d/dur/s sets","ambient ember position/delay/duration/size","duration","data","view"],
+["src/view/assets.js","48","82, 2px","portrait base height % + bottom offset","size","data","view"],
+["src/view/FxLayer.jsx","92","amp=2","default arena shake amplitude","size","data","view"],
+["src/view/FxLayer.jsx","99","0.5, 0.4","arena-shake axis multipliers","multiplier","data","view"],
+["src/view/FxLayer.jsx","62-65","brightness(4), 0.12, 130","per-hit enemy flash magnitude/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","70-76","-3/2/3/-2/1, 150","per-hit chip shake offsets + duration","offset","data","view"],
+["src/view/FxLayer.jsx","88","r:6","death-dust impact radius","size","data","view"],
+["src/view/FxLayer.jsx","113-115","brightness(3.8), 180","order-card damage flash magnitude/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","128-132","1.15/1.5/1.4/1.6/0.45, 200","telegraph lunge scale/brightness/duration","duration","data","view"],
+["src/view/FxLayer.jsx","149","140 (i*140)","hero-attack per-shot stagger","duration","data","view"],
+["src/view/FxLayer.jsx","152","160 (base+160)","trail fire delay","duration","data","view"],
+["src/view/FxLayer.jsx","156","r:6/r:4, '#ffb14a'","hero impact radius + fallback colour","color","data","view"],
+["src/view/FxLayer.jsx","173","300","splash damage-number delay","duration","data","view"],
+["src/view/FxLayer.jsx","176","150","death-dust delay","duration","data","view"],
+["src/view/FxLayer.jsx","181","2.5","crit arena-shake amplitude","size","data","view"],
+["src/view/FxLayer.jsx","189-196","2.2/1.12/0.35, 380","limit-bar pulse magnitude/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","217-219","width:3, length:8, speed:1150, r:3/5","limit-charge trail/impact geom","size","data","view"],
+["src/view/FxLayer.jsx","221","90 (i*90)","limit-charge per-hero stagger","duration","data","view"],
+["src/view/FxLayer.jsx","229","0.3 (innerHeight*0.3)","order fallback viewport position","offset","data","view"],
+["src/view/FxLayer.jsx","237-239","speed:1300, r:7, '#ffb14a'","order-chest trail speed/impact/fallback colour","size","data","view"],
+["src/view/FxLayer.jsx","242","70 (i*70)","order-chest tile stagger","duration","data","view"],
+["src/view/FxLayer.jsx","247","340, 70","chest sequence base delay + per-item","duration","data","view"],
+["src/view/FxLayer.jsx","272","r:12","wave-clear impact radius","size","data","view"],
+["src/view/FxLayer.jsx","275","3","wave-clear arena shake","size","data","view"],
+["src/view/FxLayer.jsx","278","0.42 (innerHeight*0.42)","level-complete currency origin position","offset","data","view"],
+["src/view/FxLayer.jsx","289","0.5, 0.34, count:90","confetti finale position + count","count","data","view"],
+["src/view/FxLayer.jsx","290","0.22, 220","level-complete flash opacity/duration","duration","data","view"],
+["src/view/FxLayer.jsx","297","r:16","limit-break impact radius","size","data","view"],
+["src/view/FxLayer.jsx","300","3.5","limit-break arena shake","size","data","view"],
+["src/view/FxLayer.jsx","301","120","limit-break death-dust delay","duration","data","view"],
+["src/view/FxLayer.jsx","305","0.15, 700","limit-break cine flash offset/duration","duration","data","view"],
+["src/view/FxLayer.jsx","308-313","skewY(-4deg), 420","limit-break beam skew/duration","offset","data","view"],
+["src/view/FxLayer.jsx","318","0.35, 260","limit-break screen flash opacity/duration","duration","data","view"],
+["src/view/FxLayer.jsx","319","8","limit-break screen shake","size","data","view"],
+["src/view/FxLayer.jsx","351","130 (i*130)","enemy-attack per-hit stagger","duration","data","view"],
+["src/view/FxLayer.jsx","355-357","width:3, length:8, speed:1400, r:3/4","enemy trail/impact geom","size","data","view"],
+["src/view/FxLayer.jsx","359","150 (base+150)","enemy trail fire delay","duration","data","view"],
+["src/view/FxLayer.jsx","363","300 (base+300)","hero-hurt number delay","duration","data","view"],
+["src/view/FxLayer.jsx","393-398","-140%/-150%/-260%, 0.28/0.55, 950","damage-number float keyframes/duration","offset","data","view"],
+["src/view/FxLayer.jsx","408-413",".6/1.15/1, 0.3, 900","combo popper keyframes/duration","duration","data","view"],
+["src/view/FxLayer.jsx","429","8 (c.y-8)","combo-tag vertical offset","offset","data","view"],
+["src/view/FxLayer.jsx","430","28, 13, 1.5","combo-tag font size + growth per streak","size","data","view"],
+["src/view/FxLayer.jsx","431","'#ff5d6c'/'#ff9a3c'/'#ffe58a', n>=5, n>=3","combo-tag colours + streak thresholds","color","data","view"],
+["src/view/FxLayer.jsx","435-439",".5/1.2/1, -120%/-220%, 0.3, 900","combo-tag float keyframes/duration","offset","data","view"],
+["src/view/FxLayer.jsx","462","-20, 40, 40","boss telegraph ring offset + size","offset","data","view"],
+["src/view/FxLayer.jsx","465","4.2, .3, 0.2, 0.95","telegraph ring scale/opacity","size","data","view"],
+["src/view/FxLayer.jsx","472","r:18","boss-special impact radius","size","data","view"],
+["src/view/FxLayer.jsx","480-482","width:5, length:10, speed:1200, r:4/6","boss-special trail/impact geom","size","data","view"],
+["src/view/FxLayer.jsx","484","100 (i*100)","boss-special per-hero stagger","duration","data","view"],
+["src/view/FxLayer.jsx","486","150 (i*100+150)","boss-special number delay","duration","data","view"],
+["src/view/FxLayer.jsx","490","0.5, 540","boss-special flash opacity/duration","duration","data","view"],
+["src/view/FxLayer.jsx","491","9","boss-special screen shake","size","data","view"],
+["src/view/FxLayer.jsx","499","-15, 30, 30","boss shockwave offset + size","offset","data","view"],
+["src/view/FxLayer.jsx","501",".2, 18, 640","boss shockwave scale/duration","size","data","view"],
+["src/view/FxLayer.jsx","517-522","1.5, 0.4, 480","boss-heal pulse brightness/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","529","width:2, length:7, speed:950, r:2","boss-heal wisp geom","size","data","view"],
+["src/view/FxLayer.jsx","538","2","boss-raise arena shake","size","data","view"],
+["src/view/FxLayer.jsx","543-551","2.1, 0.35, 640","boss-raise cast brightness/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","559","-20, 40, 40","boss-raise ring offset + size","offset","data","view"],
+["src/view/FxLayer.jsx","562",".3, 4, 0.9, 620","boss-raise ring scale/opacity/duration","size","data","view"],
+["src/view/FxLayer.jsx","570","r:12","raised-minion impact radius","size","data","view"],
+["src/view/FxLayer.jsx","577-581","3.4, .6, 420","minion-rise brightness/scale/duration","multiplier","data","view"],
+["src/view/FxLayer.jsx","583","220, 90 (220+i*90)","minion-rise base + stagger","duration","data","view"],
+["src/view/HeroesScreen.jsx","32","220","hero drag long-press hold (ms)","duration","data","view"],
+["src/view/HeroesScreen.jsx","33","10","touch scroll-vs-pickup tolerance","threshold","data","view"],
+["src/view/HeroesScreen.jsx","34","8","mouse drag-start tolerance","threshold","data","view"],
+["src/view/HeroesScreen.jsx","114-117","8, 6","popup placement gap + viewport clamp","offset","data","view"],
+["src/view/HeroesScreen.jsx","193","720","fuse reveal reset delay","duration","data","view"],
+["src/view/HeroesScreen.jsx","213","0.5 (r.height*0.5)","drag-avatar lift factor","multiplier","data","view"],
+["src/view/HeroesScreen.jsx","222","scale(1.06)","picked-up hero avatar swell","multiplier","data","view"],
+["src/view/HeroesScreen.jsx","290","0.19s, cubic-bezier","drag-drop glide duration","duration","data","view"],
+["src/view/HeroesScreen.jsx","293","195","glide settle timeout","duration","data","view"],
+["src/view/HeroesScreen.jsx","334-335","0.18s, cubic-bezier(0.2,0.8,0.2,1)","tile displace transition","duration","data","view"],
+["src/view/HeroesScreen.jsx","349","350","post-drag click-suppress window","duration","data","view"],
+["src/view/HeroesScreen.jsx","530","rgba(255,255,255,.15)","empty reequip-slot tint","color","data","view"],
+["src/view/Orders.jsx","48","0.28s, cubic-bezier(0.2,0.8,0.2,1)","order FLIP slide duration","duration","data","view"],
+["src/view/Orders.jsx","100","5","order rail drag threshold","threshold","data","view"],
+["src/view/Orders.jsx","125","160","reroll wipe-in duration","duration","data","view"],
+["src/view/Orders.jsx","127","150","reroll swap delay","duration","data","view"],
+["src/view/Orders.jsx","132","220","reroll wipe-out duration","duration","data","view"],
+["src/view/haptics.js","96","90","generator-drop haptic throttle","rate","data","view"],
+["src/view/haptics.js","109","500","boss-slam haptic throttle","rate","data","view"],
+["src/view/haptics.js","112","450","crit haptic throttle","rate","data","view"],
+["src/view/haptics.js","83-87","tier>=6, tier>=4","merge haptic intensity thresholds","threshold","data","view"],
+["src/view/haptics.js","118-120","tier>=3, tier>=1","gacha haptic intensity thresholds","threshold","data","view"],
+["src/view/screens/MapScreen.jsx","88","-13px, -13px","rail fill overshoot offsets","offset","data","view"],
+["src/view/screens/MapScreen.jsx","180","5","map drag threshold","threshold","data","view"],
+["src/view/screens/GachaScreen.jsx","28","0.8","pity 'near' highlight threshold","threshold","data","view"],
+["src/view/screens/GachaScreen.jsx","33","'33', '88'","banner theme colour alpha suffixes","color","data","view"],
+["src/view/screens/GearScreen.jsx","60","powFlash 0.6s","gear power-change flash duration","duration","data","view"],
+["src/view/screens/GearScreen.jsx","126-128","0.32, 230deg, 440, 70","fuse fodder fly scale/rot/duration/stagger","duration","data","view"],
+["src/view/screens/GearScreen.jsx","130","560, 70","fodder clone cleanup timing","duration","data","view"],
+["src/view/screens/GearScreen.jsx","135","440, 70, 40","fuse land-time computation","duration","data","view"],
+["src/view/screens/GearScreen.jsx","139-142","460, 800, r:18","fuse fallback canvas dims + impact radius","size","data","view"],
+["src/view/screens/GearScreen.jsx","141","0.85, 130","fuse flash opacity/duration","duration","data","view"],
+["src/view/screens/GearScreen.jsx","142","9","fuse screen shake","size","data","view"],
+["src/view/screens/GearScreen.jsx","146-148","20, 720","fuse scroll delay + reveal reset","duration","data","view"],
+["src/view/fmt.js","3","1000, 10000","number→'k' display formatting","size","ok","view"],
+["src/view/assets.js","34-35","0.5, 1, 100","anchor-to-box percent math","multiplier","ok","view"],
+
+// ── VFX ────────────────────────────────────────────────────────────────────
+["src/view/fx/fx-engine.js","211","Math.pow(0.0015, dt)","canvas-shake decay base ('fast decay to rest')","multiplier","hacky","vfx"],
+["src/view/fx/fx-engine.js","370","Math.pow(0.10, dt)","confetti horizontal air-drag decay base","multiplier","hacky","vfx"],
+["src/view/fx/fx-engine.js","316","* 2","undocumented ×2 baked into impact debris speed","multiplier","hacky","vfx"],
+["src/view/fx/fx-engine.js","292","arc(...,0,7)","'7' used as a stand-in for 2π (≈8 sites incl. reveal-engine)","rng","hacky","vfx"],
+["src/view/fx/fx-engine.js","79","Math.min(2, devicePixelRatio)","DPR perf clamp (dup reveal-engine.js:165)","multiplier","hacky","vfx"],
+["src/view/fx/chest-smash.js","33","c = 1.9","non-canonical easeOutBack overshoot (canonical 1.70158)","multiplier","hacky","vfx"],
+["src/view/fx/chest-smash.js","216-223","-100","off-screen chest staging Y — comment: this value stranded chests","offset","hacky","vfx"],
+["src/view/fx/chest-smash.js","189","window.innerHeight * 0.34","fallback chest vertical position","offset","hacky","vfx"],
+["src/view/fx/hero-fx.js","76","gain*0.13 (ATK), gain*0.9 (HP)","invented display-only stat splits shown as floating text","multiplier","hacky","vfx"],
+["src/view/fx/intro-director.js","131","+ 44px","tuned exit anchor drift fixing the 'moves down then up' glitch","offset","hacky","vfx"],
+["src/view/fx/counter-tween.js","24","FALLBACK_MS = 1500","fallback snap delay, hand-tuned to outlast the currency burst","duration","hacky","vfx"],
+["src/view/fx/fx-engine.js","18-31","count:10,size:8-14,speed:120,speedMul:1.3,life:0.33,spread:0.6 + tier table","entire IMPACT_CFG explosion recipe","multiplier","data","vfx"],
+["src/view/fx/fx-engine.js","11-16","SPINE_N:20, MIN_SPACING:4, MAX_AGE:0.12, TRAIL_REF:6.0, MAX_PARTICLES:450","trail geometry/age + particle cap","count","data","vfx"],
+["src/view/fx/fx-engine.js","153","peak:0.8, ms:140, '#fff'","flash() defaults","duration","data","vfx"],
+["src/view/fx/fx-engine.js","180-196","count:140, speed rand(120,380), up rand(120,280), life rand(1.7,3.0), size rand(5,9), grav rand(240,340), sway rand(5,10)/rand(28,70)","confetti burst tuning","rng","data","vfx"],
+["src/view/fx/fx-engine.js","208","> 0.2","shake rest threshold","threshold","data","vfx"],
+["src/view/fx/fx-engine.js","219-238","speed:900, head '#dff0ff', tail '#3366ff', r:5, width:8, length:10.5","spawnTrail defaults","color","data","vfx"],
+["src/view/fx/fx-engine.js","279-289","trail alpha *0.65, glow r*2.5 alpha 0.9","trail/glow opacity + size multipliers","multiplier","data","vfx"],
+["src/view/fx/fx-engine.js","309-311","disc dur:0.12/r*1.2/r*2.6, ring dur:0.45/w0:4, ring2 dur:0.4/r*3/w0:2 '#ffffff'","impact disc/ring shapes","size","data","vfx"],
+["src/view/fx/fx-engine.js","323-345","crit shake 6, heavy 3; ring alpha *0.85; linewidth *0.6","impact tier shake + ring fade","multiplier","data","vfx"],
+["src/view/fx/fx-engine.js","371-401","terminal vel 430, fade start 0.75, size taper 0.6+0.4*alpha, rgba(0,0,0,0.6)","confetti/debris fall & fade","velocity","data","vfx"],
+["src/view/fx/fx-math.js","41-52","peak:0.7, stops 0.35/0.7, alpha *0.55/*0.2","baked glow falloff profile","multiplier","data","vfx"],
+["src/view/fx/currency-pickup.js","23-52","STAGGER_MS:300, per-item i*150","cascade stagger + item delay","duration","data","vfx"],
+["src/view/fx/currency-pickup.js","68","scale 1.25, duration 260","header pulse","size","data","vfx"],
+["src/view/fx/currency-pickup.js","76","amount/16, clamp 2,7","icons-per-burst divisor & bounds","count","data","vfx"],
+["src/view/fx/currency-pickup.js","90-101","img 26px, font 24px, textShadow 0 0 6px, '#ffd45e'","flying-icon size/glow/default colour","size","data","vfx"],
+["src/view/fx/currency-pickup.js","108-112","apex speed rand(60,120), up -40; ctrl rand(-50,50), apex -rand(80,120)","burst apex + arc control offsets","offset","data","vfx"],
+["src/view/fx/currency-pickup.js","114-117","burstMs:160, hangMs:90, arcMs:460, delay i*30","icon flight phase timings","duration","data","vfx"],
+["src/view/fx/currency-pickup.js","130-151","0.4+0.9*back, 1.3, 0.4, 1.3-0.9*e","icon scale keyframes","multiplier","data","vfx"],
+["src/view/fx/currency-pickup.js","145-240","60, 2500, 2500, 1200","remove delays / DOM-leak reapers","duration","data","vfx"],
+["src/view/fx/currency-pickup.js","161-187","chest 44px, font 36px, apex -90, dur 560, spin t*220, bounce 0.3*sin, -22","throwChest size/arc/spin","offset","data","vfx"],
+["src/view/fx/currency-pickup.js","201-235","count:12, '#ffd45e', font 20px, fan rand(-π*.85,-π*.15), speed rand(80,190), g:540, dur rand(620,920), rot rand(-140,140)","spendBurst tuning","rng","data","vfx"],
+["src/view/fx/chest-smash.js","64-81","font size*0.72, rattle 5/-4/2deg, dur 180","icon font scale + hit wobble","offset","data","vfx"],
+["src/view/fx/chest-smash.js","138","[0,-72,72,-144,144,-216,216]","SLOT_DX horizontal fan offsets","offset","data","vfx"],
+["src/view/fx/chest-smash.js","187-193","thresholds 40/40/-40/-60, insets 34, 40/60","on-screen landing clamps","offset","data","vfx"],
+["src/view/fx/chest-smash.js","205-206","icon 56, drop-shadow 0 6px 10px / 0 0 12px","chest size + rarity glow","size","data","vfx"],
+["src/view/fx/chest-smash.js","211-223","pop 260, up 300, descend 440, scale 1+(1-k)*0.5","chest pop/fly/descend timings","duration","data","vfx"],
+["src/view/fx/chest-smash.js","243-244","HIT_WINDOW 2000+tier*500, SHOT_MS 180","rarity-scaled pelt window + shot cadence","duration","data","vfx"],
+["src/view/fx/chest-smash.js","257-269","'#dff0ff'/'#3466ff', width 3, length 6, speed 1500, r 3; impact '#ffd06b' r 4; flash(0.6,220)","pelt projectile visuals + smash flash","color","data","vfx"],
+["src/view/fx/gacha-reveal.js","26","[900,1300,2000,2800,3400,4200]","TEN_DWELL per-tier ×10 dwell","duration","data","vfx"],
+["src/view/fx/gacha-reveal.js","39-41","opacity .45/.95, box-shadow 12px/26px, scale 1.05","injected gr-hintPulse/gr-bestPulse @keyframes","size","data","vfx"],
+["src/view/fx/gacha-reveal.js","129-141","focal top:42%, stage 230px, face 190px","reveal focal + stage sizes","size","data","vfx"],
+["src/view/fx/gacha-reveal.js","133-159","aura/ring inset:6px/blur(2px), anims 2.4s/5s, mask 60-78%, name 34px, pearlScroll 5s","aura/ring + rarity/name plate styling","duration","data","vfx"],
+["src/view/fx/gacha-reveal.js","165-177","hint bottom:46px/13px/1.4s, pullCount/skipBtn 16/14px, '#93a0c0'/'#eef2ff'","×10 chrome styling","color","data","vfx"],
+["src/view/fx/gacha-reveal.js","208-227","glow 8+glowR*1.4, dur 160/620/460/360, brightness 6/2.2/1, stage scale .3/1.12","portrait glow + pop-in keyframes","multiplier","data","vfx"],
+["src/view/fx/gacha-reveal.js","242-277","pip 24px rotate(-40deg), plate dur 520/400, pip dur 360, hint dur 300/0.75","plate/pip/hint anims","duration","data","vfx"],
+["src/view/fx/gacha-reveal.js","289-301","fallback dwell 1500, engine fade 260, dismiss fade 280","×10 timing fallbacks/fades","duration","data","vfx"],
+["src/view/fx/gacha-reveal.js","311-364","pad 22px, grid repeat(5) gap 8px max 430px, tile aspect .8, face 48px, delay 150+i*90, button '#7a5cff'/'#2f8bff'","entire 'YOU SUMMONED' summary grid styling","color","data","vfx"],
+["src/view/fx/hero-fx.js","23-39","flash 420, rays 0/40/95deg dur 700, rings i<2 520+i*150, sparks i<14 d=26+rand*40, n 34/15","level-up starburst recipe","count","data","vfx"],
+["src/view/fx/hero-fx.js","42-60","float 1600 translateY -130%/-315%, tween 1.5, typer 55, fade 560 delay 3000","floating text + MAXED typer","offset","data","vfx"],
+["src/view/fx/hero-fx.js","68-134","tile pop 620/520, staggers 210+i*160, clamp(55,150,900/lvl), slot 1.22 dur 420, i*130, (len-1)*230+220","hero level-up / levelAll / equipBest choreography","duration","data","vfx"],
+["src/view/fx/hero-fx.js","128-148","scale .68/1.2 rotate -8/5deg offset .3/.72 dur 460, flash 0.95, float -14","equip-swap keyframes","offset","data","vfx"],
+["src/view/fx/hero-fx.js","162-181","spots {0,66}/{±60,50}, clone 46/30px scale 0.3 rotate 230deg dur 440 delay i*70, flash(0.85,130), shake(9), impact r:18","hero-fuse fly-in + payoff","multiplier","data","vfx"],
+["src/view/fx/intro-director.js","27","Math.min(5, …+2)","threat-level clamp + offset","count","data","vfx"],
+["src/view/fx/intro-director.js","108-133","veil 180, num scale 1.8 blur 8px dur 420, sleeps 120/560/150/420, flash 0.5/320, chip translateY 26px dur 480","LEVEL intro timeline","duration","data","vfx"],
+["src/view/fx/intro-director.js","147-168","lb-bar 30px 360, art scale 1.18 dur 900, name blur 10px 560, motes i<16 rnd(6,94)% dur rnd(1800,3200), hold 3700","AREA intro timeline","rng","data","vfx"],
+["src/view/fx/intro-director.js","181-215","lightning i<3 0.8/0.5 dur 420 delay 300+i*220, boss 1.12 dur 800, shatter 1.8/3, reveal 0/1.6/1 dur 700, meter t*20% dur 700, hold 2000","BOSS intro timeline","duration","data","vfx"],
+["src/view/fx/reveal-engine.js","30-37","RARITY table col hexes + glowR 0…32, ms 320…4000","per-rarity theme + VFX escalation","color","data","vfx"],
+["src/view/fx/reveal-engine.js","41-51","LAD ladders: flash/rings/burst/shake/chroma/confetti/rays/slowmo (6-entry arrays)","entire per-tier escalation matrix","multiplier","data","vfx"],
+["src/view/fx/reveal-engine.js","83","MAX_P = 900","particle pool cap","count","data","vfx"],
+["src/view/fx/reveal-engine.js","176-419","reduced *0.5, afterglow rate [1,3,5,8,12,16], interval 120","reduced-motion scaler + afterglow rate/cadence","multiplier","data","vfx"],
+["src/view/fx/reveal-engine.js","286-337","orb lerp(8,64) wobble *0.006, rays len*1.3 alpha .42, halo lerp(60,150), lens .7/.55/.9","orb/god-rays/halo/lens params","size","data","vfx"],
+["src/view/fx/reveal-engine.js","352-357","chroma Math.min(px,4), shake decay 3.5","reduced-motion chroma clamp + shake decay","multiplier","data","vfx"],
+["src/view/fx/reveal-engine.js","409-447","afterglow rand(30,110)/-6 grav/0.4 drag; crack branches 12/9 seg rand(6,10), rgba(255,80,140,.9), lineWidth rand(1,3), redraw 80/180ms","afterglow motion + reality-crack look","rng","data","vfx"],
+["src/view/fx/reveal-engine.js","456-544","climax flash 40/70/240+tier*40, ring stagger i*65, burst speed rand(120,560)*(0.6+tier*0.12), kind gates i%7/%5, chroma 900/600, confetti rand(-260,260) grav rand(360,620)","full climax recipe","rng","data","vfx"],
+["src/view/fx/reveal-engine.js","554-571","reveal ring r1:130 dur 0.4, shake 4/2, pip stagger 120+i*90, traits 240+pips*90+120","hero-reveal beat timings","duration","data","vfx"],
+["src/view/fx/reveal-engine.js","589-598","fake-out < 0.25 / < 0.4, antic 220, build clamp(T*0.42,260,1400), climax clamp(T*0.10,120,340)","fake-out odds + timeline scaling","rng","data","vfx"],
+["src/view/fx/reveal-engine.js","604-663","antic orb 0.6/0.35 counts 18/8, build shake 2.5/1.2 starN [6,26,48,80,120,160] iv 38ms, tell tint 0.14+tier*0.06 cap 0.4 dur 220","reveal beats 1-3 tuning","multiplier","data","vfx"],
+["src/view/fx/reveal-engine.js","790-836","reward 78px font 64px, pop-in brightness 6/2.4/1 dur 140/460, hold 800ms","chest-reward reveal + hold","duration","data","vfx"],
+["src/view/fx/reveal-engine.js","846-909","sparkle 11px apex rand(±70) dur 560 delay i*32, 8 sparkles, reward arc dx*0.5 scale .85/.35 dur 560, nav bounce 1.25 dur 300 delay 470, pulse 2000","fly-off / sparkle / nav-bounce","duration","data","vfx"],
+["src/view/fx/reveal-engine.js","873","y - 120","default flyTo vertical offset","offset","data","vfx"],
+["src/view/fx/fx-math.js","13-17","easeOutBack c1 = 1.70158","canonical easing constant","multiplier","ok","vfx"],
+["src/view/fx/fx-math.js","42","SZ = 64","glow bake texture resolution (rescaled on draw)","size","ok","vfx"],
+["src/view/fx/fx-engine.js","15-140","TRAIL_LUT_N 8, dt>0.05 clamp","LUT resolution; tab-away frame clamp","count","ok","vfx"],
+["src/view/fx/FxCanvas.jsx","15","zIndex: 50","overlay layering (comment-documented stack)","offset","ok","vfx"],
+["src/view/fx/chest-smash.js","91-178","__chestLog samples [200,600,1200,2200], cap 6, zIndex 30, safety 10000","dev chest-lifecycle instrumentation + safety nets","duration","ok","vfx"],
+["src/view/fx/perf-probe.js","16-102","CAP 1200, frame%6/%30, >16.7/33/50ms, longtask 50","dev-only perf-probe diagnostic thresholds (P-key)","duration","ok","vfx"],
+];
+
+const CATCOLORS = {};
+const catSel = document.getElementById('fCat');
+[...new Set(D.map(r=>r[4]))].sort().forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+
+const V = {hacky:'HACKY', data:'SHOULD-BE-DATA', ok:'STRUCTURAL-OK'};
+const state = {layer:'',verdict:'',cat:'',q:'',sortK:'verdict',sortDir:1};
+const rank = {hacky:0, data:1, ok:2};
+
+function tiles(){
+  const total=D.length, h=D.filter(r=>r[5]==='hacky').length, d=D.filter(r=>r[5]==='data').length, ok=D.filter(r=>r[5]==='ok').length;
+  const files=new Set(D.map(r=>r[0])).size;
+  document.getElementById('tiles').innerHTML =
+    `<div class="tile"><div class="n">${total}</div><div class="l">Findings</div></div>`+
+    `<div class="tile h"><div class="n">${h}</div><div class="l">Hacky</div></div>`+
+    `<div class="tile d"><div class="n">${d}</div><div class="l">Should be data</div></div>`+
+    `<div class="tile"><div class="n">${ok}</div><div class="l">Structural OK</div></div>`+
+    `<div class="tile"><div class="n">${files}</div><div class="l">Files</div></div>`;
+}
+function breakdown(){
+  const byLayer={logic:0,view:0,vfx:0};
+  D.filter(r=>r[5]!=='ok').forEach(r=>byLayer[r[6]]++);
+  const el=document.getElementById('breakdown');
+  el.innerHTML = Object.entries(byLayer).map(([k,v])=>`<span class="chip" data-ly="${k}"><b class="ly ly-${k}">${k}</b> ${v}</span>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ state.layer = state.layer===c.dataset.ly?'':c.dataset.ly; document.getElementById('fLayer').value=state.layer; render(); });
+}
+function render(){
+  const rows = D.filter(r=>{
+    if(state.layer && r[6]!==state.layer) return false;
+    if(state.verdict && r[5]!==state.verdict) return false;
+    if(state.cat && r[4]!==state.cat) return false;
+    if(state.q){ const s=(r[0]+' '+r[1]+' '+r[2]+' '+r[3]+' '+r[4]).toLowerCase(); if(!s.includes(state.q)) return false; }
+    return true;
+  });
+  const k=state.sortK, dir=state.sortDir;
+  rows.sort((a,b)=>{
+    let av,bv;
+    if(k==='verdict'){ av=rank[a[5]]; bv=rank[b[5]]; }
+    else if(k==='file'){ av=a[0]+a[1]; bv=b[0]+b[1]; }
+    else if(k==='value'){ av=a[2]; bv=b[2]; }
+    else if(k==='controls'){ av=a[3]; bv=b[3]; }
+    else if(k==='cat'){ av=a[4]; bv=b[4]; }
+    else if(k==='layer'){ av=a[6]; bv=b[6]; }
+    if(av<bv) return -1*dir; if(av>bv) return 1*dir; return 0;
+  });
+  document.getElementById('body').innerHTML = rows.map(r=>{
+    const [f,l,v,c,cat,vd,ly]=r;
+    return `<tr class="${vd==='hacky'?'hacky':''}">`+
+      `<td><span class="badge b-${vd}">${V[vd]}</span></td>`+
+      `<td><span class="ly ly-${ly}">${ly}</span></td>`+
+      `<td class="loc">${f}:${l}</td>`+
+      `<td class="val">${esc(v)}</td>`+
+      `<td class="ctrl">${esc(c)}</td>`+
+      `<td class="cat">${cat}</td></tr>`;
+  }).join('');
+  document.getElementById('count').textContent = `${rows.length} of ${D.length} shown`;
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('fLayer').onchange=e=>{state.layer=e.target.value;render();};
+document.getElementById('fVerdict').onchange=e=>{state.verdict=e.target.value;render();};
+document.getElementById('fCat').onchange=e=>{state.cat=e.target.value;render();};
+document.getElementById('fSearch').oninput=e=>{state.q=e.target.value.toLowerCase();render();};
+document.querySelectorAll('th').forEach(th=>th.onclick=()=>{ const k=th.dataset.k; if(state.sortK===k) state.sortDir*=-1; else {state.sortK=k;state.sortDir=1;} render(); });
+
+tiles(); breakdown(); render();
+</script>
+</body>
+</html>

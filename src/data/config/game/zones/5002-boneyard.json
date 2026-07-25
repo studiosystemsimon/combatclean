@@ -3,14 +3,18 @@
 	"displayName": "boneyard",
 	"order": 2,
 	"enemyPoolConfigIds": [
-		3006,
-		3007,
-		3009,
-		3010,
-		3021
+		3054,
+		3055,
+		3056,
+		3057,
+		3058,
+		3059,
+		3060,
+		3061,
+		3062
 	],
-	"bossConfigId": 3028,
-	"accompliceConfigId": 3006,
+	"bossConfigId": 3063,
+	"accompliceConfigId": 3054,
 	"crystalRarityKey": "rare",
 	"orderRarity": {
 		"common": 36,

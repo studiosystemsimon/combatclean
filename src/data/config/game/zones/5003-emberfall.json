@@ -3,14 +3,18 @@
 	"displayName": "emberfall",
 	"order": 3,
 	"enemyPoolConfigIds": [
-		3011,
-		3005,
-		3015,
-		3013,
-		3022
+		3064,
+		3065,
+		3066,
+		3067,
+		3068,
+		3069,
+		3070,
+		3071,
+		3072
 	],
-	"bossConfigId": 3029,
-	"accompliceConfigId": 3005,
+	"bossConfigId": 3073,
+	"accompliceConfigId": 3064,
 	"crystalRarityKey": "epic",
 	"orderRarity": {
 		"common": 26,

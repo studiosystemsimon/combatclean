@@ -16,6 +16,26 @@
       "width": 2
     }
   ],
+  "presets": {
+    "enemy_standard": {
+      "large": [
+        {
+          "color": "#ffffff",
+          "width": 4
+        }
+      ],
+      "small": [
+        {
+          "color": "#000000",
+          "width": 4
+        },
+        {
+          "color": "#ff0000",
+          "width": 2
+        }
+      ]
+    }
+  },
   "images": {
     "enemies/cave-bat.png": {
       "pockets": []
@@ -589,7 +609,11 @@
         "scale": 1,
         "x": 0,
         "y": 0
-      }
+      },
+      "reg": [
+        0.524,
+        0.8454
+      ]
     },
     "boneyard/bone-colossus.png": {
       "pockets": [],
@@ -597,13 +621,25 @@
         "scale": 1,
         "x": 0,
         "y": 0
-      }
+      },
+      "reg": [
+        0.512,
+        0.8342
+      ]
     },
     "boneyard/bone-hound.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.536,
+        0.7782
+      ]
     },
     "boneyard/bone-warrior.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.536,
+        0.7726
+      ]
     },
     "boneyard/crawling-hand.png": {
       "pockets": [],
@@ -611,7 +647,11 @@
         "scale": 1,
         "x": 0,
         "y": 0
-      }
+      },
+      "reg": [
+        0.5528,
+        0.7465
+      ]
     },
     "boneyard/grave-golem.png": {
       "pockets": [],
@@ -619,13 +659,25 @@
         "scale": 1,
         "x": 0,
         "y": 0
-      }
+      },
+      "reg": [
+        0.5072,
+        0.7912
+      ]
     },
     "boneyard/grave-wraith.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5168,
+        0.7987
+      ]
     },
     "boneyard/plague-corpse.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5408,
+        0.7931
+      ]
     },
     "boneyard/rotting-ghoul.png": {
       "pockets": [
@@ -633,6 +685,10 @@
           639,
           608
         ]
+      ],
+      "reg": [
+        0.5504,
+        0.7446
       ]
     },
     "boneyard/skeletal-archer.png": {
@@ -654,7 +710,11 @@
         "scale": 1,
         "x": 0,
         "y": 0
-      }
+      },
+      "reg": [
+        0.4328,
+        0.808
+      ]
     },
     "boneyard/tomb-guard.png": {
       "pockets": [
@@ -662,19 +722,39 @@
           341,
           704
         ]
+      ],
+      "reg": [
+        0.4832,
+        0.808
       ]
     },
     "gloomwood/antler-wraith.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.512,
+        0.8603
+      ]
     },
     "gloomwood/boar-brute.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5048,
+        0.808
+      ]
     },
     "gloomwood/dire-wolf.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5216,
+        0.808
+      ]
     },
     "gloomwood/elder-treant.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5144,
+        0.8323
+      ]
     },
     "gloomwood/goblin-archer.png": {
       "pockets": [
@@ -694,13 +774,25 @@
           510,
           310
         ]
+      ],
+      "reg": [
+        0.4712,
+        0.7875
       ]
     },
     "gloomwood/moss-troll.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4784,
+        0.7726
+      ]
     },
     "gloomwood/mushroom-brute.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4928,
+        0.8043
+      ]
     },
     "gloomwood/shade-stalker.png": {
       "pockets": [
@@ -712,10 +804,18 @@
           684,
           752
         ]
+      ],
+      "reg": [
+        0.4904,
+        0.767
       ]
     },
     "gloomwood/thorn-sprite.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.524,
+        0.7875
+      ]
     },
     "gloomwood/thornhound.png": {
       "pockets": [
@@ -723,10 +823,18 @@
           384,
           718
         ]
+      ],
+      "reg": [
+        0.512,
+        0.7857
       ]
     },
     "gloomwood/treant-sapling.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4808,
+        0.8248
+      ]
     },
     "mossbog/bog-goblin.png": {
       "pockets": [
@@ -738,13 +846,25 @@
           407,
           815
         ]
+      ],
+      "reg": [
+        0.4808,
+        0.7726
       ]
     },
     "mossbog/bog-slime.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4712,
+        0.7931
+      ]
     },
     "mossbog/bog-zombie.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4952,
+        0.8118
+      ]
     },
     "mossbog/fen-lurcher.png": {
       "pockets": [
@@ -756,10 +876,18 @@
           532,
           207
         ]
+      ],
+      "reg": [
+        0.5192,
+        0.808
       ]
     },
     "mossbog/giant-leech.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5024,
+        0.864
+      ]
     },
     "mossbog/giant-toad.png": {
       "pockets": [
@@ -767,6 +895,10 @@
           291,
           843
         ]
+      ],
+      "reg": [
+        0.5216,
+        0.7931
       ]
     },
     "mossbog/marsh-behemoth.png": {
@@ -775,6 +907,10 @@
           631,
           606
         ]
+      ],
+      "reg": [
+        0.5096,
+        0.8435
       ]
     },
     "mossbog/mud-golem.png": {
@@ -783,6 +919,10 @@
           381,
           310
         ]
+      ],
+      "reg": [
+        0.5168,
+        0.7726
       ]
     },
     "mossbog/reed-lurker.png": {
@@ -791,6 +931,10 @@
           250,
           499
         ]
+      ],
+      "reg": [
+        0.4904,
+        0.7894
       ]
     },
     "mossbog/snapvine.png": {
@@ -811,19 +955,39 @@
           358,
           905
         ]
+      ],
+      "reg": [
+        0.524,
+        0.8659
       ]
     },
     "mossbog/swamp-hag.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4928,
+        0.7819
+      ]
     },
     "dragons-ascent/arcane-golem.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5096,
+        0.7577
+      ]
     },
     "dragons-ascent/cockatrice.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.488,
+        0.7539
+      ]
     },
     "dragons-ascent/dragon-whelp.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4976,
+        0.7819
+      ]
     },
     "dragons-ascent/dragonkin-warrior.png": {
       "pockets": [
@@ -835,10 +999,18 @@
           599,
           607
         ]
+      ],
+      "reg": [
+        0.5192,
+        0.7297
       ]
     },
     "dragons-ascent/drake-hatchling.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5072,
+        0.7968
+      ]
     },
     "dragons-ascent/elder-wyrm.png": {
       "pockets": [
@@ -846,6 +1018,10 @@
           180,
           254
         ]
+      ],
+      "reg": [
+        0.5024,
+        0.808
       ]
     },
     "dragons-ascent/gargoyle.png": {
@@ -854,6 +1030,10 @@
           586,
           656
         ]
+      ],
+      "reg": [
+        0.4568,
+        0.7689
       ]
     },
     "dragons-ascent/harpy.png": {
@@ -866,6 +1046,10 @@
           534,
           633
         ]
+      ],
+      "reg": [
+        0.5144,
+        0.8099
       ]
     },
     "dragons-ascent/storm-drake.png": {
@@ -906,6 +1090,10 @@
           656,
           633
         ]
+      ],
+      "reg": [
+        0.5144,
+        0.7801
       ]
     },
     "dragons-ascent/wyrmling-mage.png": {
@@ -914,49 +1102,109 @@
           606,
           726
         ]
+      ],
+      "reg": [
+        0.4136,
+        0.8342
       ]
     },
     "dragons-ascent/wyvern.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4664,
+        0.7931
+      ]
     },
     "emberfall/ash-wraith.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5048,
+        0.8379
+      ]
     },
     "emberfall/cinder-imp.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5192,
+        0.8043
+      ]
     },
     "emberfall/coal-brute.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4904,
+        0.8024
+      ]
     },
     "emberfall/ember-bat.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5096,
+        0.7894
+      ]
     },
     "emberfall/flame-skull.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5024,
+        0.7838
+      ]
     },
     "emberfall/hellhound.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5216,
+        0.8286
+      ]
     },
     "emberfall/infernal-tyrant.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.476,
+        0.8528
+      ]
     },
     "emberfall/lava-slug.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5024,
+        0.7689
+      ]
     },
     "emberfall/magma-golem.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5048,
+        0.7483
+      ]
     },
     "emberfall/molten-knight.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5288,
+        0.7707
+      ]
     },
     "emberfall/salamander.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5312,
+        0.7838
+      ]
     },
     "frostvault/crystal-golem.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5,
+        0.7931
+      ]
     },
     "frostvault/frost-bat.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4976,
+        0.7726
+      ]
     },
     "frostvault/frost-wraith.png": {
       "pockets": [
@@ -964,6 +1212,10 @@
           631,
           718
         ]
+      ],
+      "reg": [
+        0.5072,
+        0.8304
       ]
     },
     "frostvault/frostbite-ghoul.png": {
@@ -980,10 +1232,18 @@
           710,
           811
         ]
+      ],
+      "reg": [
+        0.5432,
+        0.7614
       ]
     },
     "frostvault/frozen-zombie.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4856,
+        0.8099
+      ]
     },
     "frostvault/glacial-warden.png": {
       "pockets": [
@@ -995,22 +1255,46 @@
           715,
           744
         ]
+      ],
+      "reg": [
+        0.5504,
+        0.7968
       ]
     },
     "frostvault/ice-golem.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5072,
+        0.7707
+      ]
     },
     "frostvault/ice-slime.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4952,
+        0.7614
+      ]
     },
     "frostvault/icicle-imp.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.4856,
+        0.8099
+      ]
     },
     "frostvault/snow-wolf.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5336,
+        0.7801
+      ]
     },
     "frostvault/wendigo.png": {
-      "pockets": []
+      "pockets": [],
+      "reg": [
+        0.5096,
+        0.7987
+      ]
     }
   }
 }

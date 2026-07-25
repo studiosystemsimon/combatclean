@@ -3,14 +3,19 @@
 	"displayName": "gloomwood",
 	"order": 1,
 	"enemyPoolConfigIds": [
-		3004,
-		3005,
-		3008,
-		3002,
-		3020
+		3043,
+		3044,
+		3045,
+		3046,
+		3047,
+		3048,
+		3049,
+		3050,
+		3051,
+		3052
 	],
-	"bossConfigId": 3027,
-	"accompliceConfigId": 3004,
+	"bossConfigId": 3053,
+	"accompliceConfigId": 3044,
 	"crystalRarityKey": "rare",
 	"orderRarity": {
 		"common": 48,

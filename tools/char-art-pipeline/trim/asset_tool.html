@@ -17,6 +17,8 @@
                  padding:7px 16px; border-radius:7px; cursor:pointer; font-size:13px; font-weight:600; }
   #tabbar .tab:hover { background:#26282c; }
   #tabbar .tab.on { background:#33383f; color:#e7e9ec; box-shadow:inset 0 -2px 0 var(--accent); }
+  #catTabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  #tabbar .cat-tab { padding:6px 12px; }
   #tabbar .exp { margin-left:auto; background:#2f5137; border:1px solid #3c6b48; color:#bff0cf;
                  font-weight:600; padding:7px 14px; border-radius:7px; cursor:pointer; font-size:13px; }
   #tabbar .exp:hover { background:#356045; } #tabbar .exp:disabled { opacity:.5; cursor:default; }
@@ -120,6 +122,37 @@
   .gtile .gtname { text-align:center; font-size:11px; color:#9aa0a6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .gtile.sel .gtname { color:#e7e9ec; }
 
+  /* boss demarcation */
+  .bossbadge { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:9px; font-size:9px; font-weight:700;
+               letter-spacing:.05em; background:#7a3b12; color:#ffd9a8; vertical-align:middle; }
+  .row.boss img { box-shadow:inset 0 0 0 2px #b5701f; }
+  #list h2 .catregen { float:right; background:#33383f; border:1px solid var(--line); color:#cbd0d6; border-radius:5px;
+                       padding:1px 8px; font-size:11px; cursor:pointer; font-weight:400; text-transform:none; letter-spacing:0; }
+  #list h2 .catregen:hover { background:#3d434c; color:#fff; }
+
+  /* combat lineup view */
+  #combatView:not([hidden]) { width:100%; align-self:stretch; padding:6px 2px 30px; }
+  #combatScene { position:relative; width:100%; min-height:230px; border-radius:12px; overflow-x:auto; overflow-y:hidden;
+                 display:flex; align-items:flex-end; padding:26px 20px 34px; box-shadow:inset 0 0 60px rgba(0,0,0,.55); }
+  #combatScene .cside { display:flex; align-items:flex-end; }
+  #combatScene .cgap { flex:1 1 40px; min-width:40px; }
+  #combatScene .ground { position:absolute; left:12px; right:12px; bottom:30px; height:2px; background:rgba(255,255,255,.14); pointer-events:none; }
+  #combatScene .cempty { color:rgba(255,255,255,.5); align-self:center; margin:60px auto; }
+  .cchip { position:relative; width:72px; height:64px; display:flex; align-items:flex-end; justify-content:center; flex:0 0 auto; }
+  .cchip.cboss { width:132px; height:120px; }
+  .cchip img { height:54px; width:auto; max-width:100%; filter:drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
+  .cchip.cboss img { height:108px; }                              /* boss renders 2x, as in-game */
+  .cchip .clbl { position:absolute; bottom:-15px; left:-6px; right:-6px; text-align:center; font-size:9px;
+                 color:rgba(255,255,255,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cchip.cboss .clbl { color:#ffd9a8; font-weight:700; }
+  #combatBar { display:flex; align-items:center; gap:10px; padding:2px 6px 10px; color:#9aa0a6; font-size:12px; }
+  #combatBar .cttl { font-weight:600; color:#e7e9ec; }
+
+  /* treatment presets */
+  .tpresets { display:flex; align-items:center; gap:8px; padding:12px 16px 4px; border-top:1px solid var(--line); }
+  .tpresets select { flex:1; background:#343841; color:#e7e9ec; border:1px solid var(--line); border-radius:6px; padding:6px 8px; }
+  .tpresets button { padding:6px 10px; }
+
   /* generate tab */
   #genWrap { max-width:760px; margin:0 auto; padding:28px 24px 60px; }
   #genWrap h3 { margin:0 0 4px; font-size:16px; }
@@ -147,7 +180,7 @@
 </head>
 <body>
   <div id="tabbar">
-    <button class="tab on" data-tab="trim">Trim</button>
+    <span id="catTabs"></span>
     <button class="tab" data-tab="gen">Generate</button>
     <button id="exportBtn" class="exp">Export category</button>
     <span class="brand">char-art trim tool</span>
@@ -165,6 +198,7 @@
           <button data-v="256">256</button>
           <button data-v="tile">Tile</button>
           <button data-v="all">All tiles</button>
+          <button data-v="combat">Combat</button>
         </div>
         <span class="spacer"></span>
         <label id="zoomLbl">100%</label>
@@ -203,6 +237,11 @@
           <div id="galHead"><span id="galInfo">drag a tile to move · scroll to scale · click to select</span><button id="galReset">Reset selected</button></div>
           <div id="galGrid"></div>
         </div>
+        <div id="combatView" hidden>
+          <div id="combatBar"><span class="cttl" id="combatTtl">Combat lineup</span>
+            <span>heroes vs the area's enemies, at true in-combat size (~54px) — bosses render 2×</span></div>
+          <div id="combatScene"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -238,23 +277,37 @@
         <div class="tcol"><h4>Large trim</h4><div id="tLarge" class="tlist"></div><button class="addOutline" data-t="large">+ outline</button></div>
         <div class="tcol"><h4>256 export</h4><div id="tSmall" class="tlist"></div><button class="addOutline" data-t="small">+ outline</button></div>
       </div>
-      <div class="mf">Each outline = colour + width (px), stroked outward from the silhouette. Default = one 12px white outline (the classic halo). Large and 256 are independent; applied to the raw cut after sizing.</div>
+      <div class="tpresets">
+        <select id="presetSel"><option value="">— presets —</option></select>
+        <button id="presetLoad">Load</button>
+        <button id="presetSave">Save as…</button>
+        <button id="presetDel">Delete</button>
+      </div>
+      <div class="mf">Each outline = colour + width (px), stroked outward from the silhouette. Default = one 12px white outline (the classic halo). Large and 256 are independent; applied to the raw cut after sizing. <b>Presets</b> save a whole large+256 outline combo — Load one before clipping to process with it.</div>
     </div>
   </div>
 
   <div id="status"></div>
 
 <script>
-const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1,
-  regMode:false, checked:new Set(), treatment:{ large:[{color:'#ffffff',width:12}], small:[{color:'#ffffff',width:12}] } };
+const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1, tab:'trim',
+  regMode:false, checked:new Set(), bosses:{}, presets:{},
+  treatment:{ large:[{color:'#ffffff',width:12}], small:[{color:'#ffffff',width:12}] } };
 const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent']);
+const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
+  emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
+function labelFor(slug){ return String(slug||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(String(name).replace(/\.png$/i,''))); }
 
 /* ---------- shared list building ---------- */
 function buildFromList(list) {
   state.cats = list.categories || [];
   state.items = [];
-  for (const c of state.cats) for (const n of c.images)
-    state.items.push({ cat:c.name, name:n, key:`${c.name}/${n}` });
+  state.bosses = {};
+  for (const c of state.cats) {
+    state.bosses[c.name] = new Set(c.bosses || []);
+    for (const n of c.images) state.items.push({ cat:c.name, name:n, key:`${c.name}/${n}` });
+  }
   for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
 }
 async function boot() {
@@ -265,7 +318,10 @@ async function boot() {
   for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
   if (meta && meta.treatmentLarge && meta.treatmentLarge.length) state.treatment.large = meta.treatmentLarge;
   if (meta && meta.treatmentSmall && meta.treatmentSmall.length) state.treatment.small = meta.treatmentSmall;
+  if (meta && meta.presets) state.presets = meta.presets;
   renderTreat();
+  renderPresets();
+  renderTabs();
   renderList();
   if (state.items.length) select(0);
 }
@@ -279,36 +335,59 @@ async function refreshList(preserveKey) {
   else if (state.items.length) select(Math.min(state.idx, state.items.length - 1));   // deleted current → pick a neighbour
 }
 
+/* ---------- category tabs (top bar) ---------- */
+function renderTabs(){
+  const box = document.getElementById('catTabs'); if(!box) return;
+  box.innerHTML='';
+  for (const c of state.cats){
+    const b=document.createElement('button');
+    b.className='tab cat-tab'+(state.tab==='trim' && c.name===state.openCat ? ' on' : '');
+    b.dataset.cat=c.name;
+    b.innerHTML=`${labelFor(c.name)} <span class="n" style="color:#5b6169">${c.images.length}</span>`;
+    b.onclick=()=>selectCategoryTab(c.name);
+    box.appendChild(b);
+  }
+  const gen=document.querySelector('#tabbar .tab[data-tab="gen"]');
+  if(gen) gen.classList.toggle('on', state.tab==='gen');
+}
+function selectCategoryTab(name){
+  state.tab='trim';
+  document.getElementById('trimView').style.display='flex';
+  document.getElementById('genView').style.display='none';
+  openCategory(name);                        // sets openCat + selects first + renders list/tabs
+  setTimeout(fitZoom,30);
+}
+
 function renderList() {
   const el = document.getElementById('list');
-  el.querySelectorAll('.cat,.row').forEach(n => n.remove());
   if (!state.openCat && state.cats.length) state.openCat = (cur() && cur().cat) || state.cats[0].name;
-  for (const c of state.cats) {
-    const open = c.name === state.openCat;
-    const h = document.createElement('div'); h.className = 'cat' + (open ? ' open' : '');
-    h.innerHTML = `<span class="tw">${open ? '▾' : '▸'}</span>${c.name}<span class="n">${c.images.length}</span>`;
-    if (ENEMY_AREAS.has(c.name)) {                         // per-area regen button (enemy areas only)
-      const rb = document.createElement('button'); rb.className='catregen'; rb.textContent='⟳'; rb.title='Regen this whole area';
+  el.querySelectorAll('.cat,.row').forEach(n => n.remove());
+  const h2 = el.querySelector('h2');
+  const c = state.cats.find(x => x.name === state.openCat);
+  if (!c) { if (h2) h2.textContent = 'Assets'; renderTabs(); return; }
+  if (h2) {                                                // header = the selected category + count (+ area regen)
+    h2.innerHTML = `${labelFor(c.name)} <span style="color:#5b6169;font-weight:400">${c.images.length}</span>`;
+    if (ENEMY_AREAS.has(c.name)) {
+      const rb = document.createElement('button'); rb.className='catregen'; rb.textContent='⟳ area'; rb.title='Regen this whole area';
       rb.onclick = (e) => { e.stopPropagation(); regenArea(c.name); };
-      h.appendChild(rb);
-    }
-    h.onclick = () => openCategory(c.name);
-    el.appendChild(h);
-    if (!open) continue;                                   // collapsed — header only
-    for (const n of c.images) {
-      const key = `${c.name}/${n}`, idx = state.items.findIndex(it => it.key === key);
-      const np = (state.meta[key] || {pockets:[]}).pockets.length;
-      const row = document.createElement('div');
-      row.className = 'row' + (idx === state.idx ? ' sel' : '');
-      row.innerHTML = `<input type="checkbox" class="rowchk"><img src="/img/${c.name}/${encodeURIComponent(n)}?v=${state.ver}">
-        <span class="name">${n}</span><span class="badge ${np?'has':''}">${np}</span>`;
-      const chk = row.querySelector('.rowchk'); chk.checked = state.checked.has(key);
-      chk.onclick = (e) => e.stopPropagation();            // don't select the row when ticking
-      chk.onchange = () => { chk.checked ? state.checked.add(key) : state.checked.delete(key); updateRegenChecked(); };
-      row.onclick = () => select(idx); el.appendChild(row);
+      h2.appendChild(rb);
     }
   }
+  for (const n of c.images) {
+    const key = `${c.name}/${n}`, idx = state.items.findIndex(it => it.key === key);
+    const base = n.replace(/\.png$/i,''), boss = isBoss(c.name, n);
+    const np = (state.meta[key] || {pockets:[]}).pockets.length;
+    const row = document.createElement('div');
+    row.className = 'row' + (idx === state.idx ? ' sel' : '') + (boss ? ' boss' : '');
+    row.innerHTML = `<input type="checkbox" class="rowchk"><img src="/img/${c.name}/${encodeURIComponent(n)}?v=${state.ver}">
+      <span class="name">${base}${boss?' <span class="bossbadge">BOSS</span>':''}</span><span class="badge ${np?'has':''}">${np}</span>`;
+    const chk = row.querySelector('.rowchk'); chk.checked = state.checked.has(key);
+    chk.onclick = (e) => e.stopPropagation();              // don't select the row when ticking
+    chk.onchange = () => { chk.checked ? state.checked.add(key) : state.checked.delete(key); updateRegenChecked(); };
+    row.onclick = () => select(idx); el.appendChild(row);
+  }
   updateRegenChecked();
+  renderTabs();
 }
 function openCategory(name){
   state.openCat = name; state.checked.clear();                  // checks are per open category
@@ -322,7 +401,8 @@ function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
   if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
 function select(i){ state.idx=i; state.openCat=cur().cat; document.getElementById('curName').textContent=cur().key;
-  if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery(); else loadStage();
+  if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery();
+  else if(state.view==='combat') renderCombat(); else loadStage();
   renderList(); }
 function loadStage(){
   const img=document.getElementById('img'), msg=document.getElementById('stageMsg');
@@ -349,13 +429,45 @@ function updateGameSize(){
 }
 function setView(v){ state.view=v;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  const isTile = v==='tile', isAll = v==='all';
-  document.getElementById('stage').style.display = (isTile||isAll)?'none':'';
+  const isTile = v==='tile', isAll = v==='all', isCombat = v==='combat';
+  document.getElementById('stage').style.display = (isTile||isAll||isCombat)?'none':'';
   if(!isTile) document.getElementById('stageMsg').style.display='none';
   document.getElementById('tileEditor').hidden = !isTile;
   document.getElementById('tileGallery').hidden = !isAll;
-  if(isTile||isAll) document.getElementById('gameSize').hidden = true;   // in-game-size preview is 256-view only
-  if(isTile) renderTile(); else if(isAll) renderGallery(); else loadStage(); }
+  document.getElementById('combatView').hidden = !isCombat;
+  if(isTile||isAll||isCombat) document.getElementById('gameSize').hidden = true;   // in-game-size preview is 256-view only
+  if(isTile) renderTile(); else if(isAll) renderGallery(); else if(isCombat) renderCombat(); else loadStage(); }
+
+/* ---------- combat lineup viewer ---------- */
+function combatChip(cat, name, faceRight, boss){
+  const base=name.replace(/\.png$/i,''), key=cat+'/'+name;
+  const reg=(state.meta[key]||{}).reg, ax=reg?reg[0]:0.5, ay=reg?reg[1]:1;   // anchorStyle = combat positioning
+  const chip=document.createElement('div'); chip.className='cchip'+(boss?' cboss':'');
+  const img=document.createElement('img');
+  img.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((1-ay)*100).toFixed(2)}%)`+(faceRight?' scaleX(-1)':'');
+  img.onerror=()=>{ if(!img.dataset.fb){ img.dataset.fb='1'; img.src=`/img/${cat}/${encodeURIComponent(name)}?v=${state.ver}`; } else img.style.visibility='hidden'; };
+  img.src=`/img/${cat}/${encodeURIComponent(base)}_256.png?v=${state.ver}`;   // game art; falls back to source
+  const lbl=document.createElement('span'); lbl.className='clbl'; lbl.textContent=base;
+  chip.appendChild(img); chip.appendChild(lbl); return chip;
+}
+function renderCombat(){
+  const scene=document.getElementById('combatScene'); scene.innerHTML='';
+  const cat=state.openCat;
+  document.getElementById('combatTtl').textContent='Combat lineup — '+labelFor(cat||'');
+  const b=BIOME[cat]||['#26303a','#0e141b'];
+  scene.style.background=`linear-gradient(180deg, ${b[0]}, ${b[1]})`;
+  const ground=document.createElement('div'); ground.className='ground'; scene.appendChild(ground);
+  // player side: a few heroes on the left, flipped to face right (toward the enemies)
+  const heroes=state.items.filter(x=>x.cat==='heroes').slice(0,3);
+  if(heroes.length){ const hs=document.createElement('div'); hs.className='cside';
+    heroes.forEach(h=>hs.appendChild(combatChip('heroes',h.name,true,false))); scene.appendChild(hs);
+    const gap=document.createElement('div'); gap.className='cgap'; scene.appendChild(gap); }
+  // enemy side: the open category's roster, facing left (as generated); bosses render 2x
+  const enemies=state.items.filter(x=>x.cat===cat);
+  if(!enemies.length){ const e=document.createElement('div'); e.className='cempty'; e.textContent='no assets in this category'; scene.appendChild(e); return; }
+  const es=document.createElement('div'); es.className='cside';
+  enemies.forEach(en=>es.appendChild(combatChip(cat,en.name,false,isBoss(cat,en.name)))); scene.appendChild(es);
+}
 
 function portraitOf(key){ const rec=(state.meta[key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
 function applyImgPortrait(img,p){ img.style.height=(82*(p.scale??1))+'%'; img.style.left=`calc(50% + ${(p.x??0)*100}%)`; img.style.bottom=`calc(2px + ${(p.y??0)*100}%)`; }
@@ -474,7 +586,7 @@ document.getElementById('delBtn').onclick=async ()=>{
 let _rt; window.addEventListener('resize',()=>{clearTimeout(_rt); _rt=setTimeout(fitZoom,120);});
 
 function metaPayload(){ return { generated_by:'asset_tool',
-  treatmentLarge:state.treatment.large, treatmentSmall:state.treatment.small, images:state.meta }; }
+  treatmentLarge:state.treatment.large, treatmentSmall:state.treatment.small, presets:state.presets, images:state.meta }; }
 async function save(silent){ const res=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
   const j=await res.json(); if(!silent) toast(res.ok?('Saved → '+j.path):'Save failed'); return res.ok; }
 async function clip(scope){
@@ -489,14 +601,15 @@ async function clip(scope){
     if(j.ok){ state.ver++; setView('trim'); }
   }catch(e){ toast('✗ '+e); } finally{ btns.forEach(b=>b.disabled=false); } }
 
-/* ---------- tabs ---------- */
+/* ---------- tabs (categories are the top tabs; this toggles Trim vs Generate) ---------- */
 function switchTab(t){
-  document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  document.getElementById('trimView').style.display = t==='trim' ? 'flex' : 'none';
-  document.getElementById('genView').style.display  = t==='gen'  ? 'block' : 'none';
-  if (t==='trim') setTimeout(fitZoom, 30);
+  state.tab = t;
+  document.getElementById('trimView').style.display = t==='gen' ? 'none' : 'flex';
+  document.getElementById('genView').style.display  = t==='gen' ? 'block' : 'none';
+  renderTabs();
+  if (t!=='gen') setTimeout(fitZoom, 30);
 }
-document.querySelectorAll('#tabbar .tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+document.querySelector('#tabbar .tab[data-tab="gen"]').onclick=()=>switchTab('gen');
 
 /* ---------- registry point ---------- */
 document.getElementById('regBtn').onclick=()=>{ state.regMode=!state.regMode;
@@ -523,6 +636,32 @@ document.querySelectorAll('.addOutline').forEach(b=>b.onclick=()=>{ state.treatm
 document.getElementById('treatBtn').onclick=()=>{ document.getElementById('treatModal').hidden=false; };
 document.getElementById('treatClose').onclick=()=>{ document.getElementById('treatModal').hidden=true; };
 document.getElementById('treatModal').addEventListener('click',e=>{ if(e.target.id==='treatModal') e.currentTarget.hidden=true; });
+
+/* ---------- treatment presets (named large+256 outline combos) ---------- */
+function cloneOutlines(t){ return (t||[]).map(o=>({color:o.color,width:o.width})); }
+function renderPresets(){
+  const sel=document.getElementById('presetSel'); if(!sel) return;
+  const keep=sel.value;
+  sel.innerHTML='<option value="">— presets —</option>';
+  for(const nm of Object.keys(state.presets).sort()){ const o=document.createElement('option'); o.value=nm; o.textContent=nm; sel.appendChild(o); }
+  if(keep && state.presets[keep]) sel.value=keep;
+}
+document.getElementById('presetSave').onclick=async ()=>{
+  const nm=(prompt('Preset name:')||'').trim(); if(!nm) return;
+  state.presets[nm]={ large:cloneOutlines(state.treatment.large), small:cloneOutlines(state.treatment.small) };
+  renderPresets(); document.getElementById('presetSel').value=nm; await save(true); toast('Saved preset “'+nm+'”');
+};
+document.getElementById('presetLoad').onclick=()=>{
+  const nm=document.getElementById('presetSel').value, p=state.presets[nm];
+  if(!p){ toast('Pick a preset first'); return; }
+  state.treatment.large=cloneOutlines(p.large); state.treatment.small=cloneOutlines(p.small);
+  renderTreat(); toast('Loaded “'+nm+'” — Clip to process with it');
+};
+document.getElementById('presetDel').onclick=async ()=>{
+  const nm=document.getElementById('presetSel').value; if(!nm||!state.presets[nm]) return;
+  if(!confirm('Delete preset “'+nm+'”?')) return;
+  delete state.presets[nm]; renderPresets(); await save(true); toast('Deleted preset “'+nm+'”');
+};
 
 /* ---------- export to game ---------- */
 document.getElementById('exportBtn').onclick = exportToGame;
