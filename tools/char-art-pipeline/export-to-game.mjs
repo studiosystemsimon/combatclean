@@ -90,9 +90,12 @@ function portraitFor(cat, slug) {
   }
   return null;
 }
-function combatFor(cat, slug) {   // enemy in-combat framing — SCALE only (position lives in the asset anchor = reg point)
+function combatFor(cat, slug) {   // in-combat / on-tile framing: SCALE (+ merge ROTATION). Position lives in the asset anchor = reg point.
   const rec = metaRec(cat, slug); const c = rec && rec.combat;
-  if (c && c.scale != null) return { scale: Number(c.scale) };
+  if (c && (c.scale != null || c.rot != null)) {
+    const o = {}; if (c.scale != null) o.scale = Number(c.scale); if (c.rot != null) o.rot = Number(c.rot);
+    return Object.keys(o).length ? o : null;
+  }
   return null;
 }
 

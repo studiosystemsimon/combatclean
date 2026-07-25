@@ -22,7 +22,7 @@ export interface Enemy {
 }
 export interface BattleHero {
   id: string; hero: string; hp: number; maxHp: number; atk: number;
-  abilityMul: number; normalMs: number; basicMs: number; limitOrders: number;
+  abilityMul: number; normalMs: number; basicMs: number; limitEnergy: number;
 }
 export type BattleStatus = 'intro' | 'fighting' | 'clearing' | 'won' | 'lost' | 'gate' | 'chest';
 export interface BattleState {

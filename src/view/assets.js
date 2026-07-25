@@ -15,7 +15,7 @@ export const artUrl = (key) => firstUrl(urlById[key]);
 // Registration point: authored in assets.json as `anchor`, baked into the resolved registry
 // (Map<assetId, ResolvedAsset>). It's the point IN the image — a fraction {x,y} — that marks where
 // the asset should be PINNED when placed (e.g. a character's base). null when the asset declares none.
-const anchorOf = (key) => registry.get(key)?.anchor ?? null;
+const anchorOf = (key) => registry.get(key)?.declaration?.anchor ?? null;
 
 const base = (key) => ASSETS[key] ?? ASSETS.missing;
 export const resolve = (key) => {

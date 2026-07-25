@@ -204,7 +204,7 @@ def gen_status(root, slug):
             "outputExists": os.path.exists(png), "log": log}
 
 # suffixes this tool produces (excluded from the source list, servable for preview)
-OUT_SUFFIXES = ("_trim.png", "_256.png")
+OUT_SUFFIXES = ("_trim.png", "_256.png", "_128.png")
 
 def is_source(fn):
     fl = fn.lower()

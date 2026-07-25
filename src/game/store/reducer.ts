@@ -207,10 +207,16 @@ export const reducer = (state: S, action: Act): S => {
       }
       if (Merge.canMerge(a, b)) {
         let id = state.nextId;
-        const merged = Board.makeItem(id++, a.chain, a.level + 1);
+        const tier = a.level + 1;
+        const merged = Board.makeItem(id++, a.chain, tier);
         let board = Board.withCell(state.board, to, merged); board = Board.withCell(board, from, null);
-        const fx = [...state.fx, { id: id++, type: 'merge', tier: a.level + 1 }];
-        return { ...state, board, nextId: id, fx };
+        // Tier-mergeMinTier+ merges are a LIMIT-energy source (alongside orders): grant to the
+        // lowest-charged heroes (count + amount scale with tier) and fly a charge mote to each.
+        const heroes = Battle.grantMergeEnergy(state.battle.heroes, tier);
+        const chargedIds = heroes.filter((h: any, i: number) => (h.limitEnergy || 0) !== (state.battle.heroes[i].limitEnergy || 0)).map((h: any) => h.id);
+        const fx = [...state.fx, { id: id++, type: 'merge', tier },
+          ...(chargedIds.length ? [{ id: id++, type: 'limitCharge', heroIds: chargedIds }] : [])];
+        return { ...state, board, nextId: id, fx, battle: { ...state.battle, heroes } };
       }
       if (b.kind !== 'item') return state;
       let board = Board.withCell(state.board, to, a); board = Board.withCell(board, from, b);
@@ -226,7 +232,7 @@ export const reducer = (state: S, action: Act): S => {
       for (const idx of cells) board = Board.withCell(board, idx, null);
       const oldC = state.ordersCompleted; const newC = oldC + 1;
       const ratio = (1 + C.BATTLE.orderPowerBonus * newC) / (1 + C.BATTLE.orderPowerBonus * oldC);
-      const bHeroes = Battle.advanceLimitOrders(state.battle.heroes.map((h: any) => ({
+      const bHeroes = Battle.grantOrderEnergy(state.battle.heroes.map((h: any) => ({
         ...h, atk: Math.max(1, Math.round(h.atk * ratio)), maxHp: Math.max(1, Math.round(h.maxHp * ratio)), hp: Math.max(1, Math.round(h.hp * ratio)),
       })));
       const gid = id++;

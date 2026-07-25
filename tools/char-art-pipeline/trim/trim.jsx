@@ -106,7 +106,7 @@
     for(var i=0;i<files.length;i++){
       if(!(files[i] instanceof File)) continue;
       var name=decodeURI(files[i].name);
-      if(endsWith(name,"_trim.png")||endsWith(name,"_256.png")) continue;
+      if(endsWith(name,"_trim.png")||endsWith(name,"_256.png")||endsWith(name,"_128.png")) continue;
       var rel=catName+"/"+name;
       if(ONLY && rel!==ONLY) continue;
 
@@ -148,9 +148,11 @@
 
       var rawSubject=doc.activeLayer;
 
-      // C+D. 256 size (from the RAW subject) THEN small treatment — for configured categories
-      var sz=EXPORT_SIZES[catName]||SIZE_256;   // every category gets a 256 export by default
-      if(sz){
+      // C+D. square exports (from the RAW subject) THEN small treatment. Every cat gets 256; merge chains also get 128.
+      var MERGE_CATS = { magic:1, blade:1, range:1 };
+      var sizes = MERGE_CATS[catName] ? [SIZE_256, 128] : [SIZE_256];
+      for(var si=0; si<sizes.length; si++){
+        var sz=sizes[si];
         var dup=doc.duplicate();                       // copy of the raw subject
         try{
           dup.trim(TrimType.TRANSPARENT);

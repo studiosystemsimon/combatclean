@@ -54,7 +54,7 @@ export const heroAtkMs = (hero: string, seed: string | number) => {
 export const buildHeroes = (squad: string[], statsFn: (cid: string) => { atk: number; maxHp: number; abilityMul: number; hero: string }): BattleHero[] =>
   squad.map((cid) => {
     const s = statsFn(cid);
-    return { id: cid, hero: s.hero, hp: s.maxHp, maxHp: s.maxHp, atk: s.atk, abilityMul: s.abilityMul != null ? s.abilityMul : 1, normalMs: 0, basicMs: hash32(cid) % heroAtkMs(s.hero, cid), limitOrders: 0 };
+    return { id: cid, hero: s.hero, hp: s.maxHp, maxHp: s.maxHp, atk: s.atk, abilityMul: s.abilityMul != null ? s.abilityMul : 1, normalMs: 0, basicMs: hash32(cid) % heroAtkMs(s.hero, cid), limitEnergy: 0 };
   });
 
 // ── damage helpers (pure) ──
@@ -192,11 +192,11 @@ export const fireLimitBreak = (battle: BattleState, cid: string) => {
   if (idx < 0) return { battle, outcome: null, fired: [] };
   const h0 = battle.heroes[idx];
   const lim = heroDef(h0.hero).limit;
-  if (h0.hp <= 0 || (h0.limitOrders || 0) < limitOrdersToCharge(h0.hero)) return { battle, outcome: null, fired: [] };
+  if (h0.hp <= 0 || (h0.limitEnergy || 0) < limitEnergyToCharge(h0.hero)) return { battle, outcome: null, fired: [] };
   let heroes = battle.heroes.map((h) => ({ ...h }));
   let wave = battle.wave.map((e) => ({ ...e }));
   const acc = { focus: 0, aoe: 0, healFrac: 0 };
-  heroes[idx].limitOrders = 0;
+  heroes[idx].limitEnergy = 0;
   applyAbilityEffect(lim.effect, heroes[idx].atk, acc, heroes[idx].abilityMul || 1);
   let comboUid = battle.comboUid ?? null, comboN = battle.comboN ?? 0, combo: TickResult['combo'] = null;
   {
@@ -217,12 +217,35 @@ export const fireLimitBreak = (battle: BattleState, cid: string) => {
 };
 
 // ── selectors ──
-export const limitOrdersToCharge = (hero: string) => heroDef(hero).limit.orders || C.BATTLE.defaultLimitOrders;
-export const isLimitReady = (h: BattleHero) => h.hp > 0 && (h.limitOrders || 0) >= limitOrdersToCharge(h.hero);
+// Limit CAPACITY (energy needed to charge) — per hero from limit.orders (data), else the battle default.
+export const limitEnergyToCharge = (hero: string) => heroDef(hero).limit.orders || C.BATTLE.defaultLimitOrders;
+const capLimit = (h: BattleHero, v: number) => Math.min(limitEnergyToCharge(h.hero), v);
+export const isLimitReady = (h: BattleHero) => h.hp > 0 && (h.limitEnergy || 0) >= limitEnergyToCharge(h.hero);
 export const readyLimitCount = (battle: BattleState) => battle.heroes.filter(isLimitReady).length;
-export const advanceLimitOrders = (heroes: BattleHero[]) => heroes.map((h) => ({ ...h, limitOrders: Math.min(limitOrdersToCharge(h.hero), (h.limitOrders || 0) + 1) }));
+// Completing an ORDER grants every living hero the equivalent merge energy + a small bonus.
+export const grantOrderEnergy = (heroes: BattleHero[]): BattleHero[] => {
+  const le = C.BATTLE.limitEnergy; const add = le.mergeBase + le.orderBonus;
+  return heroes.map((h) => (h.hp > 0 ? { ...h, limitEnergy: capLimit(h, (h.limitEnergy || 0) + add) } : h));
+};
+// A MERGE whose RESULT tier >= mergeMinTier grants proportional energy to the N lowest-charged living heroes;
+// both N (mergeTargets) and the per-hero amount (mergeBase + mergePerTier·tiersAbove) scale with the tier.
+export const grantMergeEnergy = (heroes: BattleHero[], tier: number): BattleHero[] => {
+  const le = C.BATTLE.limitEnergy;
+  if (tier < le.mergeMinTier) return heroes;
+  const off = tier - le.mergeMinTier;
+  const amount = le.mergeBase + le.mergePerTier * off;
+  const n = le.mergeTargets[Math.min(off, le.mergeTargets.length - 1)] || 0;
+  const picked = new Set(
+    heroes.map((h, i) => ({ h, i }))
+      .filter((x) => x.h.hp > 0 && (x.h.limitEnergy || 0) < limitEnergyToCharge(x.h.hero))
+      .sort((a, b) => (a.h.limitEnergy || 0) - (b.h.limitEnergy || 0))
+      .slice(0, n)
+      .map((x) => x.i),
+  );
+  return heroes.map((h, i) => (picked.has(i) ? { ...h, limitEnergy: capLimit(h, (h.limitEnergy || 0) + amount) } : h));
+};
 export const normalChargeFrac = (h: BattleHero) => Math.min(1, h.normalMs / heroDef(h.hero).normal.chargeMs);
-export const limitChargeFrac = (h: BattleHero) => Math.min(1, (h.limitOrders || 0) / limitOrdersToCharge(h.hero));
+export const limitChargeFrac = (h: BattleHero) => Math.min(1, (h.limitEnergy || 0) / limitEnergyToCharge(h.hero));
 export const frontEnemyUid = (battle: BattleState) => { const e = battle.wave.find((x) => x.hp > 0); return e ? e.uid : null; };
 export const effectiveTargetUid = (battle: BattleState) => {
   if (battle.focusUid != null && battle.wave.some((x) => x.uid === battle.focusUid && x.hp > 0)) return battle.focusUid;

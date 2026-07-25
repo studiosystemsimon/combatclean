@@ -177,6 +177,23 @@
   .ctprev { display:flex; flex-direction:column; align-items:center; gap:6px; }
   #ctPreviewChip { background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/10px 10px; border-radius:6px; padding:10px 12px 8px; }
 
+  /* merge tile (single) + merge board (all icons) */
+  #mergeTileEditor:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:8px; }
+  .mtile { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; border-radius:14px;
+           background:linear-gradient(160deg,#3a3f47,#23272d);
+           box-shadow:inset 0 2px 6px rgba(255,255,255,.06), inset 0 -4px 9px rgba(0,0,0,.45), 0 4px 16px rgba(0,0,0,.45); }
+  .mtile.lg { width:300px; height:300px; } .mtile.sm { width:128px; height:128px; border-radius:8px; }
+  .mtile img { width:86%; height:86%; object-fit:contain; }
+  #mTile img { cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:none; } #mTile img:active { cursor:grabbing; }
+  #combatScene.mboard { display:grid; grid-template-columns:repeat(auto-fill,132px); gap:10px; align-content:start; justify-content:center;
+                        padding:16px; background:linear-gradient(160deg,#2a2f36,#191c21); overflow-y:auto; }
+  .mslot { width:132px; height:132px; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; border-radius:10px;
+           background:linear-gradient(160deg,#3a3f47,#23272d);
+           box-shadow:inset 0 2px 5px rgba(255,255,255,.05), inset 0 -3px 7px rgba(0,0,0,.4); }
+  .mslot img { width:auto; object-fit:contain; cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:none; }
+  .mslot img:active { cursor:grabbing; }
+  .mslot.empty { opacity:.45; }
+
   /* treatment presets */
   .tpresets { display:flex; align-items:center; gap:8px; padding:12px 16px 4px; border-top:1px solid var(--line); }
   .tpresets select { flex:1; background:#343841; color:#e7e9ec; border:1px solid var(--line); border-radius:6px; padding:6px 8px; }
@@ -288,6 +305,11 @@
           </div>
           <div class="tilehint">Drag = move the <b>registration point</b> (shared across this enemy's assets) · slider / scroll = scale · saved + exported</div>
         </div>
+        <div id="mergeTileEditor" hidden>
+          <div class="mtile lg" id="mTile"><img id="mtArt" alt=""></div>
+          <div class="ctprev"><div class="mtile sm" id="mtPrev"><img id="mtPrevArt" alt=""></div><span class="gs-lbl">on a merge tile · 128px game size</span></div>
+          <div class="tilehint">Drag = registration point · scroll = scale · shift+drag = rotate · auto-saved. Clipping emits both 256 and 128 for merge chains.</div>
+        </div>
         <div id="tileGallery" hidden>
           <div id="galHead"><span id="galInfo">drag a tile to move · scroll to scale · click to select</span><button id="galReset">Reset selected</button></div>
           <div id="galGrid"></div>
@@ -352,6 +374,7 @@ const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frost
 const MERGE_CATS = new Set(['magic','blade','range']);
 const MERGE_ORDER = ['magic','blade','range'];
 function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
+function assetType(c){ return c==='heroes' ? 'hero' : (MERGE_CATS.has(c) ? 'merge' : 'enemy'); }
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
   emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
 const COMBAT_BG = 'linear-gradient(rgb(255, 36, 255), rgb(11, 15, 255))';   // combat mockup backdrop
@@ -501,10 +524,14 @@ function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
   if (state.view==='trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
   if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
-function updateSegLabels(){                         // 4th seg button = Tile (heroes) / Combat (enemies)
-  const it=cur(), enemy = it && it.cat!=='heroes';
-  const tb=document.querySelector('#viewSeg button[data-v="tile"]'); if(tb) tb.textContent = enemy?'Combat':'Tile';
-  const ab=document.querySelector('#viewSeg button[data-v="all"]'); if(ab) ab.style.display = enemy?'none':'';  // gallery = heroes only
+function updateSegLabels(){                         // seg labels adapt to the asset type
+  const it=cur(); if(!it) return; const t=assetType(it.cat);
+  const tb=document.querySelector('#viewSeg button[data-v="tile"]');
+  if(tb) tb.textContent = t==='hero' ? 'Tile' : (t==='merge' ? 'Merge tile' : 'Combat');
+  const cb=document.querySelector('#viewSeg button[data-v="combat"]');
+  if(cb) cb.textContent = t==='merge' ? 'Board' : 'Lineup';
+  const ab=document.querySelector('#viewSeg button[data-v="all"]');
+  if(ab) ab.style.display = t==='hero' ? '' : 'none';   // hero-tile gallery = heroes only
 }
 function select(i){ state.idx=i; state.openCat=cur().cat; state.group=groupOf(cur().cat); document.getElementById('curName').textContent=cur().key;
   updateSegLabels();
@@ -539,7 +566,7 @@ function setView(v){ state.view=v;
   const isTile = v==='tile', isAll = v==='all', isCombat = v==='combat';
   document.getElementById('stage').style.display = (isTile||isAll||isCombat)?'none':'';
   if(!isTile) document.getElementById('stageMsg').style.display='none';
-  if(!isTile){ document.getElementById('tileEditor').hidden = true; document.getElementById('combatTileEditor').hidden = true; }
+  if(!isTile){ document.getElementById('tileEditor').hidden = true; document.getElementById('combatTileEditor').hidden = true; document.getElementById('mergeTileEditor').hidden = true; }
   document.getElementById('tileGallery').hidden = !isAll;
   document.getElementById('combatView').hidden = !isCombat;
   if(isTile||isAll||isCombat) document.getElementById('gameSize').hidden = true;   // in-game-size preview is 256-view only
@@ -594,8 +621,61 @@ function combatChip(cat, name, faceRight, boss, editable){
     img.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((1-ay)*100).toFixed(2)}%)`+(faceRight?' scaleX(-1)':''); }
   return chip;
 }
+/* merge placement: the reg point maps to the tile CENTRE + a stored scale (combat.scale).
+   MOVE changes the registration point (shared with the Registry tool — they override each other). */
+function mergeReg(key){ const r=(state.meta[key]||{}).reg; return r?[r[0],r[1]]:[0.5,0.5]; }   // merge default = centre
+function _angTo(e,el){ const r=el.getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; }
+function applyMergeImg(img,key,baseH){
+  const cm=combatRead(key), rg=mergeReg(key), ax=rg[0], ay=rg[1], rot=cm.rot||0;
+  img.style.height=(baseH*(cm.scale??1))+'px'; img.style.width='auto'; img.style.maxWidth='none';
+  img.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((0.5-ay)*100).toFixed(2)}%) rotate(${rot}deg)`;
+}
+function wireMergeEdit(tile,img,key,baseH,after){
+  let d=null;
+  img.addEventListener('pointerdown',e=>{ const rg=mergeReg(key);
+    d={rot:e.shiftKey, sx:e.clientX, sy:e.clientY, ax:rg[0], ay:rg[1], a0:_angTo(e,tile), r0:(combatRead(key).rot||0)};
+    try{img.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); e.stopPropagation(); });
+  img.addEventListener('pointermove',e=>{ if(!d) return;
+    if(d.rot){ combatOf(key).rot=Math.round(d.r0 + (_angTo(e,tile)-d.a0)); }                // SHIFT+drag = rotate
+    else { const w=img.offsetWidth,h=img.offsetHeight; if(w<2||h<2) return;                 // drag = reg point
+      let ax=Math.max(0,Math.min(1,d.ax-(e.clientX-d.sx)/w)), ay=Math.max(0,Math.min(1,d.ay-(e.clientY-d.sy)/h));
+      (state.meta[key] ||= {pockets:[]}).reg=[+ax.toFixed(4),+ay.toFixed(4)]; }
+    applyMergeImg(img,key,baseH); if(after)after(); });
+  const end=()=>{ if(d){ d=null; scheduleSave(); } }; img.addEventListener('pointerup',end); img.addEventListener('pointercancel',end);
+  tile.addEventListener('wheel',e=>{ e.preventDefault(); const cm=combatOf(key);                       // scroll = scale
+    cm.scale=+Math.max(0.3,Math.min(3,(cm.scale??1)-Math.sign(e.deltaY)*0.05)).toFixed(2); applyMergeImg(img,key,baseH); if(after)after(); scheduleSave(); },{passive:false});
+}
+function renderMergeBoard(){                    // merge cats: the Lineup view becomes an EDITABLE merge BOARD
+  const scene=document.getElementById('combatScene'); const cat=state.openCat;
+  document.getElementById('combatTtl').textContent='Merge board — '+labelFor(cat||'')+' — drag = reg point · scroll = scale · shift+drag = rotate (auto-saved)';
+  scene.classList.add('mboard'); scene.style.background=''; scene.innerHTML='';
+  const items=state.items.filter(x=>x.cat===cat);
+  const total=Math.max(items.length, 12);
+  for(let i=0;i<total;i++){
+    const slot=document.createElement('div'); slot.className='mslot'+(i<items.length?'':' empty');
+    if(i<items.length){ const it=items[i], key=it.key, base=it.name.replace(/\.png$/i,''), img=document.createElement('img');
+      img.onerror=()=>{ if(!img.dataset.fb){ img.dataset.fb='1'; img.src=`/img/${cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; } else img.style.visibility='hidden'; };
+      img.onload=()=>applyMergeImg(img,key,108);
+      img.src=`/img/${cat}/${encodeURIComponent(base)}_256.png?v=${state.ver}`;
+      slot.appendChild(img); applyMergeImg(img,key,108); wireMergeEdit(slot,img,key,108); }
+    scene.appendChild(slot);
+  }
+}
+function applyMergeTileView(){ const it=cur(); if(!it) return;
+  applyMergeImg(document.getElementById('mtArt'), it.key, 250);
+  applyMergeImg(document.getElementById('mtPrevArt'), it.key, 108); }
+function renderMergeTile(){                     // merge cats: the Tile view becomes ONE editable merge tile
+  const it=cur(), base=it.name.replace(/\.png$/i,''), msg=document.getElementById('stageMsg');
+  const src=`/img/${it.cat}/${encodeURIComponent(base)}_256.png?v=${state.ver}`, fb=`/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`;
+  for(const id of ['mtArt','mtPrevArt']){ const im=document.getElementById(id); im.dataset.fb='';
+    im.onload=()=>{ im.style.visibility='visible'; msg.style.display='none'; applyMergeTileView(); };
+    im.onerror=()=>{ if(!im.dataset.fb){ im.dataset.fb='1'; im.src=fb; } else { im.style.visibility='hidden'; msg.textContent='no 256 yet — Clip this icon first'; msg.style.display='block'; } };
+    im.src=src; }
+  applyMergeTileView();
+}
 function renderCombat(){
-  const scene=document.getElementById('combatScene'); scene.innerHTML='';
+  if(assetType(state.openCat)==='merge') return renderMergeBoard();   // merge → board, not the combat lineup
+  const scene=document.getElementById('combatScene'); scene.classList.remove('mboard'); scene.innerHTML='';
   const cat=state.openCat;
   document.getElementById('combatTtl').textContent='Combat lineup — '+labelFor(cat||'');
   scene.style.background=COMBAT_BG;
@@ -642,10 +722,11 @@ document.getElementById('galReset').onclick=()=>{ (state.meta[cur().key] ||= {po
 
 /* ---------- per-asset framing: heroes → portrait tile, enemies → combat mockup ---------- */
 function renderTile(){
-  const enemy = cur() && cur().cat!=='heroes';
-  document.getElementById('tileEditor').hidden = enemy;
-  document.getElementById('combatTileEditor').hidden = !enemy;
-  if(enemy) renderCombatTile(); else renderPortraitTile();
+  const t = cur() ? assetType(cur().cat) : 'hero';
+  document.getElementById('tileEditor').hidden = t!=='hero';
+  document.getElementById('combatTileEditor').hidden = t!=='enemy';
+  document.getElementById('mergeTileEditor').hidden = t!=='merge';
+  if(t==='hero') renderPortraitTile(); else if(t==='enemy') renderCombatTile(); else renderMergeTile();
 }
 /* ---------- portrait tile framing (heroes) ---------- */
 function curPortrait(){ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
@@ -713,6 +794,21 @@ document.getElementById('pReset').onclick=()=>{ state.meta[cur().key].portrait={
 })();
 document.getElementById('cScale').oninput=e=>{ combatOf(cur().key).scale=+parseFloat(e.target.value).toFixed(2); applyCombatTile(); scheduleSave(); };
 document.getElementById('cReset').onclick=()=>{ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.reg=[0.5,1]; rec.combat={scale:1}; applyCombatTile(); scheduleSave(); };
+/* single merge tile: DRAG = move the registration point · scroll = scale · auto-saved (same reg the Registry tool writes) */
+(function(){ let d=null; const art=document.getElementById('mtArt'), tile=document.getElementById('mTile');
+  art.addEventListener('pointerdown',e=>{ if(!cur()) return; const rg=mergeReg(cur().key);
+    d={rot:e.shiftKey, sx:e.clientX, sy:e.clientY, ax:rg[0], ay:rg[1], a0:_angTo(e,tile), r0:(combatRead(cur().key).rot||0)};
+    try{art.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); });
+  art.addEventListener('pointermove',e=>{ if(!d) return;
+    if(d.rot){ combatOf(cur().key).rot=Math.round(d.r0 + (_angTo(e,tile)-d.a0)); }           // SHIFT+drag = rotate
+    else { const w=art.offsetWidth,h=art.offsetHeight; if(w<2||h<2) return;
+      let ax=Math.max(0,Math.min(1,d.ax-(e.clientX-d.sx)/w)), ay=Math.max(0,Math.min(1,d.ay-(e.clientY-d.sy)/h));
+      (state.meta[cur().key] ||= {pockets:[]}).reg=[+ax.toFixed(4),+ay.toFixed(4)]; }
+    applyMergeTileView(); });
+  const end=()=>{ if(d){ d=null; scheduleSave(); } }; art.addEventListener('pointerup',end); art.addEventListener('pointercancel',end);
+  tile.addEventListener('wheel',e=>{ e.preventDefault(); const cm=combatOf(cur().key);
+    cm.scale=+Math.max(0.3,Math.min(3,(cm.scale??1)-Math.sign(e.deltaY)*0.05)).toFixed(2); applyMergeTileView(); scheduleSave(); },{passive:false});
+})();
 function setZoom(z){ state.zoom=Math.max(0.1,Math.min(z,8)); const pct=Math.round(state.zoom*100);
   document.getElementById('zoom').value=pct; document.getElementById('zoomLbl').textContent=pct+'%'; applyZoom(); }
 function fitZoom(){ if(!state.natural.w) return; const wrap=document.getElementById('stageWrap'), pad=48;

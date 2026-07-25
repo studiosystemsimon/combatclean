@@ -32,8 +32,8 @@ export const zUIConfig = z
       scale: z.number().optional(), x: z.number().optional(), y: z.number().optional(),
     }).strict().optional().describe('heroes: portrait framing in the hero tile — scale multiplier + normalized x/y offset (fraction of the tile). Authored by the char-art trim tool.'),
     combat: z.object({
-      scale: z.number().optional(),
-    }).strict().optional().describe('enemies: in-combat chip scale multiplier. Position is the asset anchor (registration point), not here. Authored by the char-art trim tool.'),
+      scale: z.number().optional(), rot: z.number().optional(),
+    }).strict().optional().describe('enemies/merge: in-combat / on-tile framing — scale multiplier (+ merge rotation in degrees). Position is the asset anchor (registration point), not here. Authored by the char-art trim tool.'),
   })
   .strict()
   .refine((e) => e.id !== undefined || e.key !== undefined, {
