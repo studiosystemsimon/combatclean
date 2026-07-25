@@ -9,8 +9,8 @@
 		"limit": "Ultimate"
 	},
 	"portrait": {
-		"scale": 1,
-		"x": 0,
-		"y": 0
+		"scale": 2.1,
+		"x": 0.01,
+		"y": -0.66
 	}
 }

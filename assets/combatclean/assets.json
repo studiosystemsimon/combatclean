@@ -736,6 +736,174 @@
 		"hero.obsidia": {
 			"type": "image",
 			"file": "heroes/obsidia.png"
+		},
+		"enemy.banshee": {
+			"type": "image",
+			"file": "enemies/banshee.png"
+		},
+		"enemy.bone-hound": {
+			"type": "image",
+			"file": "enemies/bone-hound.png"
+		},
+		"enemy.bone-warrior": {
+			"type": "image",
+			"file": "enemies/bone-warrior.png"
+		},
+		"enemy.crawling-hand": {
+			"type": "image",
+			"file": "enemies/crawling-hand.png"
+		},
+		"enemy.grave-golem": {
+			"type": "image",
+			"file": "enemies/grave-golem.png"
+		},
+		"enemy.grave-wraith": {
+			"type": "image",
+			"file": "enemies/grave-wraith.png"
+		},
+		"enemy.plague-corpse": {
+			"type": "image",
+			"file": "enemies/plague-corpse.png"
+		},
+		"enemy.rotting-ghoul": {
+			"type": "image",
+			"file": "enemies/rotting-ghoul.png"
+		},
+		"enemy.skeletal-archer": {
+			"type": "image",
+			"file": "enemies/skeletal-archer.png"
+		},
+		"enemy.tomb-guard": {
+			"type": "image",
+			"file": "enemies/tomb-guard.png"
+		},
+		"enemy.ash-wraith": {
+			"type": "image",
+			"file": "enemies/ash-wraith.png"
+		},
+		"enemy.coal-brute": {
+			"type": "image",
+			"file": "enemies/coal-brute.png"
+		},
+		"enemy.ember-bat": {
+			"type": "image",
+			"file": "enemies/ember-bat.png"
+		},
+		"enemy.flame-skull": {
+			"type": "image",
+			"file": "enemies/flame-skull.png"
+		},
+		"enemy.hellhound": {
+			"type": "image",
+			"file": "enemies/hellhound.png"
+		},
+		"enemy.infernal-tyrant": {
+			"type": "image",
+			"file": "enemies/infernal-tyrant.png"
+		},
+		"enemy.lava-slug": {
+			"type": "image",
+			"file": "enemies/lava-slug.png"
+		},
+		"enemy.magma-golem": {
+			"type": "image",
+			"file": "enemies/magma-golem.png"
+		},
+		"enemy.molten-knight": {
+			"type": "image",
+			"file": "enemies/molten-knight.png"
+		},
+		"enemy.salamander": {
+			"type": "image",
+			"file": "enemies/salamander.png"
+		},
+		"enemy.antler-wraith": {
+			"type": "image",
+			"file": "enemies/antler-wraith.png"
+		},
+		"enemy.boar-brute": {
+			"type": "image",
+			"file": "enemies/boar-brute.png"
+		},
+		"enemy.dire-wolf": {
+			"type": "image",
+			"file": "enemies/dire-wolf.png"
+		},
+		"enemy.elder-treant": {
+			"type": "image",
+			"file": "enemies/elder-treant.png"
+		},
+		"enemy.goblin-archer": {
+			"type": "image",
+			"file": "enemies/goblin-archer.png"
+		},
+		"enemy.moss-troll": {
+			"type": "image",
+			"file": "enemies/moss-troll.png"
+		},
+		"enemy.mushroom-brute": {
+			"type": "image",
+			"file": "enemies/mushroom-brute.png"
+		},
+		"enemy.shade-stalker": {
+			"type": "image",
+			"file": "enemies/shade-stalker.png"
+		},
+		"enemy.thorn-sprite": {
+			"type": "image",
+			"file": "enemies/thorn-sprite.png"
+		},
+		"enemy.thornhound": {
+			"type": "image",
+			"file": "enemies/thornhound.png"
+		},
+		"enemy.treant-sapling": {
+			"type": "image",
+			"file": "enemies/treant-sapling.png"
+		},
+		"enemy.bog-goblin": {
+			"type": "image",
+			"file": "enemies/bog-goblin.png"
+		},
+		"enemy.bog-slime": {
+			"type": "image",
+			"file": "enemies/bog-slime.png"
+		},
+		"enemy.bog-zombie": {
+			"type": "image",
+			"file": "enemies/bog-zombie.png"
+		},
+		"enemy.fen-lurcher": {
+			"type": "image",
+			"file": "enemies/fen-lurcher.png"
+		},
+		"enemy.giant-leech": {
+			"type": "image",
+			"file": "enemies/giant-leech.png"
+		},
+		"enemy.giant-toad": {
+			"type": "image",
+			"file": "enemies/giant-toad.png"
+		},
+		"enemy.marsh-behemoth": {
+			"type": "image",
+			"file": "enemies/marsh-behemoth.png"
+		},
+		"enemy.mud-golem": {
+			"type": "image",
+			"file": "enemies/mud-golem.png"
+		},
+		"enemy.reed-lurker": {
+			"type": "image",
+			"file": "enemies/reed-lurker.png"
+		},
+		"enemy.snapvine": {
+			"type": "image",
+			"file": "enemies/snapvine.png"
+		},
+		"enemy.swamp-hag": {
+			"type": "image",
+			"file": "enemies/swamp-hag.png"
 		}
 	}
 }
