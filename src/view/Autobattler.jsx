@@ -13,6 +13,7 @@ import { normalChargeFrac, limitChargeFrac, isLimitReady } from '../model/battle
 import { isBossLevel } from '../model/map.js';
 import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: biome/keyArt/nameKey), not the logical sim selector
 import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
+import { HEROES } from '../data/heroes.js'; // per-hero combatScale (in-combat avatar size) + name/asset
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
 import { fmtK as fmt } from './fmt.js';
@@ -79,7 +80,10 @@ function HeroChip({ h, onLimit, fighting }) {
         ))}
       </div>
       <div className="chip-art">
-        <Art a={ha} className="chip-emoji" style={anchorStyle(ha)} />
+        {/* In-combat AVATAR, 1:1 with the trim tool: sprite HEIGHT = COMBAT_BASE_H × cooked combat.scale,
+            bottom-anchored, no clamp, translated by its registration-point anchor. (The hero TILE portrait
+            is a separate system — portraitStyle — and is untouched here.) */}
+        <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `${COMBAT_BASE_H * (HEROES[h.hero]?.combatScale ?? 1)}px` }} />
       </div>
       <HpBar frac={h.hp / h.maxHp} kind="hero" />
       <div className="bar normal">

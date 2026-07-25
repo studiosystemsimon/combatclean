@@ -1,7 +1,8 @@
 {
 	"id": 3032,
-	"name": "Bog Slime",
-	"iconAssetId": "enemy.bog-slime",
+	"name": "Slime",
+	"iconAssetId": "enemy.slime",
+	"emoji": "👾",
 	"combat": {
 		"scale": 1.05
 	}

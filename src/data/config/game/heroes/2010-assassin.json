@@ -2,7 +2,7 @@
 	"id": 2010,
 	"displayName": "assassin",
 	"rarityKey": "common",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 14,
 	"baseHp": 142.5,
 	"baseDef": 8,

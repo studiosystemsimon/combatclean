@@ -172,6 +172,9 @@
         "scale": 1.45,
         "x": -0.003,
         "y": -0.193
+      },
+      "combat": {
+        "scale": 1
       }
     },
     "heroes/cleric.png": {
@@ -189,6 +192,9 @@
         "scale": 1.55,
         "x": 0.007,
         "y": -0.328
+      },
+      "combat": {
+        "scale": 1
       }
     },
     "heroes/dancer.png": {
@@ -311,6 +317,9 @@
         "scale": 1.9,
         "x": 0.069,
         "y": -0.414
+      },
+      "combat": {
+        "scale": 1.1
       }
     },
     "heroes/golem.png": {
@@ -343,6 +352,9 @@
         "scale": 2,
         "x": -0.222,
         "y": -0.65
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/knight.png": {
@@ -355,6 +367,9 @@
         "scale": 1.85,
         "x": -0.131,
         "y": -0.51
+      },
+      "combat": {
+        "scale": 1.1
       }
     },
     "heroes/lancer.png": {
@@ -408,6 +423,9 @@
         "scale": 1.7,
         "x": 0.074,
         "y": -0.397
+      },
+      "combat": {
+        "scale": 1
       }
     },
     "heroes/ninja.png": {
@@ -420,6 +438,9 @@
         "scale": 2,
         "x": 0.02,
         "y": -0.463
+      },
+      "combat": {
+        "scale": 1.15
       }
     },
     "heroes/obsidia.png": {
@@ -428,6 +449,9 @@
         "scale": 1.45,
         "x": -0.025,
         "y": -0.217
+      },
+      "combat": {
+        "scale": 0.95
       }
     },
     "heroes/paladin.png": {
@@ -493,6 +517,9 @@
         "scale": 1.6,
         "x": -0.03,
         "y": -0.272
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/samurai.png": {
@@ -505,6 +532,9 @@
         "scale": 1.7,
         "x": 0.033,
         "y": -0.322
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/shaman.png": {
@@ -522,6 +552,9 @@
         "scale": 1.7,
         "x": -0.086,
         "y": -0.299
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/sorceress.png": {
@@ -540,12 +573,15 @@
       "pockets": [],
       "reg": [
         0.584,
-        0.9045
+        0.9585
       ],
       "portrait": {
         "scale": 1.55,
         "x": 0.004,
         "y": -0.252
+      },
+      "combat": {
+        "scale": 1
       }
     },
     "heroes/summoner.png": {
@@ -558,18 +594,24 @@
         "scale": 1.8,
         "x": 0.072,
         "y": -0.43
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/templar.png": {
       "pockets": [],
       "reg": [
-        0.5383,
-        0.96
+        0.5981,
+        0.9585
       ],
       "portrait": {
         "scale": 1.8,
         "x": -0.07,
         "y": -0.414
+      },
+      "combat": {
+        "scale": 1.1
       }
     },
     "heroes/valkyrie.png": {
@@ -594,6 +636,9 @@
         "scale": 1.45,
         "x": 0.05,
         "y": -0.216
+      },
+      "combat": {
+        "scale": 1
       }
     },
     "heroes/warlord.png": {
@@ -615,18 +660,24 @@
         "scale": 2.2,
         "x": -0.149,
         "y": -0.535
+      },
+      "combat": {
+        "scale": 1.2
       }
     },
     "heroes/warrior.png": {
       "pockets": [],
       "reg": [
-        0.4984,
-        0.9135
+        0.545,
+        0.9321
       ],
       "portrait": {
         "scale": 1.55,
         "x": -0.117,
         "y": -0.26
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "heroes/witch.png": {
@@ -644,18 +695,24 @@
         "scale": 2.05,
         "x": -0.074,
         "y": -0.486
+      },
+      "combat": {
+        "scale": 1.1
       }
     },
     "heroes/wizard.png": {
       "pockets": [],
       "reg": [
-        0.4856,
-        0.9555
+        0.5206,
+        0.9559
       ],
       "portrait": {
         "scale": 1.7,
         "x": 0,
         "y": -0.307
+      },
+      "combat": {
+        "scale": 1.05
       }
     },
     "boneyard/banshee.png": {
@@ -1901,6 +1958,198 @@
       "reg": [
         0.4873,
         0.5052
+      ]
+    },
+    "blade-gen/blade-gen-1.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 0.85
+      },
+      "reg": [
+        0.5054,
+        0.4117
+      ]
+    },
+    "blade-gen/blade-gen-2.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.05
+      }
+    },
+    "blade-gen/blade-gen-3.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.1
+      }
+    },
+    "blade-gen/blade-gen-4.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.15
+      }
+    },
+    "blade-gen/blade-gen-5.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.15
+      },
+      "reg": [
+        0.4981,
+        0.5047
+      ]
+    },
+    "magic-gen/magic-gen-1.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 0.9
+      },
+      "reg": [
+        0.4793,
+        0.4622
+      ]
+    },
+    "magic-gen/magic-gen-2.png": {
+      "pockets": []
+    },
+    "magic-gen/magic-gen-3.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1
+      }
+    },
+    "magic-gen/magic-gen-4.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.15
+      },
+      "reg": [
+        0.4983,
+        0.551
+      ]
+    },
+    "magic-gen/magic-gen-5.png": {
+      "pockets": [],
+      "combat": {
+        "scale": 1.05
+      },
+      "reg": [
+        0.502,
+        0.5076
+      ]
+    },
+    "range-gen/range-gen-1.png": {
+      "pockets": [
+        [
+          623,
+          722
+        ],
+        [
+          422,
+          701
+        ],
+        [
+          262,
+          650
+        ]
+      ],
+      "combat": {
+        "scale": 1.05
+      },
+      "reg": [
+        0.5022,
+        0.4269
+      ]
+    },
+    "range-gen/range-gen-2.png": {
+      "pockets": [
+        [
+          250,
+          726
+        ],
+        [
+          618,
+          803
+        ],
+        [
+          415,
+          775
+        ]
+      ],
+      "combat": {
+        "scale": 1.1
+      },
+      "reg": [
+        0.4981,
+        0.4409
+      ]
+    },
+    "range-gen/range-gen-3.png": {
+      "pockets": [
+        [
+          623,
+          810
+        ],
+        [
+          416,
+          783
+        ],
+        [
+          255,
+          734
+        ]
+      ],
+      "combat": {
+        "scale": 1.2
+      },
+      "reg": [
+        0.4976,
+        0.4784
+      ]
+    },
+    "range-gen/range-gen-4.png": {
+      "pockets": [
+        [
+          415,
+          775
+        ],
+        [
+          620,
+          812
+        ],
+        [
+          257,
+          726
+        ]
+      ],
+      "reg": [
+        0.5001,
+        0.4707
+      ],
+      "combat": {
+        "scale": 1.2
+      }
+    },
+    "range-gen/range-gen-5.png": {
+      "pockets": [
+        [
+          624,
+          801
+        ],
+        [
+          410,
+          773
+        ],
+        [
+          252,
+          720
+        ]
+      ],
+      "combat": {
+        "scale": 1.15
+      },
+      "reg": [
+        0.5015,
+        0.4857
       ]
     }
   }

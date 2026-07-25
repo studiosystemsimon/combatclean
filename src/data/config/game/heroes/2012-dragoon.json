@@ -2,7 +2,7 @@
 	"id": 2012,
 	"displayName": "dragoon",
 	"rarityKey": "mythic",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 18,
 	"baseHp": 195,
 	"baseDef": 11,

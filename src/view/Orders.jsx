@@ -10,7 +10,7 @@
 // orders-bar height in index.css.
 import { useLayoutEffect, useEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
-import { itemAsset, resolve } from './assets.js';
+import { itemAsset, resolve, mergeStyle } from './assets.js';
 import Art from './Art.jsx';
 import { canFulfill } from '../model/orders.js';
 import { GEAR_RARITY } from '../data/gear.js';
@@ -174,9 +174,9 @@ export default function Orders() {
                 <button type="button" className="reroll" title={STRINGS.orders.rerollHint} onClick={(e) => onReroll(e, o.id)}><Art a={resolve('ui.reroll')} className="reroll-icon" /></button>
               </div>
               <div className="reqs">
-                {o.items.map((it, i) => (
-                  <span key={i} className="req"><Art a={itemAsset(it.chain, it.level)} className="req-art" /></span>
-                ))}
+                {o.items.map((it, i) => { const ia = itemAsset(it.chain, it.level); return (
+                  <span key={i} className="req"><Art a={ia} className="req-art" style={mergeStyle(ia)} /></span>
+                ); })}
               </div>
             </div>
           );

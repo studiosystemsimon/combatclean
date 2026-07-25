@@ -398,11 +398,11 @@ body {
    Bosses just carry a larger baseH (108) + their own cooked scale — no separate CSS size rule. */
 .enemy-chip .chip-art { align-items: flex-end; overflow: visible; }
 .enemy-chip .chip-art .art-img { height: auto; max-width: none; }
-/* Hero sprite +30% in gameplay (heroes only — enemies keep 54px). The bottom-anchored art grows
-   upward; the HP/charge bars keep their own sizes, so only the character gets bigger. 54 → 70.2,
-   38 → 49.4 (the emoji fallback, matched so it scales the same when a hero has no portrait). */
-.hero-chip .chip-art { height: 70.2px; }
-.hero-chip .art-emoji.chip-emoji { font-size: 49.4px; }
+/* Hero in-combat avatars render 1:1 with the trim tool (like enemies): the sprite HEIGHT is set inline
+   (COMBAT_BASE_H × cooked combat.scale), bottom-anchored on the baseline, width auto with NO clamp.
+   Per-hero size is the authored combat.scale — no fixed +30% bump. (Hero TILE portraits are separate.) */
+.hero-chip .chip-art { align-items: flex-end; overflow: visible; }
+.hero-chip .chip-art .art-img { height: auto; max-width: none; }
 
 /* Tap an enemy to focus-target it: pointer + gold highlight + reticle badge. */
 .enemy-chip { position: relative; cursor: pointer; }
@@ -1451,6 +1451,13 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-seclabel { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 11px; letter-spacing: 1.5px;
   text-transform: uppercase; opacity: 0.6; margin: 2px 14px 6px; }
 .hs-seclabel.sq { color: var(--gold); opacity: 0.9; }
+/* Current-squad header: label on the left, combined squad power on the right. */
+.hs-sqhdr { display: flex; align-items: center; justify-content: space-between; margin-right: 14px; }
+.hs-sqhdr .hs-seclabel { margin-right: 0; }
+.hs-sqpow { display: inline-flex; align-items: center; gap: 3px; font-family: 'Uniform Bold', system-ui, sans-serif;
+  font-weight: 900; font-size: 14px; letter-spacing: 0.5px; color: var(--gold);
+  text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 0 0 10px rgba(255, 212, 94, 0.5); }
+.hs-sqpow-ic { font-size: 11px; }
 /* Roster sort tile: label on the left, the New/Rarity/Power chips on the right. */
 .hs-rlabel { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-right: 10px; }
 .hs-rlabel .hs-seclabel { margin-right: 0; }

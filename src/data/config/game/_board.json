@@ -69,26 +69,26 @@
 		"waveColStaggerMs": 90
 	},
 	"startLayout": {
-		"startingGeneratorKeys": ["blade", "bow"],
+		"startingGeneratorKeys": ["blade", "range"],
 		"generators": [
 			{ "generator": "blade", "cell": 1 },
-			{ "generator": "bow", "cell": 3 },
+			{ "generator": "range", "cell": 3 },
 			{ "generator": "magic", "cell": 5 }
 		],
 		"seedItems": [
 			{ "chain": "blade", "level": 0, "cell": 7 },
 			{ "chain": "blade", "level": 0, "cell": 8 },
-			{ "chain": "bow", "level": 0, "cell": 9 },
-			{ "chain": "bow", "level": 0, "cell": 10 },
+			{ "chain": "range", "level": 0, "cell": 9 },
+			{ "chain": "range", "level": 0, "cell": 10 },
 			{ "chain": "blade", "level": 1, "locked": true, "cell": 21 },
-			{ "chain": "bow", "level": 1, "locked": true, "cell": 23 },
+			{ "chain": "range", "level": 1, "locked": true, "cell": 23 },
 			{ "chain": "blade", "level": 0, "locked": true, "cell": 25 },
 			{ "chain": "blade", "level": 1, "locked": true, "cell": 28 },
 			{ "chain": "blade", "level": 0, "locked": true, "cell": 29 },
-			{ "chain": "bow", "level": 0, "locked": true, "cell": 30 },
-			{ "chain": "bow", "level": 1, "locked": true, "cell": 31 },
+			{ "chain": "range", "level": 0, "locked": true, "cell": 30 },
+			{ "chain": "range", "level": 1, "locked": true, "cell": 31 },
 			{ "chain": "blade", "level": 1, "locked": true, "cell": 32 },
-			{ "chain": "bow", "level": 1, "locked": true, "cell": 33 }
+			{ "chain": "range", "level": 1, "locked": true, "cell": 33 }
 		]
 	}
 }

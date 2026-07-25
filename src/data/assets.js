@@ -8,40 +8,42 @@
 
 export const ASSETS = {
   // ── Merge chains ──────────────────────────────────────────────────────────
-  // NOTE: the chain IDs (blade / bow / magic) are OPAQUE internal keys shared with
-  // the combat VFX + hero-weapon system (config.js trailStyle / impactColor). Each
-  // ladder obeys the three cardinal laws (see agent merge-icon-author):
-  // every icon clearly differentiated, escalation clear, power/sophistication rising.
-  // Blades = SAME sword, escalating MATERIAL + gem + elaboration (art/refs/progression-reference.png).
-  // wood → brass → iron → steel(+gem) → gold(+gem) → mythril(+gem) → obsidian(+gem) → radiant crystal(+gem).
-  'blade.0': { emoji: '🗡️', label: 'Wooden Sword', art: 'merge/blade-0' },
-  'blade.1': { emoji: '🗡️', label: 'Brass Sword', art: 'merge/blade-1' },
-  'blade.2': { emoji: '⚔️', label: 'Iron Sword', art: 'merge/blade-2' },
-  'blade.3': { emoji: '⚔️', label: 'Steel Sword', art: 'merge/blade-3' },
-  'blade.4': { emoji: '⚔️', label: 'Gold Sword', art: 'merge/blade-4' },
-  'blade.5': { emoji: '🗡️', label: 'Mythril Sword', art: 'merge/blade-5' },
-  'blade.6': { emoji: '⚔️', label: 'Obsidian Sword', art: 'merge/blade-6' },
-  'blade.7': { emoji: '✨', label: 'Radiant Sword', art: 'merge/blade-7' },
-  // Bows: feather → arrow → quiver → bow & quiver → crossbow → ballista → catapult.
-  'bow.0': { emoji: '🪶', label: 'Feather', art: 'merge/bow-0' },
-  'bow.1': { emoji: '➹', label: 'Arrow', art: 'merge/bow-1' },
-  'bow.2': { emoji: '🎯', label: 'Quiver', art: 'merge/bow-2' },
-  'bow.3': { emoji: '🏹', label: 'Bow & Quiver', art: 'merge/bow-3' },
-  'bow.4': { emoji: '🏹', label: 'Crossbow', art: 'merge/bow-4' },
-  'bow.5': { emoji: '🏯', label: 'Ballista', art: 'merge/bow-5' },
-  'bow.6': { emoji: '🪨', label: 'Catapult', art: 'merge/bow-6' },
-  // Magic: mana spark → runestone → arcane sigil → grimoire → elemental orb → astral orb → arcane singularity.
-  'magic.0': { emoji: '✨', label: 'Mana Spark', art: 'merge/magic-0' },
-  'magic.1': { emoji: '🔷', label: 'Runestone', art: 'merge/magic-1' },
-  'magic.2': { emoji: '🌀', label: 'Arcane Sigil', art: 'merge/magic-2' },
-  'magic.3': { emoji: '📖', label: 'Grimoire', art: 'merge/magic-3' },
-  'magic.4': { emoji: '🔥', label: 'Elemental Orb', art: 'merge/magic-4' },
-  'magic.5': { emoji: '🌌', label: 'Astral Orb', art: 'merge/magic-5' },
-  'magic.6': { emoji: '🕳️', label: 'Arcane Singularity', art: 'merge/magic-6' },
+  // NOTE: the chain IDs (blade / range / magic) are OPAQUE internal keys shared with the combat VFX +
+  // hero-weapon system (config.js trailStyle / impactColor). Each 8-tier ladder obeys the three
+  // cardinal laws (see merge-icon-author): clear differentiation, clear escalation, rising power.
+  // Art + each icon's registration point / scale / rotation are authored in the trim tool and baked
+  // into assets.json; these emoji/label pairs are only the resolver fallbacks (art always present).
+  // Blades: forged steel → fire/solar (sword + shield).
+  'blade.0': { emoji: '🗡️', label: 'Rustbit', art: 'merge/blade-0' },
+  'blade.1': { emoji: '🗡️', label: 'Mended Iron', art: 'merge/blade-1' },
+  'blade.2': { emoji: '⚔️', label: "Soldier's Steel", art: 'merge/blade-2' },
+  'blade.3': { emoji: '⚔️', label: "Knight's Gilded", art: 'merge/blade-3' },
+  'blade.4': { emoji: '⚔️', label: 'Emberforged', art: 'merge/blade-4' },
+  'blade.5': { emoji: '🔥', label: 'Runeflame', art: 'merge/blade-5' },
+  'blade.6': { emoji: '🔥', label: "Phoenix King's", art: 'merge/blade-6' },
+  'blade.7': { emoji: '✨', label: 'Solar Sovereign', art: 'merge/blade-7' },
+  // Range: feather → arrow → quiver → bow, then nature/storm ascension.
+  'range.0': { emoji: '🪶', label: 'Feather', art: 'merge/range-0' },
+  'range.1': { emoji: '➹', label: 'Arrow', art: 'merge/range-1' },
+  'range.2': { emoji: '🎯', label: 'Quiver', art: 'merge/range-2' },
+  'range.3': { emoji: '🏹', label: "Ranger's Bow", art: 'merge/range-3' },
+  'range.4': { emoji: '🏹', label: "Warden's Gilded Bow", art: 'merge/range-4' },
+  'range.5': { emoji: '🏹', label: 'Thornwood Bow', art: 'merge/range-5' },
+  'range.6': { emoji: '⚡', label: 'Tempest Falcon Bow', art: 'merge/range-6' },
+  'range.7': { emoji: '✨', label: 'Skybreaker Sovereign', art: 'merge/range-7' },
+  // Magic: spellbooks — paper → folio → leather → arcane → cosmic → radiant.
+  'magic.0': { emoji: '📄', label: 'Scrap', art: 'merge/magic-0' },
+  'magic.1': { emoji: '📄', label: 'Loose Sheets', art: 'merge/magic-1' },
+  'magic.2': { emoji: '📑', label: 'Bound Folio', art: 'merge/magic-2' },
+  'magic.3': { emoji: '📖', label: 'Leather Spellbook', art: 'merge/magic-3' },
+  'magic.4': { emoji: '📘', label: 'Ornate Spellbook', art: 'merge/magic-4' },
+  'magic.5': { emoji: '📓', label: 'Arcane Grimoire', art: 'merge/magic-5' },
+  'magic.6': { emoji: '🌌', label: 'Cosmic Codex', art: 'merge/magic-6' },
+  'magic.7': { emoji: '✨', label: 'Radiant Tome', art: 'merge/magic-7' },
 
   // ── Generators ────────────────────────────────────────────────────────────
   'gen.blade': { emoji: '⚒️', label: 'Blade Forge', art: 'merge/gen-blade' },
-  'gen.bow': { emoji: '🏹', label: 'Bow Bench', art: 'merge/gen-bow' },
+  'gen.range': { emoji: '🏹', label: 'Bow Bench', art: 'merge/gen-range' },
   'gen.magic': { emoji: '🔮', label: 'Arcane Font', art: 'merge/gen-magic' },
 
   // ── Gear (emoji only) ──────────────────────────────────────────────────────
@@ -114,7 +116,7 @@ export const ASSETS = {
 
   // ── Weapon VFX glyphs ───────────────────────────────────────────────────────
   'fx.blade': { emoji: '⚔️', label: 'Slash' },
-  'fx.bow': { emoji: '🏹', label: 'Shot' },
+  'fx.range': { emoji: '🏹', label: 'Shot' },
   'fx.magic': { emoji: '🔮', label: 'Bolt' },
 
   // ── Ascension crystal + territory UNIQUE items (art/standalone/<name>.png) ────

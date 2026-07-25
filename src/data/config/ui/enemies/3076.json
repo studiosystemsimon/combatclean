@@ -1,5 +1,6 @@
 {
 	"id": 3076,
-	"name": "Icicle Imp",
-	"iconAssetId": "enemy.icicle-imp"
+	"name": "Imp",
+	"iconAssetId": "enemy.imp",
+	"emoji": "👾"
 }

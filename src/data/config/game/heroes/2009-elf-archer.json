@@ -2,7 +2,7 @@
 	"id": 2009,
 	"displayName": "elf-archer",
 	"rarityKey": "epic",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 20,
 	"baseHp": 150,
 	"baseDef": 8,

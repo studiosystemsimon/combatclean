@@ -383,6 +383,7 @@ export default function HeroesScreen() {
   };
 
   const squad = state.order.slice(0, SELECTED_SLOTS);
+  const squadPower = squad.reduce((sum, cid) => sum + powOf(cid), 0); // combined power of the active squad
   // Roster sort (the filter tile). Squad is left in its manual order; only the roster reorders.
   // Drag-swap is cid-identity based (SWAP_HEROES), so sorting the DISPLAY never mis-swaps.
   // cid number rises with acquisition → newest = highest cid → 'new' surfaces fresh pulls at the top.
@@ -407,7 +408,10 @@ export default function HeroesScreen() {
         </div>
       </div>
       <PeekScroll>
-        <div className="hs-seclabel sq">★ Current Squad</div>
+        <div className="hs-sqhdr">
+          <span className="hs-seclabel sq">★ Current Squad</span>
+          <span className="hs-sqpow"><span className="hs-sqpow-ic">⚔</span>{fmt(squadPower)}</span>
+        </div>
         <div className="hs-squad-band"><div className="hs-grid">{squad.map(renderCell)}</div></div>
         {roster.length ? <>
           <div className="hs-rlabel">

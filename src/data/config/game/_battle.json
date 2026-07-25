@@ -1,7 +1,7 @@
 {
 	"tickMs": 200,
 	"attackMsByWeapon": {
-		"bow": 700,
+		"range": 700,
 		"blade": 980,
 		"magic": 1260
 	},

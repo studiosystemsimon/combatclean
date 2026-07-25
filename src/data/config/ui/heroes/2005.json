@@ -1,7 +1,7 @@
 {
 	"id": 2005,
-	"name": "Warrior",
-	"iconAssetId": "hero.warrior",
+	"name": "Dwarf Warrior",
+	"iconAssetId": "hero.dwarf-warrior",
 	"emoji": "⚔️",
 	"abilityNames": {
 		"basic": "Attack",

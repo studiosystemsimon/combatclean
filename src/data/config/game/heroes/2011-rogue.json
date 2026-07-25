@@ -2,7 +2,7 @@
 	"id": 2011,
 	"displayName": "rogue",
 	"rarityKey": "common",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 12,
 	"baseHp": 150,
 	"baseDef": 8,

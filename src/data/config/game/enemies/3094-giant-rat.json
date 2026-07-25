@@ -1,0 +1,10 @@
+{
+	"id": 3094,
+	"displayName": "giant-rat",
+	"hpMul": 1,
+	"atkMul": 1,
+	"tags": {
+		"origin": "char-art-export",
+		"tuning": "placeholder"
+	}
+}

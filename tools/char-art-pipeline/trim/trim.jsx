@@ -149,7 +149,7 @@
       var rawSubject=doc.activeLayer;
 
       // C+D. square exports (from the RAW subject) THEN small treatment. Every cat gets 256; merge chains also get 128.
-      var MERGE_CATS = { magic:1, blade:1, range:1 };
+      var MERGE_CATS = { magic:1, blade:1, range:1, "blade-gen":1, "range-gen":1, "magic-gen":1 };
       var sizes = MERGE_CATS[catName] ? [SIZE_256, 128] : [SIZE_256];
       for(var si=0; si<sizes.length; si++){
         var sz=sizes[si];

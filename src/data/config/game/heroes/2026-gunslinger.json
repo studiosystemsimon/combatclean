@@ -2,7 +2,7 @@
 	"id": 2026,
 	"displayName": "gunslinger",
 	"rarityKey": "rare",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 18,
 	"baseHp": 150,
 	"baseDef": 8,

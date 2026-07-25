@@ -14,6 +14,7 @@
     "build:cap": "npm run build:packages && tsc && vite build --mode capacitor",
     "preview": "vite preview",
     "scaffold": "node config/scaffold.mjs",
+    "sync-art": "node tools/char-art-pipeline/export-to-game.mjs --no-build && node tools/merge-icon-pipeline/export-to-game.mjs && npm run game-config:validate && npm run assets:validate && npm run build",
     "game-config:validate": "node config/scaffold.mjs config validate",
     "game-config:lint": "node config/scaffold.mjs config lint",
     "visual-config:validate": "node config/scaffold.mjs visual validate",

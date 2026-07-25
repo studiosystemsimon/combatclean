@@ -1,7 +1,8 @@
 {
 	"id": 3049,
-	"name": "Antler Wraith",
-	"iconAssetId": "enemy.antler-wraith",
+	"name": "Wraith",
+	"iconAssetId": "enemy.wraith",
+	"emoji": "👾",
 	"combat": {
 		"scale": 1.5
 	}

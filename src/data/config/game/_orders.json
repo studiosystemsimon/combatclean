@@ -10,7 +10,7 @@
 	"costPerTierBase": 2,
 	"orderChains": [
 		"blade",
-		"bow",
+		"range",
 		"magic"
 	],
 	"dominantTier": {

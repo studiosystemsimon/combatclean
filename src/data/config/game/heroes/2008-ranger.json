@@ -2,7 +2,7 @@
 	"id": 2008,
 	"displayName": "ranger",
 	"rarityKey": "rare",
-	"weaponChainKey": "bow",
+	"weaponChainKey": "range",
 	"baseAtk": 16,
 	"baseHp": 165,
 	"baseDef": 9,

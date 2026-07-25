@@ -6,7 +6,7 @@
 			"width": 7,
 			"length": 9
 		},
-		"bow": {
+		"range": {
 			"color": "#dff0ff",
 			"tail": "#3466ff",
 			"width": 4,
@@ -21,7 +21,7 @@
 	},
 	"impactColor": {
 		"blade": "#8fd0ff",
-		"bow": "#9fe0ff",
+		"range": "#9fe0ff",
 		"magic": "#d59bff"
 	},
 	"confettiColors": [

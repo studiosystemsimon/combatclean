@@ -60,6 +60,8 @@ export const zImageAsset = z.object({
 	type: z.literal("image"),
 	file: z.string(),
 	anchor: zAnchor.optional(),
+	scale: z.number().optional().describe("Optional render-scale multiplier over the base tile height (merge-icon framing, authored by the trim tool)."),
+	rotation: z.number().optional().describe("Optional render rotation in degrees (merge-icon framing, authored by the trim tool)."),
 });
 export type ImageAsset = z.infer<typeof zImageAsset>;
 

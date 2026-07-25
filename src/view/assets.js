@@ -15,12 +15,16 @@ export const artUrl = (key) => firstUrl(urlById[key]);
 // Registration point: authored in assets.json as `anchor`, baked into the resolved registry
 // (Map<assetId, ResolvedAsset>). It's the point IN the image — a fraction {x,y} — that marks where
 // the asset should be PINNED when placed (e.g. a character's base). null when the asset declares none.
-const anchorOf = (key) => registry.get(key)?.declaration?.anchor ?? null;
+// The raw asset declaration (assets.json entry): carries the trim-tool-authored placement params —
+// `anchor` (registration point), and for merge icons `scale` + `rotation`. Baked into the registry
+// entry as `.declaration` (the resolved entry hoists only id/type/files/derived, NOT these).
+const declOf = (key) => registry.get(key)?.declaration ?? null;
 
 const base = (key) => ASSETS[key] ?? ASSETS.missing;
 export const resolve = (key) => {
   const a = base(key);
-  return { emoji: a.emoji, label: a.label, img: artUrl(key), anchor: anchorOf(key) };
+  const d = declOf(key);
+  return { emoji: a.emoji, label: a.label, img: artUrl(key), anchor: d?.anchor ?? null, scale: d?.scale, rotation: d?.rotation };
 };
 
 // Place a resolved asset by its REGISTRATION POINT: pin the authored anchor point to the
@@ -42,6 +46,17 @@ export function anchorStyle(a) {
 // bust 1:1. Consumed by the hero tile, the hero dialog, and the gacha digest. `undefined` when the
 // hero has no authored portrait. (The consuming element must also set `max-width:none` to defeat
 // Tailwind preflight's `img{max-width:100%}`, which would otherwise clamp the box non-square.)
+// Place a MERGE icon 1:1 with the trim tool's combat/merge board (asset_tool.html applyMergeImg): the
+// registration point is pinned to the tile CENTRE (merge default reg = [0.5,0.5]) + per-icon scale +
+// rotation. Height is a % of the cell-art box (the tile's baseH reference); width auto, NO clamp.
+export function mergeStyle(a) {
+  if (!a) return undefined;
+  const an = a.anchor, ax = an?.x ?? 0.5, ay = an?.y ?? 0.5; // merge default = tile centre
+  const s = a.scale ?? 1, rot = a.rotation ?? 0;
+  const dx = ((0.5 - ax) * 100).toFixed(2), dy = ((0.5 - ay) * 100).toFixed(2);
+  return { height: `${(s * 100).toFixed(2)}%`, width: 'auto', maxWidth: 'none', transform: `translate(${dx}%, ${dy}%) rotate(${rot}deg)` };
+}
+
 export function portraitStyle(p) {
   if (!p) return undefined;
   const s = p.scale ?? 1, x = p.x ?? 0, y = p.y ?? 0;

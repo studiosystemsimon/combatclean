@@ -23,10 +23,19 @@ FORCE="${FORCE:-0}"
 OUT="${OUT:-$(cd "$ROOT/.." && pwd)/char-art-pipeline/trim/assets/blade}"
 mkdir -p "$ROOT/raw" "$ROOT/logs" "$OUT"
 
-# REF = every image in reference/ (comma-joined). Drop your merge-icon exemplars there to lock the style.
-REF="$(ls "$ROOT"/reference/*.png 2>/dev/null | paste -sd, -)"
+# ANCHOR resolution — ONE canonical reference per chain, so every tile in a chain stays consistent
+# with the SAME image (no drift). Priority:
+#   1. REF=<path[,path]> env      → forced anchor for this run
+#   2. reference/anchor-<cat>.png  → this chain's canonical anchor (cat = the OUT folder name)
+#   3. reference/style-sheet.png   → fresh chain with no anchor yet (establishes the look)
+CAT="$(basename "$OUT")"
+if [ -z "${REF:-}" ]; then
+  if   [ -f "$ROOT/reference/anchor-$CAT.png" ]; then REF="$ROOT/reference/anchor-$CAT.png"
+  elif [ -f "$ROOT/reference/style-sheet.png" ]; then REF="$ROOT/reference/style-sheet.png"
+  else REF="$(ls "$ROOT"/reference/*.png 2>/dev/null | grep -v '/anchor-' | paste -sd, -)"; fi
+fi
 if [ -z "$REF" ]; then
-  echo "No reference images in $ROOT/reference/ — add your merge-icon exemplar PNG(s) there first (the style is anchored to them)." >&2
+  echo "No anchor for '$CAT' — add $ROOT/reference/anchor-$CAT.png (or reference/style-sheet.png)." >&2
   exit 1
 fi
 

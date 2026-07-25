@@ -1,101 +1,13 @@
 {
 	"version": 1,
 	"assets": {
-		"blade.0": {
-			"type": "image",
-			"file": "merge/blade-0.png"
-		},
-		"blade.1": {
-			"type": "image",
-			"file": "merge/blade-1.png"
-		},
-		"blade.2": {
-			"type": "image",
-			"file": "merge/blade-2.png"
-		},
-		"blade.3": {
-			"type": "image",
-			"file": "merge/blade-3.png"
-		},
-		"blade.4": {
-			"type": "image",
-			"file": "merge/blade-4.png"
-		},
-		"blade.5": {
-			"type": "image",
-			"file": "merge/blade-5.png"
-		},
-		"blade.6": {
-			"type": "image",
-			"file": "merge/blade-6.png"
-		},
-		"blade.7": {
-			"type": "image",
-			"file": "merge/blade-7.png"
-		},
-		"bow.0": {
-			"type": "image",
-			"file": "merge/bow-0.png"
-		},
-		"bow.1": {
-			"type": "image",
-			"file": "merge/bow-1.png"
-		},
-		"bow.2": {
-			"type": "image",
-			"file": "merge/bow-2.png"
-		},
-		"bow.3": {
-			"type": "image",
-			"file": "merge/bow-3.png"
-		},
-		"bow.4": {
-			"type": "image",
-			"file": "merge/bow-4.png"
-		},
-		"bow.5": {
-			"type": "image",
-			"file": "merge/bow-5.png"
-		},
-		"bow.6": {
-			"type": "image",
-			"file": "merge/bow-6.png"
-		},
-		"magic.0": {
-			"type": "image",
-			"file": "merge/magic-0.png"
-		},
-		"magic.1": {
-			"type": "image",
-			"file": "merge/magic-1.png"
-		},
-		"magic.2": {
-			"type": "image",
-			"file": "merge/magic-2.png"
-		},
-		"magic.3": {
-			"type": "image",
-			"file": "merge/magic-3.png"
-		},
-		"magic.4": {
-			"type": "image",
-			"file": "merge/magic-4.png"
-		},
-		"magic.5": {
-			"type": "image",
-			"file": "merge/magic-5.png"
-		},
-		"magic.6": {
-			"type": "image",
-			"file": "merge/magic-6.png"
-		},
 		"gen.blade": {
 			"type": "image",
 			"file": "merge/gen-blade.png"
 		},
-		"gen.bow": {
+		"gen.range": {
 			"type": "image",
-			"file": "merge/gen-bow.png"
+			"file": "merge/gen-range.png"
 		},
 		"gen.magic": {
 			"type": "image",
@@ -133,8 +45,8 @@
 			"type": "image",
 			"file": "heroes/templar.png",
 			"anchor": {
-				"x": 0.5383,
-				"y": 0.96
+				"x": 0.5981,
+				"y": 0.9585
 			}
 		},
 		"hero.barbarian": {
@@ -221,8 +133,8 @@
 			"type": "image",
 			"file": "heroes/wizard.png",
 			"anchor": {
-				"x": 0.4856,
-				"y": 0.9555
+				"x": 0.5206,
+				"y": 0.9559
 			}
 		},
 		"hero.sorceress": {
@@ -562,7 +474,7 @@
 			"file": "heroes/spellblade.png",
 			"anchor": {
 				"x": 0.584,
-				"y": 0.9045
+				"y": 0.9585
 			}
 		},
 		"hero.summoner": {
@@ -585,8 +497,8 @@
 			"type": "image",
 			"file": "heroes/warrior.png",
 			"anchor": {
-				"x": 0.4984,
-				"y": 0.9135
+				"x": 0.545,
+				"y": 0.9321
 			}
 		},
 		"hero.witch": {
@@ -1136,6 +1048,282 @@
 				"x": 0.5013,
 				"y": 0.8479
 			}
+		},
+		"enemy.cave-bat": {
+			"type": "image",
+			"file": "enemies/cave-bat.png"
+		},
+		"enemy.giant-rat": {
+			"type": "image",
+			"file": "enemies/giant-rat.png"
+		},
+		"enemy.goblin": {
+			"type": "image",
+			"file": "enemies/goblin.png"
+		},
+		"enemy.imp": {
+			"type": "image",
+			"file": "enemies/imp.png"
+		},
+		"enemy.kobold": {
+			"type": "image",
+			"file": "enemies/kobold.png"
+		},
+		"enemy.mushroom": {
+			"type": "image",
+			"file": "enemies/mushroom.png"
+		},
+		"enemy.orc": {
+			"type": "image",
+			"file": "enemies/orc.png"
+		},
+		"enemy.skeleton": {
+			"type": "image",
+			"file": "enemies/skeleton.png"
+		},
+		"enemy.slime": {
+			"type": "image",
+			"file": "enemies/slime.png"
+		},
+		"enemy.wraith": {
+			"type": "image",
+			"file": "enemies/wraith.png"
+		},
+		"enemy.zombie": {
+			"type": "image",
+			"file": "enemies/zombie.png"
+		},
+		"magic.0": {
+			"type": "image",
+			"file": "merge/magic-0.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.85,
+			"rotation": -30
+		},
+		"magic.1": {
+			"type": "image",
+			"file": "merge/magic-1.png",
+			"anchor": {
+				"x": 0.5158,
+				"y": 0.5114
+			},
+			"scale": 0.85,
+			"rotation": -9
+		},
+		"magic.2": {
+			"type": "image",
+			"file": "merge/magic-2.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			}
+		},
+		"magic.3": {
+			"type": "image",
+			"file": "merge/magic-3.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.8
+		},
+		"magic.4": {
+			"type": "image",
+			"file": "merge/magic-4.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.9
+		},
+		"magic.5": {
+			"type": "image",
+			"file": "merge/magic-5.png",
+			"anchor": {
+				"x": 0.4833,
+				"y": 0.5385
+			},
+			"scale": 1.05,
+			"rotation": -16
+		},
+		"magic.6": {
+			"type": "image",
+			"file": "merge/magic-6.png",
+			"anchor": {
+				"x": 0.4984,
+				"y": 0.5141
+			},
+			"scale": 1.15,
+			"rotation": -10
+		},
+		"magic.7": {
+			"type": "image",
+			"file": "merge/magic-7.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.15,
+			"rotation": -1
+		},
+		"blade.0": {
+			"type": "image",
+			"file": "merge/blade-0.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.85
+		},
+		"blade.1": {
+			"type": "image",
+			"file": "merge/blade-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.1,
+			"rotation": 5
+		},
+		"blade.2": {
+			"type": "image",
+			"file": "merge/blade-2.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.05
+		},
+		"blade.3": {
+			"type": "image",
+			"file": "merge/blade-3.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.05
+		},
+		"blade.4": {
+			"type": "image",
+			"file": "merge/blade-4.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.15,
+			"rotation": 6
+		},
+		"blade.5": {
+			"type": "image",
+			"file": "merge/blade-5.png",
+			"anchor": {
+				"x": 0.4985,
+				"y": 0.5021
+			},
+			"scale": 1.1,
+			"rotation": 3
+		},
+		"blade.6": {
+			"type": "image",
+			"file": "merge/blade-6.png",
+			"anchor": {
+				"x": 0.4604,
+				"y": 0.5242
+			},
+			"scale": 1.2,
+			"rotation": 4
+		},
+		"blade.7": {
+			"type": "image",
+			"file": "merge/blade-7.png",
+			"anchor": {
+				"x": 0.4545,
+				"y": 0.5291
+			},
+			"scale": 1.15,
+			"rotation": 1
+		},
+		"range.0": {
+			"type": "image",
+			"file": "merge/range-0.png",
+			"anchor": {
+				"x": 0.4952,
+				"y": 0.5109
+			},
+			"scale": 1.2,
+			"rotation": 15
+		},
+		"range.1": {
+			"type": "image",
+			"file": "merge/range-1.png",
+			"anchor": {
+				"x": 0.4929,
+				"y": 0.5282
+			},
+			"scale": 1.15,
+			"rotation": 4
+		},
+		"range.2": {
+			"type": "image",
+			"file": "merge/range-2.png",
+			"anchor": {
+				"x": 0.5002,
+				"y": 0.5316
+			},
+			"scale": 1.3,
+			"rotation": 34
+		},
+		"range.3": {
+			"type": "image",
+			"file": "merge/range-3.png",
+			"anchor": {
+				"x": 0.4948,
+				"y": 0.4874
+			},
+			"scale": 1.25,
+			"rotation": 20
+		},
+		"range.4": {
+			"type": "image",
+			"file": "merge/range-4.png",
+			"anchor": {
+				"x": 0.4877,
+				"y": 0.512
+			},
+			"scale": 1.25,
+			"rotation": -22
+		},
+		"range.5": {
+			"type": "image",
+			"file": "merge/range-5.png",
+			"anchor": {
+				"x": 0.4749,
+				"y": 0.4785
+			},
+			"scale": 1.25,
+			"rotation": 20
+		},
+		"range.6": {
+			"type": "image",
+			"file": "merge/range-6.png",
+			"anchor": {
+				"x": 0.5126,
+				"y": 0.5398
+			},
+			"scale": 1.25,
+			"rotation": 16
+		},
+		"range.7": {
+			"type": "image",
+			"file": "merge/range-7.png",
+			"anchor": {
+				"x": 0.4873,
+				"y": 0.5052
+			},
+			"scale": 1.15
 		}
 	}
 }

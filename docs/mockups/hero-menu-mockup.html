@@ -62,6 +62,10 @@
   .t-tier{font-family:'Uniform Condensed Bold',sans-serif;font-size:13px;color:var(--rar);line-height:1.28;letter-spacing:.5px}
   .t-class{font-family:'Uniform Condensed Bold',sans-serif;font-size:17px;color:#fff;line-height:1.28}
   .t-name{font-family:'Uniform Bold',sans-serif;font-size:20px;line-height:1.3;letter-spacing:.5px;color:#eef3ff}
+  .t-prog{display:inline-flex;align-items:center;gap:5px;margin-top:6px;height:26px;padding:0 12px;border-radius:8px;cursor:pointer;font-family:'Uniform Condensed Bold',sans-serif;font-size:12px;letter-spacing:.5px;border:1px solid rgba(255,255,255,.16);color:#fff}
+  .t-prog.ascend{background:linear-gradient(180deg,rgba(255,208,94,.30),rgba(255,208,94,.08));border-color:color-mix(in srgb,#ffd45e 55%,transparent);color:#ffd45e;box-shadow:0 0 10px rgba(255,208,94,.25)}
+  .t-prog.merge{background:linear-gradient(180deg,rgba(180,107,255,.30),rgba(180,107,255,.08));border-color:color-mix(in srgb,#b46bff 55%,transparent);color:#d9b8ff}
+  .t-prog:active{transform:scale(.96)}
 
   .hm-body{position:relative;z-index:4;flex:1 1 auto;min-height:0}
   .side-col{position:absolute;top:16px;bottom:56px;z-index:6;display:flex;flex-direction:column;justify-content:center;gap:14px}
@@ -223,6 +227,7 @@
           <div class="t-tier ol" id="t-tier">Rare</div>
           <div class="t-class ol" id="t-class">Blademaster</div>
           <div class="t-name ol" id="t-name">Knight</div>
+          <button class="t-prog" id="t-prog" style="display:none"></button>
         </div>
       </div>
 
@@ -302,6 +307,12 @@
 const RAR={common:'#9aa7bd',rare:'#4aa3ff',epic:'#b46bff',legendary:'#ffb020',mythic:'#ff2e6e',primal:'#78f0ff'};
 const GRAR={common:'#9aa7bd',uncommon:'#5ad17a',rare:'#4aa3ff',epic:'#b46bff',legendary:'#ffb020'};
 const MAX_LEVEL=50,MAX_ASC=5,GEAR_MAX=15;
+// Ascend/Merge availability (mock copies): ASCEND when you hold enough duplicate copies to raise a tier,
+// MERGE when you hold spare copies but not yet enough. Shown ONLY when one applies.
+const MOCK_COPIES={knight:3,sorceress:5,dragoon:4,ranger:2,paladin:1,cleric:2,barbarian:1};
+const heroCopies=h=>h.copies!=null?h.copies:(MOCK_COPIES[h.k]||0);
+const ascCost=h=>h.asc+2; // rising duplicate cost per ascension
+const heroProg=h=>{ if(h.asc>=MAX_ASC) return null; if(heroCopies(h)>=ascCost(h)) return 'ascend'; if(heroCopies(h)>=1) return 'merge'; return null; };
 const GEAR_ICON={weapon:'⚔️',armor:'🛡️',trinket:'💍'};
 const SLOTS=['weapon','armor','trinket'];
 const CLASS={blade:'Blademaster',bow:'Marksman',magic:'Arcanist'};
@@ -434,6 +445,7 @@ function render(){
   const h=HEROES[cur];
   M.style.setProperty('--rar',RAR[h.rar]);
   $('t-tier').textContent=cap1(h.rar);$('t-class').textContent=CLASS[h.weapon];$('t-name').textContent=h.name;
+  {const pr=heroProg(h),pb=$('t-prog'); if(pr){pb.style.display='';pb.className='t-prog '+pr;pb.textContent=pr==='ascend'?'✦ ASCEND':'⊕ MERGE';}else pb.style.display='none';}
   $('hm-img').src=ART(h.k);
   const lk=$('hm-lock');lk.classList.toggle('on',h.locked);lk.textContent=h.locked?'🔒':'🔓';
   $('gear-left').innerHTML=SLOTS.map(s=>gslotHTML(s,h)).join('');
@@ -465,6 +477,9 @@ function wire(){
     else if(a==='lvlgearmax'){levelAllGear(true);}
     else if(a==='equipbest'){equipBestAll();}
     else if(a==='ascend'){if(h.asc<MAX_ASC){h.asc++;render();flash();toast('Ascended! +ability level & level cap.');}else toast('Max ascension.');}});
+  $('t-prog').onclick=()=>{const h=HEROES[cur],pr=heroProg(h);if(!pr)return;
+    if(pr==='ascend'){h.copies=heroCopies(h)-ascCost(h);h.asc++;render();flash();toast('✦ Ascended! +ability level & level cap.');}
+    else{h.copies=heroCopies(h)-1;render();toast('⊕ Merged a copy in.');}};
   $('hm-info').onclick=()=>{const h=HEROES[cur];
     $('stats-body').innerHTML=[['⚔ Power',power(h)],['🗡 Attack',atkAt(h)],['❤ Health',hpAt(h)],['🛡 Defense',defAt(h)+' (illustrative)'],['⬆ Level',`${h.level}/${MAX_LEVEL}`],['✦ Ascension',`${h.asc}/${MAX_ASC}`]]
       .map(r=>`<div class="statline"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');

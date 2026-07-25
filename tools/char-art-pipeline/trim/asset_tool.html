@@ -371,8 +371,8 @@ const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, vi
   regMode:false, checked:new Set(), bosses:{}, presets:{},
   treatment:{ large:[{color:'#ffffff',width:12}], small:[{color:'#ffffff',width:12}] } };
 const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent']);
-const MERGE_CATS = new Set(['magic','blade','range']);
-const MERGE_ORDER = ['magic','blade','range'];
+const MERGE_CATS = new Set(['magic','blade','range','blade-gen','range-gen','magic-gen']);
+const MERGE_ORDER = ['blade','blade-gen','magic','magic-gen','range','range-gen'];   // chain followed by its generator
 function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
 function assetType(c){ return c==='heroes' ? 'hero' : (MERGE_CATS.has(c) ? 'merge' : 'enemy'); }
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],

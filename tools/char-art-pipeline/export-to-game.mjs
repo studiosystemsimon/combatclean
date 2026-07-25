@@ -45,7 +45,7 @@ const WEAPON_EMOJI = { bow: '🏹', magic: '🔮', blade: '⚔️' };
 // ── per-category contract ──────────────────────────────────────────────────
 const CATS = {
   heroes: {
-    prefix: 'hero', dir: 'heroes', abilities: true, portrait: true,
+    prefix: 'hero', dir: 'heroes', abilities: true, portrait: true, combat: true,
     gameArt: join(GAME, 'assets', 'combatclean', 'heroes'),
     logicalDir: join(GAME, 'src', 'data', 'config', 'game', 'heroes'),
     uiDir: join(GAME, 'src', 'data', 'config', 'ui', 'heroes'),
@@ -187,9 +187,10 @@ for (const cat of Object.keys(work)) {
       if (!existsSync(uiPath)) {
         const { emoji } = cfg.newFor(slug);
         writeFileSync(uiPath, JSON.stringify(uiObject(cfg, id, slug, emoji, portrait, combat), null, '\t') + '\n');
-      } else if ((cfg.portrait && portrait) || (cfg.combat && combat)) {
+      } else {
         let ui = {}; try { ui = JSON.parse(readFileSync(uiPath, 'utf8')); } catch {}
         if (ui.id == null) ui.id = id; if (ui.name == null) ui.name = title(slug);
+        ui.iconAssetId = `${cfg.prefix}.${slug}`; // self-heal the asset ref (always deterministic from the slug)
         if (cfg.portrait && portrait) ui.portrait = portrait;
         if (cfg.combat && combat) ui.combat = combat;
         writeFileSync(uiPath, JSON.stringify(ui, null, '\t') + '\n');

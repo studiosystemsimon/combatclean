@@ -18,7 +18,7 @@ import { useGame } from '../controller/GameContext';
 import { BOARD, TIER_PRESENTATION } from '../data/config.js';
 import { canMerge, maxLevel } from '../model/merge.js';
 import { STRINGS } from '../data/strings.js';
-import { itemAsset, generatorAsset } from './assets.js';
+import { itemAsset, generatorAsset, mergeStyle } from './assets.js';
 import { fx } from './fx/fx-engine.js';
 
 const N = BOARD.cols * BOARD.rows;
@@ -81,7 +81,9 @@ export default function Board() {
     const bob = document.createElement('div'); bob.className = 'mb-bob';
     const inner = document.createElement('div'); inner.className = 'mb-inner';
     if (a && a.img) {
-      const im = document.createElement('img'); im.src = a.img; im.className = 'mb-art'; im.draggable = false; inner.appendChild(im);
+      const im = document.createElement('img'); im.src = a.img; im.className = 'mb-art'; im.draggable = false;
+      if (!isGen) { const ms = mergeStyle(a); if (ms) Object.assign(im.style, ms); } // merge icon: reg→centre + scale + rotation (1:1 with the tile)
+      inner.appendChild(im);
     } else {
       const sp = document.createElement('span'); sp.className = 'mb-emoji'; sp.textContent = (a && a.emoji) || '?'; inner.appendChild(sp);
     }
