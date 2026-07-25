@@ -190,12 +190,54 @@ export const zRevealConfig = z.object({
     fuseFlash: z.object({ opacity: num, ms: num }).strict(), fuseShake: num, fuseImpactR: num,
   }).strict().describe('Hero level-up / equip / fuse burst, ray, float, and tile-pulse FX.'),
   gacha: z.object({
+    tenDwell: z.tuple([num, num, num, num, num, num]).describe('Per-tier dwell (ms) between ×10 reveals, common→PRIMAL.'),
+    tenDwellFallbackMs: num, msFallbackMs: num, veilMs: num, veilReducedMs: num,
     heroGlowBase: num, heroGlowPerTier: num, heroDurTierMs: z.tuple([num, num, num]), heroDurReducedMs: num,
     auraOpacity: z.tuple([num, num]), auraMs: num, ringOpacity: num, ringMs: num,
     plateMs: z.tuple([num, num]), plateReducedMs: num, pipMs: num, pipReducedMs: num, hintOpacity: num, hintMs: num,
     summaryTileMs: num, summaryTileReducedMs: num, summaryTileStaggerMs: num, summaryTileBaseMs: num,
     engineFadeMs: num, engineFadeReducedMs: num, dismissMs: num, dismissReducedMs: num,
   }).strict().describe('Gacha single/×10 reveal: hero pop, aura, plate, pip, summary-grid stagger.'),
+  reveal: z.object({
+    maxParticles: int.describe('Reveal-engine particle-pool cap (MAX_P).'),
+    rarity: z.record(z.string(), z.object({
+      id: z.string(), col: z.string(), glowR: num, ms: num, tier: int, pips: int, disp: z.string(), prismatic: z.boolean().optional(),
+    }).strict()).describe('Reveal-engine per-tier theme (VFX colour + glow + duration + tier/pips), keyed common→primal.'),
+    ladder: z.object({
+      flash: z.array(num), rings: z.array(num), burst: z.array(num), shake: z.array(num), shakeRot: z.array(num),
+      chroma: z.array(num), confetti: z.array(num), rays: z.array(num), slowmo: z.array(num), stars: z.array(num),
+    }).strict().describe('Per-tier climax/build escalation ladders (indexed by tier 0-5).'),
+    timeline: z.object({ anticMs: num, buildFrac: num, buildMin: num, buildMax: num, climaxFrac: num, climaxMin: num, climaxMax: num }).strict().describe('6-beat pacing: anticipation + build/climax fraction-of-duration clamps.'),
+    afterglow: z.object({ rateByTier: z.array(num), intervalMs: num }).strict(),
+    reduced: z.object({ particleScale: num, chromaMax: num, flashScale: num }).strict().describe('prefers-reduced-motion scalers (particle count, chroma cap, flash peak).'),
+  }).strict().describe('Reveal-engine cinematic tuning surface (tables + pacing); per-particle SHAPE stays inline.'),
+}).strict();
+
+// anim — UI + intro interaction/animation tuning (drag gestures, FLIP timings, screen
+// interaction knobs). Verbatim-ported cinematics (intro-director) keep per-keyframe SHAPE
+// inline; this holds the genuinely-tunable knobs + shared easing curves.
+export const zAnimConfig = z.object({
+  curves: z.object({ easeOut: z.string(), easeOutQuad: z.string() }).strict().describe('Shared CSS timing-functions for FLIP / glide transitions.'),
+  scrollDragThreshold: num.describe('Pointer travel (px) before a rail/list press becomes a scroll-drag (Orders, Map).'),
+  fuseRevealMs: num.describe('Hold (ms) of the just-fused rarity-up reveal class (Heroes + Gear screens).'),
+  intro: z.object({
+    exitDriftPx: num.describe('Level-intro stack exit drift below its -50% centre anchor.'),
+    threatCap: int, threatBase: int.describe('Boss threat = min(threatCap, zoneIndex + threatBase).'),
+    moteCount: int.describe('Ambient area-intro mote count.'),
+  }).strict(),
+  autobattler: z.object({
+    realignMs: num.describe('Enemy-row FLIP realign duration (ms) when a slain enemy leaves the flow.'),
+    trackWindow: int.describe('Level-track dot count.'), trackPast: int.describe('Levels shown behind the current one.'),
+    chargePips: int.describe('Hero limit-charge pip segments.'),
+    embers: z.array(z.object({ l: num, d: num, dur: num, s: num }).strict()).describe('Ambient ember decoration: left%, delay s, duration s, size px.'),
+  }).strict(),
+  orders: z.object({ flipMs: num, wipeInMs: num, wipeOutMs: num, wipeSwapMs: num }).strict().describe('Order-rail FLIP + reroll white-wipe timings.'),
+  heroes: z.object({
+    dragHoldMs: num, dragScrollTol: num, dragMoveTol: num, dragLiftFrac: num, dragAvatarScale: num,
+    dragGlideMs: num, dragSwapMs: num, dragClickSuppressMs: num, popGap: num, popMargin: num,
+  }).strict().describe('Roster drag-swap gesture + popup placement tuning.'),
+  gear: z.object({ powFlashMs: num.describe('Gear-sheet power-number flash duration (ms).') }).strict(),
+  gacha: z.object({ pityNearFrac: num.describe('Pity progress fraction at which a pity pill highlights as "near".') }).strict(),
 }).strict();
 
 // tierPresentation — merge-tier colour ramp (global presentation tuning; not per-entity).

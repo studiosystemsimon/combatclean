@@ -13,6 +13,7 @@ import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
 import { MediumEquipmentTile } from '../EquipmentTile.jsx';
 import { fx } from '../fx/fx-engine.js';
+import { ANIM, REVEAL, VFX_CONFIG } from '../../data/config.js';
 import {
   gearPower,
   gearAtMax,
@@ -26,6 +27,9 @@ import {
   pieceName,
   pieceMaxRarity,
 } from '../../model/gear.js';
+
+// Fuse choreography reuses the shared hero-fx fuse primitives (single source — no parallel copy).
+const HF = REVEAL.heroFx;
 
 // Sort high→low rarity using the canonical ladder (no view-local rarity map).
 const rankOf = (r) => GEAR_RARITY_ORDER.indexOf(r);
@@ -57,7 +61,7 @@ function GearSheet({ g, onClose, onLevel, onFuse }) {
           <div className="gsheet-owner">{owner ? `${STRINGS.gear.equippedBy} ${owner.name}` : STRINGS.gear.unequipped}</div>
         </div>
         <div className="gsheet-pow">
-          <div className="pv" key={g.level} style={{ animation: 'powFlash 0.6s ease-out' }}>
+          <div className="pv" key={g.level} style={{ animation: `powFlash ${ANIM.gear.powFlashMs}ms ease-out` }}>
             {gearPower(g)}
           </div>
           <div className="pl">{STRINGS.gear.power}</div>
@@ -125,27 +129,28 @@ export default function GearScreen() {
             { transform: 'translate(-50%,-50%) scale(1) rotate(0deg)', opacity: 1 },
             { transform: `translate(calc(-50% + ${tx - cx}px), calc(-50% + ${ty - cy}px)) scale(0.32) rotate(230deg)`, opacity: 0.5 },
           ],
-          { duration: 440, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards', delay: i * 70 },
+          { duration: HF.fuseFlyMs, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards', delay: i * HF.fuseFlyStaggerMs },
         );
-        setTimeout(() => clone.remove(), 560 + i * 70);
+        setTimeout(() => clone.remove(), HF.fuseReaperMs + i * HF.fuseFlyStaggerMs);
       });
     }
 
     // after the fodder lands → commit the fuse + big rarity-up payoff
-    const landMs = 440 + (fodder.length - 1) * 70 + 40;
+    const landMs = HF.fuseFlyMs + (fodder.length - 1) * HF.fuseFlyStaggerMs + HF.fuseLandTailMs;
     setTimeout(() => {
       actions.fuseGear(id);
       const tEl = document.querySelector(`[data-gear="${id}"]`);
-      const c = tEl ? fx.elCenter(tEl) : { x: (fx.W || 460) / 2, y: (fx.H || 800) / 2 };
-      fx.flash(0.85, 130);
-      fx.shake(9);
-      fx.impact(c.x, c.y, { tier: 'crit', color: (nr && GEAR_RARITY[nr].color) || GEAR_RARITY[g.rarity].color, r: 18 });
+      const fb = VFX_CONFIG.combat.fallbackCanvas;
+      const c = tEl ? fx.elCenter(tEl) : { x: (fx.W || fb.w) / 2, y: (fx.H || fb.h) / 2 };
+      fx.flash(HF.fuseFlash.opacity, HF.fuseFlash.ms);
+      fx.shake(HF.fuseShake);
+      fx.impact(c.x, c.y, { tier: 'crit', color: (nr && GEAR_RARITY[nr].color) || GEAR_RARITY[g.rarity].color, r: HF.fuseImpactR });
       setJustFused(id);
       setTimeout(() => {
         const el = document.querySelector(`[data-gear="${id}"]`);
         if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }, 20);
-      setTimeout(() => setJustFused(null), 720);
+      setTimeout(() => setJustFused(null), ANIM.fuseRevealMs);
     }, landMs);
   };
 

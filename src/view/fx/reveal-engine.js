@@ -1,10 +1,10 @@
 // === reveal-engine.js — self-contained chest/gacha reveal cinematic ===
 //
-// Ported VERBATIM (structure + behaviour + load-bearing constants) from
-// FrogGame's src/ui/screens/gacha-reveal-engine.js. The source is a
-// framework-agnostic Canvas2D reveal engine with ZERO imports (pure DOM +
-// performance.now + ResizeObserver + Canvas2D) — so it drops into MergeCombat
-// with no FrogGame coupling. See docs/froggame-vfx-port.md §4.
+// Ported VERBATIM (structure + behaviour) from FrogGame's
+// src/ui/screens/gacha-reveal-engine.js. Its only import is the baked config
+// barrel — the rarity/ladder/pacing TABLES live in _reveal.reveal so designers
+// tune the payoff without touching the engine's internal choreography; otherwise
+// pure DOM + performance.now + ResizeObserver + Canvas2D. See docs/froggame-vfx-port.md §4.
 //
 // The engine owns the 6-beat choreography (anticipation → build-up → rarity
 // tell → climax → hero reveal → afterglow), the per-tier escalation tables,
@@ -22,33 +22,16 @@
 // .skip() jumps to the end; .dispose() cancels the RAF and removes the DOM.
 // Exactly one internal RAF, capped particle pool (MAX_P=900), no leaks.
 
-// ---- rarity theme (mirrors src/data/rarities.js HERO_RARITIES + mockup RARITY) ----
-// Hero rarity ladder: common(0)…primal(5). `col`/`tier`/`pips`/`prismatic` mirror
-// HERO_RARITIES; `disp`/`glowR`/`ms` are VFX-only fields the engine escalates on.
-// 6 entries so the LAD[tier] escalation arrays (length 6) line up. The chest
-// wrapper maps gear common/rare/epic/legendary → these same keys (legendary→tier 3).
-const RARITY = {
-  common:   { id: 'common',    disp: 'COMMON',    col: '#9aa7bd', glowR: 0,  ms: 320,  tier: 0, pips: 1 },
-  rare:     { id: 'rare',      disp: 'RARE',      col: '#4aa3ff', glowR: 8,  ms: 900,  tier: 1, pips: 2 },
-  epic:     { id: 'epic',      disp: 'EPIC',      col: '#b46bff', glowR: 13, ms: 1600, tier: 2, pips: 3 },
-  legendary:{ id: 'legendary', disp: 'LEGENDARY', col: '#ffb020', glowR: 17, ms: 2500, tier: 3, pips: 4 },
-  mythic:   { id: 'mythic',    disp: 'MYTHIC',    col: '#ff2e6e', glowR: 24, ms: 3200, tier: 4, pips: 5 },
-  primal:   { id: 'primal',    disp: 'PRIMAL',    col: '#78f0ff', glowR: 32, ms: 4000, tier: 5, pips: 6, prismatic: true },
-};
-const R_ORDER = ['common', 'rare', 'epic', 'legendary', 'mythic', 'primal'];
+import { REVEAL } from '../../data/config.js';
 
-// per-tier escalation ladders (indexed common→PRIMAL, 0-5) — ported from the mockup.
-const LAD = {
-  flash:    [0.12, 0.55, 0.78, 0.95, 1.0, 1.0],
-  rings:    [1, 3, 5, 7, 9, 12],
-  burst:    [45, 130, 190, 260, 360, 480],
-  shake:    [2, 5, 7, 10, 14, 18],
-  shakeRot: [0, 0, 0.15, 0.3, 0.55, 0.8],
-  chroma:   [0, 2, 5, 9, 12, 16],
-  confetti: [0, 24, 48, 80, 120, 170],
-  rays:     [5, 6, 7, 9, 11, 14],
-  slowmo:   [1, 1, 1, 0.4, 0.26, 0.2],
-};
+// ---- rarity theme + escalation ladders (config-driven — the reveal tuning surface) ----
+// `RARITY` = per-tier VFX theme (col/glowR/ms + tier/pips, mirroring HERO_RARITIES with
+// VFX-only fields); `LAD` = per-tier escalation arrays (indexed common→PRIMAL, 0-5). Both
+// live in _reveal.reveal so the payoff is tuned as data, never in the engine's choreography.
+const RV = REVEAL.reveal;
+const RARITY = RV.rarity;
+const R_ORDER = ['common', 'rare', 'epic', 'legendary', 'mythic', 'primal'];
+const LAD = RV.ladder;
 
 export function rarityMeta(id) { return RARITY[id] || RARITY.common; }
 
@@ -80,7 +63,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[(Math.random() * arr.length) | 0];
 function hexRGB(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
 
-const MAX_P = 900;
+const MAX_P = RV.maxParticles;
 
 export class GachaRevealEngine {
   constructor(container, opts = {}) {
@@ -173,7 +156,7 @@ export class GachaRevealEngine {
   focal() { return this.focalPt || { x: this.W / 2, y: this.H * 0.42 }; }
 
   // reduced-motion particle-count scaler (mirrors the mockup's `pcount`).
-  _pc(n) { return this.reducedMotion ? Math.round(n * 0.5) : n; }
+  _pc(n) { return this.reducedMotion ? Math.round(n * RV.reduced.particleScale) : n; }
 
   // ---------------------------------------------------------------- pool
   _spawnP(o) {
@@ -340,7 +323,7 @@ export class GachaRevealEngine {
 
   // ---------------------------------------------------------------- flash / chroma / shake
   _flashScreen(peak, col, upMs, downMs) {
-    if (this.reducedMotion) peak *= 0.5;
+    if (this.reducedMotion) peak *= RV.reduced.flashScale;
     this.flash.style.background = col
       ? `radial-gradient(circle at 50% 42%, ${col} 0%, rgba(255,255,255,.3) 45%, transparent 74%)`
       : 'radial-gradient(circle at 50% 42%, #fff 0%, rgba(255,255,255,.4) 40%, transparent 72%)';
@@ -348,7 +331,7 @@ export class GachaRevealEngine {
       this._animateVal(peak, 0, downMs, E.outCubic, v => { this.flash.style.opacity = v; });
     });
   }
-  _setChroma(px) { this.scene.chroma = px; this.setChroma(this.reducedMotion ? Math.min(px, 4) : px); }
+  _setChroma(px) { this.scene.chroma = px; this.setChroma(this.reducedMotion ? Math.min(px, RV.reduced.chromaMax) : px); }
   _shake(amp, rotAmp, decay) {
     if (this.reducedMotion) return;
     this.shakeAmp = Math.max(this.shakeAmp, amp);
@@ -406,7 +389,7 @@ export class GachaRevealEngine {
   _startAfterglow(tier, rgb) {
     this._stopAfterglow();
     const { x: cx, y: cy } = this.focal(); const [r, g, b] = rgb;
-    const rate = this._pc([1, 3, 5, 8, 12, 16][tier]);
+    const rate = this._pc(RV.afterglow.rateByTier[tier]);
     this.afterglowIv = setInterval(() => {
       for (let i = 0; i < rate; i++) {
         const ang = rand(0, 7), d = rand(30, 110);
@@ -416,7 +399,7 @@ export class GachaRevealEngine {
           kind: tier >= 2 && i % 3 === 0 ? 1 : 3, rot: rand(0, 7), vr: rand(-2, 2), drag: 0.4, grav: -6,
           r, g, b });
       }
-    }, 120);
+    }, RV.afterglow.intervalMs);
   }
   _stopAfterglow() { if (this.afterglowIv) { clearInterval(this.afterglowIv); this.afterglowIv = null; } }
 
@@ -592,10 +575,11 @@ export class GachaRevealEngine {
     const fakeRGB = doFake ? hexRGB(fakeR.col) : null;
 
     // ---- timeline scaling ----
-    const T = R.ms, antic = 220;
-    const build = clamp(T * 0.42, 260, 1400);
+    const TL = RV.timeline;
+    const T = R.ms, antic = TL.anticMs;
+    const build = clamp(T * TL.buildFrac, TL.buildMin, TL.buildMax);
     const tellAt = antic + build;
-    const climaxAt = tellAt + clamp(T * 0.10, 120, 340);
+    const climaxAt = tellAt + clamp(T * TL.climaxFrac, TL.climaxMin, TL.climaxMax);
 
     // BEAT 1: ANTICIPATION
     this.sound('gacha_buildup');
@@ -616,7 +600,7 @@ export class GachaRevealEngine {
       this._animateVal(this.scene.orb, tier >= 1 ? 0.9 : 0.55, build * 0.8, E.inQuad, v => { this.scene.orb = v; });
       this._animateVal(0, tier >= 1 ? 1 : 0.4, build, E.outQuad, v => { this.scene.swirl = v; });
       if (tier >= 1) this._shake(tier >= 3 ? 2.5 : 1.2, 0, 2);
-      const starN = this._pc([6, 26, 48, 80, 120, 160][tier]);
+      const starN = this._pc(LAD.stars[tier]);
       let spawned = 0;
       const iv = setInterval(() => {
         const batch = Math.ceil(starN / 12);

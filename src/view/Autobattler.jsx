@@ -12,22 +12,21 @@ import HpBar from './HpBar.jsx';
 import { normalChargeFrac, limitChargeFrac, isLimitReady } from '../model/battle.js';
 import { isBossLevel } from '../model/map.js';
 import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: biome/keyArt/nameKey), not the logical sim selector
+import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
 import { STRINGS } from '../data/strings.js';
+import { ANIM } from '../data/config.js';
 
+const AB = ANIM.autobattler;
 const nextIsBoss = (level) => isBossLevel(level + 1);
 
-// Ambient embers — static presentation constants (no runtime randomness so it
-// stays a pure render). {l:left%, d:delay s, dur:duration s, s:size px}
-// Trimmed 15 → 6 always-on animating embers (each is an infinitely-animating DOM
-// node); 6 spread across the width still reads as ambient life at a fraction of cost.
-const EMBERS = [
-  { l: 8, d: 0.0, dur: 4.6, s: 3 }, { l: 26, d: 1.9, dur: 5.4, s: 2 }, { l: 44, d: 0.8, dur: 4.2, s: 3 },
-  { l: 61, d: 2.6, dur: 5.1, s: 2 }, { l: 78, d: 1.3, dur: 4.8, s: 3 }, { l: 92, d: 3.2, dur: 5.5, s: 2 },
-];
+// Ambient embers — presentation constants in _anim (no runtime randomness so it stays a
+// pure render). Each entry {l:left%, d:delay s, dur:duration s, s:size px}; a handful of
+// always-on animating DOM nodes spread across the width read as ambient life cheaply.
+const EMBERS = AB.embers;
 
 function LevelTrack({ level }) {
-  const N = 15;
-  const start = Math.max(1, level - 5);
+  const N = AB.trackWindow;
+  const start = Math.max(1, level - AB.trackPast);
   const dots = [];
   for (let i = 0; i < N; i++) {
     const lv = start + i;
@@ -51,7 +50,7 @@ function HeroChip({ h, onLimit, fighting }) {
   return (
     <div className={`chip hero-chip ${dead ? 'dead' : ''} ${lbReady ? 'lb-ready' : ''}`} data-battle-hero={h.id}>
       <div className="hero-charge" aria-hidden="true">
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        {Array.from({ length: AB.chargePips }, (_, i) => (
           <span key={i} className="cp" />
         ))}
       </div>
@@ -76,7 +75,7 @@ function HeroChip({ h, onLimit, fighting }) {
   );
 }
 
-function EnemyChip({ e, focused, onFocus, art, gone, conceal, lv, onDecayEnd }) {
+function EnemyChip({ e, focused, onFocus, art, scale = 1, gone, conceal, lv, onDecayEnd }) {
   const dead = e.hp <= 0;
   const boss = e.specialMs !== undefined;
   return (
@@ -87,7 +86,9 @@ function EnemyChip({ e, focused, onFocus, art, gone, conceal, lv, onDecayEnd }) 
       onAnimationEnd={(ev) => { if (ev.animationName === 'enemyDecay') onDecayEnd(e.uid); }}
     >
       <span className="lv-badge"><s>{STRINGS.combat.lvAbbr}</s>{lv}</span>
-      <div className="chip-art">
+      {/* SIZE = the authored combat.scale (CSS `scale` on the chip-art box, matching the combat-editor);
+          composes with the sway animation. POSITION = the img's registration-point anchor below. */}
+      <div className="chip-art" style={scale !== 1 ? { scale: String(scale) } : undefined}>
         {/* Regular enemies stand on their authored registration point (anchor), like heroes. Bosses
             are hand-positioned by the boss-mode CSS transform, so they skip the inline anchor. */}
         <Art a={art} className="chip-emoji" style={boss ? undefined : anchorStyle(art)} />
@@ -143,7 +144,7 @@ export default function Autobattler() {
         node.style.transition = 'none';
         node.style.transform = `translateX(${px - nx}px)`; // invert to the old spot
         requestAnimationFrame(() => {
-          node.style.transition = 'transform .42s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // easeOutQuad
+          node.style.transition = `transform ${AB.realignMs}ms ${ANIM.curves.easeOutQuad}`;
           node.style.transform = '';
         });
       });
@@ -219,19 +220,24 @@ export default function Autobattler() {
 
       <div className="arena">
         <div className="row enemy-row">
-          {battle.wave.map((e) => (
+          {battle.wave.map((e) => {
+            const isBoss = e.specialMs !== undefined && bossArt;
+            const slug = isBoss ? zone.bossId : e.arch; // scale slug must match the art shown
+            return (
             <EnemyChip
               key={e.uid}
               e={e}
               focused={battle.focusUid === e.uid}
               onFocus={actions.setFocusTarget}
-              art={e.specialMs !== undefined && bossArt ? bossArt : resolve(e.asset)}
+              art={isBoss ? bossArt : resolve(e.asset)}
+              scale={ENEMY_BY_ID[slug]?.combatScale ?? 1}
               gone={gone.has(e.uid)}
               conceal={conceal}
               lv={battle.level}
               onDecayEnd={onDecayEnd}
             />
-          ))}
+            );
+          })}
         </div>
         {/* landed chests live HERE — in front of the enemy row, behind the hero row */}
         <div className="chest-mid-layer" aria-hidden="true" />

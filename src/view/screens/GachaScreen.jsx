@@ -6,6 +6,7 @@ import { HERO_RARITIES, HERO_RARITY_ORDER } from '../../data/rarities.js';
 import { heroAsset, resolve } from '../assets.js';
 import { ownedHeroSet } from '../../model/heroes.js';
 import { STRINGS } from '../../data/strings.js';
+import { ANIM } from '../../data/config.js';
 import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
 
@@ -24,7 +25,7 @@ function BannerCard({ banner, state, actions }) {
 
   const pityEntries = banner.pity.map((p) => {
     const cur = pityState[p.rarity] || 0;
-    const near = cur / p.max >= 0.8;
+    const near = cur / p.max >= ANIM.gacha.pityNearFrac;
     const meta = HERO_RARITIES[p.rarity];
     return { rarity: p.rarity, cur, max: p.max, near, meta };
   });

@@ -8,11 +8,11 @@
 // Squad = first SELECTED_SLOTS of state.order (highlighted band). All state goes
 // through the reducer; all VFX through src/view/fx/hero-fx.js.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useGame } from '../../controller/GameContext';
 import { HEROES } from '../../data/heroes.js';
-import { SELECTED_SLOTS } from '../../data/config.js';
+import { SELECTED_SLOTS, ANIM } from '../../data/config.js';
 import { GEAR_SLOTS, GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
 import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
@@ -29,9 +29,10 @@ import { fmtK as fmt } from '../fmt.js';
 
 // Touch gesture split: a quick drag SCROLLS the roster; a HELD drag (long-press) picks a hero up to
 // drop into the squad. Mouse picks up on a small move (its wheel/scrollbar does the scrolling).
-const HERO_DRAG_HOLD_MS = 220;    // touch: hold this long (without scrolling) to pick a hero up
-const HERO_DRAG_SCROLL_TOL = 10;  // touch: moving this far before the hold fires = a scroll, not a pickup
-const HERO_DRAG_MOVE_TOL = 8;     // mouse: move this far to actually start dragging
+const HS = ANIM.heroes;
+const HERO_DRAG_HOLD_MS = HS.dragHoldMs;    // touch: hold this long (without scrolling) to pick a hero up
+const HERO_DRAG_SCROLL_TOL = HS.dragScrollTol;  // touch: moving this far before the hold fires = a scroll, not a pickup
+const HERO_DRAG_MOVE_TOL = HS.dragMoveTol;     // mouse: move this far to actually start dragging
 
 const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
 const gearColor = (rarity) => (GEAR_RARITY[rarity] || GEAR_RARITY.common).color;
@@ -46,6 +47,7 @@ export default function HeroesScreen() {
   const [popPos, setPopPos] = useState({ x: -9999, y: -9999 });
   const popRef = useRef(null);
   const pending = useRef(null); // { id, kind, fromLv, fromPow, slot?, max? }
+  const [sort, setSort] = useState('new'); // roster sort tile: 'new' (newest first) | 'rarity' | 'power'
 
   // Drag-swap: a body-level avatar follows the pointer (never clipped by the
   // scroll area); the hovered target displaces into the dragged hero's slot and
@@ -110,12 +112,12 @@ export default function HeroesScreen() {
     if (!t || !el) return;
     const r = t.getBoundingClientRect();
     const pw = el.offsetWidth, ph = el.offsetHeight;
-    let x = r.right + 8;
-    if (x + pw > window.innerWidth - 6) x = r.left - pw - 8;
-    if (x < 6) x = 6;
+    let x = r.right + HS.popGap;
+    if (x + pw > window.innerWidth - HS.popMargin) x = r.left - pw - HS.popGap;
+    if (x < HS.popMargin) x = HS.popMargin;
     let y = r.top;
-    if (y + ph > window.innerHeight - 6) y = window.innerHeight - 6 - ph;
-    if (y < 6) y = 6;
+    if (y + ph > window.innerHeight - HS.popMargin) y = window.innerHeight - HS.popMargin - ph;
+    if (y < HS.popMargin) y = HS.popMargin;
     setPopPos({ x, y });
   }, [popId, popState, selSlot, state.heroes, state.gear]);
 
@@ -189,7 +191,7 @@ export default function HeroesScreen() {
     fxHeroFuse(t, 1, upgradeColor(sel.keepCid), () => {
       actions.ascendHero(sel.keepCid);
       setJustFused(sel.keepCid);
-      setTimeout(() => setJustFused(null), 720);
+      setTimeout(() => setJustFused(null), ANIM.fuseRevealMs);
     });
   };
   const doAscend = (cid) => {
@@ -210,7 +212,7 @@ export default function HeroesScreen() {
     d.started = true;
     const r = src.getBoundingClientRect();
     d.originRect = r; d.grabDx = clientX - r.left; d.grabDy = clientY - r.top;
-    d.lift = r.height * 0.5; // raise the tile half its height so it stays visible above the finger
+    d.lift = r.height * HS.dragLiftFrac; // raise the tile so it stays visible above the finger
     const rar = src.style.getPropertyValue('--rar');
     const av = src.cloneNode(true); // keeps the rarity class + cloned --rar (border / wash)
     av.classList.add('hs-drag-avatar');
@@ -219,7 +221,7 @@ export default function HeroesScreen() {
       position: 'fixed', left: `${clientX - d.grabDx}px`, top: `${clientY - d.grabDy}px`,
       width: `${r.width}px`, height: `${r.height}px`, margin: '0',
       zIndex: '1000', pointerEvents: 'none', transition: 'none',
-      transform: `translateY(${-d.lift}px) scale(1.06)`,
+      transform: `translateY(${-d.lift}px) scale(${HS.dragAvatarScale})`,
     });
     if (rar) av.style.setProperty('--rar', rar);
     document.body.appendChild(av);
@@ -287,10 +289,11 @@ export default function HeroesScreen() {
       const glide = (left, top, then) => {
         if (!av) { then(); return; }
         void av.offsetWidth; // commit the current position so the transition eases FROM here
-        av.style.transition = 'left 0.19s cubic-bezier(0.2,0.8,0.2,1), top 0.19s cubic-bezier(0.2,0.8,0.2,1), transform 0.19s cubic-bezier(0.2,0.8,0.2,1)';
+        const gl = `${HS.dragGlideMs}ms ${ANIM.curves.easeOut}`;
+        av.style.transition = `left ${gl}, top ${gl}, transform ${gl}`;
         av.style.transform = 'scale(1)'; // drop the upward lift so it settles flush on the slot
         av.style.left = `${left}px`; av.style.top = `${top}px`;
-        setTimeout(then, 195);
+        setTimeout(then, HS.dragGlideMs + 5);
       };
       if (over) {
         // Land on the target's NATURAL slot (cell rect), not tileEl(over) — that
@@ -331,8 +334,8 @@ export default function HeroesScreen() {
     const tileStyle = { '--rar': meta.color };
     let extra = '';
     if (dragId === id) extra += ' hs-dragsrc'; // hollow "hole" — the avatar follows the pointer
-    else if (overId === id) { tileStyle.transform = overTf; tileStyle.transition = 'transform 0.18s cubic-bezier(0.2,0.8,0.2,1)'; tileStyle.zIndex = 6; }
-    else if (dragId) tileStyle.transition = 'transform 0.18s cubic-bezier(0.2,0.8,0.2,1)'; // ease home when no longer hovered
+    else if (overId === id) { tileStyle.transform = overTf; tileStyle.transition = `transform ${HS.dragSwapMs}ms ${ANIM.curves.easeOut}`; tileStyle.zIndex = 6; }
+    else if (dragId) tileStyle.transition = `transform ${HS.dragSwapMs}ms ${ANIM.curves.easeOut}`; // ease home when no longer hovered
     if (canUpgrade) extra += ' fuse-ready';
     if (justFused === id) extra += ' just-fused';
 
@@ -346,7 +349,7 @@ export default function HeroesScreen() {
           title={def.name}
           onPointerDown={(e) => onTilePointerDown(e, id)}
           onClick={() => {
-            if (performance.now() - dragEnd.current < 350) return; // this click trailed a drag
+            if (performance.now() - dragEnd.current < HS.dragClickSuppressMs) return; // this click trailed a drag
             active ? closePop() : openPop(id);
           }}
         >
@@ -380,7 +383,18 @@ export default function HeroesScreen() {
   };
 
   const squad = state.order.slice(0, SELECTED_SLOTS);
-  const roster = state.order.slice(SELECTED_SLOTS);
+  // Roster sort (the filter tile). Squad is left in its manual order; only the roster reorders.
+  // Drag-swap is cid-identity based (SWAP_HEROES), so sorting the DISPLAY never mis-swaps.
+  // cid number rises with acquisition → newest = highest cid → 'new' surfaces fresh pulls at the top.
+  const cidNum = (c) => Number(String(c).slice(1)) || 0;
+  const rarityTier = (c) => ((HERO_RARITIES[heroRarity(state.heroes[c]) || 'common'] || HERO_RARITIES.common).tier ?? 0);
+  const roster = useMemo(() => {
+    const arr = state.order.slice(SELECTED_SLOTS);
+    if (sort === 'rarity') return [...arr].sort((a, b) => rarityTier(b) - rarityTier(a) || cidNum(b) - cidNum(a));
+    if (sort === 'power') { const p = new Map(arr.map((c) => [c, powOf(c)])); return [...arr].sort((a, b) => p.get(b) - p.get(a) || cidNum(b) - cidNum(a)); }
+    return [...arr].sort((a, b) => cidNum(b) - cidNum(a)); // 'new' — newest first
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.order, state.heroes, state.gear, state.ordersCompleted, sort]);
 
   return (
     <div className={`hs-roster ${popId ? 'hs-ctx' : ''}`}>
@@ -396,7 +410,14 @@ export default function HeroesScreen() {
         <div className="hs-seclabel sq">★ Current Squad</div>
         <div className="hs-squad-band"><div className="hs-grid">{squad.map(renderCell)}</div></div>
         {roster.length ? <>
-          <div className="hs-seclabel">Roster</div>
+          <div className="hs-rlabel">
+            <span className="hs-seclabel">Roster</span>
+            <div className="hs-sort" role="group" aria-label="Sort roster">
+              {[['new', 'New'], ['rarity', 'Rarity'], ['power', 'Power']].map(([k, label]) => (
+                <button key={k} type="button" className={`hs-sort-btn ${sort === k ? 'on' : ''}`} onClick={() => setSort(k)}>{label}</button>
+              ))}
+            </div>
+          </div>
           <div className="hs-grid">{roster.map(renderCell)}</div>
         </> : null}
       </PeekScroll>

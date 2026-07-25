@@ -21,7 +21,7 @@ import {
   zBoardConfig, zEnergyConfig, zBattleConfig, zHeroCombatConfig, zLevelScalingConfig, zNodeConfig,
   zAfkConfig, zCrystalDropConfig, zUniqueDropConfig, zProgressionConfig, zOrdersConfig,
   zGearTuningConfig, zHapticsConfig, zTierPresentationConfig, zVfxConfig, zRuntimeConfig,
-  zRevealConfig,
+  zRevealConfig, zAnimConfig,
 } from './schemas/singletons.ts';
 
 export const CATEGORIES: ConfigCategory[] = [
@@ -58,4 +58,5 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'singleton', name: 'vfx', schema: zVfxConfig },
   { kind: 'singleton', name: 'runtime', schema: zRuntimeConfig },
   { kind: 'singleton', name: 'reveal', schema: zRevealConfig },
+  { kind: 'singleton', name: 'anim', schema: zAnimConfig },
 ];

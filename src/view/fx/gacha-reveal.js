@@ -21,9 +21,11 @@ import { heroAsset, portraitStyle, anchorStyle } from '../assets.js';
 import { HEROES } from '../../data/heroes.js';
 import { HERO_RARITIES } from '../../data/rarities.js';
 import { STRINGS } from '../../data/strings.js';
+import { REVEAL } from '../../data/config.js';
 
-// per-tier dwell between ×10 reveals (indexed common→PRIMAL, 0-5) — ported from mockup.
-const TEN_DWELL = [900, 1300, 2000, 2800, 3400, 4200];
+const GA = REVEAL.gacha;
+// per-tier dwell between ×10 reveals (indexed common→PRIMAL, 0-5).
+const TEN_DWELL = GA.tenDwell;
 
 const prefersReduced = () =>
   !!(typeof window !== 'undefined' && window.matchMedia
@@ -53,7 +55,7 @@ function metaFor(res) {
   const asset = hero ? heroAsset(res.id) : { emoji: '?', label: res.id, img: null }; // { emoji, label, img }
   const r = HERO_RARITIES[res.rarity] || HERO_RARITIES.common;
   const glowR = (fxRarityMeta(res.rarity) || {}).glowR || 0;
-  const ms = (fxRarityMeta(res.rarity) || {}).ms || 900;
+  const ms = (fxRarityMeta(res.rarity) || {}).ms || GA.msFallbackMs;
   return { id: res.id, rarity: res.rarity, name: (hero && hero.name) || asset.label || res.id, asset, portrait: hero && hero.portrait, r, glowR, ms };
 }
 
@@ -205,11 +207,11 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
   function showHero(m, tier) {
     setRarityColor(m.r.color);
     paintPortrait(face, m, 124);
-    const glow = `drop-shadow(0 0 ${8 + m.glowR * 1.4}px ${m.r.color}) drop-shadow(0 8px 20px rgba(0,0,0,.55))`;
+    const glow = `drop-shadow(0 0 ${GA.heroGlowBase + m.glowR * GA.heroGlowPerTier}px ${m.r.color}) drop-shadow(0 8px 20px rgba(0,0,0,.55))`;
     face.style.filter = glow;
     heroWrap.style.opacity = '1';
     face.style.opacity = '1';
-    const dur = reduced ? 160 : (tier >= 3 ? 620 : tier >= 1 ? 460 : 360);
+    const dur = reduced ? GA.heroDurReducedMs : (tier >= 3 ? GA.heroDurTierMs[2] : tier >= 1 ? GA.heroDurTierMs[1] : GA.heroDurTierMs[0]);
     anim(face, [
       { opacity: 0, filter: `brightness(6) saturate(0) ${glow}` },
       { opacity: 1, filter: `brightness(2.2) saturate(.5) ${glow}`, offset: 0.55 },
@@ -220,11 +222,11 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
       { transform: 'scale(1.12)', offset: 0.7 },
       { transform: 'scale(1)' },
     ], { duration: dur, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
-    aura.style.opacity = String(tier >= 1 ? 0.9 : 0.6);
-    anim(aura, [{ opacity: 0 }, { opacity: tier >= 1 ? 0.9 : 0.6 }], { duration: 420, easing: 'ease-out', fill: 'both' });
+    aura.style.opacity = String(tier >= 1 ? GA.auraOpacity[1] : GA.auraOpacity[0]);
+    anim(aura, [{ opacity: 0 }, { opacity: tier >= 1 ? GA.auraOpacity[1] : GA.auraOpacity[0] }], { duration: GA.auraMs, easing: 'ease-out', fill: 'both' });
     if (tier >= 2 && !reduced) {
-      ring.style.opacity = '0.85';
-      anim(ring, [{ opacity: 0 }, { opacity: 0.85 }], { duration: 500, easing: 'ease-out', fill: 'both' });
+      ring.style.opacity = String(GA.ringOpacity);
+      anim(ring, [{ opacity: 0 }, { opacity: GA.ringOpacity }], { duration: GA.ringMs, easing: 'ease-out', fill: 'both' });
     }
   }
 
@@ -247,7 +249,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
     anim(plate, [
       { transform: 'translateY(24px) scale(0.6)' },
       { transform: 'translateY(0) scale(1)' },
-    ], { duration: reduced ? 180 : (tier >= 2 ? 520 : 400), easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
+    ], { duration: reduced ? GA.plateReducedMs : (tier >= 2 ? GA.plateMs[1] : GA.plateMs[0]), easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
   }
 
   function showPip(i) {
@@ -256,7 +258,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
     anim(p, [
       { opacity: 0, transform: 'scale(0) rotate(-40deg)' },
       { opacity: 1, transform: 'scale(1) rotate(0deg)' },
-    ], { duration: reduced ? 160 : 360, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
+    ], { duration: reduced ? GA.pipReducedMs : GA.pipMs, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
   }
 
   function resetHeroDom() {
@@ -274,8 +276,8 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
   function onSingleSettled() {
     if (disposed) return;
     awaitingTap = true;
-    anim(hint, [{ opacity: 0 }, { opacity: 0.75 }], { duration: 300, easing: 'ease-out', fill: 'both' });
-    hint.style.opacity = '0.75';
+    anim(hint, [{ opacity: 0 }, { opacity: GA.hintOpacity }], { duration: GA.hintMs, easing: 'ease-out', fill: 'both' });
+    hint.style.opacity = String(GA.hintOpacity);
   }
 
   // ---- ×10 flow ----
@@ -286,7 +288,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
     pullCount.textContent = `PULL ${idx + 1} / ${metas.length}`;
     resetHeroDom();
     engine.play({ rarity: cur.rarity }, {});
-    const dwell = TEN_DWELL[cur.r.tier] || 1500;
+    const dwell = TEN_DWELL[cur.r.tier] || GA.tenDwellFallbackMs;
     later(() => runPull(idx + 1), cur.ms + dwell);
   }
 
@@ -298,7 +300,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
     hint.style.display = 'none';
     skipBtn.style.display = 'none';
     pullCount.style.display = 'none';
-    anim(engineWrap, [{ opacity: 1 }, { opacity: 0 }], { duration: reduced ? 120 : 260, easing: 'ease-out', fill: 'both' });
+    anim(engineWrap, [{ opacity: 1 }, { opacity: 0 }], { duration: reduced ? GA.engineFadeReducedMs : GA.engineFadeMs, easing: 'ease-out', fill: 'both' });
     buildSummary();
   }
 
@@ -350,8 +352,8 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
         anim(tile, [
           { opacity: 0, transform: 'scale(.5) translateY(14px)' },
           { opacity: 1, transform: 'scale(1) translateY(0)' },
-        ], { duration: reduced ? 160 : 420, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
-      }, 150 + i * 90);
+        ], { duration: reduced ? GA.summaryTileReducedMs : GA.summaryTileMs, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'both' });
+      }, GA.summaryTileBaseMs + i * GA.summaryTileStaggerMs);
     });
 
     const cont = mk('margin-top:18px;width:min(90%,320px);cursor:pointer;pointer-events:auto;border:none;'
@@ -368,7 +370,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
   // ---- dismissal + cleanup ----
   function dismiss() {
     if (disposed) return;
-    const a = anim(root, [{ opacity: 1 }, { opacity: 0 }], { duration: reduced ? 120 : 280, easing: 'ease-out', fill: 'both' });
+    const a = anim(root, [{ opacity: 1 }, { opacity: 0 }], { duration: reduced ? GA.dismissReducedMs : GA.dismissMs, easing: 'ease-out', fill: 'both' });
     const done = () => { cleanup(); onDone && onDone(); };
     if (a && a.finished) a.finished.catch(() => {}).then(done); else done();
   }
@@ -396,7 +398,7 @@ export function playGachaReveal(containerEl, { results = [] } = {}, onDone) {
   });
 
   // ---- GO ----
-  anim(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: reduced ? 120 : 300, easing: 'ease-out', fill: 'both' });
+  anim(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: reduced ? GA.veilReducedMs : GA.veilMs, easing: 'ease-out', fill: 'both' });
   veil.style.opacity = '1';
   if (isTen) {
     pullCount.style.display = 'block';

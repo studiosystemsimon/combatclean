@@ -21,16 +21,17 @@ import { resolve } from '../assets.js';
 import { GEAR_RARITY, GEAR_RARITY_ORDER } from '../../data/gear.js';
 import { playChestReveal } from './reveal-engine.js';
 import { awaitClearForChest, chestStarted, chestEnded } from './cinematic.js';
+import { easeInCubic, easeOutCubic, easeOutBack } from './fx-math.js';
+import { REVEAL } from '../../data/config.js';
 
+const CH = REVEAL.chest;
 const centerOf = (el) => {
   const r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-const easeInCubic = (t) => t * t * t;
-const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-const easeOutBack = (t) => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+// Chest pop uses a stronger overshoot than the shared default (config-tunable).
+const popEase = (t) => easeOutBack(t, CH.popOvershoot);
 
 // Deterministic transform tween via MANUAL requestAnimationFrame. The chest's position
 // is ALWAYS its inline style, set every frame — never a WAAPI `fill` that can leak past
@@ -61,7 +62,7 @@ function iconInto(el, a, size) {
     el.appendChild(im);
   } else {
     el.textContent = a.emoji;
-    el.style.fontSize = `${Math.round(size * 0.72)}px`;
+    el.style.fontSize = `${Math.round(size * CH.iconEmojiRatio)}px`;
   }
 }
 
@@ -77,7 +78,7 @@ function rattle(el) {
         { transform: 'rotate(2deg)' },
         { transform: 'rotate(0deg)' },
       ],
-      { duration: 180, easing: 'ease-out', composite: 'add' },
+      { duration: CH.rattleMs, easing: 'ease-out', composite: 'add' },
     );
   } catch {
     /* WAAPI composite unsupported — skip the wobble */
@@ -135,7 +136,7 @@ function chestStage() {
 }
 
 // Horizontal fan so concurrent chests line up instead of stacking.
-const SLOT_DX = [0, -72, 72, -144, 144, -216, 216];
+const SLOT_DX = CH.fanOffsets;
 const activeSlots = [];
 function claimSlot() {
   let i = 0;
@@ -175,7 +176,7 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
   const slot = claimSlot();
   const releaseSlot = () => { activeSlots[slot] = false; };
   // Safety net: free the slot even if the sequence is interrupted before the smash.
-  setTimeout(releaseSlot, 10000);
+  setTimeout(releaseSlot, CH.slotSafetyMs);
   // Compute an ALWAYS-ON-SCREEN landing spot from a FRESH arena rect. The rect can be
   // transiently wrong at the instant an order resolves — a stale/bad one is exactly what
   // pinned chests at y≈-100 (off the top → "disappearing"). Clamp into the arena when it
@@ -186,11 +187,12 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
     const b = arenaEl && arenaEl.getBoundingClientRect();
     const ok = b && b.width > 40 && b.height > 40 && b.top > -40 && b.top < window.innerHeight - 60;
     const cx = ok ? b.left + b.width / 2 : window.innerWidth / 2;
-    const cy = ok ? b.top + b.height / 2 : window.innerHeight * 0.34;
+    const cy = ok ? b.top + b.height / 2 : window.innerHeight * CH.fallbackY;
     const rawX = cx + SLOT_DX[slot % SLOT_DX.length];
+    const [vx, vy] = CH.viewInset;
     return ok
-      ? { x: clampN(rawX, b.left + 34, b.right - 34), y: clampN(cy, b.top + 34, b.bottom - 34) }
-      : { x: clampN(rawX, 40, window.innerWidth - 40), y: clampN(cy, 60, window.innerHeight - 60) };
+      ? { x: clampN(rawX, b.left + CH.clampInset, b.right - CH.clampInset), y: clampN(cy, b.top + CH.clampInset, b.bottom - CH.clampInset) }
+      : { x: clampN(rawX, vx, window.innerWidth - vx), y: clampN(cy, vy, window.innerHeight - vy) };
   };
   let spot = computeSpot();
   const at = (x, y, extra = '') => `translate(${x}px,${y}px) translate(-50%,-50%) ${extra}`;
@@ -202,26 +204,26 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
   chest.style.top = '0';
   const rc = GEAR_RARITY[gear.rarity]?.color;
   const chestAsset = resolve(`ui.chest.${gear.rarity}`);
-  iconInto(chest, chestAsset && chestAsset.emoji ? chestAsset : resolve('ui.chest'), 56);
+  iconInto(chest, chestAsset && chestAsset.emoji ? chestAsset : resolve('ui.chest'), CH.iconSize);
   if (rc) chest.style.filter = `drop-shadow(0 6px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 12px ${rc})`;
   mount.appendChild(chest);
 
   // 2) POP the chest in at the order spot (scale-up with a little overshoot).
   chest.style.transform = at(orderPt.x, orderPt.y, 'scale(0.5)');
-  await tweenChest(chest, (e) => ({ x: orderPt.x, y: orderPt.y, extra: `scale(${0.5 + 0.5 * e})` }), 260, easeOutBack);
+  await tweenChest(chest, (e) => ({ x: orderPt.x, y: orderPt.y, extra: `scale(${0.5 + 0.5 * e})` }), CH.popMs, popEase);
   // the card has become the chest → NOW empty the order slot (it stayed full through the flip).
   onFlipped && onFlipped();
 
   // 3) fly straight up, off the top (combat keeps running).
-  await tweenChest(chest, (e) => ({ x: orderPt.x, y: orderPt.y + (-100 - orderPt.y) * e }), 300, easeInCubic);
+  await tweenChest(chest, (e) => ({ x: orderPt.x, y: orderPt.y + (CH.offscreenY - orderPt.y) * e }), CH.upMs, easeInCubic);
 
   // 4) descend into the FRESH, on-screen combat spot — deterministic inline transform
   //    every frame, so it ALWAYS ends exactly at spot.y (never stranded off-screen).
   spot = computeSpot();
   await tweenChest(
     chest,
-    (e, k) => ({ x: spot.x, y: -100 + (spot.y + 100) * e, extra: k > 0.75 ? `scale(${1 + (1 - k) * 0.5})` : '' }),
-    440,
+    (e, k) => ({ x: spot.x, y: CH.offscreenY + (spot.y - CH.offscreenY) * e, extra: k > 0.75 ? `scale(${1 + (1 - k) * 0.5})` : '' }),
+    CH.descendMs,
     easeOutCubic,
   );
 
@@ -240,8 +242,8 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
   //    +0.5s per tier); each hit gives a very small angular WOBBLE.
   const ap = fx.appPt(spot.x, spot.y);
   const tier = Math.max(0, GEAR_RARITY_ORDER.indexOf(gear.rarity)); // canonical ladder (no local copy)
-  const HIT_WINDOW = 2000 + tier * 500; // 2s, 2.5s, 3s, 3.5s, 4s
-  const SHOT_MS = 180;
+  const HIT_WINDOW = CH.hitWindowBaseMs + tier * CH.hitWindowPerTierMs; // 2s, 2.5s, 3s, 3.5s, 4s
+  const SHOT_MS = CH.shotMs;
   let elapsed = 0;
   let k = 0;
   while (elapsed < HIT_WINDOW) {
@@ -252,9 +254,9 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
       const from = fx.elCenter(el);
       if (from) {
         fx.spawnTrail(from, ap, {
-          color: '#dff0ff', tail: '#3466ff', width: 3, length: 6, speed: 1500, r: 3,
+          ...CH.peltTrail,
           onHit: (x, y) => {
-            fx.impact(x, y, { tier: 'normal', color: '#ffd06b', r: 4 });
+            fx.impact(x, y, { tier: 'normal', color: CH.peltImpactColor, r: CH.peltImpactR });
             rattle(chest); // very small angular wobble on each hit
           },
         });
@@ -265,8 +267,8 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
   }
 
   // 6) SMASH → white flash + burst, then the reveal.
-  fx.flash(0.6, 220, '#ffffff');
-  fx.impact(ap.x, ap.y, { tier: 'crit', color: '#ffffff', r: 18 });
+  fx.flash(CH.smashFlash.opacity, CH.smashFlash.ms, CH.smashFlash.color);
+  fx.impact(ap.x, ap.y, { tier: 'crit', color: CH.smashFlash.color, r: CH.smashImpactR });
   chest.remove();
   releaseSlot();
 

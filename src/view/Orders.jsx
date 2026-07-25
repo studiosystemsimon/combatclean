@@ -15,6 +15,9 @@ import Art from './Art.jsx';
 import { canFulfill } from '../model/orders.js';
 import { GEAR_RARITY } from '../data/gear.js';
 import { STRINGS } from '../data/strings.js';
+import { ANIM } from '../data/config.js';
+
+const OR = ANIM.orders;
 
 export default function Orders() {
   const { state, actions } = useGame();
@@ -45,7 +48,7 @@ export default function Orders() {
           el.style.transition = 'none';
           el.style.transform = `translate(${dx}px, ${dy}px)`;
           requestAnimationFrame(() => {
-            el.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            el.style.transition = `transform ${OR.flipMs}ms ${ANIM.curves.easeOut}`;
             el.style.transform = '';
           });
         }
@@ -97,7 +100,7 @@ export default function Orders() {
     const onMove = (e) => {
       if (!down) return;
       const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) > 5) { moved = true; rail.classList.add('dragging'); try { rail.setPointerCapture(e.pointerId); } catch { /* noop */ } }
+      if (!moved && Math.abs(dx) > ANIM.scrollDragThreshold) { moved = true; rail.classList.add('dragging'); try { rail.setPointerCapture(e.pointerId); } catch { /* noop */ } }
       if (moved) rail.scrollLeft = startScroll - dx;
     };
     const onUp = (e) => { if (!down) return; down = false; rail.classList.remove('dragging'); try { rail.releasePointerCapture(e.pointerId); } catch { /* noop */ } };
@@ -122,18 +125,18 @@ export default function Orders() {
     const card = cardRefs.current[id];
     const wipe = card && card.querySelector('.wipe');
     if (wipe && wipe.animate) {
-      wipe.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
+      wipe.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: OR.wipeInMs, easing: 'ease-in', fill: 'forwards' });
     }
     setTimeout(() => {
       actions.rerollOrder(id); // swaps the order content (same id → tile stays put)
       requestAnimationFrame(() => {
         const w = cardRefs.current[id] && cardRefs.current[id].querySelector('.wipe');
         if (w && w.animate) {
-          const a = w.animate([{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 0 100%)' }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
+          const a = w.animate([{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 0 100%)' }], { duration: OR.wipeOutMs, easing: 'ease-out', fill: 'forwards' });
           a.onfinish = () => { w.style.clipPath = ''; };
         }
       });
-    }, 150);
+    }, OR.wipeSwapMs);
   };
 
   return (

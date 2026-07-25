@@ -764,8 +764,8 @@
     "gloomwood/antler-wraith.png": {
       "pockets": [],
       "reg": [
-        0.4999,
-        0.8772
+        0.4987,
+        0.894
       ],
       "combat": {
         "scale": 1.5

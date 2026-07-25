@@ -20,6 +20,7 @@ import { HERO_RARITIES } from '../../data/rarities.js';
 import { resolve } from '../assets.js';
 import Art from '../Art.jsx';
 import { STRINGS } from '../../data/strings.js';
+import { ANIM } from '../../data/config.js';
 import { fmtK } from '../fmt.js';
 
 const fmt = (n) => fmtK(Math.round(n));
@@ -177,7 +178,7 @@ export default function MapScreen() {
     const onMove = (e) => {
       if (!down) return;
       const dy = e.clientY - startY;
-      if (!moved && Math.abs(dy) > 5) { moved = true; el.classList.add('dragging'); try { el.setPointerCapture(e.pointerId); } catch { /* noop */ } }
+      if (!moved && Math.abs(dy) > ANIM.scrollDragThreshold) { moved = true; el.classList.add('dragging'); try { el.setPointerCapture(e.pointerId); } catch { /* noop */ } }
       if (moved) el.scrollTop = startTop - dy;
     };
     const onUp = (e) => { if (!down) return; down = false; el.classList.remove('dragging'); try { el.releasePointerCapture(e.pointerId); } catch { /* noop */ } };

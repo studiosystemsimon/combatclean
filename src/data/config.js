@@ -6,3 +6,4 @@ export const SELECTED_SLOTS = C.BOARD.selectedSlots;
 export const TIER_PRESENTATION = C.TIER_PRESENTATION;
 export const VFX_CONFIG = C.VFX;
 export const REVEAL = C.REVEAL;
+export const ANIM = C.ANIM;

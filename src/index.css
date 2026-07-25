@@ -1404,6 +1404,14 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-seclabel { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 11px; letter-spacing: 1.5px;
   text-transform: uppercase; opacity: 0.6; margin: 2px 14px 6px; }
 .hs-seclabel.sq { color: var(--gold); opacity: 0.9; }
+/* Roster sort tile: label on the left, the New/Rarity/Power chips on the right. */
+.hs-rlabel { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-right: 10px; }
+.hs-rlabel .hs-seclabel { margin-right: 0; }
+.hs-sort { display: flex; gap: 4px; }
+.hs-sort-btn { font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04); color: #9fb0cf; cursor: pointer; }
+.hs-sort-btn.on { color: #fff; background: rgba(255, 212, 94, 0.16); border-color: rgba(255, 212, 94, 0.5); }
 .hs-squad-band { margin: 0 10px 10px; padding: 8px 6px 6px; border-radius: 16px;
   background: radial-gradient(120% 100% at 50% 0%, rgba(255, 212, 94, 0.14), rgba(255, 212, 94, 0.03) 70%), rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 212, 94, 0.28); box-shadow: 0 0 18px rgba(255, 212, 94, 0.1) inset; }

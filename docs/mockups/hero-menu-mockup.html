@@ -71,6 +71,8 @@
   .gslot .gi{font-size:25px;filter:drop-shadow(0 1px 2px #000)}
   .gslot .glv{position:absolute;right:-5px;bottom:-6px;background:#0c0f16;border:1px solid var(--gr,#3a465e);color:#fff;font-size:9px;border-radius:7px;padding:0 4px;min-width:15px;text-align:center;font-family:'Uniform Condensed Bold',sans-serif}
   .gslot.empty{border-style:dashed;border-color:#3a465e}.gslot.empty .gi{color:#54617d}
+  /* gear LEVEL — text only, bottom-right of every tile, Uniform Condensed Bold, outlined + slanted */
+  .glvl{position:absolute;right:5px;bottom:2px;z-index:2;font-family:'Uniform Condensed Bold',sans-serif;font-size:13px;color:#fff;transform:skewX(-9deg);pointer-events:none;line-height:1}
   /* abilities (right) — plain circular tiles */
   .abil{width:52px;height:52px;border-radius:50%;position:relative;cursor:pointer;display:grid;place-items:center;
     background:radial-gradient(120% 100% at 50% 0,#242d40,#0c1018);border:1px solid rgba(255,255,255,.10);box-shadow:0 3px 9px rgba(0,0,0,.55)}
@@ -107,6 +109,10 @@
   .hm-exp .fill{position:absolute;inset:0;width:45%;background:linear-gradient(90deg,#5aa9ff,#78f0ff);transition:width .4s cubic-bezier(.2,.8,.2,1)}
   .hm-exp span{position:absolute;inset:0;display:grid;place-items:center;font-family:'Uniform Condensed Medium',sans-serif;font-size:8.5px;color:#fff;text-shadow:0 1px 2px #000}
   .actrow{display:flex;gap:8px;margin-bottom:7px}.actrow:last-child{margin-bottom:0}
+  /* two side-by-side stacks: [hero level / max] | [gear level / max] */
+  .lvl-stacks{display:flex;gap:8px;margin-bottom:7px}
+  .lvl-stack{flex:1;display:flex;flex-direction:column;gap:8px}
+  .lvl-stack .btn{flex:1 1 0;width:100%;min-height:38px}
   .btn{flex:1;border:none;border-radius:11px;cursor:pointer;font-family:'Uniform Condensed Bold',sans-serif;letter-spacing:.3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;color:#0c0e14;min-height:38px;padding:5px 8px;font-size:12px;line-height:1.05}
   .btn small{font-family:'Uniform Condensed Medium',sans-serif;font-size:8.5px;opacity:.8}
   .btn:active{transform:translateY(1px)}
@@ -135,7 +141,7 @@
   /* equip dialog */
   .eq-card{position:relative;display:flex;flex-direction:column;max-height:80%}
   .eq-cur{display:flex;align-items:center;gap:10px;background:#0f1420;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-  .eq-cur .ic{width:46px;height:46px;border-radius:11px;display:grid;place-items:center;font-size:24px;border:2px solid var(--gr,#3a465e);background:linear-gradient(180deg,#141a28,#0e1320)}
+  .eq-cur .ic{position:relative;width:46px;height:46px;border-radius:11px;display:grid;place-items:center;font-size:24px;border:2px solid var(--gr,#3a465e);background:linear-gradient(180deg,#141a28,#0e1320)}
   .eq-cur .nm{font-family:'Uniform Condensed Bold',sans-serif}
   .eq-cur .rr{font-family:'Uniform Condensed Medium',sans-serif;font-size:11px}
   .eq-cur .pw{margin-left:auto;font-family:'Uniform Bold',sans-serif;color:var(--gold);font-size:18px}
@@ -176,7 +182,7 @@
   .hero-float{position:absolute;white-space:nowrap;font-family:'Uniform Condensed Bold',system-ui,sans-serif;font-style:italic;font-weight:900;text-shadow:2px 0 0 #000,-2px 0 0 #000,0 2px 0 #000,0 -2px 0 #000,1px 1px 0 #000,-1px 1px 0 #000,1px -1px 0 #000,-1px -1px 0 #000,0 2px 4px rgba(0,0,0,.55)}
   .hero-float.hd{font-size:22px;color:#fff;letter-spacing:.5px}
   .hero-float.stat{font-size:15px}
-  .hero-float.atk{color:#ff9a6a}.hero-float.hp{color:#8dffb0}.hero-float.pwr{color:#ffd45e}
+  .hero-float.atk{color:#ff9a6a}.hero-float.hp{color:#8dffb0}.hero-float.pwr{color:#ffd45e}.hero-float.def{color:#8fd0ff}
   .hero-float.lvup{font-size:16px;color:#fff}
   .hero-float.maxed{font-size:30px;color:#ffd45e;transform:translate(-50%,-50%);text-shadow:0 0 16px rgba(255,212,94,.6),0 2px 4px #000}
   .pburst{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff7cc,#ffcf3a 60%,#ff9f1a);box-shadow:0 0 8px 1px rgba(255,200,80,.9)}
@@ -240,17 +246,16 @@
         </div>
         <div class="hm-actions">
           <div class="hm-exp"><div class="fill" id="hm-expfill"></div><span id="hm-exptxt">EXP 240 / 560</span></div>
-          <div class="actrow">
-            <button class="btn primary" data-act="lvl" id="btn-lvl">LEVEL UP</button>
-            <button class="btn side" data-act="lvlmax">LEVEL UP MAX</button>
-          </div>
-          <div class="actrow">
-            <button class="btn b" data-act="lvlgear">LEVEL ALL GEAR</button>
-            <button class="btn b" data-act="lvlgearmax">LEVEL ALL GEAR MAX</button>
-          </div>
-          <div class="actrow">
-            <button class="btn side" data-act="equipbest">⚡ EQUIP BEST</button>
-            <button class="btn g" data-act="ascend" id="btn-asc">✦ ASCEND</button>
+          <div class="lvl-stacks">
+            <div class="lvl-stack">
+              <button class="btn primary" data-act="lvl" id="btn-lvl">LEVEL UP</button>
+              <button class="btn side" data-act="lvlmax">LEVEL UP MAX</button>
+            </div>
+            <div class="lvl-stack">
+              <button class="btn b" data-act="lvlgear">LEVEL GEAR</button>
+              <button class="btn b" data-act="lvlgearmax">LEVEL GEAR MAX</button>
+              <button class="btn side" data-act="equipbest">⚡ EQUIP BEST</button>
+            </div>
           </div>
         </div>
       </div>
@@ -377,29 +382,45 @@ function maxedOut(cx,cy){particleBurst(cx,cy,true);
     d.animate([{transform:'translate(-50%,-50%) rotate(-4deg) scale(1.1)'},{transform:'translate(-50%,-50%) rotate(4deg) scale(1.02)',offset:.5},{transform:'translate(-50%,-50%) rotate(0deg) scale(1)'}],{duration:110,easing:'ease-out'});
     if(i>=word.length){clearInterval(typer);setTimeout(()=>{d.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate(-50%,-50%) scale(0)',opacity:0}],{duration:560,easing:'cubic-bezier(.7,0,.84,0)'}).onfinish=()=>d.remove();},3000);}},55);}
 function fxHostAt(cx,cy,w,h){const el=document.createElement('div');el.style.cssText=`position:fixed;left:${cx-w/2}px;top:${cy-h/2}px;width:${w}px;height:${h}px;pointer-events:none;z-index:9998`;document.body.appendChild(el);setTimeout(()=>el.remove(),1300);return el;}
+/* clipped host INSIDE a tile → the starburst is MASKED to the tile (like the game's .gfx). */
+function clippedHost(el){if(!el)return null;if(getComputedStyle(el).position==='static')el.style.position='relative';
+  const h=document.createElement('div');h.style.cssText='position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;z-index:1';el.appendChild(h);setTimeout(()=>h.remove(),1000);return h;}
+const snap=h=>({lv:h.level,pow:power(h),hp:hpAt(h),atk:atkAt(h),def:defAt(h)});
 
 /* Hero level-up — exact fxHeroLevelUp choreography, centered on the hero. */
-function heroLevelUpFX(fromLv,toLv,fromPow,toPow){
-  const heroEl=$('hm-img'),levels=toLv-fromLv,gain=Math.max(0,toPow-fromPow),multi=levels>1;
+function heroLevelUpFX(before,after){
+  const heroEl=$('hm-img'),levels=after.lv-before.lv,multi=levels>1;
   heroEl.animate([{transform:'scale(1)'},{transform:`scale(${multi?1.12:1.09})`,offset:.3},{transform:'scale(.99)',offset:.6},{transform:'scale(1)'}],{duration:multi?620:520,easing:'cubic-bezier(.2,1.4,.3,1)'});
   const c=centerOf(heroEl);
-  burstInto(fxHostAt(c.x,c.y,260,300));
+  burstInto(fxHostAt(c.x,c.y,260,300));      // hero starburst (full, unmasked)
   particleBurst(c.x,c.y,multi);
-  tween($('pw-val'),fromPow,toPow,multi?900:720);
-  tween($('st-lv'),fromLv,toLv,multi?900:500);
-  const stats=[{t:'+'+Math.max(1,Math.round(gain*.13))+' ATK',c:'atk'},{t:'+'+Math.max(1,Math.round(gain*.9))+' HP',c:'hp'},{t:'+'+gain+' PWR',c:'pwr'}];
-  if(!multi){floatText(c.x,c.y-4,'LEVEL UP!','hd',0);stats.forEach((s,i)=>floatText(c.x+(i-1)*3,c.y,s.t,'stat '+s.c,210+i*160));
-    if(toLv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),320);}
-  else{const st=Math.max(55,Math.min(150,Math.round(900/levels)));
+  // count the ACTUAL value nodes up in place
+  tween($('st-lv'),before.lv,after.lv,multi?900:500);
+  tween($('pw-val'),before.pow,after.pow,multi?900:720);
+  tween($('st-hp'),before.hp,after.hp,multi?900:720);
+  tween($('st-atk'),before.atk,after.atk,multi?900:720);
+  tween($('st-def'),before.def,after.def,multi?900:720);
+  // "+delta" rises UP from each stat's real value in the panel below (not the hero)
+  const rise=(id,delta,cls,delay)=>{if(delta<=0)return;const p=centerOf($(id));floatText(p.x,p.y,'+'+delta,'stat '+cls,delay);};
+  const dp=after.pow-before.pow,dh=after.hp-before.hp,da=after.atk-before.atk,dd=after.def-before.def;
+  if(!multi){
+    floatText(c.x,c.y-4,'LEVEL UP!','hd',0);
+    rise('pw-val',dp,'pwr',210);rise('st-hp',dh,'hp',330);rise('st-atk',da,'atk',450);rise('st-def',dd,'def',570);
+    if(after.lv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),320);
+  }else{
+    const st=Math.max(55,Math.min(150,Math.round(900/levels)));
     for(let k=0;k<levels;k++){floatText(c.x+(Math.random()*22-11),c.y,'LEVEL UP','lvup',k*st);if(k%3===0)particleBurst(c.x,c.y,false);}
-    const after=levels*st+150;stats.forEach((s,i)=>floatText(c.x+(i-1)*3,c.y,s.t,'stat '+s.c,after+i*160,2600));
-    if(toLv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),after+120);}}
+    const aft=levels*st+150;
+    rise('pw-val',dp,'pwr',aft);rise('st-hp',dh,'hp',aft+120);rise('st-atk',da,'atk',aft+240);rise('st-def',dd,'def',aft+360);
+    if(after.lv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),aft+120);
+  }
+}
 
 /* Gear level-up — same primitives, played on a gear element + hero power tween. */
 function gearLevelUpFX(el,fromPow,toPow,levels){
   if(!el)return;const c=centerOf(el),gain=Math.max(0,toPow-fromPow),multi=levels>1;
   el.animate([{transform:'scale(1)'},{transform:'scale(1.22)',offset:.35},{transform:'scale(1)'}],{duration:420,easing:'cubic-bezier(.2,1.4,.3,1)'});
-  burstInto(fxHostAt(c.x,c.y,120,120));particleBurst(c.x,c.y,multi);
+  burstInto(clippedHost(el));particleBurst(c.x,c.y,multi);   // starburst MASKED to the tile
   if(multi){const st=Math.max(45,Math.min(120,Math.round(700/levels)));for(let k=0;k<levels;k++)floatText(c.x,c.y-6,'LEVEL UP','lvup',k*st);floatText(c.x,c.y,'+'+gain+' PWR','stat pwr',levels*st+120,2600);}
   else floatText(c.x,c.y,'+'+gain+' PWR','stat pwr',0);
   tween($('pw-val'),fromPow,toPow,multi?720:520);}
@@ -407,7 +428,7 @@ function gearLevelUpFX(el,fromPow,toPow,levels){
 /* hero menu */
 const M=$('hero-menu');let cur=0,exp=.45;
 const gslotHTML=(slot,h)=>{const g=h.gear[slot];
-  return g?`<div class="gslot" data-slot="${slot}" style="--gr:${GRAR[g.r]}"><span class="gi">${GEAR_ICON[slot]}</span><span class="glv">${g.lv}</span></div>`
+  return g?`<div class="gslot" data-slot="${slot}" style="--gr:${GRAR[g.r]}"><span class="gi">${GEAR_ICON[slot]}</span><span class="glvl ol">${g.lv}</span></div>`
           :`<div class="gslot empty" data-slot="${slot}"><span class="gi">${GEAR_ICON[slot]}</span></div>`;};
 function render(){
   const h=HEROES[cur];
@@ -424,7 +445,6 @@ function render(){
   $('hm-expfill').style.width=(atMax?100:exp*100)+'%';
   $('hm-exptxt').textContent=atMax?'MAX LEVEL':`EXP ${Math.round(exp*expNext(h))} / ${expNext(h)}`;
   const bl=$('btn-lvl');bl.disabled=atMax;bl.innerHTML=atMax?'★ MAX LEVEL':`LEVEL UP<small>📘 ${lvlCost(h)}</small>`;
-  const asc=$('btn-asc');const canAsc=h.asc<MAX_ASC;asc.style.display=canAsc?'':'none';asc.innerHTML=`✦ ASCEND<small>${h.asc}/${MAX_ASC}</small>`;
   wire();
 }
 let tt;function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),1500);}
@@ -439,8 +459,8 @@ function wire(){
   document.querySelectorAll('#gear-left .gslot[data-slot]').forEach(s=>s.onclick=()=>openEquip(s.dataset.slot));
   document.querySelectorAll('#abil-right .abil').forEach(b=>b.onclick=()=>openSkill(+b.dataset.sk));
   document.querySelectorAll('.hm-actions .btn').forEach(b=>b.onclick=()=>{const h=HEROES[cur],a=b.dataset.act;
-    if(a==='lvl'){if(h.level>=MAX_LEVEL)return;const fl=h.level,fp=power(h);h.level++;exp=.12;render();heroLevelUpFX(fl,h.level,fp,power(h));}
-    else if(a==='lvlmax'){if(h.level>=MAX_LEVEL){const c=centerOf($('hm-img'));maxedOut(c.x,c.y);return;}const fl=h.level,fp=power(h);h.level=MAX_LEVEL;exp=1;render();heroLevelUpFX(fl,h.level,fp,power(h));}
+    if(a==='lvl'){if(h.level>=MAX_LEVEL)return;const b=snap(h);h.level++;exp=.12;render();heroLevelUpFX(b,snap(h));}
+    else if(a==='lvlmax'){if(h.level>=MAX_LEVEL){const c=centerOf($('hm-img'));maxedOut(c.x,c.y);return;}const b=snap(h);h.level=MAX_LEVEL;exp=1;render();heroLevelUpFX(b,snap(h));}
     else if(a==='lvlgear'){levelAllGear(false);}
     else if(a==='lvlgearmax'){levelAllGear(true);}
     else if(a==='equipbest'){equipBestAll();}
@@ -463,7 +483,7 @@ function levelAllGear(max){const h=HEROES[cur];const worn=SLOTS.filter(s=>h.gear
   worn.forEach(s=>{const g=h.gear[s];const target=max?GEAR_MAX:Math.min(GEAR_MAX,g.lv+1);if(target<=g.lv)return;any=true;const from=g.lv;g.lv=target;if(g.id){const inv=(INVENTORY[s]||[]).find(x=>x.id===g.id);if(inv)inv.lv=g.lv;g._levels=g.lv-from;}g._levels=g.lv-from;});
   if(!any)return toast('Gear already maxed.');
   render();
-  worn.forEach(s=>{const el=document.querySelector(`#gear-left .gslot[data-slot="${s}"]`);if(el){const c=centerOf(el);burstInto(fxHostAt(c.x,c.y,110,110));particleBurst(c.x,c.y,false);floatText(c.x,c.y-6,'LEVEL UP','lvup',0);}});
+  worn.forEach(s=>{const el=document.querySelector(`#gear-left .gslot[data-slot="${s}"]`);if(el){const c=centerOf(el);burstInto(clippedHost(el));particleBurst(c.x,c.y,false);floatText(c.x,c.y-6,'LEVEL UP','lvup',0);}});
   tween($('pw-val'),fp,power(h),720);
   const hc=centerOf($('hm-img'));floatText(hc.x,hc.y,'+'+(power(h)-fp)+' PWR','stat pwr',200);}
 
@@ -484,16 +504,16 @@ function openEquip(slot){
   eqSlot=slot;const h=HEROES[cur],cur0=h.gear[slot],items=INVENTORY[slot]||[];
   $('eq-title').textContent=`Equip · ${cap1(slot)}`;
   $('eq-cur').innerHTML=cur0
-    ? `<div class="ic" style="--gr:${GRAR[cur0.r]}">${GEAR_ICON[slot]}</div><div><div class="nm">${cur0.r.toUpperCase()} ${cap1(slot)}</div><div class="rr" style="color:${GRAR[cur0.r]}">Lv ${cur0.lv}</div></div><div class="pw">⚔ ${gpow(cur0)}</div>`
+    ? `<div class="ic" style="--gr:${GRAR[cur0.r]}">${GEAR_ICON[slot]}<span class="glvl ol">${cur0.lv}</span></div><div><div class="nm">${cur0.r.toUpperCase()} ${cap1(slot)}</div><div class="rr" style="color:${GRAR[cur0.r]}">Lv ${cur0.lv}</div></div><div class="pw">⚔ ${gpow(cur0)}</div>`
     : `<div class="ic">${GEAR_ICON[slot]}</div><div><div class="nm">Empty slot</div><div class="rr" style="color:var(--dim)">pick an item below</div></div>`;
   $('eq-grid').innerHTML=items.map(it=>{
     const d=gpow(it)-(cur0?gpow(cur0):0),on=cur0&&cur0.id===it.id;
     const owner=it.equippedBy&&it.equippedBy!==h.k?heroByKey(it.equippedBy):null;
     return `<div class="eq-item ${on?'on':''}" data-eq="${it.id}" style="--gr:${GRAR[it.r]}">
-      <span class="lv">Lv${it.lv}</span>${on?'<span class="eqbadge">✓</span>':''}
+      ${on?'<span class="eqbadge">✓</span>':''}
       <span class="gi">${GEAR_ICON[slot]}</span><span class="pw">⚔ ${gpow(it)}</span>
       <span class="d ${d>=0?'up':'dn'}">${on?'equipped':(d>=0?'▲ +'+d:'▼ '+Math.abs(d))}</span>
-      ${owner?`<span class="owner">👤${owner.name[0]}</span>`:''}</div>`;
+      ${owner?`<span class="owner">👤${owner.name[0]}</span>`:''}<span class="glvl ol">${it.lv}</span></div>`;
   }).join('')||`<div style="grid-column:1/5;color:var(--dim);text-align:center;padding:22px">No items for this slot.</div>`;
   document.querySelectorAll('#eq-grid .eq-item').forEach(el=>el.onclick=()=>promptEquip(slot,items.find(x=>x.id===el.dataset.eq)));
   $('eq-best').onclick=()=>{const pool=items.filter(it=>!it.equippedBy||it.equippedBy===HEROES[cur].k);

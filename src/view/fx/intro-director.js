@@ -17,14 +17,16 @@ import { ENEMY_BY_ID } from '../../data/enemies.js';
 import { zoneIndexForLevel, levelInZone, isBossLevel } from '../../model/map.js';
 import { zoneForLevel } from '../../data/zones.js'; // MERGED zone (presentation: nameKey/keyArt/biome), not the logical sim selector — matches Autobattler
 import { awaitClearForIntro, introStarted, introEnded, chestsBusy } from './cinematic.js';
+import { ANIM } from '../../data/config.js';
 
+const IN = ANIM.intro;
 const rnd = (a, b) => a + Math.random() * (b - a);
 const L = () => document.querySelector('.intro-layer');
 const battleEl = () => document.querySelector('.battle');
 const enemyChips = () => [...document.querySelectorAll('.enemy-row .enemy-chip')];
 const bossChip = () => document.querySelector('.enemy-row .enemy-chip.boss-chip');
 const minionChips = () => [...document.querySelectorAll('.enemy-row .enemy-chip:not(.boss-chip)')];
-const threatFor = (level) => Math.min(5, zoneIndexForLevel(level) + 2);
+const threatFor = (level) => Math.min(IN.threatCap, zoneIndexForLevel(level) + IN.threatBase);
 const bossName = (zone) => (ENEMY_BY_ID[zone.bossId]?.name || STRINGS.combat.boss).toUpperCase();
 const skulls = (n) => { let s = ''; for (let i = 0; i < 5; i++) s += `<span class="sk ${i < n ? 'on' : ''}">☠</span>`; return s; };
 
@@ -128,7 +130,7 @@ async function seqLevel(run, level, zone) {
   // is translateY(-50%) (vertical centre); the exit keyframes MUST keep that -50% or
   // the anim snaps the stack down to translateY(0) on the first frame (half its height
   // lower) before easing — the "moves down then up" glitch. Anchor at -50% → drift +44px.
-  run.anim(el('.intro-stack'), [{ opacity: 1, transform: 'translateY(-50%)' }, { opacity: 0, transform: 'translateY(calc(-50% + 44px))' }], { duration: 340, easing: 'cubic-bezier(.4,0,.7,1)', fill: 'forwards' });
+  run.anim(el('.intro-stack'), [{ opacity: 1, transform: 'translateY(-50%)' }, { opacity: 0, transform: `translateY(calc(-50% + ${IN.exitDriftPx}px))` }], { duration: 340, easing: 'cubic-bezier(.4,0,.7,1)', fill: 'forwards' });
   run.anim(el('.intro-veil'), [{ opacity: 1 }, { opacity: 0 }], { duration: 340, fill: 'forwards' });
   await run.sleep(360);
 }
@@ -157,7 +159,7 @@ async function seqArea(run, level, zone) {
   run.anim(el('.intro-flash'), [{ opacity: 0.55 }, { opacity: 0 }], { duration: 420 });
   const b = battleEl(); run.anim(b, [{ transform: 'translate(0,0)' }, { transform: 'translate(-3px,2px)' }, { transform: 'translate(3px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 260 });
   const layer = L();
-  for (let i = 0; i < 16; i++) { if (!layer) break; const m = document.createElement('div'); m.className = 'area-mote'; m.style.left = `${rnd(6, 94)}%`; layer.appendChild(m);
+  for (let i = 0; i < IN.moteCount; i++) { if (!layer) break; const m = document.createElement('div'); m.className = 'area-mote'; m.style.left = `${rnd(6, 94)}%`; layer.appendChild(m);
     run.transient(m, [{ transform: 'translateY(0)', opacity: 0 }, { opacity: 1, offset: 0.2 }, { transform: `translate(${rnd(-16, 16)}px,-${rnd(120, 220)}px)`, opacity: 0 }], { duration: rnd(1800, 3200), easing: 'ease-out', delay: i * 70 }); }
   await run.sleep(3700); if (!run.alive()) return;           // hold the area name a good beat
   run.anim(el('.intro-stack'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
