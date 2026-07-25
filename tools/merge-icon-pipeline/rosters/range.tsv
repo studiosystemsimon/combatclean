@@ -1,10 +1,10 @@
-# range merge chain — 8 tiers (slug<TAB>subject). DRAFT — refine against references.
-# Laws: clear differentiation · clear escalation · rising power. Stays a BOW; vary silhouette + material/gem ladder + ornament.
-range-1	a crude wooden shortbow, roughly hewn, plain string, tan wood, no ornament
-range-2	a brass-tipped hunting bow, slight recurve, bound leather grip, warm golden fittings
-range-3	an iron-reinforced recurve bow, cool-grey metal limb caps, taut string, sturdier
-range-4	a steel composite bow, bright silver-blue fittings, a small blue gem at the grip, sleek limbs
-range-5	an ornate rich-gold longbow, engraved riser, tall elegant limbs, a red gem at the nock
-range-6	a pale silver-blue mythril elven longbow, slender filigree limbs, a green gem, refined
-range-7	a black obsidian recurve warbow, dark jagged limb tips, a violet gem, faint glow
-range-8	a radiant white crystal longbow, glowing translucent limbs, a winged riser, a brilliant central gem, holy glow, legendary
+# range merge chain — 8 tiers. PROPOSAL — THEME: carved bow → NATURE / STORM ascension. Palette: wood/leather → living green → storm teal/blue → radiant gold-green.
+# slug<TAB>subject (design). Names: 1 Cracked Shortbow · 2 Hunter's Bow · 3 Ranger's Recurve · 4 Warden's Gilded Bow · 5 Thornwood Bow · 6 Stormcall Greatbow · 7 Tempest Falcon Bow · 8 Skybreaker Sovereign
+range-1	a crude short wooden bow with a frayed string, roughly hewn and worn, no ornament
+range-2	a hunter's recurve bow of polished wood with a leather-wrapped grip and small bone limb tips
+range-3	a ranger's longer recurve bow with reinforced metal-capped limbs and a waxed taut string
+range-4	an ornate warden's longbow with a gold-leaf riser, carved limbs and a small jewel at the nock
+range-5	a living thornwood bow of dark wood with glowing green sap-veins and thorn accents along the limbs
+range-6	a large stormcall greatbow crackling with teal lightning along the string, storm-rune limbs and a faint charge
+range-7	a tempest bow with wing-shaped limbs, a bright storm-core at the grip and small lightning wisps
+range-8	a majestic skybreaker bow with a radiant storm core, a crown-like riser, a few floating arrow shards and a restrained tempest aura

@@ -988,17 +988,17 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
    fills the space between them (flex:1), fades out on BOTH ends. Tall container (overflow visible)
    so the current-dot pulse ring never clips top/bottom. */
 /* Level progress = VERTICAL bar pinned to the LEFT edge (number lives on the current node) */
-.level-track { position: absolute; left: 8px; top: 46px; bottom: 14px; width: 20px; z-index: 8; margin: 0; overflow: visible; pointer-events: none; }
+.level-track { position: absolute; left: 6px; top: 4px; bottom: 108px; width: 14px; z-index: 8; margin: 0; overflow: visible; pointer-events: none; }
 .level-track .track-line { position: absolute; top: 2px; bottom: 2px; left: 50%; width: 2px; transform: translateX(-50%);
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.22), rgba(255,255,255,.04)); border-radius: 2px; }
 .level-track .dots { position: relative; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: center; height: 100%; }
-.ldot { width: 7px; height: 7px; border-radius: 50%; position: relative; color: var(--blue);
+.ldot { width: 7px; height: 7px; border-radius: 50%; position: relative; color: #8b93a3;
   background: currentColor; border: 1px solid rgba(255,255,255,.28); box-shadow: 0 0 4px currentColor; }
-.ldot.boss { width: 10px; height: 10px; color: var(--gold); box-shadow: 0 0 7px currentColor; }
+.ldot.boss { width: 10px; height: 10px; color: var(--red); box-shadow: 0 0 7px currentColor; }
 .ldot.past { opacity: .32; }
-.ldot.current { width: 20px; height: 20px; transform: none; filter: none; z-index: 2; display: grid; place-items: center; background: var(--gold); box-shadow: 0 0 8px var(--gold); }
-.ldot.current::after { display: none; }
-.ldot.current b { font-size: 11px; color: #241a02; font-weight: 900; line-height: 1; }
+.level-track .ldot.current { width: 15px; height: 15px; transform: none; filter: none; z-index: 2; display: grid; place-items: center; background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.level-track .ldot.current::after { display: none; }
+.level-track .ldot.current b { font-size: 9px; color: #241a02; font-weight: 900; line-height: 1; }
 @keyframes ldotpulse { 0% { transform: scale(.5); opacity: .95; } 100% { transform: scale(2); opacity: 0; } }
 
 /* arena sits above the backdrop */
@@ -1124,7 +1124,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .zone-name { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 8; font-family: 'Uniform Condensed Bold', system-ui, sans-serif;
   font-weight: 900; font-size: 16px; letter-spacing: .5px; text-transform: uppercase; color: #fff; -webkit-text-stroke: 2px #000; paint-order: stroke fill;
   text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
-.battle-right { position: absolute; top: 6px; left: 8px; right: auto; z-index: 9; flex-direction: row; }
+.battle-right { position: absolute; top: 6px; left: 26px; right: auto; z-index: 9; flex-direction: row; }
 .arena { padding-top: 34px; padding-bottom: 106px; } /* padding-bottom reserves the pinned hero band */
 .enemy-row { transform: translateY(-4px); }
 
@@ -1415,8 +1415,8 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 @keyframes reticleBob { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.16); } }
 
 /* Level-track dots: bigger + better spaced so progress reads at a glance */
-.ldot { width: 10px; height: 10px; }
-.ldot.boss { width: 14px; height: 14px; }
+.ldot { width: 5px; height: 5px; }
+.ldot.boss { width: 7px; height: 7px; }
 .level-track .dots { justify-content: space-around; }
 .ldot.current::after { inset: -5px; }
 
@@ -1789,11 +1789,13 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 /* summon glow used by the level-intro materialise beat */
 .summon-glow { position: absolute; left: 50%; bottom: 4px; width: 54px; height: 20px; transform: translateX(-50%); border-radius: 50%; pointer-events: none; z-index: -1; background: radial-gradient(ellipse at center, color-mix(in srgb, var(--biome-accent,#5ad17a) 85%, transparent), transparent 70%); filter: blur(3px); }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ---------------------------------------------------------------------------
    HERO MENU — full-screen isolated hero detail (src/view/screens/HeroMenu.jsx).
    All selectors scoped under .hero-menu to avoid clashing with global classes.
-   Reuses the existing @font-face (Uniform) + .lvfx-*/.hero-float*/.pburst* fx.
-   ═══════════════════════════════════════════════════════════════════════════ */
+   Reuses the existing @font-face (Uniform) + the lvfx / hero-float / pburst fx.
+   NOTE: never write a bare "asterisk-slash" pair inside a CSS comment — it ends
+   the comment early and silently drops the next rule (bit us here once).
+   --------------------------------------------------------------------------- */
 /* A normal context-panel screen filling the whole context area (below currency bar, above nav).
    GRID with an explicit middle row (not flex) so the body track ALWAYS fills: header pinned top,
    hero in the middle track, stats/buttons pinned bottom. minmax(0,1fr) lets it fill AND shrink.

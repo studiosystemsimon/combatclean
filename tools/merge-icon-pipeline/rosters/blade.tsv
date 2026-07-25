@@ -1,10 +1,10 @@
-# blade merge chain — 8 tiers (slug<TAB>subject). DRAFT — refine against references.
-# Laws: clear differentiation · clear escalation · rising power. Distinct-hue material ramp, no redundant greys.
-blade-1	a crude wooden training sword, plain straight blade, rough wrapped grip, tan wood, no ornament
-blade-2	a brass shortsword, warm golden metal, simple straight guard, slightly leaf-shaped blade
-blade-3	a cool-grey iron broadsword, wider heavier blade, riveted crossguard, worn leather grip
-blade-4	a bright silver-blue steel longsword, a small blue gem set in the pommel, clean fuller, wrapped grip
-blade-5	a rich-gold ceremonial sword, engraved blade, gemmed crossguard with a red gem, ornate pommel
-blade-6	a pale silver-blue mythril blade, slender elegant silhouette, filigree guard, a green gem, refined
-blade-7	a black obsidian greatsword, jagged wide blade, dark ornate winged guard, a violet gem, faint glow
-blade-8	a radiant white crystal greatsword, glowing translucent blade, winged crossguard, a brilliant central gem, holy glow, legendary
+# blade merge chain — 8 tiers. THEME: forged steel → FIRE / SOLAR ascension. Palette: rust/iron-grey → steel → gold → ember-orange/red → solar white-gold.
+# slug<TAB>subject (design). Names (ref): 1 Rustbit · 2 Mended Iron · 3 Soldier's Steel · 4 Knight's Gilded · 5 Emberforged · 6 Runeflame · 7 Phoenix King's · 8 Solar Sovereign
+blade-1	a short narrow iron sword with a chipped edge and rusted, damaged blade, a plain wooden grip and a small round pommel
+blade-2	a repaired iron sword with a visible riveted metal patch on the blade, a wrapped leather grip and a simple straight guard
+blade-3	a longer polished steel sword with a central fuller, a wider guard and a steel pommel, clean and well-proportioned
+blade-4	a slightly broader steel longsword with gold guard accents, an engraved fuller and a jewel set in the pommel
+blade-5	a dark forged sword with glowing orange cracks running through the blade, a swept guard and an ember-shaped gem
+blade-6	a wide runeflame greatsword with three glowing runes down the blade, a flame-shaped guard and faint heat distortion
+blade-7	a phoenix blade with a feather-edged profile, a wing-shaped guard, a bright molten core and small flame wisps
+blade-8	a majestic broad solar greatsword with a radiant central core, a crown-like guard, a few floating blade fragments and a restrained solar aura
