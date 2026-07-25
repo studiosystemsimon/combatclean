@@ -1,5 +1,8 @@
 {
 	"id": 3071,
 	"name": "Molten Knight",
-	"iconAssetId": "enemy.molten-knight"
+	"iconAssetId": "enemy.molten-knight",
+	"combat": {
+		"scale": 1.4
+	}
 }

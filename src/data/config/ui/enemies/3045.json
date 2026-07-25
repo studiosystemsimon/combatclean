@@ -1,5 +1,8 @@
 {
 	"id": 3045,
 	"name": "Dire Wolf",
-	"iconAssetId": "enemy.dire-wolf"
+	"iconAssetId": "enemy.dire-wolf",
+	"combat": {
+		"scale": 1.2
+	}
 }

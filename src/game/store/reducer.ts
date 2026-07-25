@@ -72,8 +72,7 @@ export const initState = (now: number, saved: any = null): S => {
   const gear: any = {}; const ordersCompleted = 0;
 
   let board = Board.emptyBoard();
-  const genCols = [1, 3, 5];
-  C.BOARD.startLayout.generators.forEach((genId: string, i: number) => { board = Board.withCell(board, genCols[i] ?? i, Board.makeGenerator(id++, genId)); });
+  C.BOARD.startLayout.generators.forEach((g: { generator: string; cell: number }) => { board = Board.withCell(board, g.cell, Board.makeGenerator(id++, g.generator)); });
   C.BOARD.startLayout.seedItems.forEach((s: any) => { board = Board.withCell(board, s.cell, Board.makeItem(id++, s.chain, s.level, s.locked)); });
 
   const startWeights = Map.zoneForLevel(C.BATTLE.startLevel).orderRarity;
@@ -324,8 +323,9 @@ export const reducer = (state: S, action: Act): S => {
     case A.SUMMON: {
       const banner = C.BANNERS[action.bannerId];
       if (!banner) return state;
-      const count = action.count === 10 ? 10 : 1;
-      const totalCost = count === 10 ? banner.ten : banner.cost;
+      const ten = C.RUNTIME.tenPullCount;
+      const count = action.count === ten ? ten : 1;
+      const totalCost = count === ten ? banner.ten : banner.cost;
       if (state.coins < totalCost) return state;
       let id = state.nextId; let cidN = state.nextCid;
       let counters = { ...(state.pity[banner.id] || Gacha.initPity(banner)) };

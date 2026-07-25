@@ -1,5 +1,8 @@
 {
 	"id": 3038,
 	"name": "Giant Toad",
-	"iconAssetId": "enemy.giant-toad"
+	"iconAssetId": "enemy.giant-toad",
+	"combat": {
+		"scale": 1.25
+	}
 }

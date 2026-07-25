@@ -1,5 +1,8 @@
 {
 	"id": 3054,
 	"name": "Crawling Hand",
-	"iconAssetId": "enemy.crawling-hand"
+	"iconAssetId": "enemy.crawling-hand",
+	"combat": {
+		"scale": 0.85
+	}
 }

@@ -273,158 +273,6 @@
 				"y": 0.966
 			}
 		},
-		"enemy.slime": {
-			"type": "image",
-			"file": "enemies/slime.png"
-		},
-		"enemy.slime-cube": {
-			"type": "image",
-			"file": "enemies/slime-cube.png"
-		},
-		"enemy.bat": {
-			"type": "image",
-			"file": "enemies/bat.png"
-		},
-		"enemy.snake": {
-			"type": "image",
-			"file": "enemies/snake.png"
-		},
-		"enemy.goblin": {
-			"type": "image",
-			"file": "enemies/goblin.png"
-		},
-		"enemy.imp": {
-			"type": "image",
-			"file": "enemies/imp.png"
-		},
-		"enemy.skeleton": {
-			"type": "image",
-			"file": "enemies/skeleton.png"
-		},
-		"enemy.skeleton-archer": {
-			"type": "image",
-			"file": "enemies/skeleton-archer.png"
-		},
-		"enemy.spider": {
-			"type": "image",
-			"file": "enemies/spider.png"
-		},
-		"enemy.zombie": {
-			"type": "image",
-			"file": "enemies/zombie.png"
-		},
-		"enemy.ghost": {
-			"type": "image",
-			"file": "enemies/ghost.png"
-		},
-		"enemy.orc": {
-			"type": "image",
-			"file": "enemies/orc.png"
-		},
-		"enemy.mummy": {
-			"type": "image",
-			"file": "enemies/mummy.png"
-		},
-		"enemy.gargoyle": {
-			"type": "image",
-			"file": "enemies/gargoyle.png",
-			"anchor": {
-				"x": 0.4568,
-				"y": 0.7689
-			}
-		},
-		"enemy.wraith": {
-			"type": "image",
-			"file": "enemies/wraith.png"
-		},
-		"enemy.flaming-skull": {
-			"type": "image",
-			"file": "enemies/flaming-skull.png"
-		},
-		"enemy.minotaur": {
-			"type": "image",
-			"file": "enemies/minotaur.png"
-		},
-		"enemy.mimic": {
-			"type": "image",
-			"file": "enemies/mimic.png"
-		},
-		"enemy.lich": {
-			"type": "image",
-			"file": "enemies/lich.png"
-		},
-		"enemy.dragon-whelp": {
-			"type": "image",
-			"file": "enemies/dragon-whelp.png",
-			"anchor": {
-				"x": 0.4976,
-				"y": 0.7819
-			}
-		},
-		"enemy.bogling": {
-			"type": "image",
-			"file": "enemies/bogling.png"
-		},
-		"enemy.shroomling": {
-			"type": "image",
-			"file": "enemies/shroomling.png"
-		},
-		"enemy.grave-crawler": {
-			"type": "image",
-			"file": "enemies/grave-crawler.png"
-		},
-		"enemy.cinder-imp": {
-			"type": "image",
-			"file": "enemies/cinder-imp.png",
-			"anchor": {
-				"x": 0.5192,
-				"y": 0.8043
-			}
-		},
-		"enemy.frost-wisp": {
-			"type": "image",
-			"file": "enemies/frost-wisp.png"
-		},
-		"enemy.drake-hatchling": {
-			"type": "image",
-			"file": "enemies/drake-hatchling.png",
-			"anchor": {
-				"x": 0.5072,
-				"y": 0.7968
-			}
-		},
-		"enemy.marsh-hydra": {
-			"type": "image",
-			"file": "enemies/marsh-hydra.png"
-		},
-		"enemy.goblin-warlord": {
-			"type": "image",
-			"file": "enemies/goblin-warlord.png"
-		},
-		"enemy.bone-colossus": {
-			"type": "image",
-			"file": "enemies/bone-colossus.png",
-			"anchor": {
-				"x": 0.512,
-				"y": 0.8342
-			}
-		},
-		"enemy.elder-dragon": {
-			"type": "image",
-			"file": "enemies/elder-dragon.png"
-		},
-		"enemy.boss-1": {
-			"type": "image",
-			"file": "enemies/boss-1.png"
-		},
-		"enemy.boss-2": {
-			"type": "image",
-			"file": "enemies/boss-2.png"
-		},
-		"enemy.boss-3": {
-			"type": "image",
-			"file": "enemies/boss-3.png"
-		},
 		"ui.energy": {
 			"type": "image",
 			"file": "ui/energy.png"
@@ -745,168 +593,156 @@
 				"y": 0.969
 			}
 		},
-		"hero.demon": {
-			"type": "image",
-			"file": "heroes/demon.png"
-		},
-		"hero.golem": {
-			"type": "image",
-			"file": "heroes/golem.png"
-		},
-		"hero.obsidia": {
-			"type": "image",
-			"file": "heroes/obsidia.png"
-		},
 		"enemy.banshee": {
 			"type": "image",
 			"file": "enemies/banshee.png",
 			"anchor": {
-				"x": 0.524,
-				"y": 0.8454
+				"x": 0.547,
+				"y": 0.8878
 			}
 		},
 		"enemy.bone-hound": {
 			"type": "image",
 			"file": "enemies/bone-hound.png",
 			"anchor": {
-				"x": 0.536,
-				"y": 0.7782
+				"x": 0.5216,
+				"y": 0.8025
 			}
 		},
 		"enemy.bone-warrior": {
 			"type": "image",
 			"file": "enemies/bone-warrior.png",
 			"anchor": {
-				"x": 0.536,
-				"y": 0.7726
+				"x": 0.5975,
+				"y": 0.8275
 			}
 		},
 		"enemy.crawling-hand": {
 			"type": "image",
 			"file": "enemies/crawling-hand.png",
 			"anchor": {
-				"x": 0.5528,
-				"y": 0.7465
+				"x": 0.6235,
+				"y": 0.8066
 			}
 		},
 		"enemy.grave-golem": {
 			"type": "image",
 			"file": "enemies/grave-golem.png",
 			"anchor": {
-				"x": 0.5072,
-				"y": 0.7912
+				"x": 0.509,
+				"y": 0.8882
 			}
 		},
 		"enemy.grave-wraith": {
 			"type": "image",
 			"file": "enemies/grave-wraith.png",
 			"anchor": {
-				"x": 0.5168,
-				"y": 0.7987
+				"x": 0.5251,
+				"y": 0.8532
 			}
 		},
 		"enemy.plague-corpse": {
 			"type": "image",
 			"file": "enemies/plague-corpse.png",
 			"anchor": {
-				"x": 0.5408,
-				"y": 0.7931
+				"x": 0.5581,
+				"y": 0.8692
 			}
 		},
 		"enemy.rotting-ghoul": {
 			"type": "image",
 			"file": "enemies/rotting-ghoul.png",
 			"anchor": {
-				"x": 0.5504,
-				"y": 0.7446
+				"x": 0.5272,
+				"y": 0.7555
 			}
 		},
 		"enemy.skeletal-archer": {
 			"type": "image",
 			"file": "enemies/skeletal-archer.png",
 			"anchor": {
-				"x": 0.4328,
-				"y": 0.808
+				"x": 0.4067,
+				"y": 0.8459
 			}
 		},
 		"enemy.tomb-guard": {
 			"type": "image",
 			"file": "enemies/tomb-guard.png",
 			"anchor": {
-				"x": 0.4832,
-				"y": 0.808
+				"x": 0.5344,
+				"y": 0.8746
 			}
 		},
 		"enemy.ash-wraith": {
 			"type": "image",
 			"file": "enemies/ash-wraith.png",
 			"anchor": {
-				"x": 0.5048,
-				"y": 0.8379
+				"x": 0.5013,
+				"y": 0.8743
 			}
 		},
 		"enemy.coal-brute": {
 			"type": "image",
 			"file": "enemies/coal-brute.png",
 			"anchor": {
-				"x": 0.4904,
-				"y": 0.8024
+				"x": 0.4827,
+				"y": 0.8114
 			}
 		},
 		"enemy.ember-bat": {
 			"type": "image",
 			"file": "enemies/ember-bat.png",
 			"anchor": {
-				"x": 0.5096,
-				"y": 0.7894
+				"x": 0.5019,
+				"y": 0.9599
 			}
 		},
 		"enemy.flame-skull": {
 			"type": "image",
 			"file": "enemies/flame-skull.png",
 			"anchor": {
-				"x": 0.5024,
-				"y": 0.7838
+				"x": 0.516,
+				"y": 1
 			}
 		},
 		"enemy.hellhound": {
 			"type": "image",
 			"file": "enemies/hellhound.png",
 			"anchor": {
-				"x": 0.5216,
-				"y": 0.8286
+				"x": 0.6101,
+				"y": 0.8944
 			}
 		},
 		"enemy.infernal-tyrant": {
 			"type": "image",
 			"file": "enemies/infernal-tyrant.png",
 			"anchor": {
-				"x": 0.476,
-				"y": 0.8528
+				"x": 0.4507,
+				"y": 0.9118
 			}
 		},
 		"enemy.lava-slug": {
 			"type": "image",
 			"file": "enemies/lava-slug.png",
 			"anchor": {
-				"x": 0.5024,
-				"y": 0.7689
+				"x": 0.4926,
+				"y": 0.7934
 			}
 		},
 		"enemy.magma-golem": {
 			"type": "image",
 			"file": "enemies/magma-golem.png",
 			"anchor": {
-				"x": 0.5048,
-				"y": 0.7483
+				"x": 0.5397,
+				"y": 0.774
 			}
 		},
 		"enemy.molten-knight": {
 			"type": "image",
 			"file": "enemies/molten-knight.png",
 			"anchor": {
-				"x": 0.5288,
-				"y": 0.7707
+				"x": 0.578,
+				"y": 0.8271
 			}
 		},
 		"enemy.salamander": {
@@ -921,16 +757,16 @@
 			"type": "image",
 			"file": "enemies/antler-wraith.png",
 			"anchor": {
-				"x": 0.512,
-				"y": 0.8603
+				"x": 0.4987,
+				"y": 0.894
 			}
 		},
 		"enemy.boar-brute": {
 			"type": "image",
 			"file": "enemies/boar-brute.png",
 			"anchor": {
-				"x": 0.5048,
-				"y": 0.808
+				"x": 0.5615,
+				"y": 0.8538
 			}
 		},
 		"enemy.dire-wolf": {
@@ -945,232 +781,232 @@
 			"type": "image",
 			"file": "enemies/elder-treant.png",
 			"anchor": {
-				"x": 0.5144,
-				"y": 0.8323
+				"x": 0.5389,
+				"y": 0.8989
 			}
 		},
 		"enemy.goblin-archer": {
 			"type": "image",
 			"file": "enemies/goblin-archer.png",
 			"anchor": {
-				"x": 0.4712,
-				"y": 0.7875
+				"x": 0.4174,
+				"y": 0.865
 			}
 		},
 		"enemy.moss-troll": {
 			"type": "image",
 			"file": "enemies/moss-troll.png",
 			"anchor": {
-				"x": 0.4784,
-				"y": 0.7726
+				"x": 0.501,
+				"y": 0.8138
 			}
 		},
 		"enemy.mushroom-brute": {
 			"type": "image",
 			"file": "enemies/mushroom-brute.png",
 			"anchor": {
-				"x": 0.4928,
-				"y": 0.8043
+				"x": 0.5058,
+				"y": 0.8943
 			}
 		},
 		"enemy.shade-stalker": {
 			"type": "image",
 			"file": "enemies/shade-stalker.png",
 			"anchor": {
-				"x": 0.4904,
-				"y": 0.767
+				"x": 0.5314,
+				"y": 0.8092
 			}
 		},
 		"enemy.thorn-sprite": {
 			"type": "image",
 			"file": "enemies/thorn-sprite.png",
 			"anchor": {
-				"x": 0.524,
-				"y": 0.7875
+				"x": 0.5901,
+				"y": 0.8643
 			}
 		},
 		"enemy.thornhound": {
 			"type": "image",
 			"file": "enemies/thornhound.png",
 			"anchor": {
-				"x": 0.512,
-				"y": 0.7857
+				"x": 0.5147,
+				"y": 0.8513
 			}
 		},
 		"enemy.treant-sapling": {
 			"type": "image",
 			"file": "enemies/treant-sapling.png",
 			"anchor": {
-				"x": 0.4808,
-				"y": 0.8248
+				"x": 0.5048,
+				"y": 0.8735
 			}
 		},
 		"enemy.bog-goblin": {
 			"type": "image",
 			"file": "enemies/bog-goblin.png",
 			"anchor": {
-				"x": 0.4808,
-				"y": 0.7726
+				"x": 0.4885,
+				"y": 0.8457
 			}
 		},
 		"enemy.bog-slime": {
 			"type": "image",
 			"file": "enemies/bog-slime.png",
 			"anchor": {
-				"x": 0.4712,
-				"y": 0.7931
+				"x": 0.5048,
+				"y": 0.8359
 			}
 		},
 		"enemy.bog-zombie": {
 			"type": "image",
 			"file": "enemies/bog-zombie.png",
 			"anchor": {
-				"x": 0.4952,
-				"y": 0.8118
+				"x": 0.4844,
+				"y": 0.8632
 			}
 		},
 		"enemy.fen-lurcher": {
 			"type": "image",
 			"file": "enemies/fen-lurcher.png",
 			"anchor": {
-				"x": 0.5192,
-				"y": 0.808
+				"x": 0.5163,
+				"y": 0.8875
 			}
 		},
 		"enemy.giant-leech": {
 			"type": "image",
 			"file": "enemies/giant-leech.png",
 			"anchor": {
-				"x": 0.5024,
-				"y": 0.864
+				"x": 0.5483,
+				"y": 0.8756
 			}
 		},
 		"enemy.giant-toad": {
 			"type": "image",
 			"file": "enemies/giant-toad.png",
 			"anchor": {
-				"x": 0.5216,
-				"y": 0.7931
+				"x": 0.5549,
+				"y": 0.8196
 			}
 		},
 		"enemy.marsh-behemoth": {
 			"type": "image",
 			"file": "enemies/marsh-behemoth.png",
 			"anchor": {
-				"x": 0.5096,
-				"y": 0.8435
+				"x": 0.5113,
+				"y": 0.88
 			}
 		},
 		"enemy.mud-golem": {
 			"type": "image",
 			"file": "enemies/mud-golem.png",
 			"anchor": {
-				"x": 0.5168,
-				"y": 0.7726
+				"x": 0.5382,
+				"y": 0.8068
 			}
 		},
 		"enemy.reed-lurker": {
 			"type": "image",
 			"file": "enemies/reed-lurker.png",
 			"anchor": {
-				"x": 0.4904,
-				"y": 0.7894
+				"x": 0.4871,
+				"y": 0.8374
 			}
 		},
 		"enemy.snapvine": {
 			"type": "image",
 			"file": "enemies/snapvine.png",
 			"anchor": {
-				"x": 0.524,
-				"y": 0.8659
+				"x": 0.5151,
+				"y": 0.9103
 			}
 		},
 		"enemy.swamp-hag": {
 			"type": "image",
 			"file": "enemies/swamp-hag.png",
 			"anchor": {
-				"x": 0.4928,
-				"y": 0.7819
+				"x": 0.5221,
+				"y": 0.8664
 			}
 		},
 		"enemy.arcane-golem": {
 			"type": "image",
 			"file": "enemies/arcane-golem.png",
 			"anchor": {
-				"x": 0.5096,
-				"y": 0.7577
+				"x": 0.5131,
+				"y": 0.7759
 			}
 		},
 		"enemy.cockatrice": {
 			"type": "image",
 			"file": "enemies/cockatrice.png",
 			"anchor": {
-				"x": 0.488,
-				"y": 0.7539
+				"x": 0.5336,
+				"y": 0.857
 			}
 		},
 		"enemy.dragonkin-warrior": {
 			"type": "image",
 			"file": "enemies/dragonkin-warrior.png",
 			"anchor": {
-				"x": 0.5192,
-				"y": 0.7297
+				"x": 0.5404,
+				"y": 0.7786
 			}
 		},
 		"enemy.elder-wyrm": {
 			"type": "image",
 			"file": "enemies/elder-wyrm.png",
 			"anchor": {
-				"x": 0.5024,
-				"y": 0.808
+				"x": 0.4591,
+				"y": 0.9102
 			}
 		},
 		"enemy.harpy": {
 			"type": "image",
 			"file": "enemies/harpy.png",
 			"anchor": {
-				"x": 0.5144,
-				"y": 0.8099
+				"x": 0.5019,
+				"y": 0.8734
 			}
 		},
 		"enemy.storm-drake": {
 			"type": "image",
 			"file": "enemies/storm-drake.png",
 			"anchor": {
-				"x": 0.5144,
-				"y": 0.7801
+				"x": 0.5145,
+				"y": 0.83
 			}
 		},
 		"enemy.wyrmling-mage": {
 			"type": "image",
 			"file": "enemies/wyrmling-mage.png",
 			"anchor": {
-				"x": 0.4136,
-				"y": 0.8342
+				"x": 0.4267,
+				"y": 0.8788
 			}
 		},
 		"enemy.wyvern": {
 			"type": "image",
 			"file": "enemies/wyvern.png",
 			"anchor": {
-				"x": 0.4664,
-				"y": 0.7931
+				"x": 0.5429,
+				"y": 0.8585
 			}
 		},
 		"enemy.crystal-golem": {
 			"type": "image",
 			"file": "enemies/crystal-golem.png",
 			"anchor": {
-				"x": 0.5,
-				"y": 0.7931
+				"x": 0.5073,
+				"y": 0.8257
 			}
 		},
 		"enemy.frost-bat": {
 			"type": "image",
 			"file": "enemies/frost-bat.png",
 			"anchor": {
-				"x": 0.4976,
-				"y": 0.7726
+				"x": 0.5131,
+				"y": 0.9257
 			}
 		},
 		"enemy.frost-wraith": {
@@ -1193,56 +1029,108 @@
 			"type": "image",
 			"file": "enemies/frozen-zombie.png",
 			"anchor": {
-				"x": 0.4856,
-				"y": 0.8099
+				"x": 0.4781,
+				"y": 0.8709
 			}
 		},
 		"enemy.glacial-warden": {
 			"type": "image",
 			"file": "enemies/glacial-warden.png",
 			"anchor": {
-				"x": 0.5504,
-				"y": 0.7968
+				"x": 0.5953,
+				"y": 0.8329
 			}
 		},
 		"enemy.ice-golem": {
 			"type": "image",
 			"file": "enemies/ice-golem.png",
 			"anchor": {
-				"x": 0.5072,
-				"y": 0.7707
+				"x": 0.5005,
+				"y": 0.8083
 			}
 		},
 		"enemy.ice-slime": {
 			"type": "image",
 			"file": "enemies/ice-slime.png",
 			"anchor": {
-				"x": 0.4952,
-				"y": 0.7614
+				"x": 0.4867,
+				"y": 0.8262
 			}
 		},
 		"enemy.icicle-imp": {
 			"type": "image",
 			"file": "enemies/icicle-imp.png",
 			"anchor": {
-				"x": 0.4856,
-				"y": 0.8099
+				"x": 0.5315,
+				"y": 0.8712
 			}
 		},
 		"enemy.snow-wolf": {
 			"type": "image",
 			"file": "enemies/snow-wolf.png",
 			"anchor": {
-				"x": 0.5336,
-				"y": 0.7801
+				"x": 0.5201,
+				"y": 0.9108
 			}
 		},
 		"enemy.wendigo": {
 			"type": "image",
 			"file": "enemies/wendigo.png",
 			"anchor": {
-				"x": 0.5096,
-				"y": 0.7987
+				"x": 0.5449,
+				"y": 0.8894
+			}
+		},
+		"hero.demon": {
+			"type": "image",
+			"file": "heroes/demon.png"
+		},
+		"hero.golem": {
+			"type": "image",
+			"file": "heroes/golem.png"
+		},
+		"hero.obsidia": {
+			"type": "image",
+			"file": "heroes/obsidia.png"
+		},
+		"enemy.bone-colossus": {
+			"type": "image",
+			"file": "enemies/bone-colossus.png",
+			"anchor": {
+				"x": 0.5006,
+				"y": 0.9124
+			}
+		},
+		"enemy.dragon-whelp": {
+			"type": "image",
+			"file": "enemies/dragon-whelp.png",
+			"anchor": {
+				"x": 0.4988,
+				"y": 0.7877
+			}
+		},
+		"enemy.drake-hatchling": {
+			"type": "image",
+			"file": "enemies/drake-hatchling.png",
+			"anchor": {
+				"x": 0.4991,
+				"y": 0.851
+			}
+		},
+		"enemy.gargoyle": {
+			"type": "image",
+			"file": "enemies/gargoyle.png",
+			"anchor": {
+				"x": 0.4859,
+				"y": 0.8019
+			}
+		},
+		"enemy.cinder-imp": {
+			"type": "image",
+			"file": "enemies/cinder-imp.png",
+			"anchor": {
+				"x": 0.5013,
+				"y": 0.8479
 			}
 		}
 	}

@@ -5,40 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Combat Layout Editor — Combat Clean</title>
 <!--
-  COMBAT LAYOUT EDITOR · exact combat render (real src/index.css + reconstructed DOM),
-  with a non-destructive drag/scale editor on top.
-    • DRAG a component to move it.
-    • SCROLL-WHEEL over a component to grow/shrink it.
-    • SAVE → copies the per-component deltas {x,y,scale} to the clipboard (and the box below).
-  Editing uses the CSS `translate` + `scale` properties (NOT `transform`), so each edit
-  COMPOSES with the game's own transforms (chip anchors/animations stay intact).
-  Deltas are relative to the current layout, so I can apply them 1:1 in the real combat view.
+  COMBAT LAYOUT EDITOR · exact combat render (real src/index.css + reconstructed DOM).
+  TWO INDEPENDENT SCENES — [ Wave ] and [ Boss ] — editing one never touches the other.
+  SCALING (mouse-wheel) is BY TYPE, within the active scene only:
+    • wheel a basic ENEMY sprite → scales ALL enemies
+    • wheel a HERO sprite        → scales ALL heroes
+    • wheel the BOSS sprite      → scales the boss
+    • wheel a top UI element (level label / track / button) → scales those UI
+    • wheel an HP BAR            → scales that HP bar's WIDTH
+  DRAG any piece to move it. SAVE → copies per-scene deltas to clipboard (+ box).
+  Uses CSS translate/scale/width (composes with the game's own transforms). Export = relative deltas.
 -->
 <link rel="stylesheet" href="../../src/index.css" />
 <style>
-  /* page + frame (override anything global from index.css for this standalone editor) */
   html,body{ height:auto; min-height:100%; }
   body{ margin:0; background:radial-gradient(120% 80% at 50% -10%, #16203a, #0a0f1c 60%, #070b15);
     display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px; color:#eef2ff;
     font-family:'Uniform Condensed Bold', system-ui, sans-serif; }
-  .frame{ --combat-h:400px; width:min(460px,100vw); border-radius:20px; overflow:hidden;
-    box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 8px #05070e, 0 0 0 9px #1b2540; }
+  .frame{ width:var(--app-w); border-radius:20px; overflow:hidden;
+    box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 8px #05070e, 0 0 0 9px #1b2540; position:relative; }
   .frame .combat-panel{ width:100%; height:var(--combat-h); }
+  .scene[data-scene]{ position:absolute; inset:0; }
+  /* hero movement: only heroes flagged `flying` bob; grounded heroes stand still */
+  .hero-chip:not(.flying) .chip-art{ animation:none !important; }
+  /* combat-top redesign (mockup): no "Level N" text; zone name = movable/zoomable level text;
+     small narrow progress track underneath it, with the level number on the CURRENT node. */
+  .battle-top{ pointer-events:auto; justify-content:space-between; padding:6px 10px 0; }
+  .lvl-col{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+  .battle-zone.zone-name{ margin:0; font-size:15px; color:#fff; -webkit-text-stroke:2px #000; paint-order:stroke fill; text-shadow:0 1px 2px #000; }
+  .level-track.mini{ flex:0 0 auto; width:120px; height:16px; }
+  .level-track.mini .dots{ justify-content:space-between; }
+  .level-track.mini .ldot{ width:5px; height:5px; }
+  .level-track.mini .ldot.boss{ width:7px; height:7px; }
+  .level-track.mini .ldot.current{ width:17px; height:17px; transform:none; display:grid; place-items:center; background:var(--gold); box-shadow:0 0 8px var(--gold); }
+  .level-track.mini .ldot.current::after{ display:none; }
+  .level-track.mini .ldot.current b{ font-size:10px; color:#241a02; font-weight:900; line-height:1; -webkit-text-stroke:0; }
 
-  /* editor chrome */
-  [data-edit]{ cursor:grab; }
-  [data-edit]:active{ cursor:grabbing; }
-  .ed-sel{ outline:2px dashed #ffd45e !important; outline-offset:2px; }
-  .ed-hover{ outline:1px dashed rgba(255,212,94,.5); outline-offset:2px; }
-  .editor-bar{ width:min(640px,100vw); display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  [data-move]{ cursor:grab; } [data-move]:active{ cursor:grabbing; }
+  [data-scale],[data-hp]{ cursor:ns-resize; }
+  .ed-hover{ outline:1px dashed rgba(255,212,94,.6); outline-offset:2px; }
+  .editor-bar{ width:min(680px,100vw); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:9px 12px; }
-  .editor-bar .hint{ font-size:12px; color:#9fb0cf; }
-  .editor-bar .readout{ font-size:12px; color:#ffd45e; margin-left:auto; white-space:nowrap; }
-  .editor-bar button{ height:34px; padding:0 14px; border-radius:9px; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:.5px;
+  .seg{ display:flex; border:1px solid rgba(255,255,255,.14); border-radius:9px; overflow:hidden; }
+  .seg button{ height:32px; padding:0 16px; border:0; background:rgba(255,255,255,.05); color:#c7d3ea; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:.5px; }
+  .seg button.on{ background:linear-gradient(180deg, rgba(255,208,94,.28), rgba(255,208,94,.08)); color:#ffd45e; }
+  .editor-bar .readout{ font-size:12px; color:#9fb0cf; margin-left:auto; white-space:nowrap; }
+  .editor-bar button.act{ height:34px; padding:0 14px; border-radius:9px; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:.5px;
     border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#dfe8ff; }
   .editor-bar button.save{ border-color:color-mix(in srgb,#ffd45e 55%,transparent); background:linear-gradient(180deg, rgba(255,208,94,.24), rgba(255,208,94,.06)); color:#ffd45e; }
-  .editor-bar button:active{ transform:scale(.97); }
-  #out{ width:min(640px,100vw); height:120px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
+  .editor-bar button:active{ transform:scale(.96); }
+  .editor-bar .hint{ width:100%; font-size:11px; color:#8393b3; }
+  #out{ width:min(680px,100vw); height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
     background:#0b1020; color:#cfe0ff; font-family:ui-monospace,Menlo,monospace; font-size:12px; padding:10px; resize:vertical; }
   .toast2{ position:fixed; top:14px; left:50%; transform:translateX(-50%); background:linear-gradient(180deg,#ffe79a,#ffca44); color:#241a02;
     font-size:13px; padding:8px 16px; border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,.5); opacity:0; transition:opacity .2s ease; pointer-events:none; z-index:99; }
@@ -49,148 +66,152 @@
 
 <div class="frame">
   <div class="combat-panel">
-    <!-- EXACT combat DOM (reconstructed from src/view/Autobattler.jsx), Mossbog zone -->
-    <section class="battle" style="--biome-from:#173a2a; --biome-to:#0a1a12; --biome-accent:#5ad17a; --biome-img:url(../../assets/combatclean/zones/zone-mossbog.png)">
-      <div class="bg bg-sky"></div>
-      <div class="bg bg-rays"></div>
-      <div class="bg-horizon"></div>
-      <div class="bg fog a"></div>
-      <div class="bg fog b"></div>
-      <div class="bg grid"></div>
-      <div class="bg biome-art"></div>
-      <div class="floor enemy"></div>
-      <div class="floor hero"></div>
-      <div class="embers">
-        <span class="ember" style="left:8%;width:3px;height:3px;animation-delay:0s;animation-duration:4.6s"></span>
-        <span class="ember" style="left:26%;width:2px;height:2px;animation-delay:1.9s;animation-duration:5.4s"></span>
-        <span class="ember" style="left:44%;width:3px;height:3px;animation-delay:.8s;animation-duration:4.2s"></span>
-        <span class="ember" style="left:61%;width:2px;height:2px;animation-delay:2.6s;animation-duration:5.1s"></span>
-        <span class="ember" style="left:78%;width:3px;height:3px;animation-delay:1.3s;animation-duration:4.8s"></span>
-        <span class="ember" style="left:92%;width:2px;height:2px;animation-delay:3.2s;animation-duration:5.5s"></span>
-      </div>
-      <div class="bg vignette"></div>
-      <div class="boss-loom"></div>
-      <div class="bg-lightning"></div>
-      <div class="bg biome-tint"></div>
 
-      <div class="battle-top">
-        <div class="battle-level-main" data-edit="level-label">Level <b>7</b><span class="battle-zone">Mossbog Fens</span></div>
-        <div class="level-track" data-edit="level-track">
-          <div class="track-line"></div>
-          <div class="dots">
-            <span class="ldot past"></span><span class="ldot past"></span><span class="ldot past"></span>
-            <span class="ldot past"></span><span class="ldot past"></span><span class="ldot current"></span>
-            <span class="ldot"></span><span class="ldot"></span><span class="ldot boss"></span><span class="ldot"></span>
-            <span class="ldot"></span><span class="ldot"></span><span class="ldot boss"></span><span class="ldot"></span><span class="ldot"></span>
-          </div>
-        </div>
-        <div class="battle-right">
-          <button type="button" class="challenge-btn" data-edit="next-button">NEXT</button>
-        </div>
-      </div>
+    <!-- ============ SCENE: WAVE ============ -->
+    <div class="scene" data-scene="wave">
+      <section class="battle" style="--biome-from:#173a2a; --biome-to:#0a1a12; --biome-accent:#5ad17a; --biome-img:url(../../assets/combatclean/zones/zone-mossbog.png)">
+        <div class="bg bg-sky"></div><div class="bg bg-rays"></div><div class="bg-horizon"></div>
+        <div class="bg fog a"></div><div class="bg fog b"></div><div class="bg grid"></div>
+        <div class="bg biome-art"></div><div class="floor enemy"></div><div class="floor hero"></div>
+        <div class="bg vignette"></div><div class="boss-loom"></div><div class="bg-lightning"></div><div class="bg biome-tint"></div>
 
-      <div class="arena">
-        <div class="row enemy-row" data-edit="enemy-row">
-          <div class="chip enemy-chip focused" data-edit="enemy-0">
-            <span class="lv-badge"><s>Lv</s>7</span>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/enemies/bog-slime.png" alt=""></div>
-            <div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:64%"></span><span class="hp-fill" style="width:58%"></span><span class="hp-white"></span></div>
-            <span class="focus-reticle" aria-hidden="true">🎯</span>
+        <div class="battle-top">
+          <div class="lvl-col">
+            <div class="battle-zone zone-name" data-move="zone-name" data-scale="ui">Mossbog Fens</div>
+            <div class="level-track mini" data-move="level-track" data-scale="ui"><div class="track-line"></div><div class="dots">
+              <span class="ldot past"></span><span class="ldot past"></span><span class="ldot past"></span><span class="ldot current"><b>7</b></span><span class="ldot"></span><span class="ldot"></span><span class="ldot boss"></span><span class="ldot"></span><span class="ldot"></span>
+            </div></div>
           </div>
-          <div class="chip enemy-chip" data-edit="enemy-1">
-            <span class="lv-badge"><s>Lv</s>7</span>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/enemies/bog-goblin.png" alt=""></div>
-            <div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:92%"></span><span class="hp-fill" style="width:88%"></span><span class="hp-white"></span></div>
-          </div>
-          <div class="chip enemy-chip" data-edit="enemy-2">
-            <span class="lv-badge"><s>Lv</s>7</span>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/enemies/boar-brute.png" alt=""></div>
-            <div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:100%"></span><span class="hp-fill" style="width:100%"></span><span class="hp-white"></span></div>
-          </div>
-          <div class="chip enemy-chip" data-edit="enemy-3">
-            <span class="lv-badge"><s>Lv</s>7</span>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/enemies/bog-zombie.png" alt=""></div>
-            <div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:40%"></span><span class="hp-fill" style="width:33%"></span><span class="hp-white"></span></div>
-          </div>
+          <div class="battle-right"><button type="button" class="challenge-btn" data-move="next-button" data-scale="ui">NEXT</button></div>
         </div>
 
-        <div class="chest-mid-layer" aria-hidden="true"></div>
-
-        <div class="row hero-row" data-edit="hero-row">
-          <div class="chip hero-chip" data-edit="hero-knight">
-            <div class="hero-charge" aria-hidden="true"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/heroes/knight.png" alt=""></div>
-            <div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:82%"></span><span class="hp-fill" style="width:78%"></span><span class="hp-white"></span></div>
-            <div class="bar normal"><span style="width:55%"></span></div>
-            <button type="button" class="bar limit lb-btn"><span style="width:40%"></span></button>
+        <div class="arena">
+          <div class="row enemy-row" data-move="enemy-row">
+            <div class="chip enemy-chip focused" data-move="enemy-0"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-slime.png" alt=""></div><div class="bar hp enemy" data-hp="enemy-0"><span class="hp-ghost" style="background:#B00063;width:64%"></span><span class="hp-fill" style="width:58%"></span><span class="hp-white"></span></div><span class="focus-reticle">🎯</span></div>
+            <div class="chip enemy-chip" data-move="enemy-1"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-goblin.png" alt=""></div><div class="bar hp enemy" data-hp="enemy-1"><span class="hp-ghost" style="background:#B00063;width:92%"></span><span class="hp-fill" style="width:88%"></span><span class="hp-white"></span></div></div>
+            <div class="chip enemy-chip" data-move="enemy-2"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/boar-brute.png" alt=""></div><div class="bar hp enemy" data-hp="enemy-2"><span class="hp-ghost" style="background:#B00063;width:100%"></span><span class="hp-fill" style="width:100%"></span><span class="hp-white"></span></div></div>
+            <div class="chip enemy-chip" data-move="enemy-3"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-zombie.png" alt=""></div><div class="bar hp enemy" data-hp="enemy-3"><span class="hp-ghost" style="background:#B00063;width:40%"></span><span class="hp-fill" style="width:33%"></span><span class="hp-white"></span></div></div>
           </div>
-          <div class="chip hero-chip" data-edit="hero-ranger">
-            <div class="hero-charge" aria-hidden="true"><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/heroes/ranger.png" alt=""></div>
-            <div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:95%"></span><span class="hp-fill" style="width:92%"></span><span class="hp-white"></span></div>
-            <div class="bar normal"><span style="width:72%"></span></div>
-            <button type="button" class="bar limit lb-btn"><span style="width:20%"></span></button>
-          </div>
-          <div class="chip hero-chip lb-ready" data-edit="hero-sorceress">
-            <div class="hero-charge" aria-hidden="true"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span></div>
-            <div class="chip-art"><img class="chip-emoji" src="../../assets/combatclean/heroes/sorceress.png" alt=""></div>
-            <div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:66%"></span><span class="hp-fill" style="width:60%"></span><span class="hp-white"></span></div>
-            <div class="bar normal"><span style="width:90%"></span></div>
-            <button type="button" class="bar limit lb-btn ready"><span style="width:100%"></span><em class="lb-flash">💥</em></button>
+          <div class="chest-mid-layer"></div>
+          <div class="row hero-row" data-move="hero-row">
+            <div class="chip hero-chip" data-move="hero-knight"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/knight.png" alt=""></div><div class="bar hp" data-hp="hero-knight"><span class="hp-ghost" style="background:#FF007C;width:82%"></span><span class="hp-fill" style="width:78%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:55%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:40%"></span></button></div>
+            <div class="chip hero-chip" data-move="hero-ranger"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/ranger.png" alt=""></div><div class="bar hp" data-hp="hero-ranger"><span class="hp-ghost" style="background:#FF007C;width:95%"></span><span class="hp-fill" style="width:92%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:72%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:20%"></span></button></div>
+            <div class="chip hero-chip lb-ready flying" data-move="hero-sorceress"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/sorceress.png" alt=""></div><div class="bar hp" data-hp="hero-sorceress"><span class="hp-ghost" style="background:#FF007C;width:66%"></span><span class="hp-fill" style="width:60%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:90%"></span></div><button type="button" class="bar limit lb-btn ready"><span style="width:100%"></span><em class="lb-flash">💥</em></button></div>
           </div>
         </div>
-      </div>
+        <div class="bg vignette"></div>
+      </section>
+    </div>
 
-      <div class="bg vignette"></div>
-    </section>
+    <!-- ============ SCENE: BOSS ============ -->
+    <div class="scene" data-scene="boss" style="display:none">
+      <section class="battle boss-mode" style="--biome-from:#173a2a; --biome-to:#0a1a12; --biome-accent:#5ad17a; --biome-img:url(../../assets/combatclean/zones/zone-mossbog.png)">
+        <div class="bg bg-sky"></div><div class="bg bg-rays"></div><div class="bg-horizon"></div>
+        <div class="bg fog a"></div><div class="bg fog b"></div><div class="bg grid"></div>
+        <div class="bg biome-art"></div><div class="floor enemy"></div><div class="floor hero"></div>
+        <div class="bg vignette"></div><div class="boss-loom"></div><div class="bg-lightning"></div><div class="bg biome-tint"></div>
+
+        <div class="battle-top">
+          <div class="lvl-col">
+            <div class="battle-zone zone-name" data-move="zone-name" data-scale="ui">Mossbog Fens</div>
+            <div class="level-track mini" data-move="level-track" data-scale="ui"><div class="track-line"></div><div class="dots">
+              <span class="ldot past"></span><span class="ldot past"></span><span class="ldot past"></span><span class="ldot past"></span><span class="ldot boss current"><b>10</b></span><span class="ldot"></span><span class="ldot"></span><span class="ldot boss"></span><span class="ldot"></span>
+            </div></div>
+          </div>
+          <div class="battle-right"><button type="button" class="challenge-btn boss" data-move="next-button" data-scale="ui">BOSS</button></div>
+        </div>
+
+        <div class="arena">
+          <div class="row enemy-row" data-move="enemy-row">
+            <div class="chip enemy-chip" data-move="acc-0"><span class="lv-badge"><s>Lv</s>10</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-slime.png" alt=""></div><div class="bar hp enemy" data-hp="acc-0"><span class="hp-ghost" style="background:#B00063;width:80%"></span><span class="hp-fill" style="width:75%"></span><span class="hp-white"></span></div></div>
+            <div class="chip enemy-chip boss-chip focused" data-move="boss"><span class="lv-badge"><s>Lv</s>10</span><div class="chip-art" data-scale="boss"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/marsh-behemoth.png" alt=""></div><div class="bar hp enemy" data-hp="boss"><span class="hp-ghost" style="background:#B00063;width:100%"></span><span class="hp-fill" style="width:100%"></span><span class="hp-white"></span></div><span class="focus-reticle">🎯</span></div>
+            <div class="chip enemy-chip" data-move="acc-1"><span class="lv-badge"><s>Lv</s>10</span><div class="chip-art" data-scale="enemy"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-goblin.png" alt=""></div><div class="bar hp enemy" data-hp="acc-1"><span class="hp-ghost" style="background:#B00063;width:88%"></span><span class="hp-fill" style="width:84%"></span><span class="hp-white"></span></div></div>
+          </div>
+          <div class="chest-mid-layer"></div>
+          <div class="row hero-row" data-move="hero-row">
+            <div class="chip hero-chip" data-move="hero-knight"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/knight.png" alt=""></div><div class="bar hp" data-hp="hero-knight"><span class="hp-ghost" style="background:#FF007C;width:82%"></span><span class="hp-fill" style="width:78%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:55%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:40%"></span></button></div>
+            <div class="chip hero-chip" data-move="hero-ranger"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/ranger.png" alt=""></div><div class="bar hp" data-hp="hero-ranger"><span class="hp-ghost" style="background:#FF007C;width:95%"></span><span class="hp-fill" style="width:92%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:72%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:20%"></span></button></div>
+            <div class="chip hero-chip lb-ready flying" data-move="hero-sorceress"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span></div><div class="chip-art" data-scale="hero"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/sorceress.png" alt=""></div><div class="bar hp" data-hp="hero-sorceress"><span class="hp-ghost" style="background:#FF007C;width:66%"></span><span class="hp-fill" style="width:60%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:90%"></span></div><button type="button" class="bar limit lb-btn ready"><span style="width:100%"></span><em class="lb-flash">💥</em></button></div>
+          </div>
+        </div>
+        <div class="boss-warn">BOSS</div>
+        <div class="bg vignette"></div>
+      </section>
+    </div>
+
   </div>
 </div>
 
 <div class="editor-bar">
-  <span class="hint">Drag a piece to move · Scroll on it to resize</span>
-  <span class="readout" id="readout">nothing selected</span>
-  <button id="btnReset">Reset</button>
-  <button class="save" id="btnSave">💾 SAVE → clipboard</button>
+  <div class="seg"><button class="on" data-tab="wave">Wave</button><button data-tab="boss">Boss</button></div>
+  <button class="act" id="btnReset">Reset scene</button>
+  <button class="act save" id="btnSave">💾 SAVE → clipboard</button>
+  <span class="readout" id="readout"></span>
+  <span class="hint">Active scene edits are isolated · wheel a <b>sprite</b>=scale that type · wheel an <b>HP bar</b>=its width · drag=move</span>
 </div>
-<textarea id="out" readonly placeholder="SAVE writes the layout deltas here (and to your clipboard)…"></textarea>
+<textarea id="out" readonly placeholder="SAVE writes per-scene deltas here (and to your clipboard)…"></textarea>
 <div class="toast2" id="toast2"></div>
 
 <script>
-const stMap=new Map(); // element -> {x,y,s}
-let sel=null, drag=null;
-const stOf=el=>{ if(!stMap.has(el)) stMap.set(el,{x:0,y:0,s:1}); return stMap.get(el); };
-const apply=el=>{ const s=stOf(el); el.style.translate=`${s.x}px ${s.y}px`; el.style.scale=String(s.s); };
+const S={ wave:{enemy:1,hero:1,ui:1}, boss:{enemy:1,hero:1,boss:1,ui:1} };
+const moves=new Map(), hpW=new Map();
+let active='wave', drag=null;
+const clamp=v=>Math.max(0.3, Math.min(3, v));
 const round=n=>Math.round(n*1000)/1000;
-function readout(el){ const r=document.getElementById('readout'); if(!el){ r.textContent='nothing selected'; return; } const s=stOf(el); r.textContent=`${el.dataset.edit}  ·  x ${Math.round(s.x)}  y ${Math.round(s.y)}  ·  scale ${s.s.toFixed(2)}`; }
-function select(el){ if(sel&&sel!==el) sel.classList.remove('ed-sel'); sel=el; if(el) el.classList.add('ed-sel'); readout(el); }
+const sceneEl=n=>document.querySelector(`.scene[data-scene="${n}"]`);
 
-// hover outline
-document.addEventListener('pointerover', e=>{ const el=e.target.closest('[data-edit]'); document.querySelectorAll('.ed-hover').forEach(n=>n.classList.remove('ed-hover')); if(el&&el!==sel) el.classList.add('ed-hover'); });
+function applyType(n,type){ sceneEl(n).querySelectorAll(`[data-scale="${type}"]`).forEach(e=>{ e.style.scale=String(S[n][type]); }); }
+function applyHp(el){ el.style.width=((hpW.get(el)||1)*100)+'%'; }
+function applyMove(el){ const m=moves.get(el)||{x:0,y:0}; el.style.translate=`${m.x}px ${m.y}px`; }
+function readout(){ const s=S[active]; const parts=Object.entries(s).map(([k,v])=>`${k} ${Math.round(v*100)}%`); document.getElementById('readout').textContent=active.toUpperCase()+' · '+parts.join('  '); }
+function setActive(n){ active=n; document.querySelectorAll('.scene').forEach(s=>{ s.style.display=(s.dataset.scene===n?'':'none'); });
+  document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.tab===n)); readout(); }
 
-// drag to move
-document.addEventListener('pointerdown', e=>{ const el=e.target.closest('[data-edit]'); if(!el) return; e.preventDefault(); select(el); const s=stOf(el); drag={el, sx:e.clientX, sy:e.clientY, ox:s.x, oy:s.y}; });
-document.addEventListener('pointermove', e=>{ if(!drag) return; const s=stOf(drag.el); s.x=drag.ox+(e.clientX-drag.sx); s.y=drag.oy+(e.clientY-drag.sy); apply(drag.el); readout(drag.el); });
+// hover outline (active scene only)
+document.addEventListener('pointerover', e=>{ document.querySelectorAll('.ed-hover').forEach(x=>x.classList.remove('ed-hover'));
+  const t=e.target.closest('[data-scale],[data-hp],[data-move]'); if(t) t.classList.add('ed-hover'); });
+
+// DRAG to move
+document.addEventListener('pointerdown', e=>{ const el=e.target.closest('[data-move]'); if(!el) return; e.preventDefault();
+  const m=moves.get(el)||{x:0,y:0}; moves.set(el,m); drag={el, sx:e.clientX, sy:e.clientY, ox:m.x, oy:m.y}; });
+document.addEventListener('pointermove', e=>{ if(!drag) return; const m=moves.get(drag.el); m.x=drag.ox+(e.clientX-drag.sx); m.y=drag.oy+(e.clientY-drag.sy); applyMove(drag.el); });
 document.addEventListener('pointerup', ()=>{ drag=null; });
 
-// scroll-wheel to resize the piece under the cursor
-document.addEventListener('wheel', e=>{ const el=e.target.closest('[data-edit]'); if(!el) return; e.preventDefault(); const s=stOf(el); s.s=Math.max(0.3, Math.min(3, s.s*(e.deltaY<0?1.06:0.94))); apply(el); select(el); }, {passive:false});
+// WHEEL: by type (sprites) · width (hp bars) — active scene only
+document.addEventListener('wheel', e=>{
+  const scope=e.target.closest('.scene'); if(!scope || scope.dataset.scene!==active) return;
+  const hp=e.target.closest('[data-hp]'); const sc=e.target.closest('[data-scale]');
+  if(!hp && !sc) return; e.preventDefault();
+  const f=e.deltaY<0?1.06:0.94;
+  if(hp){ hpW.set(hp, clamp((hpW.get(hp)||1)*f)); applyHp(hp); }
+  else { const t=sc.dataset.scale; S[active][t]=clamp((S[active][t]||1)*f); applyType(active,t); readout(); }
+},{passive:false});
 
-// save → clipboard + box
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setActive(b.dataset.tab));
+
 function toast(t){ const el=document.getElementById('toast2'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1600); }
+function coll(n){ const sc=sceneEl(n); const o={ scale:{}, hpWidth:{}, moves:{} };
+  Object.entries(S[n]).forEach(([k,v])=>{ if(Math.abs(v-1)>1e-3) o.scale[k]=round(v); });
+  sc.querySelectorAll('[data-hp]').forEach(el=>{ const k=hpW.get(el); if(k&&Math.abs(k-1)>1e-3) o.hpWidth[el.dataset.hp]=round(k); });
+  sc.querySelectorAll('[data-move]').forEach(el=>{ const m=moves.get(el); if(m&&(m.x||m.y)) o.moves[el.dataset.move]={x:Math.round(m.x),y:Math.round(m.y)}; });
+  return o; }
 document.getElementById('btnSave').onclick=()=>{
-  const out={};
-  stMap.forEach((s,el)=>{ if(s.x||s.y||Math.abs(s.s-1)>1e-3){ out[el.dataset.edit]={x:Math.round(s.x), y:Math.round(s.y), scale:round(s.s)}; } });
+  const out={ wave:coll('wave'), boss:coll('boss') };
   const json=JSON.stringify(out,null,2);
   document.getElementById('out').value=json;
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(json).then(()=>toast('Copied to clipboard ✓'),()=>{ selectOut(); toast('Copy from the box below'); }); }
-  else { selectOut(); toast('Copy from the box below'); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(json).then(()=>toast('Copied to clipboard ✓'),()=>{ selOut(); toast('Copy from the box below'); }); }
+  else { selOut(); toast('Copy from the box below'); }
 };
-function selectOut(){ const o=document.getElementById('out'); o.focus(); o.select(); try{ document.execCommand('copy'); }catch(e){} }
+function selOut(){ const o=document.getElementById('out'); o.focus(); o.select(); try{ document.execCommand('copy'); }catch(e){} }
 document.getElementById('btnReset').onclick=()=>{
-  stMap.forEach((s,el)=>{ el.style.translate=''; el.style.scale=''; }); stMap.clear();
-  if(sel){ sel.classList.remove('ed-sel'); sel=null; } readout(null); document.getElementById('out').value='';
-  toast('Reset');
+  const sc=sceneEl(active);
+  Object.keys(S[active]).forEach(k=>{ S[active][k]=1; sc.querySelectorAll(`[data-scale="${k}"]`).forEach(e=>e.style.scale=''); });
+  sc.querySelectorAll('[data-hp]').forEach(el=>{ hpW.delete(el); el.style.width=''; });
+  sc.querySelectorAll('[data-move]').forEach(el=>{ moves.delete(el); el.style.translate=''; });
+  readout(); toast('Reset '+active);
 };
+
+setActive('wave');
 </script>
 </body>
 </html>

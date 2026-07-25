@@ -7,28 +7,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { rand, lerpHex, easeOutExpo, easeOutCubic, bakeGlow } from './fx-math.js';
+import { VFX_CONFIG } from '../../data/config.js';
 
-const SPINE_N = 20;
-const MIN_SPACING_PX = 4;
-const MAX_AGE_BASE = 0.12;
-const TRAIL_LENGTH_REF = 6.0;
-const TRAIL_LUT_N = 8; // trail colour LUT size — avoids a per-segment lerpHex() alloc
-const MAX_PARTICLES = 450; // hard cap so a confetti explosion can't spike one frame
-
-const IMPACT_CFG = {
-  count: 10,
-  sizeMin: 8,
-  sizeMax: 14,
-  speed: 120,
-  speedMul: 1.3,
-  life: 0.33,
-  spread: 0.6,
-  tier: {
-    normal: { count: 1, size: 1, speed: 1, life: 1 },
-    heavy: { count: 1.4, size: 1, speed: 1.25, life: 1.15 },
-    crit: { count: 1.9, size: 1.14, speed: 1.5, life: 1.36 },
-  },
-};
+// All fx-engine tuning is config (_vfx.json → engine). Destructure once.
+const VE = VFX_CONFIG.engine;
+const { spineN: SPINE_N, minSpacingPx: MIN_SPACING_PX, maxAgeBase: MAX_AGE_BASE, lengthRef: TRAIL_LENGTH_REF, lutN: TRAIL_LUT_N, maxParticles: MAX_PARTICLES } = VE.trail;
+const IMPACT_CFG = VE.impact;
 
 class FxEngine {
   constructor() {
@@ -76,7 +60,7 @@ class FxEngine {
   _resize() {
     if (!this.canvas) return;
     const r = this.canvas.parentElement.getBoundingClientRect();
-    this.DPR = Math.min(2, window.devicePixelRatio || 1);
+    this.DPR = Math.min(VE.dprMax, window.devicePixelRatio || 1);
     this.W = r.width;
     this.H = r.height;
     this.canvas.width = Math.round(this.W * this.DPR);
@@ -150,7 +134,7 @@ class FxEngine {
   }
 
   // ── Screen flash (white full-canvas fade — for big rarity-up / climax beats) ──
-  flash(peak = 0.8, ms = 140, color = '#fff') {
+  flash(peak = VE.flash.peak, ms = VE.flash.ms, color = VE.flash.color) {
     this.flashPeak = Math.max(this.flashPeak, peak);
     this.flashDur = ms / 1000;
     this.flashT = 0;
@@ -177,23 +161,24 @@ class FxEngine {
   // ── System 3: CONFETTI explosion (flat paper pieces erupt 360° biased upward,
   //    then flutter + spin down under gravity). Cheap on purpose: source-over flat
   //    fillRects, NO additive glow stamps — far lighter than the old firework embers. ─
-  confetti(x, y, { count = 140, colors = ['#ffffff'], power = 1 } = {}) {
+  confetti(x, y, { count = VE.confetti.count, colors = ['#ffffff'], power = 1 } = {}) {
+    const CF = VE.confetti;
     const budget = Math.max(0, MAX_PARTICLES - this.particles.length); // cap the spike
     const n = Math.min(budget, count);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
-      const sp = rand(120, 380) * power;
+      const sp = rand(...CF.speed) * power;
       this.particles.push({
         kind: 'confetti',
         x, y,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp - rand(120, 280) * power, // upward bias → erupts, then falls
-        t: 0, life: rand(1.7, 3.0),
-        size: rand(5, 9), aspect: rand(0.4, 0.7),
+        vy: Math.sin(a) * sp - rand(...CF.up) * power, // upward bias → erupts, then falls
+        t: 0, life: rand(...CF.life),
+        size: rand(...CF.size), aspect: rand(...CF.aspect),
         color: colors[(Math.random() * colors.length) | 0],
-        rot: Math.random() * Math.PI * 2, vrot: rand(-9, 9),
-        grav: rand(240, 340),
-        swayF: rand(5, 10), swayP: Math.random() * Math.PI * 2, swayA: rand(28, 70),
+        rot: Math.random() * Math.PI * 2, vrot: rand(-CF.vrot, CF.vrot),
+        grav: rand(...CF.grav),
+        swayF: rand(...CF.swayFreq), swayP: Math.random() * Math.PI * 2, swayA: rand(...CF.swayAmp),
       });
     }
     this._wake();
@@ -205,10 +190,10 @@ class FxEngine {
     // and jittered the HUD. Combat sprite-shake stays handled by FxLayer's shakeArena().
     const el = this.canvas;
     if (!el) return;
-    if (this.shakeAmt > 0.2) {
+    if (this.shakeAmt > VE.shake.restThreshold) {
       const a = this.shakeAmt;
       el.style.transform = `translate(${rand(-a, a)}px,${rand(-a, a)}px)`;
-      this.shakeAmt *= Math.pow(0.0015, dt); // fast decay to rest
+      this.shakeAmt *= Math.pow(VE.shake.decayBase, dt); // fast decay to rest
     } else if (el.style.transform) {
       el.style.transform = '';
       this.shakeAmt = 0;
@@ -221,10 +206,10 @@ class FxEngine {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const speed = opts.speed || 900;
+    const speed = opts.speed || VE.spawnTrail.speed;
     const dur = dist / speed;
-    const head = opts.color || '#dff0ff';
-    const tail = opts.tail || opts.color || '#3366ff';
+    const head = opts.color || VE.spawnTrail.head;
+    const tail = opts.tail || opts.color || VE.spawnTrail.tail;
     // Precompute a small head→tail colour LUT once per trail so the per-frame,
     // per-segment draw indexes it instead of allocating an rgb() string each time.
     const lut = [];
@@ -232,10 +217,10 @@ class FxEngine {
     this.projectiles.push({
       x: from.x, y: from.y, tx: to.x, ty: to.y,
       vx: dx / dur, vy: dy / dur,
-      t: 0, dur, r: opts.r || 5,
+      t: 0, dur, r: opts.r || VE.spawnTrail.r,
       head, tail, lut,
-      halfW: opts.width || 8,
-      maxAge: MAX_AGE_BASE * ((opts.length || 10.5) / TRAIL_LENGTH_REF),
+      halfW: opts.width || VE.spawnTrail.width,
+      maxAge: MAX_AGE_BASE * ((opts.length || VE.spawnTrail.length) / TRAIL_LENGTH_REF),
       spine: [], lastX: null, lastY: null,
       onHit: opts.onHit,
       glow: opts.glow !== false,
@@ -276,7 +261,7 @@ class FxEngine {
           const ageNorm = Math.min(1, b.age / p.maxAge);
           const w = (1 - ageNorm) * p.halfW * 2;
           ctx.strokeStyle = p.lut[(ageNorm * (TRAIL_LUT_N - 1)) | 0];
-          ctx.globalAlpha = (1 - ageNorm) * 0.65;
+          ctx.globalAlpha = (1 - ageNorm) * VE.spawnTrail.alpha;
           ctx.lineWidth = Math.max(0.5, w);
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -286,10 +271,10 @@ class FxEngine {
         ctx.restore();
       }
 
-      if (p.glow) this._stampGlow(p.x, p.y, p.r * 2.5, p.head, 0.9);
+      if (p.glow) this._stampGlow(p.x, p.y, p.r * VE.spawnTrail.glowRMul, p.head, VE.spawnTrail.glowAlpha);
       ctx.fillStyle = p.head;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, 7);
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
 
       if (done) {
@@ -303,25 +288,26 @@ class FxEngine {
   impact(x, y, opts = {}) {
     const tier = opts.tier || 'normal';
     const tm = IMPACT_CFG.tier[tier] || IMPACT_CFG.tier.normal;
-    const color = opts.color || '#ffb14a';
-    const r = opts.r || 6;
+    const color = opts.color || IMPACT_CFG.color;
+    const r = opts.r || IMPACT_CFG.r;
+    const { disc, ring, ring2 } = IMPACT_CFG;
 
-    this.impacts.push({ kind: 'disc', x, y, t: 0, dur: 0.12, r0: r * 1.2, r1: r * 2.6, color });
-    this.impacts.push({ kind: 'ring', x, y, t: 0, dur: 0.45 * tm.life, r0: r, r1: r * (tier === 'crit' ? 7 : 4.5), w0: 4, color });
-    this.impacts.push({ kind: 'ring', x, y, t: -0.05, dur: 0.4, r0: r, r1: r * 3, w0: 2, color: '#ffffff' });
+    this.impacts.push({ kind: 'disc', x, y, t: 0, dur: disc.dur, r0: r * disc.r0Mul, r1: r * disc.r1Mul, color });
+    this.impacts.push({ kind: 'ring', x, y, t: 0, dur: ring.dur * tm.life, r0: r, r1: r * (tier === 'crit' ? ring.r1MulCrit : ring.r1Mul), w0: ring.w0, color });
+    this.impacts.push({ kind: 'ring', x, y, t: -ring2.delay, dur: ring2.dur, r0: r, r1: r * ring2.r1Mul, w0: ring2.w0, color: ring2.color });
 
     const n = Math.round(IMPACT_CFG.count * tm.count);
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * IMPACT_CFG.spread;
-      const sp = IMPACT_CFG.speed * IMPACT_CFG.speedMul * tm.speed * 2 * (0.55 + Math.random() * 0.45);
+      const sp = IMPACT_CFG.speed * IMPACT_CFG.speedMul * tm.speed * IMPACT_CFG.debrisSpeedMul * (IMPACT_CFG.speedJitter[0] + Math.random() * IMPACT_CFG.speedJitter[1]);
       const size = (IMPACT_CFG.sizeMin + Math.random() * (IMPACT_CFG.sizeMax - IMPACT_CFG.sizeMin)) * tm.size;
       this.particles.push({ x, y, bvx: Math.cos(a) * sp, bvy: Math.sin(a) * sp, t: 0, life: IMPACT_CFG.life * tm.life, size, color });
     }
     // Callers can opt out of the built-in tier shake (opts.shake === false) and
     // drive their own — the merge board does this so only big merges shake.
     if (opts.shake !== false) {
-      if (tier === 'crit') this.shake(6);
-      else if (tier === 'heavy') this.shake(3);
+      if (tier === 'crit') this.shake(IMPACT_CFG.shakeCrit);
+      else if (tier === 'heavy') this.shake(IMPACT_CFG.shakeHeavy);
     }
     this._wake();
   }
@@ -340,11 +326,11 @@ class FxEngine {
         const rad = im.r0 + (im.r1 - im.r0) * easeOutExpo(p);
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = (1 - p) * 0.85;
+        ctx.globalAlpha = (1 - p) * IMPACT_CFG.ringAlpha;
         ctx.strokeStyle = im.color;
-        ctx.lineWidth = im.w0 * (1 - p * 0.6);
+        ctx.lineWidth = im.w0 * (1 - p * IMPACT_CFG.ringTaper);
         ctx.beginPath();
-        ctx.arc(im.x, im.y, rad, 0, 7);
+        ctx.arc(im.x, im.y, rad, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
@@ -367,12 +353,12 @@ class FxEngine {
       // sway, fading over the last quarter of life. Deliberately cheap: source-over
       // fillRect, NO additive glow stamp (the old firework embers were the heavy path).
       if (pt.kind === 'confetti') {
-        pt.vx *= Math.pow(0.10, dt); // horizontal air drag → settles into a flutter
-        pt.vy = Math.min(pt.vy + pt.grav * dt, 430); // gravity → a gentle terminal fall
+        pt.vx *= Math.pow(VE.confetti.dragBase, dt); // horizontal air drag → settles into a flutter
+        pt.vy = Math.min(pt.vy + pt.grav * dt, VE.confetti.termVel); // gravity → a gentle terminal fall
         pt.x += pt.vx * dt + Math.sin(pt.t * pt.swayF + pt.swayP) * pt.swayA * dt;
         pt.y += pt.vy * dt;
         pt.rot += pt.vrot * dt;
-        const a = k > 0.75 ? (1 - k) / 0.25 : 1;
+        const a = k > VE.confetti.fadeFrom ? (1 - k) / (1 - VE.confetti.fadeFrom) : 1;
         const w = pt.size;
         const h = pt.size * pt.aspect;
         // translate/rotate + inverse instead of save()/restore() (which snapshots the
@@ -396,9 +382,9 @@ class FxEngine {
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = alpha;
       ctx.fillStyle = pt.color;
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.strokeStyle = VE.debris.stroke;
       ctx.lineWidth = 1;
-      const s = pt.size * (0.6 + 0.4 * alpha);
+      const s = pt.size * (VE.debris.sizeBase + VE.debris.sizeAlpha * alpha);
       ctx.beginPath();
       ctx.rect(pt.x - s / 2, pt.y - s / 2, s, s);
       ctx.fill();

@@ -132,21 +132,42 @@
 
   /* combat lineup view */
   #combatView:not([hidden]) { width:100%; align-self:stretch; padding:6px 2px 30px; }
-  #combatScene { position:relative; width:100%; min-height:230px; border-radius:12px; overflow-x:auto; overflow-y:hidden;
-                 display:flex; align-items:flex-end; padding:26px 20px 34px; box-shadow:inset 0 0 60px rgba(0,0,0,.55); }
-  #combatScene .cside { display:flex; align-items:flex-end; }
+  #combatScene { position:relative; width:100%; min-height:300px; border-radius:12px; overflow-x:auto; overflow-y:hidden;
+                 display:flex; align-items:flex-end; padding:26px 20px 20px; box-shadow:inset 0 0 60px rgba(0,0,0,.55); }
+  #combatScene .cside { display:flex; align-items:flex-end; gap:2px; }
   #combatScene .cgap { flex:1 1 40px; min-width:40px; }
-  #combatScene .ground { position:absolute; left:12px; right:12px; bottom:30px; height:2px; background:rgba(255,255,255,.14); pointer-events:none; }
   #combatScene .cempty { color:rgba(255,255,255,.5); align-self:center; margin:60px auto; }
-  .cchip { position:relative; width:72px; height:64px; display:flex; align-items:flex-end; justify-content:center; flex:0 0 auto; }
-  .cchip.cboss { width:132px; height:120px; }
-  .cchip img { height:54px; width:auto; max-width:100%; filter:drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
-  .cchip.cboss img { height:108px; }                              /* boss renders 2x, as in-game */
-  .cchip .clbl { position:absolute; bottom:-15px; left:-6px; right:-6px; text-align:center; font-size:9px;
-                 color:rgba(255,255,255,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cchip.cboss .clbl { color:#ffd9a8; font-weight:700; }
+  /* game-faithful chip: character body (reg point pinned to its baseline) → line + reg dot → HP bar → label */
+  .cchip { display:flex; flex-direction:column; align-items:center; flex:0 0 auto; }
+  .cbody { position:relative; width:72px; height:54px; display:flex; align-items:flex-end; justify-content:center; }
+  .cchip.cboss .cbody { width:132px; height:108px; }
+  .cbody img { width:auto; max-width:none; filter:drop-shadow(0 3px 3px rgba(0,0,0,.55)); }  /* height inline; NO clamp → uniform scale */
+  .cbase { position:relative; width:72px; border-top:1px solid rgba(255,255,255,.5); }        /* THE LINE = reg-point baseline */
+  .cchip.cboss .cbase { width:132px; }
+  .cregdot { position:absolute; left:50%; top:-4px; width:7px; height:7px; margin-left:-3.5px; border-radius:50%;
+             background:#37d67a; box-shadow:0 0 0 1.5px rgba(0,0,0,.7); }                       /* the registration point, on the line */
+  .chp { width:72px; height:6px; margin-top:3px; border-radius:3px; background:rgba(0,0,0,.55); overflow:hidden; }
+  .cchip.cboss .chp { width:132px; }
+  .chp-fill { display:block; height:100%; background:#ff3b46; border-radius:3px; }
+  .cchip.chero .chp-fill { background:#46d06a; }   /* heroes: green HP as in game */
+  .clbl { margin-top:3px; text-align:center; font-size:9px; color:rgba(255,255,255,.55);
+          max-width:92px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cchip.cboss .clbl { color:#ffd9a8; font-weight:700; max-width:150px; }
+  .cchip.cedit .cbody img { cursor:grab; } .cchip.cedit .cbody img:active { cursor:grabbing; }
   #combatBar { display:flex; align-items:center; gap:10px; padding:2px 6px 10px; color:#9aa0a6; font-size:12px; }
   #combatBar .cttl { font-weight:600; color:#e7e9ec; }
+
+  /* single-enemy combat mockup (Tile→Combat for enemies) — same stack, magnified + a true-size copy */
+  #combatTileEditor:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:8px; }
+  .cmock { position:relative; width:340px; height:340px; border-radius:14px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,.5);
+           display:flex; align-items:flex-end; justify-content:center; padding:16px 0 22px; }
+  #cmChip .cbody { width:220px; height:120px; }
+  #cmChip .cbase, #cmChip .chp { width:220px; }
+  #cmChip .chp { height:10px; margin-top:4px; }
+  #cmChip .cbody img { cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:none; filter:drop-shadow(0 4px 5px rgba(0,0,0,.6)); }
+  #cmChip .cregdot { width:9px; height:9px; margin-left:-4.5px; top:-5px; }
+  .ctprev { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #ctPreviewChip { background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/10px 10px; border-radius:6px; padding:10px 12px 8px; }
 
   /* treatment presets */
   .tpresets { display:flex; align-items:center; gap:8px; padding:12px 16px 4px; border-top:1px solid var(--line); }
@@ -198,7 +219,7 @@
           <button data-v="256">256</button>
           <button data-v="tile">Tile</button>
           <button data-v="all">All tiles</button>
-          <button data-v="combat">Combat</button>
+          <button data-v="combat">Lineup</button>
         </div>
         <span class="spacer"></span>
         <label id="zoomLbl">100%</label>
@@ -233,13 +254,36 @@
           </div>
           <div class="tilehint">Drag the portrait to position · slider to zoom · saved per hero · exported to the hero tile</div>
         </div>
+        <div id="combatTileEditor" hidden>
+          <div class="cmock" id="cmock">
+            <div class="cchip cedit" id="cmChip">
+              <div class="cbody"><img id="ctArt" alt=""></div>
+              <div class="cbase"><span class="cregdot"></span></div>
+              <div class="chp"><span class="chp-fill" style="width:72%"></span></div>
+            </div>
+          </div>
+          <div class="tilectrls">
+            <label>Scale <input id="cScale" type="range" min="0.3" max="3" step="0.02" value="1"></label>
+            <span id="cRead">scale 1.00 · x 0.00 · y 0.00</span>
+            <button id="cReset">Reset</button>
+          </div>
+          <div class="ctprev">
+            <div class="cchip" id="ctPreviewChip">
+              <div class="cbody"><img id="ctPreview" alt=""></div>
+              <div class="cbase"><span class="cregdot"></span></div>
+              <div class="chp"><span class="chp-fill" style="width:72%"></span></div>
+            </div>
+            <span class="gs-lbl">green dot = registration point · HP bar as in game · true size</span>
+          </div>
+          <div class="tilehint">Drag = move the <b>registration point</b> (shared across this enemy's assets) · slider / scroll = scale · saved + exported</div>
+        </div>
         <div id="tileGallery" hidden>
           <div id="galHead"><span id="galInfo">drag a tile to move · scroll to scale · click to select</span><button id="galReset">Reset selected</button></div>
           <div id="galGrid"></div>
         </div>
         <div id="combatView" hidden>
           <div id="combatBar"><span class="cttl" id="combatTtl">Combat lineup</span>
-            <span>heroes vs the area's enemies, at true in-combat size (~54px) — bosses render 2×</span></div>
+            <span>true in-combat size · green dot = registration point on the line · HP bar below · drag = move reg point, scroll = scale (auto-saved)</span></div>
           <div id="combatScene"></div>
         </div>
       </div>
@@ -296,6 +340,7 @@ const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, vi
 const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent']);
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
   emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
+const COMBAT_BG = 'linear-gradient(rgb(255, 36, 255), rgb(11, 15, 255))';   // combat mockup backdrop
 function labelFor(slug){ return String(slug||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(String(name).replace(/\.png$/i,''))); }
 
@@ -319,6 +364,7 @@ async function boot() {
   if (meta && meta.treatmentLarge && meta.treatmentLarge.length) state.treatment.large = meta.treatmentLarge;
   if (meta && meta.treatmentSmall && meta.treatmentSmall.length) state.treatment.small = meta.treatmentSmall;
   if (meta && meta.presets) state.presets = meta.presets;
+  for (const k in state.meta){ const c=state.meta[k]&&state.meta[k].combat; if(c){ delete c.x; delete c.y; } }  // position is the reg point now — drop legacy combat offsets
   renderTreat();
   renderPresets();
   renderTabs();
@@ -400,7 +446,13 @@ function stageURL(){ const it=cur(), base=it.name.replace(/\.png$/i,'');
   if (state.view==='trim') return `/img/${it.cat}/${base}_trim.png?v=${state.ver}`;
   if (state.view==='256')  return `/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   return `/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`; }
+function updateSegLabels(){                         // 4th seg button = Tile (heroes) / Combat (enemies)
+  const it=cur(), enemy = it && it.cat!=='heroes';
+  const tb=document.querySelector('#viewSeg button[data-v="tile"]'); if(tb) tb.textContent = enemy?'Combat':'Tile';
+  const ab=document.querySelector('#viewSeg button[data-v="all"]'); if(ab) ab.style.display = enemy?'none':'';  // gallery = heroes only
+}
 function select(i){ state.idx=i; state.openCat=cur().cat; document.getElementById('curName').textContent=cur().key;
+  updateSegLabels();
   if(state.view==='tile') renderTile(); else if(state.view==='all') renderGallery();
   else if(state.view==='combat') renderCombat(); else loadStage();
   renderList(); }
@@ -432,41 +484,76 @@ function setView(v){ state.view=v;
   const isTile = v==='tile', isAll = v==='all', isCombat = v==='combat';
   document.getElementById('stage').style.display = (isTile||isAll||isCombat)?'none':'';
   if(!isTile) document.getElementById('stageMsg').style.display='none';
-  document.getElementById('tileEditor').hidden = !isTile;
+  if(!isTile){ document.getElementById('tileEditor').hidden = true; document.getElementById('combatTileEditor').hidden = true; }
   document.getElementById('tileGallery').hidden = !isAll;
   document.getElementById('combatView').hidden = !isCombat;
   if(isTile||isAll||isCombat) document.getElementById('gameSize').hidden = true;   // in-game-size preview is 256-view only
   if(isTile) renderTile(); else if(isAll) renderGallery(); else if(isCombat) renderCombat(); else loadStage(); }
 
-/* ---------- combat lineup viewer ---------- */
-function combatChip(cat, name, faceRight, boss){
-  const base=name.replace(/\.png$/i,''), key=cat+'/'+name;
-  const reg=(state.meta[key]||{}).reg, ax=reg?reg[0]:0.5, ay=reg?reg[1]:1;   // anchorStyle = combat positioning
-  const chip=document.createElement('div'); chip.className='cchip'+(boss?' cboss':'');
-  const img=document.createElement('img');
+/* ---------- combat framing data ---------- */
+// POSITION is the REGISTRATION POINT (reg) — dragging moves it. SCALE is the only extra combat datum.
+function combatOf(key){ const rec=(state.meta[key] ||= {pockets:[]}); rec.combat ||= {scale:1}; return rec.combat; }   // mutating — use on EDIT only
+function combatRead(key){ return (state.meta[key] && state.meta[key].combat) || {scale:1}; }                          // non-mutating — use for RENDER
+function regOf(key){ const r=(state.meta[key]||{}).reg; return r ? [r[0],r[1]] : [0.5,1]; }
+function scheduleSave(){ clearTimeout(scheduleSave._t); scheduleSave._t=setTimeout(()=>save(true),600); }  // debounced auto-persist
+// place `img` by its REGISTRATION POINT (pinned to the baseline-centre) + per-enemy SCALE. No position offset.
+function applyChipImg(img,key,faceRight,baseH){
+  const cm=combatRead(key), [ax,ay]=regOf(key);
+  img.style.height=(baseH*(cm.scale??1))+'px';
   img.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((1-ay)*100).toFixed(2)}%)`+(faceRight?' scaleX(-1)':'');
+}
+// DRAG = move the registration point (the character shifts so a different point sits on the baseline).
+function wireChipEdit(chip,img,key,faceRight,baseH,after){
+  let d=null;
+  img.addEventListener('pointerdown',e=>{ const [ax,ay]=regOf(key); d={sx:e.clientX,sy:e.clientY,ax,ay}; try{img.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); });
+  img.addEventListener('pointermove',e=>{ if(!d) return; const w=img.offsetWidth, h=img.offsetHeight; if(w<2||h<2) return;
+    const dir=faceRight?-1:1;                                                   // flipped art → horizontal is mirrored
+    let ax=d.ax-dir*(e.clientX-d.sx)/w, ay=d.ay-(e.clientY-d.sy)/h;
+    ax=Math.max(0,Math.min(1,ax)); ay=Math.max(0,Math.min(1,ay));
+    (state.meta[key] ||= {pockets:[]}).reg=[+ax.toFixed(4),+ay.toFixed(4)];      // MOVE → registration point
+    applyChipImg(img,key,faceRight,baseH); if(after) after(); });
+  const end=()=>{ if(d){ d=null; scheduleSave(); } }; img.addEventListener('pointerup',end); img.addEventListener('pointercancel',end);
+  chip.addEventListener('wheel',e=>{ e.preventDefault(); const cm=combatOf(key);
+    cm.scale=+Math.max(0.3,Math.min(3,(cm.scale??1)-Math.sign(e.deltaY)*0.05)).toFixed(2);
+    applyChipImg(img,key,faceRight,baseH); if(after) after(); scheduleSave(); },{passive:false});
+}
+
+/* ---------- combat lineup viewer ---------- */
+// build a game-faithful chip stack: character body (reg point on baseline) + line/reg-dot + HP bar + label
+function makeChipStack(boss, editable, label){
+  const chip=document.createElement('div'); chip.className='cchip'+(boss?' cboss':'')+(editable?' cedit':'');
+  chip.innerHTML=`<div class="cbody"><img alt=""></div><div class="cbase"><span class="cregdot"></span></div>`+
+    `<div class="chp"><span class="chp-fill" style="width:72%"></span></div>`+
+    (label!=null?`<span class="clbl">${label}</span>`:'');
+  return { chip, img: chip.querySelector('img') };
+}
+function combatChip(cat, name, faceRight, boss, editable){
+  const base=name.replace(/\.png$/i,''), key=cat+'/'+name;
+  const baseH=boss?108:54;
+  const {chip,img}=makeChipStack(boss,editable,base);
+  if(cat==='heroes') chip.classList.add('chero');       // green HP bar for the hero context chips
   img.onerror=()=>{ if(!img.dataset.fb){ img.dataset.fb='1'; img.src=`/img/${cat}/${encodeURIComponent(name)}?v=${state.ver}`; } else img.style.visibility='hidden'; };
   img.src=`/img/${cat}/${encodeURIComponent(base)}_256.png?v=${state.ver}`;   // game art; falls back to source
-  const lbl=document.createElement('span'); lbl.className='clbl'; lbl.textContent=base;
-  chip.appendChild(img); chip.appendChild(lbl); return chip;
+  if(editable){ applyChipImg(img,key,faceRight,baseH); wireChipEdit(chip,img,key,faceRight,baseH); }
+  else { const [ax,ay]=regOf(key); img.style.height=baseH+'px';
+    img.style.transform=`translate(${((0.5-ax)*100).toFixed(2)}%, ${((1-ay)*100).toFixed(2)}%)`+(faceRight?' scaleX(-1)':''); }
+  return chip;
 }
 function renderCombat(){
   const scene=document.getElementById('combatScene'); scene.innerHTML='';
   const cat=state.openCat;
   document.getElementById('combatTtl').textContent='Combat lineup — '+labelFor(cat||'');
-  const b=BIOME[cat]||['#26303a','#0e141b'];
-  scene.style.background=`linear-gradient(180deg, ${b[0]}, ${b[1]})`;
-  const ground=document.createElement('div'); ground.className='ground'; scene.appendChild(ground);
-  // player side: a few heroes on the left, flipped to face right (toward the enemies)
+  scene.style.background=COMBAT_BG;
+  // player side: a few heroes on the left, flipped to face right (toward the enemies) — static context
   const heroes=state.items.filter(x=>x.cat==='heroes').slice(0,3);
   if(heroes.length){ const hs=document.createElement('div'); hs.className='cside';
-    heroes.forEach(h=>hs.appendChild(combatChip('heroes',h.name,true,false))); scene.appendChild(hs);
+    heroes.forEach(h=>hs.appendChild(combatChip('heroes',h.name,true,false,false))); scene.appendChild(hs);
     const gap=document.createElement('div'); gap.className='cgap'; scene.appendChild(gap); }
-  // enemy side: the open category's roster, facing left (as generated); bosses render 2x
+  // enemy side: the open category's roster, facing left; bosses 2x — DRAG to move, SCROLL to scale (auto-saved)
   const enemies=state.items.filter(x=>x.cat===cat);
   if(!enemies.length){ const e=document.createElement('div'); e.className='cempty'; e.textContent='no assets in this category'; scene.appendChild(e); return; }
   const es=document.createElement('div'); es.className='cside';
-  enemies.forEach(en=>es.appendChild(combatChip(cat,en.name,false,isBoss(cat,en.name)))); scene.appendChild(es);
+  enemies.forEach(en=>es.appendChild(combatChip(cat,en.name,false,isBoss(cat,en.name),true))); scene.appendChild(es);
 }
 
 function portraitOf(key){ const rec=(state.meta[key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
@@ -498,9 +585,16 @@ function renderGallery(){
 }
 document.getElementById('galReset').onclick=()=>{ (state.meta[cur().key] ||= {pockets:[]}).portrait={scale:1,x:0,y:0}; renderGallery(); };
 
-/* ---------- portrait tile framing ---------- */
-function curPortrait(){ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
+/* ---------- per-asset framing: heroes → portrait tile, enemies → combat mockup ---------- */
 function renderTile(){
+  const enemy = cur() && cur().cat!=='heroes';
+  document.getElementById('tileEditor').hidden = enemy;
+  document.getElementById('combatTileEditor').hidden = !enemy;
+  if(enemy) renderCombatTile(); else renderPortraitTile();
+}
+/* ---------- portrait tile framing (heroes) ---------- */
+function curPortrait(){ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.portrait ||= {scale:1,x:0,y:0}; return rec.portrait; }
+function renderPortraitTile(){
   const it=cur(), base=it.name.replace(/\.png$/i,'');
   const art=document.getElementById('tileArt'), msg=document.getElementById('stageMsg');
   art.onerror=()=>{ art.style.visibility='hidden'; msg.textContent='no 256 yet — Clip this hero first'; msg.style.display='block'; };
@@ -508,6 +602,29 @@ function renderTile(){
   art.src=`/img/${it.cat}/${base}_256.png?v=${state.ver}`;
   document.getElementById('pScale').value = (curPortrait().scale ?? 1);
   applyPortrait();
+}
+/* ---------- single-enemy combat mockup (enemies) ---------- */
+function combatRefs(){ const it=cur(); return { it, key:it.key, boss:isBoss(it.cat,it.name) }; }
+function applyCombatTile(){
+  const it=cur(); if(!it) return; const r=combatRefs(), cm=combatRead(r.key), [ax,ay]=regOf(r.key);
+  document.getElementById('ctPreviewChip').classList.toggle('cboss', r.boss);
+  applyChipImg(document.getElementById('ctArt'), r.key, false, 120);            // magnified edit chip
+  applyChipImg(document.getElementById('ctPreview'), r.key, false, r.boss?108:54);   // true-size preview
+  document.getElementById('cRead').textContent=`reg ${ax.toFixed(2)}, ${ay.toFixed(2)} · scale ${(cm.scale??1).toFixed(2)}`;
+  document.getElementById('cScale').value=(cm.scale??1);
+}
+function renderCombatTile(){
+  const it=cur(), base=it.name.replace(/\.png$/i,''), r=combatRefs();
+  document.getElementById('cmock').style.background=COMBAT_BG;
+  const art=document.getElementById('ctArt'), prev=document.getElementById('ctPreview'), msg=document.getElementById('stageMsg');
+  const src=`/img/${it.cat}/${encodeURIComponent(base)}_256.png?v=${state.ver}`;
+  const fb =`/img/${it.cat}/${encodeURIComponent(it.name)}?v=${state.ver}`;
+  for(const im of [art,prev]){
+    im.dataset.fb=''; im.onload=()=>{ im.style.visibility='visible'; msg.style.display='none'; };
+    im.onerror=()=>{ if(!im.dataset.fb){ im.dataset.fb='1'; im.src=fb; } else { im.style.visibility='hidden'; msg.textContent='no 256 yet — Clip this enemy first'; msg.style.display='block'; } };
+    im.src=src;
+  }
+  applyCombatTile();
 }
 function applyPortrait(){
   const p=curPortrait(), art=document.getElementById('tileArt');
@@ -528,6 +645,19 @@ document.getElementById('pReset').onclick=()=>{ state.meta[cur().key].portrait={
     applyPortrait(); });
   const end=()=>{ drag=null; }; art.addEventListener('pointerup',end); art.addEventListener('pointercancel',end);
 })();
+/* combat-tile (single enemy): DRAG = move the registration point · scroll/slider = scale · auto-saved */
+(function(){ let d=null; const art=document.getElementById('ctArt'), chip=document.getElementById('cmChip');
+  art.addEventListener('pointerdown',e=>{ if(!cur()) return; const [ax,ay]=regOf(cur().key); d={sx:e.clientX,sy:e.clientY,ax,ay};
+    try{ art.setPointerCapture(e.pointerId); }catch(_){}; e.preventDefault(); });
+  art.addEventListener('pointermove',e=>{ if(!d) return; const w=art.offsetWidth, h=art.offsetHeight; if(w<2||h<2) return;
+    let ax=Math.max(0,Math.min(1,d.ax-(e.clientX-d.sx)/w)), ay=Math.max(0,Math.min(1,d.ay-(e.clientY-d.sy)/h));
+    (state.meta[cur().key] ||= {pockets:[]}).reg=[+ax.toFixed(4),+ay.toFixed(4)]; applyCombatTile(); });
+  const end=()=>{ if(d){ d=null; scheduleSave(); } }; art.addEventListener('pointerup',end); art.addEventListener('pointercancel',end);
+  chip.addEventListener('wheel',e=>{ e.preventDefault(); const cm=combatOf(cur().key);
+    cm.scale=+Math.max(0.3,Math.min(3,(cm.scale??1)-Math.sign(e.deltaY)*0.05)).toFixed(2); applyCombatTile(); scheduleSave(); },{passive:false});
+})();
+document.getElementById('cScale').oninput=e=>{ combatOf(cur().key).scale=+parseFloat(e.target.value).toFixed(2); applyCombatTile(); scheduleSave(); };
+document.getElementById('cReset').onclick=()=>{ const rec=(state.meta[cur().key] ||= {pockets:[]}); rec.reg=[0.5,1]; rec.combat={scale:1}; applyCombatTile(); scheduleSave(); };
 function setZoom(z){ state.zoom=Math.max(0.1,Math.min(z,8)); const pct=Math.round(state.zoom*100);
   document.getElementById('zoom').value=pct; document.getElementById('zoomLbl').textContent=pct+'%'; applyZoom(); }
 function fitZoom(){ if(!state.natural.w) return; const wrap=document.getElementById('stageWrap'), pad=48;
@@ -686,6 +816,7 @@ async function pollExport(btn, old){
       const r=j.result;
       if(j.returncode===0 && r){ toast(`✓ export ok — refreshed ${r.refreshed.length}, created ${r.created.length}`+
         `${r.anchored?', '+r.anchored+' anchors':''}${r.portraited?', '+r.portraited+' portraits':''}`+
+        `${r.combated?', '+r.combated+' combat-frames':''}`+
         `${r.errors&&r.errors.length?', '+r.errors.length+' errors':''}`); state.ver++; }
       else { toast('✗ export failed'+(r&&r.errors&&r.errors.length?': '+r.errors[0].error:' (see console)')); }
       console.log('[export]\n'+(j.log||''));

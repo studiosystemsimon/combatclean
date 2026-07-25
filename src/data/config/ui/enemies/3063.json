@@ -1,5 +1,8 @@
 {
 	"id": 3063,
 	"name": "Grave Golem",
-	"iconAssetId": "enemy.grave-golem"
+	"iconAssetId": "enemy.grave-golem",
+	"combat": {
+		"scale": 1.75
+	}
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3049,
 	"name": "Antler Wraith",
-	"iconAssetId": "enemy.antler-wraith"
+	"iconAssetId": "enemy.antler-wraith",
+	"combat": {
+		"scale": 1.5
+	}
 }

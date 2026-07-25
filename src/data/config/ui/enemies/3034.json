@@ -1,5 +1,8 @@
 {
 	"id": 3034,
 	"name": "Bog Goblin",
-	"iconAssetId": "enemy.bog-goblin"
+	"iconAssetId": "enemy.bog-goblin",
+	"combat": {
+		"scale": 1.15
+	}
 }

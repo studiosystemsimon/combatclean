@@ -1,5 +1,8 @@
 {
 	"id": 3039,
 	"name": "Snapvine",
-	"iconAssetId": "enemy.snapvine"
+	"iconAssetId": "enemy.snapvine",
+	"combat": {
+		"scale": 1.25
+	}
 }

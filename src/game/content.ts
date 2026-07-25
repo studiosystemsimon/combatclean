@@ -99,7 +99,7 @@ export function createContent(bundle: GameConfigBundle) {
     HERO_LEVEL: b.progression.heroLevel, HERO_UPGRADE: b.progression.heroUpgrade, ABILITY_MUL_PER_LEVEL: b.progression.abilityMulPerLevel,
     ORDER_CONFIG: { active: b.orders.active, arrivalMs: b.orders.arrivalMs, itemCount: b.orders.itemCount, fillerMaxLevel: b.orders.fillerMaxLevel, costPerTierBase: b.orders.costPerTierBase },
     ORDER_CHAINS: b.orders.orderChains as string[], ORDER_DOMINANT_TIER: b.orders.dominantTier as Record<string, [number, number]>, ORDER_REROLL: b.orders.reroll,
-    CRYSTAL: b.crystalDrop, UNIQUE_DROP: b.uniqueDrop, TIER_PRESENTATION: b.tierPresentation, VFX: b.vfx, HAPTICS: b.haptics,
+    CRYSTAL: b.crystalDrop, UNIQUE_DROP: b.uniqueDrop, TIER_PRESENTATION: b.tierPresentation, VFX: b.vfx, HAPTICS: b.haptics, RUNTIME: b.runtime, REVEAL: b.reveal,
     // derived: fresh-crystal wallet (all rarities zero) + the starter hero roster + well-known refs
     EMPTY_CRYSTALS: Object.fromEntries(HERO_RARITY_ORDER.map((k: string) => [k, 0])) as Record<string, number>,
     STARTER_HEROES: [heroIdToSlug[(b.refs || {}).starterHeroConfigId]].filter(Boolean) as string[],

@@ -3,203 +3,290 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Combat Clean — Hero Menu mockup (AFK-Arena style)</title>
+<title>Combat Clean — Hero Menu (AFK layout · iPhone 16)</title>
 <style>
   :root{
-    --bg:#0e1016; --panel:#161b27; --panel2:#1b2233; --line:#2a3346;
-    --ink:#eef2fb; --dim:#9aa7bd; --faint:#6b7891;
-    --gold:#ffd45e; --gold2:#ffb020;
-    /* hero rarity ramp (from src/data/config/ui/rarities) */
-    --common:#9aa7bd; --rare:#4aa3ff; --epic:#b46bff; --legendary:#ffb020; --mythic:#ff2e6e; --primal:#78f0ff;
+    --bg:#0e1016;--line:#2a3346;--ink:#eef2fb;--dim:#9aa7bd;--faint:#6b7891;--gold:#ffd45e;
+    --common:#9aa7bd;--rare:#4aa3ff;--epic:#b46bff;--legendary:#ffb020;--mythic:#ff2e6e;--primal:#78f0ff;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;background:#0a0b0f;color:var(--ink);
-    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    display:flex;flex-direction:column;align-items:center;min-height:100vh;gap:12px;padding:18px 0 60px}
-  .banner{color:var(--faint);font-size:12px;letter-spacing:.4px}
-  .banner b{color:var(--gold)}
-  /* phone frame */
-  .device{width:430px;max-width:96vw;height:900px;max-height:86vh;background:var(--bg);border:1px solid #222b3d;
-    border-radius:26px;overflow:hidden;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.6)}
-  .screen{position:absolute;inset:0;display:flex;flex-direction:column}
+  @font-face{font-family:'Uniform Bold';src:url('../../src/fonts/Uniform-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Bold';src:url('../../src/fonts/Uniform-Condensed-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Medium';src:url('../../src/fonts/Uniform-Condensed-Medium.ttf') format('truetype');font-display:swap}
+  html,body{margin:0;background:#08090d;color:var(--ink);display:flex;flex-direction:column;align-items:center;min-height:100vh;gap:12px;padding:18px 0 60px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .banner{color:var(--faint);font-size:12px}.banner b{color:var(--gold)}
+  /* ROUNDED outer-only black outline (12-point ring of hard text-shadows) */
+  .ol{text-shadow:
+    0.10em 0 0 #000, 0.087em 0.05em 0 #000, 0.05em 0.087em 0 #000, 0 0.10em 0 #000,
+    -0.05em 0.087em 0 #000, -0.087em 0.05em 0 #000, -0.10em 0 0 #000, -0.087em -0.05em 0 #000,
+    -0.05em -0.087em 0 #000, 0 -0.10em 0 #000, 0.05em -0.087em 0 #000, 0.087em -0.05em 0 #000}
 
-  /* ── currency bar (shared chrome) ─────────────────────────────── */
-  .topbar{display:flex;align-items:center;gap:8px;padding:12px 12px 8px;flex:0 0 auto}
-  .topbar .pool{background:#0c0f16;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-weight:800;font-size:12px;color:#dce6f7}
-  .topbar .sp{flex:1}
-  .title{font-weight:900;letter-spacing:.5px;font-size:15px}
+  .device{aspect-ratio:393/852;height:min(852px,88vh);width:auto;background:var(--bg);border:1px solid #222b3d;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:'Uniform Condensed Bold',system-ui,sans-serif}
+  .screen{position:absolute;inset:0}
+  .device ::-webkit-scrollbar{width:0;height:0;display:none}
+  .roster,.eq-grid{cursor:grab}.roster:active,.eq-grid:active{cursor:grabbing}
 
-  /* ── ROSTER (hero list) ───────────────────────────────────────── */
-  .roster{flex:1;overflow:auto;padding:4px 10px 20px}
-  .seclabel{color:var(--gold);font-weight:800;font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin:10px 4px 8px}
+  /* ROSTER */
+  .topbar{display:flex;align-items:center;gap:8px;padding:14px 14px 8px}
+  .topbar .title{font-weight:900;letter-spacing:.5px;font-size:15px}.topbar .sp{flex:1}
+  .pool{background:#0c0f16;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:#dce6f7}
+  .roster{position:absolute;inset:0;top:48px;overflow:auto;padding:4px 10px 24px;scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 26px),transparent)}
+  .seclabel{color:var(--gold);font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin:10px 4px 8px}
   .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
   .tile{position:relative;aspect-ratio:1/1;border-radius:13px;overflow:hidden;cursor:pointer;
-    background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--rar) 26%,#121626),#0d1119 70%);
-    border:2px solid var(--rar);box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.35)}
-  .tile .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center}
-  .tile .pow{position:absolute;left:5px;top:4px;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
-  .tile .pow i{color:var(--gold);font-style:normal}
-  .tile .lv{position:absolute;right:5px;bottom:24px;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
-  .tile .lv s{font-size:8px;text-decoration:none;opacity:.8;margin-right:1px}
-  .tile .nm{position:absolute;left:0;right:0;bottom:0;padding:10px 4px 3px;font-size:11px;font-weight:800;text-align:center;
-    color:#fff;text-shadow:0 1px 2px #000;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent)}
-  .tile .stars{position:absolute;right:4px;top:4px;display:flex;gap:1px}
-  .tile .stars i{width:6px;height:6px;font-size:8px;line-height:6px;color:var(--gold);opacity:.28}
-  .tile .stars i.on{opacity:1;filter:drop-shadow(0 0 3px var(--gold))}
+    background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--rar) 26%,#121626),#0d1119 70%);border:2px solid var(--rar);box-shadow:0 3px 10px rgba(0,0,0,.5)}
+  .tile .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .tile .pow{position:absolute;left:5px;top:4px;font-size:11px;color:#fff;text-shadow:0 1px 2px #000}.tile .pow i{color:var(--gold);font-style:normal}
+  .tile .nm{position:absolute;left:0;right:0;bottom:0;padding:9px 4px 3px;font-size:11px;text-align:center;color:#fff;text-shadow:0 1px 2px #000;background:linear-gradient(0deg,rgba(0,0,0,.72),transparent)}
+  .tile .lv{position:absolute;right:5px;bottom:22px;font-size:11px;color:#fff;text-shadow:0 1px 2px #000}.tile .lv s{font-size:8px;text-decoration:none;opacity:.8}
 
-  /* ── HERO MENU (the isolated AFK-style view) ──────────────────── */
-  .hero-menu{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;
-    background:
-      radial-gradient(90% 55% at 50% 20%,color-mix(in srgb,var(--rar) 30%,transparent),transparent 70%),
-      linear-gradient(180deg,#12friday 0,#0c0e14 60%);
-    background-color:#0c0e14;
-    transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.85,.25,1);pointer-events:none}
+  /* HERO MENU */
+  .hero-menu{position:absolute;inset:0;z-index:20;overflow:hidden;display:flex;flex-direction:column;
+    transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.85,.25,1);pointer-events:none;--rar:var(--rare)}
   .hero-menu.open{transform:none;pointer-events:auto}
+  .hm-bg{position:absolute;inset:0;background:#0c0e14 center/cover no-repeat;background-image:url('assets/hero-bg.png');transform:scale(1.06);z-index:0}
+  .hm-tint{position:absolute;inset:0;z-index:0;background:radial-gradient(70% 42% at 50% 40%,color-mix(in srgb,var(--rar) 20%,transparent),transparent 70%);mix-blend-mode:screen;opacity:.7}
+  .hm-scrim{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(6,7,11,.55) 0,transparent 18%)}
+  .hm-back{position:absolute;top:14px;left:14px;z-index:9;width:32px;height:32px;border-radius:9px;background:rgba(10,12,18,.6);border:1px solid var(--line);color:var(--ink);font-size:16px;cursor:pointer}
+  .hm-lock{position:absolute;top:14px;right:14px;z-index:9;width:36px;height:36px;border-radius:10px;background:rgba(10,12,18,.6);border:1px solid var(--line);color:var(--dim);font-size:17px;cursor:pointer;transition:all .15s}
+  .hm-lock.on{color:#0c0e14;background:linear-gradient(180deg,#ffe08a,#f2b021);border-color:transparent;box-shadow:0 0 12px rgba(242,176,33,.5)}
 
-  .hm-top{display:flex;align-items:center;gap:8px;padding:12px 10px 4px;position:relative;z-index:3}
-  .hm-back{background:#0c0f16cc;border:1px solid var(--line);color:var(--ink);border-radius:10px;
-    width:34px;height:34px;font-size:16px;cursor:pointer;display:grid;place-items:center}
-  .hm-name{font-weight:900;font-size:17px;letter-spacing:.3px}
-  .hm-rar{font-weight:900;font-size:10px;letter-spacing:.8px;padding:2px 8px;border-radius:999px;
-    color:var(--rar);border:1px solid color-mix(in srgb,var(--rar) 60%,transparent);background:color-mix(in srgb,var(--rar) 14%,transparent)}
-  .hm-cyc{display:flex;gap:6px;margin-left:auto}
-  .hm-cyc button{background:#0c0f16cc;border:1px solid var(--line);color:var(--dim);border-radius:10px;width:34px;height:34px;font-size:15px;cursor:pointer}
+  .hm-header{position:relative;z-index:5;flex:0 0 auto;padding-top:22px;text-align:center}
+  .hm-emblems{display:flex;justify-content:center;align-items:center}
+  .emb{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:radial-gradient(120% 100% at 50% 0,#2a3450,#10131d);border:2px solid #56618a;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .emb.diamond{width:34px;height:34px;border-radius:8px;transform:rotate(45deg);border-color:var(--rar);background:#171b2b}
+  .emb.diamond .g{transform:rotate(-45deg);font-size:15px;color:var(--rar)}
+  .emb-line{width:22px;height:2px;background:linear-gradient(90deg,transparent,#b98cff,transparent)}
+  .hm-titles{margin-top:5px}
+  .t-tier{font-family:'Uniform Condensed Bold',sans-serif;font-size:13px;color:var(--rar);line-height:1.28;letter-spacing:.5px}
+  .t-class{font-family:'Uniform Condensed Bold',sans-serif;font-size:17px;color:#fff;line-height:1.28}
+  .t-name{font-family:'Uniform Bold',sans-serif;font-size:20px;line-height:1.3;letter-spacing:.5px;color:#eef3ff}
 
-  /* stage: big hero render + flanking gear + ascension */
-  .hm-stage{position:relative;flex:0 0 auto;height:330px;display:flex;align-items:flex-end;justify-content:center}
-  .hm-aura{position:absolute;left:50%;top:44%;width:300px;height:300px;transform:translate(-50%,-50%);
-    background:radial-gradient(closest-side,color-mix(in srgb,var(--rar) 45%,transparent),transparent 72%);filter:blur(4px);opacity:.7}
-  .hm-render{position:relative;z-index:2;height:300px;filter:drop-shadow(0 18px 22px rgba(0,0,0,.6))}
-  .hm-render img{height:100%;width:auto;object-fit:contain}
-  .hm-pedestal{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:230px;height:34px;z-index:1;
-    background:radial-gradient(closest-side,color-mix(in srgb,var(--rar) 55%,transparent),transparent 75%);opacity:.55;filter:blur(2px)}
-  /* level badge + ascension stars */
-  .hm-lv{position:absolute;left:14px;top:6px;z-index:3;background:#0c0f16dd;border:1px solid var(--rar);
-    border-radius:12px;padding:6px 10px;text-align:center;min-width:52px}
-  .hm-lv b{display:block;font-size:22px;font-weight:900;line-height:1;color:#fff}
-  .hm-lv s{font-size:9px;letter-spacing:1px;color:var(--dim);text-decoration:none}
-  .hm-stars{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);z-index:3;display:flex;gap:4px}
-  .hm-stars i{font-size:15px;color:var(--gold);opacity:.25}
-  .hm-stars i.on{opacity:1;filter:drop-shadow(0 0 4px var(--gold))}
+  .hm-body{position:relative;z-index:4;flex:1 1 auto;min-height:0}
+  .side-col{position:absolute;top:16px;bottom:56px;z-index:6;display:flex;flex-direction:column;justify-content:center;gap:14px}
+  .side-col.left{left:16px}.side-col.right{right:16px}
+  .gslot{width:56px;height:56px;border-radius:13px;position:relative;cursor:pointer;display:grid;place-items:center;
+    background:linear-gradient(180deg,rgba(20,26,40,.9),rgba(10,13,22,.9));border:2px solid var(--gr,#3a465e);box-shadow:0 3px 9px rgba(0,0,0,.55)}
+  .gslot .gi{font-size:25px;filter:drop-shadow(0 1px 2px #000)}
+  .gslot .glv{position:absolute;right:-5px;bottom:-6px;background:#0c0f16;border:1px solid var(--gr,#3a465e);color:#fff;font-size:9px;border-radius:7px;padding:0 4px;min-width:15px;text-align:center;font-family:'Uniform Condensed Bold',sans-serif}
+  .gslot.empty{border-style:dashed;border-color:#3a465e}.gslot.empty .gi{color:#54617d}
+  /* abilities (right) — plain circular tiles */
+  .abil{width:52px;height:52px;border-radius:50%;position:relative;cursor:pointer;display:grid;place-items:center;
+    background:radial-gradient(120% 100% at 50% 0,#242d40,#0c1018);border:1px solid rgba(255,255,255,.10);box-shadow:0 3px 9px rgba(0,0,0,.55)}
+  .abil .ai{font-size:24px;filter:drop-shadow(0 1px 2px #000)}
+  .abil .alv{position:absolute;right:-4px;bottom:-4px;background:#0c0f16;border:1px solid rgba(255,255,255,.18);border-radius:8px;font-size:9px;padding:0 4px;color:var(--gold);font-family:'Uniform Condensed Bold',sans-serif}
 
-  /* gear rail (right flank, AFK arranges gear around the hero) */
-  .hm-gear{position:absolute;right:10px;top:8px;z-index:3;display:flex;flex-direction:column;gap:9px}
-  .gslot{width:52px;height:52px;border-radius:12px;position:relative;cursor:pointer;
-    background:linear-gradient(180deg,#141a28,#0e1320);border:2px solid var(--gr,#33405a);
-    display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.5)}
-  .gslot .gi{font-size:22px;filter:drop-shadow(0 1px 2px #000)}
-  .gslot .glv{position:absolute;right:-4px;bottom:-6px;background:#0c0f16;border:1px solid var(--gr,#33405a);
-    color:#fff;font-size:10px;font-weight:900;border-radius:8px;padding:0 5px;min-width:16px;text-align:center}
-  .gslot.empty{border-style:dashed;border-color:#39435c}
-  .gslot.empty .gi{color:#4a566f}
-  .gslot.locked{opacity:.6}
-  .gslot .lockcap{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-weight:800;
-    color:var(--mythic);background:rgba(8,10,16,.55);border-radius:10px;letter-spacing:.3px;text-align:center;line-height:1.1}
+  .hm-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:30px}
+  .hm-dais{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);width:168px;height:38px;background:radial-gradient(closest-side,color-mix(in srgb,var(--rar) 60%,transparent),transparent 74%);opacity:.55;filter:blur(2px)}
+  .hm-img{position:relative;height:224px;max-height:calc(100% - 24px);width:auto;object-fit:contain;filter:drop-shadow(0 16px 20px rgba(0,0,0,.6));animation:float 3.8s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .nav{position:absolute;bottom:10px;z-index:7;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(120% 120% at 50% 25%,#2c3656,#0e1220);border:2px solid var(--gold);color:var(--gold);
+    font-size:30px;line-height:1;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 16px rgba(255,212,94,.4);animation:navpulse 2.2s ease-in-out infinite}
+  .nav:active{transform:translateY(1px)}.nav.l{left:12px}.nav.r{right:12px}
+  @keyframes navpulse{0%,100%{box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(255,212,94,.3)}50%{box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 20px rgba(255,212,94,.6)}}
 
-  /* ── lower panel: tabs + body ─────────────────────────────────── */
-  .hm-panel{flex:1;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12friday,rgba(20,25,38,.96));
-    background-color:#141926;border-top:1px solid var(--line);border-radius:18px 18px 0 0;margin-top:-6px;position:relative;z-index:4}
-  .hm-tabs{display:flex;gap:6px;padding:10px 12px 0}
-  .hm-tab{flex:1;text-align:center;padding:9px 0;border-radius:10px 10px 0 0;font-weight:800;font-size:12px;letter-spacing:.4px;
-    color:var(--dim);cursor:pointer;background:transparent;border:none}
-  .hm-tab.on{color:#fff;background:#1d2536;box-shadow:inset 0 2px 0 var(--gold)}
-  .hm-body{flex:1;min-height:0;overflow:auto;padding:12px}
+  /* foot */
+  .hm-foot{position:relative;z-index:6;flex:0 0 auto}
+  .hm-stats{background:rgba(9,11,17,.42);backdrop-filter:blur(6px);border-top:1px solid rgba(255,255,255,.08);padding:6px 12px}
+  .power-line{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:3px}
+  .power-line .pw-ic{font-size:15px;filter:drop-shadow(0 1px 2px #000)}
+  .power-line .pw-val{font-family:'Uniform Bold',sans-serif;font-size:19px;color:#fff;letter-spacing:.5px}
+  .power-line .warn{position:absolute;right:2px;top:-1px;width:22px;height:22px;border-radius:7px;background:rgba(10,12,18,.5);border:1px solid var(--line);color:var(--gold);cursor:pointer}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;padding:0 4px;gap:4px}
+  .stat{display:flex;align-items:center;gap:5px}
+  .stat .ico{font-size:15px;line-height:1;filter:drop-shadow(0 1px 2px #000)}
+  .stat .lvbadge{font-family:'Uniform Condensed Bold',sans-serif;font-size:12px;color:#8fd0ff}
+  .stat .sv{display:flex;flex-direction:column;line-height:1}
+  .stat b{font-family:'Uniform Condensed Bold',sans-serif;font-size:14px;color:#fff}
+  .stat small{font-family:'Uniform Condensed Medium',sans-serif;font-size:9.5px;color:var(--dim)}
 
-  /* stats */
-  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-  .stat{background:#0f1420;border:1px solid var(--line);border-radius:11px;padding:9px 11px;display:flex;align-items:center;gap:9px}
-  .stat .k{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:.4px}
-  .stat .v{margin-left:auto;font-weight:900;font-size:16px}
-  .stat.big{grid-column:1/3;border-color:color-mix(in srgb,var(--gold) 40%,var(--line))}
-  .stat.big .v{color:var(--gold);font-size:20px}
-  .chip{display:inline-flex;align-items:center;gap:5px;background:#0f1420;border:1px solid var(--line);border-radius:999px;
-    padding:4px 10px;font-size:11px;font-weight:800;color:var(--dim)}
+  .hm-actions{background:#10151f;border-top:1px solid var(--line);padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+  .hm-exp{position:relative;height:9px;border-radius:5px;background:#0c0f16;border:1px solid var(--line);overflow:hidden;margin-bottom:8px}
+  .hm-exp .fill{position:absolute;inset:0;width:45%;background:linear-gradient(90deg,#5aa9ff,#78f0ff);transition:width .4s cubic-bezier(.2,.8,.2,1)}
+  .hm-exp span{position:absolute;inset:0;display:grid;place-items:center;font-family:'Uniform Condensed Medium',sans-serif;font-size:8.5px;color:#fff;text-shadow:0 1px 2px #000}
+  .actrow{display:flex;gap:8px;margin-bottom:7px}.actrow:last-child{margin-bottom:0}
+  .btn{flex:1;border:none;border-radius:11px;cursor:pointer;font-family:'Uniform Condensed Bold',sans-serif;letter-spacing:.3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;color:#0c0e14;min-height:38px;padding:5px 8px;font-size:12px;line-height:1.05}
+  .btn small{font-family:'Uniform Condensed Medium',sans-serif;font-size:8.5px;opacity:.8}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{flex:2;font-size:13px;background:linear-gradient(180deg,#ffe08a,#f2b021);box-shadow:0 3px 0 #b9820f}
+  .btn.side{background:linear-gradient(180deg,#cfd8e8,#8b99b4);box-shadow:0 3px 0 #5a6478}
+  .btn.g{background:linear-gradient(180deg,#8ce6ad,#33b06a);color:#06110a;box-shadow:0 3px 0 #1f7a45}
+  .btn.b{background:linear-gradient(180deg,#8fd0ff,#3a8de0);color:#04121f;box-shadow:0 3px 0 #1f5fa0}
+  .btn:disabled{filter:grayscale(.75) brightness(.62);box-shadow:none;cursor:default}
 
-  /* gear detail row (overview) */
-  .gearlist{display:flex;flex-direction:column;gap:8px}
-  .gearrow{display:flex;align-items:center;gap:10px;background:#0f1420;border:1px solid var(--line);border-left:3px solid var(--gr,#33405a);border-radius:11px;padding:9px 11px}
-  .gearrow .gic{font-size:22px}
-  .gearrow .gnm{font-weight:800}
-  .gearrow .grr{font-size:11px;font-weight:800;color:var(--gr,#9aa7bd)}
-  .gearrow .gpw{margin-left:auto;font-weight:900;color:var(--gold)}
+  /* overlays */
+  .sheet{position:absolute;inset:0;z-index:14;display:none}.sheet.open{display:block}
+  .sheet .bd{position:absolute;inset:0;background:rgba(4,5,8,.6)}
+  .sheet .card{position:absolute;left:14px;right:14px;bottom:14px;background:#141926;border:1px solid var(--line);border-radius:16px;padding:14px}
+  .sheet .card h4{margin:0 0 10px;font-family:'Uniform Condensed Bold',sans-serif;font-size:14px;letter-spacing:.5px;color:var(--gold);text-transform:uppercase}
+  .statline{display:flex;padding:9px 2px;border-bottom:1px solid var(--line)}.statline:last-child{border-bottom:none}
+  .statline .k{color:var(--dim)}.statline .v{margin-left:auto;font-family:'Uniform Condensed Bold',sans-serif}
+  .closebtn{margin-top:12px;width:100%;padding:11px;border:1px solid var(--line);background:#1a2232;color:var(--dim);border-radius:11px;cursor:pointer;font-family:'Uniform Condensed Bold',sans-serif}
+  /* red X (equip dialog) */
+  .sheet-x{position:absolute;top:-12px;right:-6px;width:30px;height:30px;border-radius:50%;background:#c0392b;border:2px solid #7a2018;color:#fff;font-size:13px;font-weight:900;cursor:pointer;display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.5);z-index:3}
+  /* skill detail */
+  .skhead{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+  .skhead .sc{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:radial-gradient(120% 100% at 50% 0,#242d40,#0c1018);border:1px solid rgba(255,255,255,.12)}
+  .skhead .styp{font-family:'Uniform Condensed Medium',sans-serif;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)}
+  .skhead .snm{font-family:'Uniform Condensed Bold',sans-serif;font-size:16px}
+  .skdesc{color:#c7d2e6;font-size:13px;line-height:1.5}
+  /* equip dialog */
+  .eq-card{position:relative;display:flex;flex-direction:column;max-height:80%}
+  .eq-cur{display:flex;align-items:center;gap:10px;background:#0f1420;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+  .eq-cur .ic{width:46px;height:46px;border-radius:11px;display:grid;place-items:center;font-size:24px;border:2px solid var(--gr,#3a465e);background:linear-gradient(180deg,#141a28,#0e1320)}
+  .eq-cur .nm{font-family:'Uniform Condensed Bold',sans-serif}
+  .eq-cur .rr{font-family:'Uniform Condensed Medium',sans-serif;font-size:11px}
+  .eq-cur .pw{margin-left:auto;font-family:'Uniform Bold',sans-serif;color:var(--gold);font-size:18px}
+  .eq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;overflow-y:auto;max-height:190px;padding:2px 2px 10px;scrollbar-width:none;touch-action:pan-y;
+    -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent)}
+  .eq-item{position:relative;aspect-ratio:1/1;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    background:radial-gradient(120% 100% at 50% 0,color-mix(in srgb,var(--gr) 26%,#0e1320),#0b0e16);border:2px solid var(--gr,#3a465e)}
+  .eq-item .gi{font-size:25px;filter:drop-shadow(0 1px 2px #000)}
+  .eq-item .lv{position:absolute;left:5px;top:3px;font-family:'Uniform Condensed Bold',sans-serif;font-size:10px;color:#fff;text-shadow:0 1px 2px #000}
+  .eq-item .eqbadge{position:absolute;right:5px;top:3px;font-size:11px;color:var(--gold)}
+  .eq-item .pw{font-family:'Uniform Condensed Bold',sans-serif;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
+  .eq-item .d{font-family:'Uniform Condensed Medium',sans-serif;font-size:10px}.eq-item .d.up{color:#5ad17a}.eq-item .d.dn{color:#ff6a6a}
+  .eq-item.on{box-shadow:0 0 0 2px var(--gold) inset}
+  .eq-item .owner{position:absolute;left:4px;bottom:3px;font-family:'Uniform Condensed Bold',sans-serif;font-size:9px;color:#ffd9a0;background:rgba(8,10,16,.7);border-radius:6px;padding:0 4px}
+  .eq-btns{display:flex;gap:10px;margin-top:12px}
+  /* comparison */
+  .cmp-cols{display:flex;align-items:stretch;gap:8px}.cmp-col{flex:1}
+  .cmp-arrow{display:flex;align-items:center;color:var(--faint);font-size:20px}
+  .ci{height:100%;background:#0f1420;border:1px solid var(--line);border-left:3px solid var(--gr,#3a465e);border-radius:11px;padding:10px 8px;text-align:center}
+  .ci .cl{font-family:'Uniform Condensed Medium',sans-serif;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+  .ci .cx{position:relative;display:inline-block;font-size:30px;margin:4px 0;filter:drop-shadow(0 1px 2px #000)}
+  .ci .clv{position:absolute;right:-10px;bottom:-2px;font-family:'Uniform Condensed Bold',sans-serif;font-size:10px;color:#fff;text-shadow:0 1px 2px #000}
+  .ci .cn{font-family:'Uniform Condensed Bold',sans-serif;font-size:12px}
+  .ci .cst{font-family:'Uniform Bold',sans-serif;color:var(--gold);font-size:14px;margin-top:2px}
+  .cmp-deltas{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+  .dl{display:flex;flex-direction:column;align-items:center;font-family:'Uniform Condensed Medium',sans-serif;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  .dl b{font-family:'Uniform Condensed Bold',sans-serif;font-size:14px}
+  .dl b.up{color:#5ad17a}.dl b.dn{color:#ff6a6a}.dl b.eq{color:var(--dim)}
+  .cmp-warn{display:none;margin-top:12px;background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.4);border-radius:10px;padding:9px 11px;font-family:'Uniform Condensed Medium',sans-serif;font-size:12px;color:#ffb3b3}
+  .cmp-warn.show{display:block}.cmp-warn b{color:#fff;font-family:'Uniform Condensed Bold',sans-serif}
 
-  /* skills view */
-  .skill{display:flex;gap:11px;background:#0f1420;border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px;cursor:pointer}
-  .skill .sic{width:46px;height:46px;flex:0 0 auto;border-radius:11px;display:grid;place-items:center;font-size:24px;
-    background:radial-gradient(120% 100% at 50% 0,color-mix(in srgb,var(--rar) 35%,#12friday),#0d1119);border:1px solid var(--rar)}
-  .skill .snm{font-weight:900}
-  .skill .styp{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)}
-  .skill .sds{color:var(--dim);font-size:12px;margin-top:3px}
-  .skill .slv{margin-left:auto;font-weight:900;font-size:12px;color:var(--gold);white-space:nowrap}
+  /* EXACT gameplay level-up VFX styles (verbatim from src/index.css) */
+  .lvfx-flash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 52%,#fff,rgba(255,240,190,.4) 45%,transparent 72%)}
+  .lvfx-rays{position:absolute;left:50%;top:52%;width:190%;height:190%;opacity:0;mix-blend-mode:screen;background:repeating-conic-gradient(from 0deg,rgba(255,225,150,.55) 0 5deg,transparent 5deg 15deg)}
+  .lvfx-ring{position:absolute;left:50%;top:52%;width:18px;height:18px;border-radius:50%;border:2.5px solid #ffd45e;box-shadow:0 0 12px #ffd45e}
+  .lvfx-spark{position:absolute;left:50%;top:52%;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle,#fff7cc,#ffcf3a 60%,#ff9f1a);box-shadow:0 0 6px 1px rgba(255,200,80,.9)}
+  .hero-float-portal{position:fixed;inset:0;z-index:9999;pointer-events:none}
+  .hero-float{position:absolute;white-space:nowrap;font-family:'Uniform Condensed Bold',system-ui,sans-serif;font-style:italic;font-weight:900;text-shadow:2px 0 0 #000,-2px 0 0 #000,0 2px 0 #000,0 -2px 0 #000,1px 1px 0 #000,-1px 1px 0 #000,1px -1px 0 #000,-1px -1px 0 #000,0 2px 4px rgba(0,0,0,.55)}
+  .hero-float.hd{font-size:22px;color:#fff;letter-spacing:.5px}
+  .hero-float.stat{font-size:15px}
+  .hero-float.atk{color:#ff9a6a}.hero-float.hp{color:#8dffb0}.hero-float.pwr{color:#ffd45e}
+  .hero-float.lvup{font-size:16px;color:#fff}
+  .hero-float.maxed{font-size:30px;color:#ffd45e;transform:translate(-50%,-50%);text-shadow:0 0 16px rgba(255,212,94,.6),0 2px 4px #000}
+  .pburst{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff7cc,#ffcf3a 60%,#ff9f1a);box-shadow:0 0 8px 1px rgba(255,200,80,.9)}
+  .pburst-ring{position:absolute;width:22px;height:22px;border-radius:50%;border:3px solid #ffd45e;box-shadow:0 0 20px #ffd45e}
 
-  /* action bar */
-  .hm-actions{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px 14px;border-top:1px solid var(--line);background:#10151f}
-  .btn{border:none;border-radius:12px;padding:12px 8px;font-weight:900;font-size:13px;letter-spacing:.3px;cursor:pointer;
-    display:flex;flex-direction:column;align-items:center;gap:2px;color:#0c0e14}
-  .btn small{font-weight:800;font-size:10px;opacity:.8}
-  .btn.gold{background:linear-gradient(180deg,#ffdd7a,#f2b021)}
-  .btn.green{background:linear-gradient(180deg,#7ce0a0,#33b06a);color:#06110a}
-  .btn.blue{background:linear-gradient(180deg,#7cc0ff,#3a8de0);color:#04121f}
-  .btn.ghost{background:#1a2232;color:var(--dim);border:1px solid var(--line)}
-  .btn:disabled{filter:grayscale(.7) brightness(.7);cursor:default}
-  .btn.wide{grid-column:1/3}
-
-  /* tiny toast for slot taps */
-  .toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:30;background:#0c0f16ee;border:1px solid var(--line);
-    border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink);opacity:0;transition:opacity .18s;pointer-events:none;max-width:80%;text-align:center}
+  .toast{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);z-index:16;background:rgba(10,13,20,.94);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-family:'Uniform Condensed Medium',sans-serif;font-size:12px;opacity:0;transition:opacity .18s;pointer-events:none;max-width:82%;text-align:center}
   .toast.show{opacity:1}
   .note{color:var(--faint);font-size:11px;text-align:center;margin-top:8px}
 </style>
 </head>
 <body>
-  <div class="banner">Combat Clean · <b>Hero Menu</b> mockup — tap a hero → isolated AFK-style view. Iterate freely.</div>
+  <div class="banner">Combat Clean · <b>Hero Menu</b> — equipment left · abilities right · exact level-up VFX</div>
 
   <div class="device">
     <!-- ROSTER -->
     <div class="screen" id="roster-screen">
-      <div class="topbar">
-        <div class="title">HEROES</div>
-        <div class="sp"></div>
-        <div class="pool">📘 4.2k</div>
-        <div class="pool">🔧 1.8k</div>
-      </div>
+      <div class="topbar"><div class="title">HEROES</div><div class="sp"></div><div class="pool">📘 4.2k</div><div class="pool">🔧 1.8k</div></div>
       <div class="roster">
-        <div class="seclabel">★ Current Squad</div>
-        <div class="grid" id="squad-grid"></div>
-        <div class="seclabel">Roster</div>
-        <div class="grid" id="roster-grid"></div>
-        <div class="note">Numbers are illustrative — real stats come from the model. Tap any hero.</div>
+        <div class="seclabel">★ Current Squad</div><div class="grid" id="squad-grid"></div>
+        <div class="seclabel">Roster</div><div class="grid" id="roster-grid"></div>
+        <div class="note">Numbers illustrative. Tap any hero.</div>
       </div>
     </div>
 
-    <!-- HERO MENU (isolated) -->
+    <!-- HERO MENU -->
     <div class="hero-menu" id="hero-menu">
-      <div class="hm-top">
-        <button class="hm-back" id="hm-back">‹</button>
-        <div class="hm-name" id="hm-name">Knight</div>
-        <div class="hm-rar" id="hm-rar">RARE</div>
-        <div class="hm-cyc">
-          <button id="hm-prev">‹</button>
-          <button id="hm-next">›</button>
+      <div class="hm-bg"></div><div class="hm-tint"></div><div class="hm-scrim"></div>
+      <button class="hm-back" id="hm-back">‹</button>
+      <button class="hm-lock" id="hm-lock" title="Lock: prevents sell / burn / merge">🔓</button>
+
+      <div class="hm-header">
+        <div class="hm-emblems">
+          <div class="emb"><span>✨</span></div><div class="emb-line"></div>
+          <div class="emb diamond"><span class="g">◆</span></div><div class="emb-line"></div>
+          <div class="emb"><span>✊</span></div>
+        </div>
+        <div class="hm-titles">
+          <div class="t-tier ol" id="t-tier">Rare</div>
+          <div class="t-class ol" id="t-class">Blademaster</div>
+          <div class="t-name ol" id="t-name">Knight</div>
         </div>
       </div>
 
-      <div class="hm-stage">
-        <div class="hm-aura"></div>
-        <div class="hm-lv"><s>LV</s><b id="hm-lv">12</b></div>
-        <div class="hm-render" id="hm-render"><img id="hm-img" alt=""/></div>
-        <div class="hm-pedestal"></div>
-        <div class="hm-stars" id="hm-stars"></div>
-        <div class="hm-gear" id="hm-gear"></div>
+      <div class="hm-body">
+        <div class="side-col left" id="gear-left"></div>
+        <div class="side-col right" id="abil-right"></div>
+        <div class="hm-stage"><div class="hm-dais"></div><img class="hm-img" id="hm-img" alt=""/></div>
+        <button class="nav l" id="hm-prev">‹</button>
+        <button class="nav r" id="hm-next">›</button>
       </div>
 
-      <div class="hm-panel">
-        <div class="hm-tabs">
-          <button class="hm-tab on" data-tab="overview">OVERVIEW</button>
-          <button class="hm-tab" data-tab="skills">SKILLS</button>
+      <div class="hm-foot">
+        <div class="hm-stats">
+          <div class="power-line"><span class="pw-ic">✊</span><span class="pw-val ol" id="pw-val">4301</span><button class="warn" id="hm-info">!</button></div>
+          <div class="stat-row">
+            <div class="stat"><span class="lvbadge ol">LV</span><div class="sv"><b class="ol" id="st-lv">35</b><small>Level</small></div></div>
+            <div class="stat"><span class="ico">❤️</span><div class="sv"><b class="ol" id="st-hp">7906</b><small>Health</small></div></div>
+            <div class="stat"><span class="ico">🗡️</span><div class="sv"><b class="ol" id="st-atk">469</b><small>Attack</small></div></div>
+            <div class="stat"><span class="ico">🛡️</span><div class="sv"><b class="ol" id="st-def">120</b><small>Defense</small></div></div>
+          </div>
         </div>
-        <div class="hm-body" id="hm-body"></div>
-        <div class="hm-actions" id="hm-actions"></div>
+        <div class="hm-actions">
+          <div class="hm-exp"><div class="fill" id="hm-expfill"></div><span id="hm-exptxt">EXP 240 / 560</span></div>
+          <div class="actrow">
+            <button class="btn primary" data-act="lvl" id="btn-lvl">LEVEL UP</button>
+            <button class="btn side" data-act="lvlmax">LEVEL UP MAX</button>
+          </div>
+          <div class="actrow">
+            <button class="btn b" data-act="lvlgear">LEVEL ALL GEAR</button>
+            <button class="btn b" data-act="lvlgearmax">LEVEL ALL GEAR MAX</button>
+          </div>
+          <div class="actrow">
+            <button class="btn side" data-act="equipbest">⚡ EQUIP BEST</button>
+            <button class="btn g" data-act="ascend" id="btn-asc">✦ ASCEND</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet" id="stats-sheet"><div class="bd" data-close></div>
+        <div class="card"><h4>Attributes</h4><div id="stats-body"></div><button class="closebtn" data-close>Close</button></div></div>
+
+      <div class="sheet" id="skill-sheet"><div class="bd" data-close></div>
+        <div class="card"><div id="skill-card"></div><button class="closebtn" data-close>Close</button></div></div>
+
+      <!-- equip dialog: red X (no bottom close), LEVEL UP left · EQUIP BEST right -->
+      <div class="sheet" id="equip-sheet"><div class="bd" data-close-eq></div>
+        <div class="card eq-card">
+          <button class="sheet-x" data-close-eq>✕</button>
+          <h4 id="eq-title">Equip</h4>
+          <div class="eq-cur" id="eq-cur"></div>
+          <div class="eq-grid" id="eq-grid"></div>
+          <div class="eq-btns">
+            <button class="btn primary" id="eq-levelup">LEVEL UP</button>
+            <button class="btn b" id="eq-best">⚡ EQUIP BEST</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- comparison + confirm -->
+      <div class="sheet" id="confirm-sheet"><div class="bd" data-close-cmp></div>
+        <div class="card">
+          <h4 id="cmp-title">Change Gear</h4>
+          <div class="cmp-cols"><div class="cmp-col" id="cmp-cur"></div><div class="cmp-arrow">→</div><div class="cmp-col" id="cmp-new"></div></div>
+          <div class="cmp-deltas" id="cmp-deltas"></div>
+          <div class="cmp-warn" id="cmp-warn"></div>
+          <div class="eq-btns">
+            <button class="closebtn" style="margin-top:0;flex:1" data-close-cmp>Cancel</button>
+            <button class="btn primary" id="cmp-confirm" style="flex:1">EQUIP</button>
+          </div>
+        </div>
       </div>
 
       <div class="toast" id="toast"></div>
@@ -207,189 +294,265 @@
   </div>
 
 <script>
-/* ── real Combat Clean data (from src/data/config) ────────────────── */
-const RAR = { common:'#9aa7bd', rare:'#4aa3ff', epic:'#b46bff', legendary:'#ffb020', mythic:'#ff2e6e', primal:'#78f0ff' };
-const GRAR = { common:'#9aa7bd', uncommon:'#5ad17a', rare:'#4aa3ff', epic:'#b46bff', legendary:'#ffb020' };
-const MAX_LEVEL = 50, MAX_ASC = 5;             // _progression.json
-const GEAR_ICON = { weapon:'⚔', armor:'🛡', trinket:'💍' };
-const WEAPON_LABEL = { blade:'Blade', bow:'Bow', magic:'Magic' };
+const RAR={common:'#9aa7bd',rare:'#4aa3ff',epic:'#b46bff',legendary:'#ffb020',mythic:'#ff2e6e',primal:'#78f0ff'};
+const GRAR={common:'#9aa7bd',uncommon:'#5ad17a',rare:'#4aa3ff',epic:'#b46bff',legendary:'#ffb020'};
+const MAX_LEVEL=50,MAX_ASC=5,GEAR_MAX=15;
+const GEAR_ICON={weapon:'⚔️',armor:'🛡️',trinket:'💍'};
+const SLOTS=['weapon','armor','trinket'];
+const CLASS={blade:'Blademaster',bow:'Marksman',magic:'Arcanist'};
 
-const HEROES = [
-  {k:'knight', name:'Knight', rar:'rare', weapon:'blade', level:12, asc:1, atk:14, hp:270,
-    p:{s:1.75,x:-.107,y:-.423},
-    abil:{basic:'Attack', normal:'Shield Bash', limit:'Valor Strike'},
-    normal:{type:'burst',mult:2.2,chargeMs:6000}, limit:{type:'burst',mult:5.5,orders:5},
-    gear:{weapon:{r:'rare',lv:8}, armor:{r:'uncommon',lv:5}, trinket:null}, squad:true},
-  {k:'paladin', name:'Paladin', rar:'legendary', weapon:'blade', level:20, asc:2, atk:22, hp:315,
-    p:{s:1.45,x:-.016,y:-.225},
-    abil:{basic:'Attack', normal:'Consecrate', limit:'Divine Aegis'},
-    normal:{type:'burst',mult:2.2,chargeMs:6000}, limit:{type:'burst',mult:5.5,orders:5},
-    gear:{weapon:{r:'epic',lv:12}, armor:{r:'rare',lv:9}, trinket:{r:'rare',lv:7}}, squad:true},
-  {k:'ranger', name:'Ranger', rar:'rare', weapon:'bow', level:10, asc:0, atk:16, hp:165,
-    p:{s:1.7,x:.022,y:-.407},
-    abil:{basic:'Attack', normal:'Volley', limit:'Arrow Storm'},
-    normal:{type:'burst',mult:2.4,chargeMs:5500}, limit:{type:'aoe',mult:3,orders:5},
-    gear:{weapon:{r:'rare',lv:6}, armor:null, trinket:null}, squad:true},
-  {k:'wizard', name:'Wizard', rar:'epic', weapon:'magic', level:15, asc:1, atk:20, hp:142.5,
-    p:{s:1.7,x:0,y:-.307},
-    abil:{basic:'Attack', normal:'Fireball', limit:'Meteor'},
-    normal:{type:'aoe',mult:1.8,chargeMs:6500}, limit:{type:'aoe',mult:4,orders:5},
-    gear:{weapon:{r:'epic',lv:10}, armor:{r:'rare',lv:6}, trinket:{r:'uncommon',lv:4}}, squad:true},
-  {k:'cleric', name:'Cleric', rar:'rare', weapon:'magic', level:9, asc:0, atk:12, hp:187.5,
-    p:{s:1.55,x:.007,y:-.328},
-    abil:{basic:'Attack', normal:'Heal', limit:'Sanctuary'},
-    normal:{type:'heal',frac:0.12,chargeMs:6000}, limit:{type:'heal',frac:0.35,orders:5},
-    gear:{weapon:{r:'rare',lv:5}, armor:{r:'rare',lv:5}, trinket:null}, squad:true},
-  {k:'barbarian', name:'Barbarian', rar:'common', weapon:'blade', level:6, asc:0, atk:12, hp:247.5,
-    p:{s:1.55,x:-.034,y:-.285},
-    abil:{basic:'Attack', normal:'Wild Swing', limit:'Earthbreaker'},
-    normal:{type:'aoe',mult:1.5,chargeMs:6500}, limit:{type:'aoe',mult:3.5,orders:5},
-    gear:{weapon:{r:'common',lv:3}, armor:null, trinket:null}, squad:false},
+const HEROES=[
+ {k:'knight',name:'Knight',rar:'rare',weapon:'blade',level:12,asc:1,atk:14,hp:270,locked:false,p:{s:1.75,x:-.107,y:-.423},
+  abil:{basic:'Attack',normal:'Shield Bash',limit:'Valor Strike'},normal:{type:'burst',mult:2.2,chargeMs:6000},limit:{type:'burst',mult:5.5,orders:5},
+  gear:{weapon:{r:'rare',lv:8},armor:{r:'uncommon',lv:5},trinket:null},squad:true},
+ {k:'paladin',name:'Paladin',rar:'legendary',weapon:'blade',level:20,asc:2,atk:22,hp:315,locked:true,p:{s:1.45,x:-.016,y:-.225},
+  abil:{basic:'Attack',normal:'Consecrate',limit:'Divine Aegis'},normal:{type:'burst',mult:2.2,chargeMs:6000},limit:{type:'burst',mult:5.5,orders:5},
+  gear:{weapon:{r:'epic',lv:12},armor:{r:'rare',lv:9},trinket:{r:'rare',lv:7}},squad:true},
+ {k:'ranger',name:'Ranger',rar:'rare',weapon:'bow',level:10,asc:0,atk:16,hp:165,locked:false,p:{s:1.7,x:.022,y:-.407},
+  abil:{basic:'Attack',normal:'Volley',limit:'Arrow Storm'},normal:{type:'burst',mult:2.4,chargeMs:5500},limit:{type:'aoe',mult:3,orders:5},
+  gear:{weapon:{r:'rare',lv:6},armor:null,trinket:null},squad:true},
+ {k:'wizard',name:'Wizard',rar:'epic',weapon:'magic',level:15,asc:1,atk:20,hp:142.5,locked:false,p:{s:1.7,x:0,y:-.307},
+  abil:{basic:'Attack',normal:'Fireball',limit:'Meteor'},normal:{type:'aoe',mult:1.8,chargeMs:6500},limit:{type:'aoe',mult:4,orders:5},
+  gear:{weapon:{r:'epic',lv:10},armor:{r:'rare',lv:6},trinket:{r:'uncommon',lv:4}},squad:true},
+ {k:'cleric',name:'Cleric',rar:'rare',weapon:'magic',level:9,asc:0,atk:12,hp:187.5,locked:false,p:{s:1.55,x:.007,y:-.328},
+  abil:{basic:'Attack',normal:'Heal',limit:'Sanctuary'},normal:{type:'heal',frac:.12,chargeMs:6000},limit:{type:'heal',frac:.35,orders:5},
+  gear:{weapon:{r:'rare',lv:5},armor:{r:'rare',lv:5},trinket:null},squad:true},
+ {k:'barbarian',name:'Barbarian',rar:'common',weapon:'blade',level:6,asc:0,atk:12,hp:247.5,locked:false,p:{s:1.55,x:-.034,y:-.285},
+  abil:{basic:'Attack',normal:'Wild Swing',limit:'Earthbreaker'},normal:{type:'aoe',mult:1.5,chargeMs:6500},limit:{type:'aoe',mult:3.5,orders:5},
+  gear:{weapon:{r:'common',lv:3},armor:null,trinket:null},squad:false},
 ];
-const ART = (k) => `../../assets/combatclean/heroes/${k}.png`;
+const ART=k=>`../../assets/combatclean/heroes/${k}.png`;
+const atkAt=h=>Math.round(h.atk*(1+.06*(h.level-1))*(1+.08*h.asc));
+const hpAt=h=>Math.round(h.hp*(1+.06*(h.level-1))*(1+.08*h.asc));
+const defAt=h=>Math.round(atkAt(h)*0.22+hpAt(h)*0.015);
+const gpow=g=>g?({common:1,uncommon:2,rare:3,epic:4,legendary:5}[g.r]*12+g.lv*4):0;
+const power=h=>Math.round(atkAt(h)*2+hpAt(h)/2+SLOTS.reduce((s,sl)=>s+gpow(h.gear[sl]),0));
+const lvlCost=h=>120+h.level*40;const expNext=h=>100+h.level*40;
+const abilLv=h=>1+h.asc;
+const desc=a=>a.type==='heal'?`Heals the party for ${Math.round(a.frac*100)}% of max HP.`:a.type==='aoe'?`Deals ${a.mult}× ATK to ALL enemies.`:`Deals ${a.mult}× ATK to the focus target.`;
+const pcss=p=>`transform:translate(${p.x*100}%,${p.y*100}%) scale(${p.s})`;
+const cap1=s=>s[0].toUpperCase()+s.slice(1);
+const $=id=>document.getElementById(id);
+const heroByKey=k=>HEROES.find(x=>x.k===k);
+const squad_grid=$('squad-grid'),roster_grid=$('roster-grid');
 
-/* ── illustrative derived numbers (real formula lives in model/heroes.js) ── */
-const atkAt = h => Math.round(h.atk * (1 + 0.06*(h.level-1)) * (1 + 0.08*h.asc));
-const hpAt  = h => Math.round(h.hp  * (1 + 0.06*(h.level-1)) * (1 + 0.08*h.asc));
-const gearPow = g => g ? ({common:1,uncommon:2,rare:3,epic:4,legendary:5}[g.r]*12 + g.lv*4) : 0;
-const gearTotal = h => Object.values(h.gear).reduce((s,g)=>s+gearPow(g),0);
-const power = h => Math.round(atkAt(h)*2 + hpAt(h)/2 + gearTotal(h));
-const cap = h => MAX_LEVEL; // display cap; ascension adds to it in the real model
-const abilLevel = h => 1 + h.asc; // illustrative: ascension bumps ability level
+/* roster */
+const tile=(h,i)=>`<div class="tile" style="--rar:${RAR[h.rar]}" data-i="${i}">
+  <img class="art" src="${ART(h.k)}" style="${pcss(h.p)}"/>
+  <span class="pow"><i>⚔</i> ${power(h)}</span><span class="lv"><s>LV</s>${h.level}</span><span class="nm">${h.name}</span></div>`;
+squad_grid.innerHTML=HEROES.map((h,i)=>h.squad?tile(h,i):'').join('');
+roster_grid.innerHTML=HEROES.map((h,i)=>!h.squad?tile(h,i):'').join('');
+document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>openMenu(+t.dataset.i));
 
-const abilityDesc = (a) => {
-  if (a.type==='heal')  return `Heals the party for ${Math.round(a.frac*100)}% of max HP.`;
-  if (a.type==='aoe')   return `Deals ${a.mult}× ATK to ALL enemies.`;
-  return `Deals ${a.mult}× ATK to the focus target.`;
+/* ── EXACT gameplay level-up VFX (ported 1:1 from src/view/fx/hero-fx.js) ── */
+let _portal=null;
+function portal(){if(!_portal||!_portal.isConnected){_portal=document.createElement('div');_portal.className='hero-float-portal';document.body.appendChild(_portal);}return _portal;}
+const centerOf=el=>{const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};};
+function burstInto(host){if(!host)return;
+  const f=document.createElement('div');f.className='lvfx-flash';host.appendChild(f);
+  f.animate([{opacity:0},{opacity:1,offset:.2},{opacity:0}],{duration:420,easing:'ease-out'}).onfinish=()=>f.remove();
+  const rays=document.createElement('div');rays.className='lvfx-rays';host.appendChild(rays);
+  rays.animate([{opacity:0,transform:'translate(-50%,-50%) rotate(0deg) scale(.4)'},{opacity:.85,transform:'translate(-50%,-50%) rotate(40deg) scale(1)',offset:.3},{opacity:0,transform:'translate(-50%,-50%) rotate(95deg) scale(1.3)'}],{duration:700,easing:'ease-out'}).onfinish=()=>rays.remove();
+  for(let i=0;i<2;i++){const r=document.createElement('div');r.className='lvfx-ring';host.appendChild(r);
+    r.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},{transform:'translate(-50%,-50%) scale(5)',opacity:0}],{duration:520+i*150,delay:i*100,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>r.remove();}
+  for(let i=0;i<14;i++){const s=document.createElement('div');s.className='lvfx-spark';host.appendChild(s);
+    const a=(i/14)*Math.PI*2+Math.random()*.4,d=26+Math.random()*40;
+    s.animate([{transform:'translate(-50%,-50%) translate(0,0) scale(1)',opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px) scale(.3)`,opacity:0}],{duration:560+Math.random()*200,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove();}}
+function particleBurst(cx,cy,big){const p=portal();const n=big?34:15,base=big?55:28,spread=big?150:70,size=big?8:5;
+  for(let i=0;i<n;i++){const s=document.createElement('div');s.className='pburst';s.style.left=cx+'px';s.style.top=cy+'px';s.style.width=size+'px';s.style.height=size+'px';p.appendChild(s);
+    const a=(i/n)*Math.PI*2+Math.random()*.5,d=base+Math.random()*spread;
+    s.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px) scale(.2)`,opacity:0}],{duration:(big?900:620)+Math.random()*260,easing:'cubic-bezier(.15,.7,.3,1)'}).onfinish=()=>s.remove();}
+  if(big){const ring=document.createElement('div');ring.className='pburst-ring';ring.style.left=cx+'px';ring.style.top=cy+'px';p.appendChild(ring);
+    ring.animate([{transform:'translate(-50%,-50%) scale(.2)',opacity:1},{transform:'translate(-50%,-50%) scale(10)',opacity:0}],{duration:720,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>ring.remove();}}
+function floatText(x,y,text,cls,delay,dur){dur=dur||1600;
+  setTimeout(()=>{const d=document.createElement('div');d.className='hero-float '+cls;d.textContent=text;d.style.left=x+'px';d.style.top=y+'px';portal().appendChild(d);
+    d.animate([{transform:'translate(-50%,-50%) scale(.5)',opacity:0},{transform:'translate(-50%,-130%) scale(1.12)',opacity:1,offset:.28},{transform:'translate(-50%,-315%) scale(1)',opacity:0}],{duration:dur,easing:'ease-out'}).onfinish=()=>d.remove();},delay);}
+function tween(node,from,to,ms,f){if(!node)return;const t0=performance.now();
+  (function step(now){const k=Math.min(1,(now-t0)/ms);const e=1-(1-k)*(1-k);const v=Math.round(from+(to-from)*e);node.textContent=f?f(v):v;if(k<1)requestAnimationFrame(step);})(t0);
+  node.animate([{transform:'scale(1)'},{transform:'scale(1.5)',offset:.3},{transform:'scale(1)'}],{duration:ms,easing:'ease-out'});}
+function maxedOut(cx,cy){particleBurst(cx,cy,true);
+  const d=document.createElement('div');d.className='hero-float maxed';d.style.left=cx+'px';d.style.top=(cy-8)+'px';portal().appendChild(d);
+  const word='MAXED OUT';let i=0;
+  const typer=setInterval(()=>{i++;d.textContent=word.slice(0,i);
+    d.animate([{transform:'translate(-50%,-50%) rotate(-4deg) scale(1.1)'},{transform:'translate(-50%,-50%) rotate(4deg) scale(1.02)',offset:.5},{transform:'translate(-50%,-50%) rotate(0deg) scale(1)'}],{duration:110,easing:'ease-out'});
+    if(i>=word.length){clearInterval(typer);setTimeout(()=>{d.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate(-50%,-50%) scale(0)',opacity:0}],{duration:560,easing:'cubic-bezier(.7,0,.84,0)'}).onfinish=()=>d.remove();},3000);}},55);}
+function fxHostAt(cx,cy,w,h){const el=document.createElement('div');el.style.cssText=`position:fixed;left:${cx-w/2}px;top:${cy-h/2}px;width:${w}px;height:${h}px;pointer-events:none;z-index:9998`;document.body.appendChild(el);setTimeout(()=>el.remove(),1300);return el;}
+
+/* Hero level-up — exact fxHeroLevelUp choreography, centered on the hero. */
+function heroLevelUpFX(fromLv,toLv,fromPow,toPow){
+  const heroEl=$('hm-img'),levels=toLv-fromLv,gain=Math.max(0,toPow-fromPow),multi=levels>1;
+  heroEl.animate([{transform:'scale(1)'},{transform:`scale(${multi?1.12:1.09})`,offset:.3},{transform:'scale(.99)',offset:.6},{transform:'scale(1)'}],{duration:multi?620:520,easing:'cubic-bezier(.2,1.4,.3,1)'});
+  const c=centerOf(heroEl);
+  burstInto(fxHostAt(c.x,c.y,260,300));
+  particleBurst(c.x,c.y,multi);
+  tween($('pw-val'),fromPow,toPow,multi?900:720);
+  tween($('st-lv'),fromLv,toLv,multi?900:500);
+  const stats=[{t:'+'+Math.max(1,Math.round(gain*.13))+' ATK',c:'atk'},{t:'+'+Math.max(1,Math.round(gain*.9))+' HP',c:'hp'},{t:'+'+gain+' PWR',c:'pwr'}];
+  if(!multi){floatText(c.x,c.y-4,'LEVEL UP!','hd',0);stats.forEach((s,i)=>floatText(c.x+(i-1)*3,c.y,s.t,'stat '+s.c,210+i*160));
+    if(toLv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),320);}
+  else{const st=Math.max(55,Math.min(150,Math.round(900/levels)));
+    for(let k=0;k<levels;k++){floatText(c.x+(Math.random()*22-11),c.y,'LEVEL UP','lvup',k*st);if(k%3===0)particleBurst(c.x,c.y,false);}
+    const after=levels*st+150;stats.forEach((s,i)=>floatText(c.x+(i-1)*3,c.y,s.t,'stat '+s.c,after+i*160,2600));
+    if(toLv>=MAX_LEVEL)setTimeout(()=>maxedOut(c.x,c.y),after+120);}}
+
+/* Gear level-up — same primitives, played on a gear element + hero power tween. */
+function gearLevelUpFX(el,fromPow,toPow,levels){
+  if(!el)return;const c=centerOf(el),gain=Math.max(0,toPow-fromPow),multi=levels>1;
+  el.animate([{transform:'scale(1)'},{transform:'scale(1.22)',offset:.35},{transform:'scale(1)'}],{duration:420,easing:'cubic-bezier(.2,1.4,.3,1)'});
+  burstInto(fxHostAt(c.x,c.y,120,120));particleBurst(c.x,c.y,multi);
+  if(multi){const st=Math.max(45,Math.min(120,Math.round(700/levels)));for(let k=0;k<levels;k++)floatText(c.x,c.y-6,'LEVEL UP','lvup',k*st);floatText(c.x,c.y,'+'+gain+' PWR','stat pwr',levels*st+120,2600);}
+  else floatText(c.x,c.y,'+'+gain+' PWR','stat pwr',0);
+  tween($('pw-val'),fromPow,toPow,multi?720:520);}
+
+/* hero menu */
+const M=$('hero-menu');let cur=0,exp=.45;
+const gslotHTML=(slot,h)=>{const g=h.gear[slot];
+  return g?`<div class="gslot" data-slot="${slot}" style="--gr:${GRAR[g.r]}"><span class="gi">${GEAR_ICON[slot]}</span><span class="glv">${g.lv}</span></div>`
+          :`<div class="gslot empty" data-slot="${slot}"><span class="gi">${GEAR_ICON[slot]}</span></div>`;};
+function render(){
+  const h=HEROES[cur];
+  M.style.setProperty('--rar',RAR[h.rar]);
+  $('t-tier').textContent=cap1(h.rar);$('t-class').textContent=CLASS[h.weapon];$('t-name').textContent=h.name;
+  $('hm-img').src=ART(h.k);
+  const lk=$('hm-lock');lk.classList.toggle('on',h.locked);lk.textContent=h.locked?'🔒':'🔓';
+  $('gear-left').innerHTML=SLOTS.map(s=>gslotHTML(s,h)).join('');
+  $('abil-right').innerHTML=[['👊','basic'],['✨','normal'],['💥','limit']].map((it,i)=>
+    `<button class="abil" data-sk="${i}"><span class="ai">${it[0]}</span><span class="alv">${abilLv(h)}</span></button>`).join('');
+  $('pw-val').textContent=power(h);
+  $('st-lv').textContent=h.level;$('st-hp').textContent=hpAt(h);$('st-atk').textContent=atkAt(h);$('st-def').textContent=defAt(h);
+  const atMax=h.level>=MAX_LEVEL;
+  $('hm-expfill').style.width=(atMax?100:exp*100)+'%';
+  $('hm-exptxt').textContent=atMax?'MAX LEVEL':`EXP ${Math.round(exp*expNext(h))} / ${expNext(h)}`;
+  const bl=$('btn-lvl');bl.disabled=atMax;bl.innerHTML=atMax?'★ MAX LEVEL':`LEVEL UP<small>📘 ${lvlCost(h)}</small>`;
+  const asc=$('btn-asc');const canAsc=h.asc<MAX_ASC;asc.style.display=canAsc?'':'none';asc.innerHTML=`✦ ASCEND<small>${h.asc}/${MAX_ASC}</small>`;
+  wire();
+}
+let tt;function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),1500);}
+function flash(){$('hm-img').animate([{filter:'brightness(2.2)'},{filter:'brightness(1)'}],{duration:440,easing:'ease-out'});}
+function openSkill(i){const h=HEROES[cur];
+  const A=[['👊','Basic',h.abil.basic,'Standard attack on the focus target.'],
+           ['✨','Skill',h.abil.normal,`${desc(h.normal)} Charges every ${(h.normal.chargeMs/1000).toFixed(1)}s.`],
+           ['💥','Ultimate',h.abil.limit,`${desc(h.limit)} Fires after ${h.limit.orders} orders.`]][i];
+  $('skill-card').innerHTML=`<div class="skhead"><div class="sc">${A[0]}</div><div><div class="styp">${A[1]} · Lv ${abilLv(h)}</div><div class="snm">${A[2]}</div></div></div><div class="skdesc">${A[3]}</div>`;
+  $('skill-sheet').classList.add('open');wireClose();}
+function wire(){
+  document.querySelectorAll('#gear-left .gslot[data-slot]').forEach(s=>s.onclick=()=>openEquip(s.dataset.slot));
+  document.querySelectorAll('#abil-right .abil').forEach(b=>b.onclick=()=>openSkill(+b.dataset.sk));
+  document.querySelectorAll('.hm-actions .btn').forEach(b=>b.onclick=()=>{const h=HEROES[cur],a=b.dataset.act;
+    if(a==='lvl'){if(h.level>=MAX_LEVEL)return;const fl=h.level,fp=power(h);h.level++;exp=.12;render();heroLevelUpFX(fl,h.level,fp,power(h));}
+    else if(a==='lvlmax'){if(h.level>=MAX_LEVEL){const c=centerOf($('hm-img'));maxedOut(c.x,c.y);return;}const fl=h.level,fp=power(h);h.level=MAX_LEVEL;exp=1;render();heroLevelUpFX(fl,h.level,fp,power(h));}
+    else if(a==='lvlgear'){levelAllGear(false);}
+    else if(a==='lvlgearmax'){levelAllGear(true);}
+    else if(a==='equipbest'){equipBestAll();}
+    else if(a==='ascend'){if(h.asc<MAX_ASC){h.asc++;render();flash();toast('Ascended! +ability level & level cap.');}else toast('Max ascension.');}});
+  $('hm-info').onclick=()=>{const h=HEROES[cur];
+    $('stats-body').innerHTML=[['⚔ Power',power(h)],['🗡 Attack',atkAt(h)],['❤ Health',hpAt(h)],['🛡 Defense',defAt(h)+' (illustrative)'],['⬆ Level',`${h.level}/${MAX_LEVEL}`],['✦ Ascension',`${h.asc}/${MAX_ASC}`]]
+      .map(r=>`<div class="statline"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+    $('stats-sheet').classList.add('open');wireClose();};
+}
+function wireClose(){
+  document.querySelectorAll('[data-close]').forEach(x=>x.onclick=()=>document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open')));
+  document.querySelectorAll('[data-close-cmp]').forEach(x=>x.onclick=()=>$('confirm-sheet').classList.remove('open'));
+  document.querySelectorAll('[data-close-eq]').forEach(x=>x.onclick=()=>$('equip-sheet').classList.remove('open'));
+}
+
+/* level all equipped gear */
+function levelAllGear(max){const h=HEROES[cur];const worn=SLOTS.filter(s=>h.gear[s]);
+  if(!worn.length)return toast('No gear equipped.');
+  const fp=power(h);let any=false;
+  worn.forEach(s=>{const g=h.gear[s];const target=max?GEAR_MAX:Math.min(GEAR_MAX,g.lv+1);if(target<=g.lv)return;any=true;const from=g.lv;g.lv=target;if(g.id){const inv=(INVENTORY[s]||[]).find(x=>x.id===g.id);if(inv)inv.lv=g.lv;g._levels=g.lv-from;}g._levels=g.lv-from;});
+  if(!any)return toast('Gear already maxed.');
+  render();
+  worn.forEach(s=>{const el=document.querySelector(`#gear-left .gslot[data-slot="${s}"]`);if(el){const c=centerOf(el);burstInto(fxHostAt(c.x,c.y,110,110));particleBurst(c.x,c.y,false);floatText(c.x,c.y-6,'LEVEL UP','lvup',0);}});
+  tween($('pw-val'),fp,power(h),720);
+  const hc=centerOf($('hm-img'));floatText(hc.x,hc.y,'+'+(power(h)-fp)+' PWR','stat pwr',200);}
+
+/* ── equip dialog ── */
+const INVENTORY={
+  weapon:[{id:'w1',r:'legendary',lv:5},{id:'w2',r:'epic',lv:10,equippedBy:'ranger'},{id:'w3',r:'rare',lv:8},{id:'w4',r:'rare',lv:4},{id:'w5',r:'uncommon',lv:6},{id:'w6',r:'common',lv:2},{id:'w7',r:'rare',lv:6},{id:'w8',r:'uncommon',lv:3},{id:'w9',r:'common',lv:5},{id:'w10',r:'epic',lv:2},{id:'w11',r:'rare',lv:1},{id:'w12',r:'common',lv:7}],
+  armor:[{id:'a1',r:'epic',lv:6,equippedBy:'wizard'},{id:'a2',r:'rare',lv:9},{id:'a3',r:'uncommon',lv:7},{id:'a4',r:'common',lv:3},{id:'a5',r:'rare',lv:4},{id:'a6',r:'uncommon',lv:2},{id:'a7',r:'common',lv:6},{id:'a8',r:'rare',lv:3},{id:'a9',r:'uncommon',lv:5},{id:'a10',r:'common',lv:1}],
+  trinket:[{id:'t1',r:'epic',lv:4,equippedBy:'paladin'},{id:'t2',r:'rare',lv:7},{id:'t3',r:'uncommon',lv:5},{id:'t4',r:'common',lv:2},{id:'t5',r:'rare',lv:3},{id:'t6',r:'uncommon',lv:6},{id:'t7',r:'common',lv:4},{id:'t8',r:'rare',lv:2},{id:'t9',r:'epic',lv:6},{id:'t10',r:'common',lv:5}],
 };
-const stars = (n) => Array.from({length:MAX_ASC},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('');
-const portraitCss = (p) => `transform:translate(${p.x*100}%,${p.y*100}%) scale(${p.s})`;
-
-/* ── roster render ────────────────────────────────────────────────── */
-const tile = (h,i) => `
-  <div class="tile" style="--rar:${RAR[h.rar]}" data-i="${i}">
-    <img class="art" src="${ART(h.k)}" style="${portraitCss(h.p)}" alt="${h.name}"/>
-    <span class="pow"><i>⚔</i> ${power(h)}</span>
-    <span class="stars">${Array.from({length:MAX_ASC},(_,k)=>`<i class="${k<h.asc?'on':''}">★</i>`).join('')}</span>
-    <span class="lv"><s>LV</s>${h.level}</span>
-    <span class="nm">${h.name}</span>
-  </div>`;
-document.getElementById('squad-grid').innerHTML  = HEROES.map((h,i)=>h.squad?tile(h,i):'').join('');
-document.getElementById('roster-grid').innerHTML = HEROES.map((h,i)=>!h.squad?tile(h,i):'').join('');
-document.querySelectorAll('.tile').forEach(t=> t.addEventListener('click',()=>openMenu(+t.dataset.i)));
-
-/* ── hero menu ────────────────────────────────────────────────────── */
-const menu = document.getElementById('hero-menu');
-let cur = 0, tab = 'overview';
-
-function setVar(el,h){ el.style.setProperty('--rar', RAR[h.rar]); }
-
-function renderGearRail(h){
-  const slots = ['weapon','armor','trinket'];
-  let html = slots.map(s=>{
-    const g = h.gear[s];
-    if(!g) return `<div class="gslot empty" data-slot="${s}"><span class="gi">${GEAR_ICON[s]}</span></div>`;
-    return `<div class="gslot" data-slot="${s}" style="--gr:${GRAR[g.r]}">
-        <span class="gi">${GEAR_ICON[s]}</span><span class="glv">${g.lv}</span></div>`;
-  }).join('');
-  // AFK-style Signature slot, gated at Mythic (locked here — a design proposal, not yet a system)
-  const siLocked = !['mythic','primal'].includes(h.rar);
-  html += `<div class="gslot locked" data-slot="sig">${siLocked
-      ? '<div class="lockcap">SIG<br>MYTHIC</div>' : '<span class="gi">✦</span>'}</div>`;
-  return html;
+function itemStats(slot,it){if(!it)return{pow:0,atk:0,hp:0,def:0};const p=gpow(it);
+  const by={weapon:{atk:Math.round(p*.9),hp:0,def:0},armor:{atk:0,hp:Math.round(p*6),def:Math.round(p*.3)},trinket:{atk:Math.round(p*.4),hp:Math.round(p*3),def:0}};
+  return {pow:p,...(by[slot]||{atk:0,hp:0,def:0})};}
+function colHTML(slot,it,label){if(!it)return `<div class="ci"><div class="cl">${label}</div><div class="cx">➖</div><div class="cn" style="color:var(--dim)">Empty</div><div class="cst" style="color:var(--dim)">⚔ 0</div></div>`;
+  return `<div class="ci" style="--gr:${GRAR[it.r]}"><div class="cl">${label}</div><div class="cx">${GEAR_ICON[slot]}<span class="clv">Lv${it.lv}</span></div><div class="cn" style="color:${GRAR[it.r]}">${it.r.toUpperCase()}</div><div class="cst">⚔ ${gpow(it)}</div></div>`;}
+function deltaRow(a,b){return [['POW','pow'],['ATK','atk'],['HP','hp'],['DEF','def']].map(([lbl,k])=>{const d=(b[k]||0)-(a[k]||0);if(!(a[k]||b[k]))return '';const cls=d>0?'up':d<0?'dn':'eq';const t=d>0?'▲ +'+d:(d<0?'▼ '+Math.abs(d):'—');return `<div class="dl"><span>${lbl}</span><b class="${cls}">${t}</b></div>`;}).join('');}
+let pendingEq=null,eqSlot=null;
+function openEquip(slot){
+  eqSlot=slot;const h=HEROES[cur],cur0=h.gear[slot],items=INVENTORY[slot]||[];
+  $('eq-title').textContent=`Equip · ${cap1(slot)}`;
+  $('eq-cur').innerHTML=cur0
+    ? `<div class="ic" style="--gr:${GRAR[cur0.r]}">${GEAR_ICON[slot]}</div><div><div class="nm">${cur0.r.toUpperCase()} ${cap1(slot)}</div><div class="rr" style="color:${GRAR[cur0.r]}">Lv ${cur0.lv}</div></div><div class="pw">⚔ ${gpow(cur0)}</div>`
+    : `<div class="ic">${GEAR_ICON[slot]}</div><div><div class="nm">Empty slot</div><div class="rr" style="color:var(--dim)">pick an item below</div></div>`;
+  $('eq-grid').innerHTML=items.map(it=>{
+    const d=gpow(it)-(cur0?gpow(cur0):0),on=cur0&&cur0.id===it.id;
+    const owner=it.equippedBy&&it.equippedBy!==h.k?heroByKey(it.equippedBy):null;
+    return `<div class="eq-item ${on?'on':''}" data-eq="${it.id}" style="--gr:${GRAR[it.r]}">
+      <span class="lv">Lv${it.lv}</span>${on?'<span class="eqbadge">✓</span>':''}
+      <span class="gi">${GEAR_ICON[slot]}</span><span class="pw">⚔ ${gpow(it)}</span>
+      <span class="d ${d>=0?'up':'dn'}">${on?'equipped':(d>=0?'▲ +'+d:'▼ '+Math.abs(d))}</span>
+      ${owner?`<span class="owner">👤${owner.name[0]}</span>`:''}</div>`;
+  }).join('')||`<div style="grid-column:1/5;color:var(--dim);text-align:center;padding:22px">No items for this slot.</div>`;
+  document.querySelectorAll('#eq-grid .eq-item').forEach(el=>el.onclick=()=>promptEquip(slot,items.find(x=>x.id===el.dataset.eq)));
+  $('eq-best').onclick=()=>{const pool=items.filter(it=>!it.equippedBy||it.equippedBy===HEROES[cur].k);
+    if(!pool.length)return toast('No free items for this slot.');promptEquip(slot,pool.reduce((a,b)=>gpow(b)>gpow(a)?b:a));};
+  $('eq-levelup').onclick=()=>eqLevelUp();
+  const eqcur=h.gear[slot];$('eq-levelup').disabled=!eqcur||eqcur.lv>=GEAR_MAX;
+  $('equip-sheet').classList.add('open');wireClose();
 }
-
-function renderOverview(h){
-  const g = h.gear;
-  const gearRow = (s)=>{ const it=g[s]; return it
-    ? `<div class="gearrow" style="--gr:${GRAR[it.r]}"><span class="gic">${GEAR_ICON[s]}</span>
-         <div><div class="gnm">${s[0].toUpperCase()+s.slice(1)}</div><div class="grr">${it.r.toUpperCase()} · Lv ${it.lv}</div></div>
-         <span class="gpw">⚔ ${gearPow(it)}</span></div>`
-    : `<div class="gearrow"><span class="gic" style="opacity:.4">${GEAR_ICON[s]}</span>
-         <div><div class="gnm" style="color:var(--dim)">${s[0].toUpperCase()+s.slice(1)}</div><div class="grr" style="color:var(--faint)">empty — tap to equip</div></div></div>`; };
-  return `
-    <div class="statgrid">
-      <div class="stat big"><span class="k">⚔ POWER</span><span class="v">${power(h)}</span></div>
-      <div class="stat"><span class="k">ATK</span><span class="v">${atkAt(h)}</span></div>
-      <div class="stat"><span class="k">HP</span><span class="v">${hpAt(h)}</span></div>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:12px">
-      <span class="chip">${GEAR_ICON.weapon} ${WEAPON_LABEL[h.weapon]}</span>
-      <span class="chip">✦ Ascension ${h.asc}/${MAX_ASC}</span>
-      <span class="chip">Lv ${h.level}/${cap(h)}</span>
-    </div>
-    <div class="seclabel" style="margin:2px 2px 8px">Equipment</div>
-    <div class="gearlist">${['weapon','armor','trinket'].map(gearRow).join('')}</div>`;
+function promptEquip(slot,it){
+  const h=HEROES[cur],cur0=h.gear[slot];
+  if(!it)return;if(cur0&&cur0.id===it.id){toast('Already equipped.');return;}
+  pendingEq={slot,it};
+  $('cmp-title').textContent=`Change ${cap1(slot)}`;
+  $('cmp-cur').innerHTML=colHTML(slot,cur0,'Equipped');
+  $('cmp-new').innerHTML=colHTML(slot,it,'New');
+  $('cmp-deltas').innerHTML=deltaRow(itemStats(slot,cur0),itemStats(slot,it));
+  const owner=it.equippedBy&&it.equippedBy!==h.k?heroByKey(it.equippedBy):null,w=$('cmp-warn');
+  if(owner){w.classList.add('show');w.innerHTML=`⚠ Currently equipped by <b>${owner.name}</b>. Equipping will remove it from them.`;}else w.classList.remove('show');
+  $('confirm-sheet').classList.add('open');wireClose();
 }
-
-function renderSkills(h){
-  const card=(icon,typ,name,desc,lv)=>`
-    <div class="skill">
-      <div class="sic">${icon}</div>
-      <div style="flex:1;min-width:0">
-        <div class="styp">${typ}</div><div class="snm">${name}</div><div class="sds">${desc}</div>
-      </div>
-      <div class="slv">Lv ${lv}</div>
-    </div>`;
-  return card('👊','Basic', h.abil.basic, 'Standard attack on the focus target.', abilLevel(h))
-       + card('✨','Skill', h.abil.normal, `${abilityDesc(h.normal)} Charges every ${(h.normal.chargeMs/1000).toFixed(1)}s.`, abilLevel(h))
-       + card('💥','Ultimate', h.abil.limit, `${abilityDesc(h.limit)} Fires after ${h.limit.orders} orders.`, abilLevel(h));
+$('cmp-confirm').onclick=()=>{if(pendingEq){const p=pendingEq;pendingEq=null;equip(p.slot,p.it);}};
+function equip(slot,it){
+  if(!it)return;const h=HEROES[cur],prev=h.gear[slot];
+  if(prev&&prev.id){const pv=(INVENTORY[slot]||[]).find(x=>x.id===prev.id);if(pv)pv.equippedBy=null;}
+  if(it.equippedBy&&it.equippedBy!==h.k){const o=heroByKey(it.equippedBy);if(o&&o.gear[slot]&&o.gear[slot].id===it.id)o.gear[slot]=null;}
+  it.equippedBy=h.k;h.gear[slot]={...it};
+  $('confirm-sheet').classList.remove('open');
+  render();openEquip(slot);flash();toast(`Equipped ${it.r.toUpperCase()} ${cap1(slot)} · Lv ${it.lv}.`);
 }
+/* level up THIS equipped piece */
+function eqLevelUp(){const h=HEROES[cur],slot=eqSlot,g=h.gear[slot];
+  if(!g)return toast('Equip an item first.');
+  if(g.lv>=GEAR_MAX)return toast('Gear already maxed.');
+  const fp=power(h);g.lv++;if(g.id){const inv=(INVENTORY[slot]||[]).find(x=>x.id===g.id);if(inv)inv.lv=g.lv;}
+  render();openEquip(slot);
+  const icon=document.querySelector('#eq-cur .ic');gearLevelUpFX(icon||$('eq-cur'),fp,power(h),1);}
+/* equip best from the FREE POOL only (never off another hero) */
+function equipBestAll(){const h=HEROES[cur];let changed=0;
+  SLOTS.forEach(slot=>{const pool=(INVENTORY[slot]||[]).filter(it=>!it.equippedBy||it.equippedBy===h.k);if(!pool.length)return;
+    const best=pool.reduce((a,b)=>gpow(b)>gpow(a)?b:a),cur0=h.gear[slot];
+    if(cur0&&(cur0.id===best.id||gpow(cur0)>=gpow(best)))return;
+    if(cur0&&cur0.id){const pv=(INVENTORY[slot]||[]).find(x=>x.id===cur0.id);if(pv)pv.equippedBy=null;}
+    best.equippedBy=h.k;h.gear[slot]={...best};changed++;});
+  render();if(changed){flash();toast(`Equipped best free gear · ${changed} slot${changed>1?'s':''}.`);}else toast('Already optimally geared from the pool.');}
 
-function renderActions(h){
-  const atMax = h.level>=cap(h);
-  return `
-    <button class="btn gold" ${atMax?'disabled':''} data-act="lvl">${atMax?'★ MAX LEVEL':'⬆ LEVEL UP'}<small>${atMax?'':'📘 '+(120+h.level*40)}</small></button>
-    <button class="btn gold" ${atMax?'disabled':''} data-act="lvlmax">⏫ LEVEL MAX<small>${atMax?'':'use all XP'}</small></button>
-    <button class="btn green" data-act="ascend">✦ ASCEND ${h.asc}/${MAX_ASC}<small>🔁 sacrifices 1 copy</small></button>
-    <button class="btn blue" data-act="equipbest">✨ EQUIP BEST<small>auto-optimise gear</small></button>`;
-}
+$('hm-lock').onclick=()=>{const h=HEROES[cur];h.locked=!h.locked;render();toast(h.locked?'🔒 Locked — can’t be sold, burned, or merged.':'🔓 Unlocked.');};
+$('hm-back').onclick=()=>M.classList.remove('open');
+$('hm-prev').onclick=()=>{cur=(cur-1+HEROES.length)%HEROES.length;exp=.45;render();};
+$('hm-next').onclick=()=>{cur=(cur+1)%HEROES.length;exp=.45;render();};
 
-function renderMenu(){
-  const h = HEROES[cur];
-  setVar(menu,h);
-  document.getElementById('hm-name').textContent = h.name;
-  const rEl = document.getElementById('hm-rar'); rEl.textContent = h.rar.toUpperCase();
-  document.getElementById('hm-lv').textContent = h.level;
-  const img = document.getElementById('hm-img'); img.src = ART(h.k); img.alt = h.name;
-  document.getElementById('hm-stars').innerHTML = stars(h.asc);
-  document.getElementById('hm-gear').innerHTML = renderGearRail(h);
-  document.getElementById('hm-body').innerHTML = tab==='overview' ? renderOverview(h) : renderSkills(h);
-  document.getElementById('hm-actions').innerHTML = renderActions(h);
-  document.querySelectorAll('.hm-tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===tab));
-  wireDynamic();
-}
+/* drag-to-scroll (scrollbars hidden). Mouse only — touch keeps native momentum. */
+function dragScroll(el){if(!el)return;let down=false,sy=0,st=0,moved=false;
+  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||(e.button&&e.button!==0))return;down=true;moved=false;sy=e.clientY;st=el.scrollTop;});
+  window.addEventListener('pointermove',e=>{if(!down)return;const dy=e.clientY-sy;if(Math.abs(dy)>4)moved=true;el.scrollTop=st-dy;});
+  window.addEventListener('pointerup',()=>{down=false;});
+  el.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);}
+dragScroll(document.querySelector('.roster'));dragScroll($('eq-grid'));
 
-let toastT;
-function toast(msg){
-  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
-  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1300);
-}
-
-function wireDynamic(){
-  document.querySelectorAll('#hm-gear .gslot').forEach(s=>s.onclick=()=>{
-    const slot=s.dataset.slot;
-    if(slot==='sig') return toast('Signature item — proposed to unlock at MYTHIC tier (AFK-style).');
-    const g=HEROES[cur].gear[slot];
-    toast(g ? `${slot[0].toUpperCase()+slot.slice(1)} · ${g.r.toUpperCase()} Lv ${g.lv} — tap opens reequip/compare.` : `${slot} empty — tap opens item picker.`);
-  });
-  document.querySelectorAll('#hm-actions .btn').forEach(b=>b.onclick=()=>{
-    const h=HEROES[cur], act=b.dataset.act;
-    if(act==='lvl' && h.level<cap(h)){ h.level++; renderMenu(); flash(); }
-    else if(act==='lvlmax'){ h.level=cap(h); renderMenu(); flash(); }
-    else if(act==='ascend'){ if(h.asc<MAX_ASC){ h.asc++; renderMenu(); flash(); toast('Ascended! +ability level, +level cap (sacrifices a copy).'); } else toast('Already at max ascension.'); }
-    else if(act==='equipbest'){ toast('Auto-equips the best available item in each slot.'); }
-  });
-}
-function flash(){ const img=document.getElementById('hm-img'); img.animate([{filter:'brightness(2.2)'},{filter:'brightness(1)'}],{duration:420,easing:'ease-out'}); }
-
-function openMenu(i){ cur=i; tab='overview'; renderMenu(); menu.classList.add('open'); }
-function closeMenu(){ menu.classList.remove('open'); }
-
-document.getElementById('hm-back').onclick = closeMenu;
-document.getElementById('hm-prev').onclick = ()=>{ cur=(cur-1+HEROES.length)%HEROES.length; tab='overview'; renderMenu(); };
-document.getElementById('hm-next').onclick = ()=>{ cur=(cur+1)%HEROES.length; tab='overview'; renderMenu(); };
-document.querySelectorAll('.hm-tab').forEach(t=>t.addEventListener('click',()=>{ tab=t.dataset.tab; renderMenu(); }));
+function openMenu(i){cur=i;exp=.45;render();M.classList.add('open');}
 </script>
 </body>
 </html>

@@ -14,11 +14,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useRef, useEffect } from 'react';
+import { VFX_CONFIG } from '../data/config.js';
 
-const TAIL_LERP_DURATION = 0.5; // ghost catch-up (cubic ease-in), seconds
-const WHOLE_FLASH_DUR = 0.24; // whole-bar brightness/saturate/drop-shadow
-const PINK_FLASH_DUR = 0.6; // pink trailing layer (ghost only)
-const WHITE_BLIP_DUR = 0.06; // pure-white overlay blip
+const HP = VFX_CONFIG.hpbar;
+const TAIL_LERP_DURATION = HP.ghostLerpSec; // ghost catch-up (cubic ease-in), seconds
+const WHOLE_FLASH_DUR = HP.wholeFlashSec; // whole-bar brightness/saturate/drop-shadow
+const PINK_FLASH_DUR = HP.pinkFlashSec; // pink trailing layer (ghost only)
+const WHITE_BLIP_DUR = HP.whiteBlipSec; // pure-white overlay blip
 
 export default function HpBar({ frac, kind }) {
   const barRef = useRef(null);
@@ -71,8 +73,8 @@ export default function HpBar({ frac, kind }) {
       if (age < WHOLE_FLASH_DUR) {
         const env = (1 - age / WHOLE_FLASH_DUR) ** 3;
         bar.style.filter =
-          `brightness(${(1 + 2.2 * env).toFixed(3)}) saturate(${(1 + 1.5 * env).toFixed(3)}) ` +
-          `drop-shadow(0 0 ${(7 * env).toFixed(2)}px rgba(255,255,255,0.95))`;
+          `brightness(${(1 + HP.wholeFlash.brightness * env).toFixed(3)}) saturate(${(1 + HP.wholeFlash.saturate * env).toFixed(3)}) ` +
+          `drop-shadow(0 0 ${(HP.wholeFlash.dropShadowPx * env).toFixed(2)}px ${HP.wholeFlash.shadowColor})`;
       } else if (bar.style.filter) {
         bar.style.filter = '';
       }
@@ -81,7 +83,7 @@ export default function HpBar({ frac, kind }) {
       if (ghostSpan) {
         if (age < PINK_FLASH_DUR) {
           const env = (1 - age / PINK_FLASH_DUR) ** 2;
-          ghostSpan.style.filter = `brightness(${(1 + 1.2 * env).toFixed(3)}) saturate(${(1 + 1.5 * env).toFixed(3)})`;
+          ghostSpan.style.filter = `brightness(${(1 + HP.pinkFlash.brightness * env).toFixed(3)}) saturate(${(1 + HP.pinkFlash.saturate * env).toFixed(3)})`;
         } else if (ghostSpan.style.filter) {
           ghostSpan.style.filter = '';
         }
@@ -100,7 +102,7 @@ export default function HpBar({ frac, kind }) {
     };
   }, []);
 
-  const ghostColor = kind === 'enemy' ? '#B00063' : '#FF007C';
+  const ghostColor = kind === 'enemy' ? HP.ghostColor.enemy : HP.ghostColor.hero;
 
   return (
     <div ref={barRef} className={`bar hp ${kind === 'enemy' ? 'enemy' : ''}`}>

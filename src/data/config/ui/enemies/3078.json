@@ -1,5 +1,8 @@
 {
 	"id": 3078,
 	"name": "Frozen Zombie",
-	"iconAssetId": "enemy.frozen-zombie"
+	"iconAssetId": "enemy.frozen-zombie",
+	"combat": {
+		"scale": 1.05
+	}
 }

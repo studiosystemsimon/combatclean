@@ -1,5 +1,8 @@
 {
 	"id": 3059,
 	"name": "Plague Corpse",
-	"iconAssetId": "enemy.plague-corpse"
+	"iconAssetId": "enemy.plague-corpse",
+	"combat": {
+		"scale": 1.5
+	}
 }

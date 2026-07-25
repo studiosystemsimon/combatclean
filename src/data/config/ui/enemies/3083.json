@@ -1,5 +1,8 @@
 {
 	"id": 3083,
 	"name": "Wendigo",
-	"iconAssetId": "enemy.wendigo"
+	"iconAssetId": "enemy.wendigo",
+	"combat": {
+		"scale": 1.35
+	}
 }

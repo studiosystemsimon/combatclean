@@ -1,5 +1,8 @@
 {
 	"id": 3057,
 	"name": "Bone Warrior",
-	"iconAssetId": "enemy.bone-warrior"
+	"iconAssetId": "enemy.bone-warrior",
+	"combat": {
+		"scale": 1.55
+	}
 }

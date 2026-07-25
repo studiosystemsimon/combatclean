@@ -1,5 +1,8 @@
 {
 	"id": 3043,
 	"name": "Thorn Sprite",
-	"iconAssetId": "enemy.thorn-sprite"
+	"iconAssetId": "enemy.thorn-sprite",
+	"combat": {
+		"scale": 1.2
+	}
 }

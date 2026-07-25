@@ -1,5 +1,8 @@
 {
 	"id": 3037,
 	"name": "Fen Lurcher",
-	"iconAssetId": "enemy.fen-lurcher"
+	"iconAssetId": "enemy.fen-lurcher",
+	"combat": {
+		"scale": 1.3
+	}
 }

@@ -80,10 +80,10 @@ export function hapticForFx(ev) {
     case 'merge': {
       // common (light) → good (medium) → rare big merge (heavy + success chime)
       const tier = ev.tier || 0;
-      if (tier >= 6) {
+      if (tier >= HAPTICS.mergeTier.heavy) {
         impact(ImpactStyle.Heavy);
         notify(NotificationType.Success);
-      } else if (tier >= 4) {
+      } else if (tier >= HAPTICS.mergeTier.medium) {
         impact(ImpactStyle.Medium);
       } else {
         impact(ImpactStyle.Light);
@@ -93,7 +93,7 @@ export function hapticForFx(ev) {
     case 'generatorDrop':
       // Every successful generator pop, but throttled so rapid tapping reads as a
       // pleasant staccato rather than a continuous buzz.
-      if (gate('gen', 90)) impact(ImpactStyle.Light);
+      if (gate('gen', HAPTICS.throttleMs.generatorDrop)) impact(ImpactStyle.Light);
       break;
     case 'orderChest': // an order was fulfilled → chest reward
     case 'levelComplete': // a wave/level was won
@@ -106,19 +106,19 @@ export function hapticForFx(ev) {
       impact(ImpactStyle.Heavy);
       break;
     case 'bossSpecial': // a boss slam LANDS on the squad
-      if (gate('bossSlam', 500)) impact(ImpactStyle.Heavy);
+      if (gate('bossSlam', HAPTICS.throttleMs.bossSlam)) impact(ImpactStyle.Heavy);
       break;
     case 'heroAttacks': // idle combat is silent EXCEPT when a crit lands
-      if (ev.crit && gate('crit', 450)) impact(ImpactStyle.Light);
+      if (ev.crit && gate('crit', HAPTICS.throttleMs.crit)) impact(ImpactStyle.Light);
       break;
     case 'gachaReveal': {
       // Scale to the best rarity pulled: legendary+ = jackpot (heavy + success),
       // rare/epic = success chime, all-common = a medium thunk.
       const tier = bestRarityTier(ev.results);
-      if (tier >= 3) {
+      if (tier >= HAPTICS.gachaTier.jackpot) {
         impact(ImpactStyle.Heavy);
         notify(NotificationType.Success);
-      } else if (tier >= 1) {
+      } else if (tier >= HAPTICS.gachaTier.success) {
         notify(NotificationType.Success);
       } else {
         impact(ImpactStyle.Medium);

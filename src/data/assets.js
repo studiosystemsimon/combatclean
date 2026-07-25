@@ -72,42 +72,9 @@ export const ASSETS = {
   'hero.bard': { emoji: '🎵', label: 'Bard', art: 'heroes/bard' },
 
   // ── Enemies (art/enemies/<id>.png) ──────────────────────────────────────────
-  'enemy.slime': { emoji: '🟢', label: 'Slime', art: 'enemies/slime' },
-  'enemy.slime-cube': { emoji: '🟩', label: 'Slime Cube', art: 'enemies/slime-cube' },
-  'enemy.bat': { emoji: '🦇', label: 'Bat', art: 'enemies/bat' },
-  'enemy.snake': { emoji: '🐍', label: 'Snake', art: 'enemies/snake' },
-  'enemy.goblin': { emoji: '👺', label: 'Goblin', art: 'enemies/goblin' },
-  'enemy.imp': { emoji: '👿', label: 'Imp', art: 'enemies/imp' },
-  'enemy.skeleton': { emoji: '💀', label: 'Skeleton', art: 'enemies/skeleton' },
-  'enemy.skeleton-archer': { emoji: '🏹', label: 'Skeleton Archer', art: 'enemies/skeleton-archer' },
-  'enemy.spider': { emoji: '🕷️', label: 'Spider', art: 'enemies/spider' },
-  'enemy.zombie': { emoji: '🧟', label: 'Zombie', art: 'enemies/zombie' },
-  'enemy.ghost': { emoji: '👻', label: 'Ghost', art: 'enemies/ghost' },
-  'enemy.orc': { emoji: '👹', label: 'Orc', art: 'enemies/orc' },
-  'enemy.mummy': { emoji: '🧟‍♂️', label: 'Mummy', art: 'enemies/mummy' },
-  'enemy.gargoyle': { emoji: '🗿', label: 'Gargoyle', art: 'enemies/gargoyle' },
-  'enemy.wraith': { emoji: '👻', label: 'Wraith', art: 'enemies/wraith' },
-  'enemy.flaming-skull': { emoji: '☠️', label: 'Flaming Skull', art: 'enemies/flaming-skull' },
-  'enemy.minotaur': { emoji: '🐂', label: 'Minotaur', art: 'enemies/minotaur' },
-  'enemy.mimic': { emoji: '🧰', label: 'Mimic', art: 'enemies/mimic' },
-  'enemy.lich': { emoji: '💀', label: 'Lich', art: 'enemies/lich' },
-  'enemy.dragon-whelp': { emoji: '🐉', label: 'Dragon Whelp', art: 'enemies/dragon-whelp' },
   // Zone signature enemies (one per zone).
-  'enemy.bogling': { emoji: '🫧', label: 'Bogling', art: 'enemies/bogling' },
-  'enemy.shroomling': { emoji: '🍄', label: 'Shroomling', art: 'enemies/shroomling' },
-  'enemy.grave-crawler': { emoji: '💀', label: 'Grave Crawler', art: 'enemies/grave-crawler' },
-  'enemy.cinder-imp': { emoji: '🔥', label: 'Cinder Imp', art: 'enemies/cinder-imp' },
-  'enemy.frost-wisp': { emoji: '❄️', label: 'Frost Wisp', art: 'enemies/frost-wisp' },
-  'enemy.drake-hatchling': { emoji: '🐲', label: 'Drake Hatchling', art: 'enemies/drake-hatchling' },
   // Zone bosses (per-zone gate; boss-1/boss-2 reuse the shipped generic stickers).
-  'enemy.marsh-hydra': { emoji: '🐍', label: 'Marsh Hydra', art: 'enemies/marsh-hydra' },
-  'enemy.goblin-warlord': { emoji: '👹', label: 'Goblin Warlord', art: 'enemies/goblin-warlord' },
-  'enemy.bone-colossus': { emoji: '💀', label: 'Bone Colossus', art: 'enemies/bone-colossus' },
-  'enemy.elder-dragon': { emoji: '🐉', label: 'Elder Dragon', art: 'enemies/elder-dragon' },
   // Boss megaboss stickers — shown on boss levels (cosmetic; cycle by level).
-  'enemy.boss-1': { emoji: '👺', label: 'Demon Overlord', art: 'enemies/boss-1' },
-  'enemy.boss-2': { emoji: '🐲', label: 'Bone Wyrm King', art: 'enemies/boss-2' },
-  'enemy.boss-3': { emoji: '🗿', label: 'Stone Titan', art: 'enemies/boss-3' },
 
   // ── UI / currencies / rewards (art/ui/<name>.png) ──────────────────────────
   'ui.energy': { emoji: '⚡', label: 'Energy', art: 'ui/energy' },

@@ -1,5 +1,8 @@
 {
 	"id": 3041,
 	"name": "Mud Golem",
-	"iconAssetId": "enemy.mud-golem"
+	"iconAssetId": "enemy.mud-golem",
+	"combat": {
+		"scale": 1.35
+	}
 }

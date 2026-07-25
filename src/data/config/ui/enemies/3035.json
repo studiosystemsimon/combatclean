@@ -1,5 +1,8 @@
 {
 	"id": 3035,
 	"name": "Bog Zombie",
-	"iconAssetId": "enemy.bog-zombie"
+	"iconAssetId": "enemy.bog-zombie",
+	"combat": {
+		"scale": 1.05
+	}
 }

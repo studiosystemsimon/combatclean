@@ -1,5 +1,8 @@
 {
 	"id": 3060,
 	"name": "Grave Wraith",
-	"iconAssetId": "enemy.grave-wraith"
+	"iconAssetId": "enemy.grave-wraith",
+	"combat": {
+		"scale": 0.95
+	}
 }

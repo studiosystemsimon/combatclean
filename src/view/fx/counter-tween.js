@@ -14,6 +14,8 @@
 //   • While a burst is active the burst owns the display and converges to target.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { REVEAL } from '../../data/config.js';
+
 const listeners = {}; // statKey -> Set of callbacks
 const displayValues = {}; // statKey -> current displayed number
 const targets = {}; // statKey -> burst target (null/undefined when not mid-burst)
@@ -21,7 +23,7 @@ const fallbackTimers = {}; // statKey -> timeout id for a non-burst gain snap
 
 // Longer than the latest currency-burst start (clear-pause + cascade stagger +
 // per-item delay), so a real burst always claims the gain before this fires.
-const FALLBACK_MS = 1500;
+const FALLBACK_MS = REVEAL.currency.counterFallbackMs;
 
 export function subscribe(statKey, callback) {
   if (!listeners[statKey]) listeners[statKey] = new Set();

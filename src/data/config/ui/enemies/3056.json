@@ -1,5 +1,8 @@
 {
 	"id": 3056,
 	"name": "Bone Hound",
-	"iconAssetId": "enemy.bone-hound"
+	"iconAssetId": "enemy.bone-hound",
+	"combat": {
+		"scale": 1.1
+	}
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3088,
 	"name": "Storm Drake",
-	"iconAssetId": "enemy.storm-drake"
+	"iconAssetId": "enemy.storm-drake",
+	"combat": {
+		"scale": 1.55
+	}
 }

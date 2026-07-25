@@ -1,5 +1,8 @@
 {
 	"id": 3079,
 	"name": "Frostbite Ghoul",
-	"iconAssetId": "enemy.frostbite-ghoul"
+	"iconAssetId": "enemy.frostbite-ghoul",
+	"combat": {
+		"scale": 1.3
+	}
 }

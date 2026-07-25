@@ -47,7 +47,7 @@ export const buildWave = (level: number, rng: Rng, nextUid: () => number): Enemy
 };
 
 export const heroAtkMs = (hero: string, seed: string | number) => {
-  const base = (C.BATTLE.attackMsByWeapon && C.BATTLE.attackMsByWeapon[heroDef(hero).weapon]) || 900;
+  const base = (C.BATTLE.attackMsByWeapon && C.BATTLE.attackMsByWeapon[heroDef(hero).weapon]) || C.BATTLE.defaultAttackMs;
   return base + (hash32(seed != null ? seed : hero) % C.BATTLE.attackJitterSteps) * C.BATTLE.attackJitterMs;
 };
 
@@ -79,7 +79,7 @@ const applyAbilityEffect = (effect: any, atk: number, acc: { focus: number; aoe:
 const enemiesAttack = (heroes: BattleHero[], wave: Enemy[], dtMs: number, rng: Rng) => {
   const next = heroes.map((h) => ({ ...h }));
   const hits: Array<{ enemyUid: number; heroId: string; dmg: number }> = [];
-  const interval = C.BATTLE.enemyAttackMs || 900;
+  const interval = C.BATTLE.enemyAttackMs || C.BATTLE.defaultAttackMs;
   for (const e of wave) {
     if (e.hp <= 0) continue;
     if (e.atkMs == null) e.atkMs = hash32(e.uid) % interval;
@@ -217,7 +217,7 @@ export const fireLimitBreak = (battle: BattleState, cid: string) => {
 };
 
 // ── selectors ──
-export const limitOrdersToCharge = (hero: string) => heroDef(hero).limit.orders || 5;
+export const limitOrdersToCharge = (hero: string) => heroDef(hero).limit.orders || C.BATTLE.defaultLimitOrders;
 export const isLimitReady = (h: BattleHero) => h.hp > 0 && (h.limitOrders || 0) >= limitOrdersToCharge(h.hero);
 export const readyLimitCount = (battle: BattleState) => battle.heroes.filter(isLimitReady).length;
 export const advanceLimitOrders = (heroes: BattleHero[]) => heroes.map((h) => ({ ...h, limitOrders: Math.min(limitOrdersToCharge(h.hero), (h.limitOrders || 0) + 1) }));

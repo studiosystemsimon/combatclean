@@ -1,5 +1,8 @@
 {
 	"id": 3090,
 	"name": "Wyvern",
-	"iconAssetId": "enemy.wyvern"
+	"iconAssetId": "enemy.wyvern",
+	"combat": {
+		"scale": 1.4
+	}
 }

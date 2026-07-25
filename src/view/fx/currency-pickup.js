@@ -7,6 +7,9 @@
 
 import { rand, clamp, easeOutBack, easeInQuad, easeOutCubic, bezier2 } from './fx-math.js';
 import { startBurst, incrementDisplay, finishBurst, getDisplay } from './counter-tween.js';
+import { REVEAL } from '../../data/config.js';
+
+const CU = REVEAL.currency;
 
 let _container = null;
 function container() {
@@ -19,8 +22,8 @@ function container() {
   return _container;
 }
 
-// Cascade sequencer: back-to-back bursts start ≥300ms apart (cascade-queue.js).
-const STAGGER_MS = 300;
+// Cascade sequencer: back-to-back bursts start ≥staggerMs apart (cascade-queue.js).
+const STAGGER_MS = CU.staggerMs;
 let _lastStart = 0;
 
 // ── Shared rAF driver ────────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ export function currencyBurst(from, items) {
   const now = performance.now();
   const start = Math.max(now, _lastStart + STAGGER_MS);
   _lastStart = start;
-  const fire = () => items.forEach((it, i) => setTimeout(() => _burstOne(from, it), i * 150));
+  const fire = () => items.forEach((it, i) => setTimeout(() => _burstOne(from, it), i * CU.itemStaggerMs));
   const wait = start - now;
   if (wait <= 0) fire();
   else setTimeout(fire, wait);
@@ -65,15 +68,15 @@ function targetPoint(statKey) {
 function pulse(el) {
   if (!el || !el.animate) return;
   el.animate(
-    [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
-    { duration: 260, easing: 'ease-out' },
+    [{ transform: 'scale(1)' }, { transform: `scale(${CU.pulseScale})` }, { transform: 'scale(1)' }],
+    { duration: CU.pulseMs, easing: 'ease-out' },
   );
 }
 
 function _burstOne(from, it) {
   const tgt = targetPoint(it.statKey);
   if (!tgt) return;
-  const n = clamp(Math.ceil(it.amount / 16), 2, 7); // fewer icons — each is a DOM node on its own rAF
+  const n = clamp(Math.ceil(it.amount / CU.iconsPerAmount), CU.iconsMin, CU.iconsMax); // fewer icons — each is a DOM node on its own rAF
   // Lock the display at its current value; it will tick up as icons land.
   const currentDisplay = getDisplay(it.statKey, 0);
   startBurst(it.statKey, currentDisplay, currentDisplay + it.amount);
@@ -87,34 +90,34 @@ function _icon(from, tgt, it, i, share, totalIcons) {
     const im = document.createElement('img');
     im.src = it.img;
     im.draggable = false;
-    im.style.cssText = 'width:26px;height:26px;object-fit:contain;display:block;';
+    im.style.cssText = `width:${CU.iconSize}px;height:${CU.iconSize}px;object-fit:contain;display:block;`;
     el.appendChild(im);
   } else {
     el.textContent = it.emoji;
   }
   Object.assign(el.style, {
-    position: 'absolute', left: '0', top: '0', fontSize: '24px',
+    position: 'absolute', left: '0', top: '0', fontSize: `${CU.iconFont}px`,
     willChange: 'transform, opacity',
     transform: `translate(${from.x}px,${from.y}px)`,
     // A per-icon animated drop-shadow is a GPU blur pass EVERY frame × every icon — the
     // main reason the burst crawled. A cheap static text-shadow reads the same on emoji.
-    textShadow: `0 0 6px ${it.color || '#ffd45e'}`,
+    textShadow: `0 0 6px ${it.color || CU.glowColor}`,
   });
   container().appendChild(el);
 
   // Burst apex (a small fountain, biased upward).
   const ang = rand(0, Math.PI * 2);
-  const sp = rand(60, 120);
+  const sp = rand(...CU.burstSpeed);
   const bx = from.x + Math.cos(ang) * sp;
-  const by = from.y + Math.sin(ang) * sp - 40;
+  const by = from.y + Math.sin(ang) * sp - CU.burstUp;
   // Arc control point (curves up into the counter).
-  const cx = (bx + tgt.x) / 2 + rand(-50, 50);
-  const cy = Math.min(by, tgt.y) - rand(80, 120);
+  const cx = (bx + tgt.x) / 2 + rand(-CU.ctrlJitter, CU.ctrlJitter);
+  const cy = Math.min(by, tgt.y) - rand(...CU.arcApex);
 
-  const burstMs = 160;
-  const hangMs = 90;
-  const arcMs = 460;
-  const delay = i * 30;
+  const burstMs = CU.burstMs;
+  const hangMs = CU.hangMs;
+  const arcMs = CU.arcMs;
+  const delay = i * CU.iconDelayMs;
   const t0 = performance.now();
   const isLast = i === totalIcons - 1;
 
@@ -142,7 +145,7 @@ function _icon(from, tgt, it, i, share, totalIcons) {
       // Increment the display by this icon's share; last icon snaps to exact target.
       if (isLast) finishBurst(it.statKey);
       else incrementDisplay(it.statKey, share);
-      setTimeout(() => el.remove(), 60);
+      setTimeout(() => el.remove(), CU.removeMs);
       return true;
     }
     const e = easeInQuad(at);
@@ -154,16 +157,17 @@ function _icon(from, tgt, it, i, share, totalIcons) {
   addFlier(frame);
 
   // DOM-leak reaper (matches FrogGame's hard max-life).
-  setTimeout(() => el.parentNode && el.remove(), 2500);
+  setTimeout(() => el.parentNode && el.remove(), CU.reaperMs);
 }
 
 // Throw a chest from `from` → `to` (viewport coords) with a small arc + spin.
 export function throwChest(from, to, { img = null, emoji = '🧰', onLand } = {}) {
   const el = document.createElement('div');
+  const half = CU.throwSize / 2;
   Object.assign(el.style, {
-    position: 'absolute', left: '0', top: '0', width: '44px', height: '44px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px',
-    willChange: 'transform', transform: `translate(${from.x - 22}px,${from.y - 22}px)`,
+    position: 'absolute', left: '0', top: '0', width: `${CU.throwSize}px`, height: `${CU.throwSize}px`,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: `${CU.throwFont}px`,
+    willChange: 'transform', transform: `translate(${from.x - half}px,${from.y - half}px)`,
     filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.55))', zIndex: 10000, pointerEvents: 'none',
   });
   if (img) {
@@ -177,14 +181,14 @@ export function throwChest(from, to, { img = null, emoji = '🧰', onLand } = {}
   }
   container().appendChild(el);
   const cx = (from.x + to.x) / 2;
-  const cy = Math.min(from.y, to.y) - 90; // arc apex above both points
-  const dur = 560;
+  const cy = Math.min(from.y, to.y) - CU.throwApex; // arc apex above both points
+  const dur = CU.throwMs;
   const t0 = performance.now();
   function frame(now) {
     const t = Math.min(1, (now - t0) / dur);
     const x = bezier2(t, from.x, cx, to.x);
     const y = bezier2(t, from.y, cy, to.y);
-    el.style.transform = `translate(${x - 22}px,${y - 22}px) rotate(${t * 220}deg) scale(${1 + 0.3 * Math.sin(Math.PI * t)})`;
+    el.style.transform = `translate(${x - half}px,${y - half}px) rotate(${t * 220}deg) scale(${1 + 0.3 * Math.sin(Math.PI * t)})`;
     if (t < 1) requestAnimationFrame(frame);
     else {
       el.remove();
@@ -192,13 +196,13 @@ export function throwChest(from, to, { img = null, emoji = '🧰', onLand } = {}
     }
   }
   requestAnimationFrame(frame);
-  setTimeout(() => el.parentNode && el.remove(), 2500);
+  setTimeout(() => el.parentNode && el.remove(), CU.reaperMs);
 }
 
 // A "spend" explosion at a point: emoji fountain outward + up, gravity, fade.
 // Unlike currencyBurst (which arcs INTO the HUD counter to read as a GAIN), this
 // bursts in place to read as SPENDING soft currency on a button.
-export function spendBurst(from, { emoji = '🪙', img = null, color = '#ffd45e' } = {}, count = 12) {
+export function spendBurst(from, { emoji = '🪙', img = null, color = CU.spend.color } = {}, count = CU.spend.count) {
   for (let i = 0; i < count; i++) _spendIcon(from, { emoji, img, color });
 }
 
@@ -214,17 +218,17 @@ function _spendIcon(from, it) {
     el.textContent = it.emoji;
   }
   Object.assign(el.style, {
-    position: 'absolute', left: '0', top: '0', fontSize: '20px', willChange: 'transform, opacity',
+    position: 'absolute', left: '0', top: '0', fontSize: `${CU.spend.font}px`, willChange: 'transform, opacity',
     transform: `translate(${from.x}px,${from.y}px)`, filter: `drop-shadow(0 0 5px ${it.color})`,
   });
   container().appendChild(el);
-  const ang = rand(-Math.PI * 0.85, -Math.PI * 0.15); // fan upward
-  const sp = rand(80, 190);
+  const ang = rand(...CU.spend.fan); // fan upward
+  const sp = rand(...CU.spend.speed);
   const vx = Math.cos(ang) * sp;
   const vy = Math.sin(ang) * sp;
-  const g = 540;
-  const dur = rand(620, 920);
-  const rot = rand(-140, 140);
+  const g = CU.spend.grav;
+  const dur = rand(...CU.spend.durMs);
+  const rot = rand(-CU.spend.rot, CU.spend.rot);
   const t0 = performance.now();
   function frame(now) {
     const p = (now - t0) / dur;
@@ -237,5 +241,5 @@ function _spendIcon(from, it) {
     return false;
   }
   addFlier(frame);
-  setTimeout(() => el.parentNode && el.remove(), 1200);
+  setTimeout(() => el.parentNode && el.remove(), CU.spend.reaperMs);
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3053,
 	"name": "Elder Treant",
-	"iconAssetId": "enemy.elder-treant"
+	"iconAssetId": "enemy.elder-treant",
+	"combat": {
+		"scale": 1.05
+	}
 }

@@ -1,5 +1,8 @@
 // Shared VFX math/helpers (view layer). Lifted once so the fx engine, the
 // currency engine, and the reveal engine share one copy (per the porting guide).
+import { VFX_CONFIG } from '../../data/config.js';
+
+const GLOW = VFX_CONFIG.engine.glow;
 
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const rand = (a = 0, b = 1) => a + Math.random() * (b - a);
@@ -38,7 +41,7 @@ export function lerpHex(a, b, t) {
 }
 
 // Pre-bake a radial-gradient glow sprite (never use ctx.shadowBlur in the loop).
-export function bakeGlow(hex, peak = 0.7) {
+export function bakeGlow(hex, peak = GLOW.peak) {
   const SZ = 64;
   const c = document.createElement('canvas');
   c.width = c.height = SZ;
@@ -47,8 +50,8 @@ export function bakeGlow(hex, peak = 0.7) {
   const rgb = rgbStr(hex);
   const grad = g.createRadialGradient(cx, cx, 0, cx, cx, cx);
   grad.addColorStop(0.0, `rgba(${rgb},${peak})`);
-  grad.addColorStop(0.35, `rgba(${rgb},${peak * 0.55})`);
-  grad.addColorStop(0.7, `rgba(${rgb},${peak * 0.2})`);
+  grad.addColorStop(GLOW.stops[0], `rgba(${rgb},${peak * GLOW.alphas[0]})`);
+  grad.addColorStop(GLOW.stops[1], `rgba(${rgb},${peak * GLOW.alphas[1]})`);
   grad.addColorStop(1.0, `rgba(${rgb},0)`);
   g.fillStyle = grad;
   g.fillRect(0, 0, SZ, SZ);

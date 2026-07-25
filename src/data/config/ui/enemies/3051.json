@@ -1,5 +1,8 @@
 {
 	"id": 3051,
 	"name": "Mushroom Brute",
-	"iconAssetId": "enemy.mushroom-brute"
+	"iconAssetId": "enemy.mushroom-brute",
+	"combat": {
+		"scale": 1.05
+	}
 }

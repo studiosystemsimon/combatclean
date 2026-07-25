@@ -1,5 +1,8 @@
 {
 	"id": 3070,
 	"name": "Coal Brute",
-	"iconAssetId": "enemy.coal-brute"
+	"iconAssetId": "enemy.coal-brute",
+	"combat": {
+		"scale": 1.4
+	}
 }

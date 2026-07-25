@@ -1,5 +1,8 @@
 {
 	"id": 3050,
 	"name": "Boar Brute",
-	"iconAssetId": "enemy.boar-brute"
+	"iconAssetId": "enemy.boar-brute",
+	"combat": {
+		"scale": 1.05
+	}
 }

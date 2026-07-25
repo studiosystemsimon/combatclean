@@ -1,5 +1,8 @@
 {
 	"id": 3086,
 	"name": "Cockatrice",
-	"iconAssetId": "enemy.cockatrice"
+	"iconAssetId": "enemy.cockatrice",
+	"combat": {
+		"scale": 1.05
+	}
 }

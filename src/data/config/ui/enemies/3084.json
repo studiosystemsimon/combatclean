@@ -1,5 +1,8 @@
 {
 	"id": 3084,
 	"name": "Glacial Warden",
-	"iconAssetId": "enemy.glacial-warden"
+	"iconAssetId": "enemy.glacial-warden",
+	"combat": {
+		"scale": 1.05
+	}
 }

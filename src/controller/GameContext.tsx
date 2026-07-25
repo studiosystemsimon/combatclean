@@ -10,8 +10,6 @@ import { C } from '../game/content.ts';
 import { seedSim } from '../game/sim-random.ts';
 import { loadSaved, save, clearSaved } from '../game/store/persistence.ts';
 
-const PERSIST_THROTTLE_MS = 2000;
-
 const StateContext = createContext<any>(null);
 const ActionsContext = createContext<any>(null);
 
@@ -22,7 +20,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const id = setInterval(() => dispatch({ type: A.REGEN_TICK, now: Date.now() }), 1000);
+    const id = setInterval(() => dispatch({ type: A.REGEN_TICK, now: Date.now() }), C.RUNTIME.regenTickMs);
     return () => clearInterval(id);
   }, []);
 
@@ -49,7 +47,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const lastSaveRef = useRef(0);
   useEffect(() => {
     const t = Date.now();
-    if (t - lastSaveRef.current >= PERSIST_THROTTLE_MS) { lastSaveRef.current = t; save(state); }
+    if (t - lastSaveRef.current >= C.RUNTIME.persistThrottleMs) { lastSaveRef.current = t; save(state); }
   }, [state]);
 
   useEffect(() => {

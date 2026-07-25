@@ -1,5 +1,8 @@
 {
 	"id": 3067,
 	"name": "Flame Skull",
-	"iconAssetId": "enemy.flame-skull"
+	"iconAssetId": "enemy.flame-skull",
+	"combat": {
+		"scale": 0.85
+	}
 }

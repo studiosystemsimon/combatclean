@@ -1,5 +1,8 @@
 {
 	"id": 3065,
 	"name": "Lava Slug",
-	"iconAssetId": "enemy.lava-slug"
+	"iconAssetId": "enemy.lava-slug",
+	"combat": {
+		"scale": 1.1
+	}
 }

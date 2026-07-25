@@ -1,5 +1,8 @@
 {
 	"id": 3091,
 	"name": "Arcane Golem",
-	"iconAssetId": "enemy.arcane-golem"
+	"iconAssetId": "enemy.arcane-golem",
+	"combat": {
+		"scale": 1.5
+	}
 }

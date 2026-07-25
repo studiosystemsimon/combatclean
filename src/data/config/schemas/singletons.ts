@@ -9,6 +9,8 @@ import { configRef, stringConfigRef, configRecord } from '@bishop/config-registr
 
 const num = z.number();
 const int = z.number().int();
+// Reusable projectile-trail geometry (width/length/speed/head-radius).
+const zTrail = z.object({ width: num, length: num, speed: num, r: num }).strict();
 
 // board — grid dims + squad size + the fresh-account start layout.
 export const zBoardConfig = z.object({
@@ -19,9 +21,37 @@ export const zBoardConfig = z.object({
     liftScale: num.describe('A held item scales to this × its resting size (1 = no change).'),
     easeMs: num.describe('Duration (ms) of the lift ease-in on grab / ease-out on release.'),
     easeCurve: z.string().describe('CSS timing-function for the lift ease (natural settle, no bounce).'),
-  }).strict().describe('Held-tile lift so the dragged icon stays visible above the finger/thumb.'),
+    moveThreshold: num.describe('Pointer travel (px) before a press becomes a drag.'),
+    hitTolerance: num.describe('Drop hit-test window as a fraction of cell w/h.'),
+    hintDelayMs: num.describe('Hold time (ms) before mergeable tiles are hinted green.'),
+    snapBackMs: num, snapBackCurve: z.string(),
+    fallbackTile: z.object({ w: num, h: num }).strict().describe('Tile size used before geometry is measured.'),
+  }).strict().describe('Held-tile lift + drag/drop interaction tuning.'),
+  tiltMaxDeg: num.describe('Max ± lifted-tile tilt (deg); a per-tile hash spreads across [-max,+max].'),
+  merge: z.object({
+    critTier: int, heavyTier: int,
+    burstRadii: z.object({ crit: num, heavy: num, normal: num }).strict().describe('Impact radii by intensity (JUICE pre-baked).'),
+    shakeTier: int, shakeAmp: num, shakeBigTier: int, shakeBigAmp: num,
+    flashTier: int, flashOpacity: num, flashMs: num,
+    confettiTier: int, confettiCount: int, confettiPower: num, confettiColors: z.array(z.string()),
+    pushScale: num, squashPeak: z.tuple([num, num]), squashMs: num,
+    slamMs: num, slamCurve: z.string(), safetyReleaseMs: num,
+  }).strict().describe('Merge burst/shake/flash/confetti + slam-squash tuning.'),
+  spawn: z.object({
+    popPeak: num, popMs: num, popCurve: z.string(),
+    moveMs: num, moveCurve: z.string(),
+    birthRevealMs: num, spawnClearMs: num,
+    throwApex: num, throwMs: num, throwCurve: z.string(), throwLandScale: z.tuple([num, num]), throwSpin: num,
+  }).strict().describe('Tile spawn/move/birth + generator-throw animation.'),
+  float: z.object({
+    fontBig: num, fontSmall: num, topOffset: num, lifetimeMs: num, fadeMs: num,
+    bigTier: int, unlockColor: z.string(),
+  }).strict().describe('Float-label size/lifetime + big-tier + cobweb-unlock colour.'),
+  idle: z.object({
+    bestHintMs: num, waveIdleMs: num, waveGapMs: num, waveGapRandMs: num, pollMs: num, waveColStaggerMs: num,
+  }).strict().describe('Idle best-merge hint + ambient wave-bob timing.'),
   startLayout: z.object({
-    generators: z.array(stringConfigRef('generators', 'key')).describe('Generators placed on a fresh board (→ generators.key).'),
+    generators: z.array(z.object({ generator: stringConfigRef('generators', 'key'), cell: int }).strict()).describe('Generators placed on a fresh board: each generator (→ generators.key) at its board cell.'),
     seedItems: z.array(z.object({
       chain: stringConfigRef('chains', 'key'), level: int, cell: int, locked: z.boolean().optional(),
     }).strict()),
@@ -38,6 +68,8 @@ export const zBattleConfig = z.object({
   tickMs: num.describe('Combat tick = real interval AND simulated dt (no time-stretch/rate mul).'),
   attackMsByWeapon: configRecord('chains', 'key', num).describe('Per-weapon basic-attack cadence (ms), keyed by chain/weapon.'),
   enemyAttackMs: num,
+  defaultAttackMs: num.describe('Fallback basic-attack cadence (ms) when a weapon has no attackMsByWeapon entry.'),
+  defaultLimitOrders: int.describe('Fallback orders-to-charge a limit break when a hero omits limit.orders.'),
   attackJitterSteps: int, attackJitterMs: num,
   critChance: num, critMult: num, comboMin: int,
   startLevel: int, orderPowerBonus: num.describe('+fraction to all heroes per completed order.'),
@@ -87,7 +119,7 @@ export const zProgressionConfig = z.object({
 
 // orders — the order-board tuning.
 export const zOrdersConfig = z.object({
-  active: int, arrivalMs: num, itemCount: z.object({ one: num, two: num }).strict(),
+  active: int, arrivalMs: num, itemCount: z.object({ one: num, two: num, max: int.describe('Item count above the `two` roll threshold (order size ceiling).') }).strict(),
   fillerMaxLevel: int, costPerTierBase: num.describe('Tile build-cost base: a tier-t item costs base^t tier-0 drops.'),
   orderChains: z.array(stringConfigRef('chains', 'key')),
   dominantTier: configRecord('gearRarities', 'key', z.tuple([int, int])).describe('Dominant-item tier [min,max] per reward rarity band (keys → gearRarities).'),
@@ -97,7 +129,7 @@ export const zOrdersConfig = z.object({
 // gearTuning — gear generation / leveling / fusion / chest-rarity tuning.
 export const zGearTuningConfig = z.object({
   fuse: z.object({ fodder: int, coinBase: num, coinPerTier: num }).strict(),
-  gen: z.object({ basePower: num, perTier: num }).strict(),
+  gen: z.object({ basePower: num, perTier: num, powerSpread: int.describe('Random +[0..powerSpread] variance added to a rolled item base power.') }).strict(),
   level: z.object({ maxLevel: int, xpBase: num, xpGrowth: num, powerPerLevel: num }).strict(),
   chestTiers: z.array(z.object({
     maxDifficulty: num.nullable().describe('Inclusive difficulty ceiling for this chest rarity; null = no upper bound (Infinity).'),
@@ -105,7 +137,66 @@ export const zGearTuningConfig = z.object({
   }).strict()),
 }).strict();
 
-export const zHapticsConfig = z.object({ enabled: z.boolean() }).strict();
+export const zHapticsConfig = z.object({
+  enabled: z.boolean(),
+  throttleMs: z.object({ generatorDrop: num, bossSlam: num, crit: num }).strict().describe('Per-source haptic rate gates (ms).'),
+  mergeTier: z.object({ heavy: int, medium: int }).strict().describe('Merge tier thresholds for heavy/medium haptic.'),
+  gachaTier: z.object({ jackpot: int, success: int }).strict().describe('Best-pull rarity-tier thresholds for jackpot/success haptic.'),
+}).strict();
+
+// runtime — controller/loop timers + gacha knobs (not part of the combat sim step).
+export const zRuntimeConfig = z.object({
+  regenTickMs: num.describe('Energy-regen recompute interval (ms) owned by the controller.'),
+  persistThrottleMs: num.describe('Minimum interval (ms) between throttled saves.'),
+  tenPullCount: int.describe('Pulls in a multi-pull ("ten-pull"); selects banner.ten pricing.'),
+}).strict();
+
+// reveal — reward/reveal-sequence tuning (gacha pull, chest smash, hero level-up FX, currency pickup).
+// Presentational timings/sizes/counts for the reward cinematics; pure keyframe SHAPES stay inline.
+export const zRevealConfig = z.object({
+  currency: z.object({
+    staggerMs: num, itemStaggerMs: num, pulseScale: num, pulseMs: num,
+    iconsPerAmount: num, iconsMin: num, iconsMax: num, iconSize: num, iconFont: num, glowColor: z.string(),
+    burstSpeed: z.tuple([num, num]), burstUp: num, ctrlJitter: num, arcApex: z.tuple([num, num]),
+    burstMs: num, hangMs: num, arcMs: num, iconDelayMs: num, removeMs: num, reaperMs: num, counterFallbackMs: num,
+    throwSize: num, throwFont: num, throwApex: num, throwMs: num,
+    spend: z.object({ count: int, color: z.string(), font: num, fan: z.tuple([num, num]), speed: z.tuple([num, num]), grav: num, durMs: z.tuple([num, num]), rot: num, reaperMs: num }).strict(),
+  }).strict().describe('Currency burst→arc→HUD-tally pickup + generator throw + spend-burst tuning.'),
+  chest: z.object({
+    popOvershoot: num.describe('easeOutBack overshoot for the chest pop-in.'), rattleMs: num,
+    fanOffsets: z.array(num).describe('Per-reward horizontal fan offsets (px) around the chest.'),
+    fallbackY: num, clampInset: num, viewInset: z.tuple([num, num]), iconSize: num, iconEmojiRatio: num,
+    popMs: num, offscreenY: num, upMs: num, descendMs: num,
+    hitWindowBaseMs: num, hitWindowPerTierMs: num, shotMs: num,
+    peltTrail: z.object({ color: z.string(), tail: z.string(), width: num, length: num, speed: num, r: num }).strict(),
+    peltImpactColor: z.string(), peltImpactR: num,
+    smashFlash: z.object({ opacity: num, ms: num, color: z.string() }).strict(), smashImpactR: num, slotSafetyMs: num,
+  }).strict().describe('Chest smash-to-open sequence: pop, fan, pelt-shot trail/impact, smash flash.'),
+  heroFx: z.object({
+    flashMs: num, raysMs: num, ringCount: int, ringBaseMs: num, ringStepMs: num, ringDelayMs: num,
+    sparkCount: int, sparkDistBase: num, sparkDistSpread: num, sparkBaseMs: num, sparkSpreadMs: num,
+    burstCount: z.tuple([num, num]), burstBase: z.tuple([num, num]), burstSpread: z.tuple([num, num]), burstSize: z.tuple([num, num]), burstMs: z.tuple([num, num]), burstSpreadMs: num,
+    bigRingMs: num, floatMs: num, tweenScale: num,
+    maxedTyperMs: num, maxedWobbleMs: num, maxedHoldMs: num, maxedExitMs: num,
+    levelUpStatAtkFrac: num.describe('Fraction of a level-up gain shown as the ATK float split.'),
+    levelUpStatHpFrac: num.describe('Fraction of a level-up gain shown as the HP float split.'),
+    levelUpStaggerMax: num, levelUpStaggerMin: num, levelUpStaggerCap: num, levelUpStatDelayMs: num, levelUpStatBaseMs: num,
+    tileScale: z.tuple([num, num]), tileMs: z.tuple([num, num]), tileGlowBlur: z.tuple([num, num]), tileGlowSpread: z.tuple([num, num]), tileGlowMs: z.tuple([num, num]),
+    powTweenMs: z.tuple([num, num]), lvTweenMs: z.tuple([num, num]), maxedDelayMs: num,
+    slotScale: num, slotMs: num, slotStaggerMax: num, slotStaggerMin: num, slotStaggerCap: num,
+    levelAllStaggerMs: num, multiFloatDurMs: num,
+    equipMs: num, equipStaggerMs: num, equipPowMs: num, equipTailMs: num,
+    fuseCloneSize: num, fuseCloneFont: num, fuseFlyMs: num, fuseFlyStaggerMs: num, fuseReaperMs: num, fuseLandTailMs: num,
+    fuseFlash: z.object({ opacity: num, ms: num }).strict(), fuseShake: num, fuseImpactR: num,
+  }).strict().describe('Hero level-up / equip / fuse burst, ray, float, and tile-pulse FX.'),
+  gacha: z.object({
+    heroGlowBase: num, heroGlowPerTier: num, heroDurTierMs: z.tuple([num, num, num]), heroDurReducedMs: num,
+    auraOpacity: z.tuple([num, num]), auraMs: num, ringOpacity: num, ringMs: num,
+    plateMs: z.tuple([num, num]), plateReducedMs: num, pipMs: num, pipReducedMs: num, hintOpacity: num, hintMs: num,
+    summaryTileMs: num, summaryTileReducedMs: num, summaryTileStaggerMs: num, summaryTileBaseMs: num,
+    engineFadeMs: num, engineFadeReducedMs: num, dismissMs: num, dismissReducedMs: num,
+  }).strict().describe('Gacha single/×10 reveal: hero pop, aura, plate, pip, summary-grid stagger.'),
+}).strict();
 
 // tierPresentation — merge-tier colour ramp (global presentation tuning; not per-entity).
 export const zTierPresentationConfig = z.object({ colors: z.array(z.string()) }).strict();
@@ -118,4 +209,55 @@ export const zVfxConfig = z.object({
   impactColor: configRecord('chains', 'key', z.string()),
   confettiColors: z.array(z.string()),
   combatColors: z.record(z.string(), z.string()).describe('Named combat-special VFX colours (deathDust, waveClear, limitBreak, …).'),
+  hpbar: z.object({
+    ghostLerpSec: num, wholeFlashSec: num, pinkFlashSec: num, whiteBlipSec: num,
+    wholeFlash: z.object({ brightness: num, saturate: num, dropShadowPx: num, shadowColor: z.string() }).strict(),
+    pinkFlash: z.object({ brightness: num, saturate: num }).strict(),
+    ghostColor: z.object({ enemy: z.string(), hero: z.string() }).strict(),
+  }).strict().describe('Damage-feedback HP-bar layers: ghost catch-up + flash timings/magnitudes + lost-HP colours.'),
+  engine: z.object({
+    trail: z.object({ spineN: int, minSpacingPx: num, maxAgeBase: num, lengthRef: num, lutN: int, maxParticles: int }).strict(),
+    spawnTrail: z.object({ speed: num, head: z.string(), tail: z.string(), r: num, width: num, length: num, alpha: num, glowRMul: num, glowAlpha: num }).strict(),
+    flash: z.object({ peak: num, ms: num, color: z.string() }).strict(),
+    shake: z.object({ decayBase: num, restThreshold: num }).strict(),
+    dprMax: num,
+    glow: z.object({ peak: num, stops: z.tuple([num, num]), alphas: z.tuple([num, num]) }).strict(),
+    impact: z.object({
+      count: int, sizeMin: num, sizeMax: num, speed: num, speedMul: num, life: num, spread: num,
+      tier: z.record(z.string(), z.object({ count: num, size: num, speed: num, life: num }).strict()),
+      color: z.string(), r: num,
+      disc: z.object({ dur: num, r0Mul: num, r1Mul: num }).strict(),
+      ring: z.object({ dur: num, r1MulCrit: num, r1Mul: num, w0: num }).strict(),
+      ring2: z.object({ delay: num, dur: num, r1Mul: num, w0: num, color: z.string() }).strict(),
+      debrisSpeedMul: num, speedJitter: z.tuple([num, num]), ringAlpha: num, ringTaper: num, shakeCrit: num, shakeHeavy: num,
+    }).strict(),
+    confetti: z.object({
+      count: int, speed: z.tuple([num, num]), up: z.tuple([num, num]), life: z.tuple([num, num]), size: z.tuple([num, num]), aspect: z.tuple([num, num]),
+      vrot: num, grav: z.tuple([num, num]), swayFreq: z.tuple([num, num]), swayAmp: z.tuple([num, num]), termVel: num, fadeFrom: num, dragBase: num,
+    }).strict(),
+    debris: z.object({ stroke: z.string(), sizeBase: num, sizeAlpha: num }).strict(),
+  }).strict().describe('Canvas fx-engine primitives: trail/impact/confetti/flash/shake/glow tuning.'),
+  combat: z.object({
+    fallbackCanvas: z.object({ w: num, h: num }).strict().describe('App-frame size used when the fx canvas is not yet measured.'),
+    hitFlash: z.object({ brightness: num, peakOffset: num, ms: num }).strict(),
+    chipShake: z.object({ ms: num }).strict(),
+    arenaShake: z.object({ amp: num, ms: num }).strict(),
+    cardFlash: z.object({ brightness: num, ms: num }).strict(),
+    telegraph: z.object({ scale: num, brightness: num, hostileBrightness: num, hostileSaturate: num, offset: num, ms: num }).strict(),
+    heroAttack: z.object({ stagger: num, trailDelay: num, trailSpeed: num, trailR: num, impactCrit: num, impactNormal: num, splashDelay: num, deathDustDelay: num, critShake: num }).strict(),
+    deathDust: z.object({ r: num }).strict(),
+    limitPulse: z.object({ brightness: num, scale: num, offset: num, ms: num }).strict(),
+    limitCharge: z.object({ stagger: num, trail: zTrail, impactR: num }).strict(),
+    orderChest: z.object({ fallbackY: num, trailSpeed: num, impactR: num, tileStagger: num, baseDelay: num }).strict(),
+    waveClear: z.object({ impactR: num, shake: num }).strict(),
+    levelComplete: z.object({ originY: num, confettiX: num, confettiY: num, confettiCount: int, flashOpacity: num, flashMs: num }).strict(),
+    limitBreak: z.object({ impactR: num, arenaShake: num, deathDustDelay: num, cineMs: num, cineOffset: num, beamSkew: num, beamMs: num, flashOpacity: num, flashMs: num, screenShake: num }).strict(),
+    enemyAttack: z.object({ stagger: num, trailDelay: num, trail: zTrail, impactR: num, hurtDelay: num }).strict(),
+    damageNumberMs: num, comboMs: num,
+    comboTag: z.object({ yOffset: num, fontBase: num, fontPerN: num, fontMax: num, ms: num, hotColor: z.string(), warmColor: z.string(), baseColor: z.string(), hotN: int, warmN: int }).strict(),
+    bossTelegraph: z.object({ ringSize: num, fromScale: num, fromOpacity: num, toScale: num, toOpacity: num }).strict(),
+    bossSpecial: z.object({ impactR: num, trail: zTrail, hitR: num, stagger: num, numberDelay: num, flashOpacity: num, flashMs: num, screenShake: num, shockSize: num, shockFromScale: num, shockToScale: num, shockMs: num, shockCurve: z.string() }).strict(),
+    bossHeal: z.object({ pulseBrightness: num, pulseOffset: num, pulseMs: num, wisp: zTrail }).strict(),
+    bossRaise: z.object({ arenaShake: num, castBrightness: num, castOffset: num, castMs: num, ringSize: num, ringFromScale: num, ringFromOpacity: num, ringToScale: num, ringMs: num, minionR: num, riseBrightness: num, riseFromScale: num, riseMs: num, riseBaseDelay: num, riseStagger: num }).strict(),
+  }).strict().describe('Per-effect combat VFX: hit/flash/shake/telegraph, trails, boss beats.'),
 }).strict();

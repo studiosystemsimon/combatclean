@@ -1,0 +1,5 @@
+{
+	"regenTickMs": 1000,
+	"persistThrottleMs": 2000,
+	"tenPullCount": 10
+}

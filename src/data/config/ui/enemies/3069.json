@@ -1,5 +1,8 @@
 {
 	"id": 3069,
 	"name": "Ash Wraith",
-	"iconAssetId": "enemy.ash-wraith"
+	"iconAssetId": "enemy.ash-wraith",
+	"combat": {
+		"scale": 1.2
+	}
 }

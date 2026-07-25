@@ -1,5 +1,8 @@
 {
 	"id": 3085,
 	"name": "Harpy",
-	"iconAssetId": "enemy.harpy"
+	"iconAssetId": "enemy.harpy",
+	"combat": {
+		"scale": 1.4
+	}
 }

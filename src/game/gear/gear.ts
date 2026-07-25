@@ -33,7 +33,7 @@ export const rollGear = (id: string, rarity: string, rng: Rng): GearItem => {
   const def = C.GEAR_PIECES[pieceId];
   const capIdx = C.GEAR_RARITY_ORDER.indexOf(def.maxRarity);
   const instRarity = C.GEAR_RARITY_ORDER[Math.min(rIdx, capIdx)];
-  const base = C.GEAR_GEN.basePower + rIdx * C.GEAR_GEN.perTier + randInt(0, 3, rng);
+  const base = C.GEAR_GEN.basePower + rIdx * C.GEAR_GEN.perTier + randInt(0, C.GEAR_GEN.powerSpread, rng);
   return { id, pieceId, slot: def.slot, rarity: instRarity, level: 1, base, equippedTo: null };
 };
 
@@ -42,7 +42,7 @@ export const makeUnique = (id: string, pieceId: string, rng: Rng): GearItem | nu
   if (!def || !def.unique) return null;
   const rarity = C.GEAR_RARITY[def.maxRarity] ? def.maxRarity : 'common';
   const rIdx = Math.max(0, C.GEAR_RARITY_ORDER.indexOf(rarity));
-  const base = C.GEAR_GEN.basePower + rIdx * C.GEAR_GEN.perTier + randInt(0, 3, rng);
+  const base = C.GEAR_GEN.basePower + rIdx * C.GEAR_GEN.perTier + randInt(0, C.GEAR_GEN.powerSpread, rng);
   return { id, pieceId, slot: def.slot, rarity, level: 1, base, equippedTo: null, unique: true };
 };
 

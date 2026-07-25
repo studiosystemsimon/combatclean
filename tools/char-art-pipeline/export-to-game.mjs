@@ -59,7 +59,7 @@ const CATS = {
     },
   },
   enemies: {
-    prefix: 'enemy', dir: 'enemies', abilities: false, portrait: false,
+    prefix: 'enemy', dir: 'enemies', abilities: false, portrait: false, combat: true,
     gameArt: join(GAME, 'assets', 'combatclean', 'enemies'),
     logicalDir: join(GAME, 'src', 'data', 'config', 'game', 'enemies'),
     uiDir: join(GAME, 'src', 'data', 'config', 'ui', 'enemies'),
@@ -90,11 +90,17 @@ function portraitFor(cat, slug) {
   }
   return null;
 }
+function combatFor(cat, slug) {   // enemy in-combat framing — SCALE only (position lives in the asset anchor = reg point)
+  const rec = metaRec(cat, slug); const c = rec && rec.combat;
+  if (c && c.scale != null) return { scale: Number(c.scale) };
+  return null;
+}
 
-function uiObject(cfg, id, slug, emoji, portrait) {
+function uiObject(cfg, id, slug, emoji, portrait, combat) {
   const o = { id, name: title(slug), iconAssetId: `${cfg.prefix}.${slug}`, emoji };
   if (cfg.abilities) o.abilityNames = { basic: 'Attack', normal: 'Skill', limit: 'Ultimate' };
   if (cfg.portrait && portrait) o.portrait = portrait;
+  if (cfg.combat && combat) o.combat = combat;
   return o;
 }
 
@@ -143,7 +149,7 @@ if (DRY) {
 
 const assets = JSON.parse(readFileSync(ASSETS_JSON, 'utf8'));
 assets.assets ||= {};
-const refreshed = [], created = [], errors = []; let anchored = 0, portraited = 0;
+const refreshed = [], created = [], errors = []; let anchored = 0, portraited = 0, combated = 0;
 
 for (const cat of Object.keys(work)) {
   const cfg = cfgFor(cat);
@@ -153,6 +159,7 @@ for (const cat of Object.keys(work)) {
       copyFileSync(join(PIPELINE, 'trim', 'assets', cat, `${slug}_256.png`), join(cfg.gameArt, `${slug}.png`));
       const anchor = anchorFor(cat, slug); if (anchor) anchored++;
       const portrait = cfg.portrait ? portraitFor(cat, slug) : null;
+      const combat = cfg.combat ? combatFor(cat, slug) : null;
       assets.assets[`${cfg.prefix}.${slug}`] = { type: 'image', file: `${cfg.dir}/${slug}.png`, ...(anchor ? { anchor } : {}) };
 
       let id = existing[cat][slug];
@@ -167,22 +174,25 @@ for (const cat of Object.keys(work)) {
         const nf = readdirSync(cfg.logicalDir).find(f => f.endsWith(`-${slug}.json`));
         id = nf ? JSON.parse(readFileSync(join(cfg.logicalDir, nf), 'utf8')).id : null;
         if (id == null) throw new Error('scaffold did not produce a logical entry');
-        writeFileSync(join(cfg.uiDir, `${id}.json`), JSON.stringify(uiObject(cfg, id, slug, emoji, portrait), null, '\t') + '\n');
+        writeFileSync(join(cfg.uiDir, `${id}.json`), JSON.stringify(uiObject(cfg, id, slug, emoji, portrait, combat), null, '\t') + '\n');
         created.push(`${cat}/${slug}`);
         log(`created    ${cat}/${slug} (id ${id}) — logical + ui + asset [placeholder stats]`);
       }
 
-      // ensure a UI entry exists for pre-existing entries; patch portrait (heroes) if set
+      // ensure a UI entry exists for pre-existing entries; patch portrait (heroes) / combat (enemies) if set
       const uiPath = join(cfg.uiDir, `${id}.json`);
       if (!existsSync(uiPath)) {
         const { emoji } = cfg.newFor(slug);
-        writeFileSync(uiPath, JSON.stringify(uiObject(cfg, id, slug, emoji, portrait), null, '\t') + '\n');
-      } else if (cfg.portrait && portrait) {
+        writeFileSync(uiPath, JSON.stringify(uiObject(cfg, id, slug, emoji, portrait, combat), null, '\t') + '\n');
+      } else if ((cfg.portrait && portrait) || (cfg.combat && combat)) {
         let ui = {}; try { ui = JSON.parse(readFileSync(uiPath, 'utf8')); } catch {}
-        ui.portrait = portrait; if (ui.id == null) ui.id = id; if (ui.name == null) ui.name = title(slug);
+        if (ui.id == null) ui.id = id; if (ui.name == null) ui.name = title(slug);
+        if (cfg.portrait && portrait) ui.portrait = portrait;
+        if (cfg.combat && combat) ui.combat = combat;
         writeFileSync(uiPath, JSON.stringify(ui, null, '\t') + '\n');
       }
       if (cfg.portrait && portrait) portraited++;
+      if (cfg.combat && combat) combated++;
     } catch (e) {
       const msg = (e.stderr || e.message || String(e)).toString().trim().split('\n').slice(-3).join(' ');
       errors.push({ slug: `${cat}/${slug}`, error: msg });
@@ -206,7 +216,7 @@ if (!NO_BUILD) { log('=== npm run build (compose gate) ==='); build = run('npm',
 
 const ok = v1.ok && v2.ok && (build.ok !== false);
 log('\nRESULT ' + JSON.stringify({
-  ok, refreshed, created, anchored, portraited,
+  ok, refreshed, created, anchored, portraited, combated,
   errors, validate: { config: v1.ok, assets: v2.ok }, build: build.ok,
 }));
 process.exit(ok ? 0 : 1);

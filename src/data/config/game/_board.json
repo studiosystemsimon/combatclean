@@ -6,13 +6,73 @@
 		"liftFactor": 0.45,
 		"liftScale": 1.5,
 		"easeMs": 160,
-		"easeCurve": "cubic-bezier(0.22, 1, 0.36, 1)"
+		"easeCurve": "cubic-bezier(0.22, 1, 0.36, 1)",
+		"moveThreshold": 8,
+		"hitTolerance": 0.92,
+		"hintDelayMs": 4000,
+		"snapBackMs": 220,
+		"snapBackCurve": "cubic-bezier(.34,1.56,.64,1)",
+		"fallbackTile": { "w": 56, "h": 56 }
+	},
+	"tiltMaxDeg": 6,
+	"merge": {
+		"critTier": 6,
+		"heavyTier": 4,
+		"burstRadii": { "crit": 18, "heavy": 13.5, "normal": 9 },
+		"shakeTier": 5,
+		"shakeAmp": 2,
+		"shakeBigTier": 6,
+		"shakeBigAmp": 3,
+		"flashTier": 5,
+		"flashOpacity": 0.85,
+		"flashMs": 130,
+		"confettiTier": 6,
+		"confettiCount": 36,
+		"confettiPower": 0.85,
+		"confettiColors": ["#ffffff", "#ffd45e"],
+		"pushScale": 1.12,
+		"squashPeak": [1.28, 0.72],
+		"squashMs": 120,
+		"slamMs": 110,
+		"slamCurve": "cubic-bezier(.55,.06,.9,.3)",
+		"safetyReleaseMs": 700
+	},
+	"spawn": {
+		"popPeak": 1.12,
+		"popMs": 300,
+		"popCurve": "cubic-bezier(.2,.8,.3,1.3)",
+		"moveMs": 180,
+		"moveCurve": "cubic-bezier(.2,.7,.3,1)",
+		"birthRevealMs": 40,
+		"spawnClearMs": 90,
+		"throwApex": 70,
+		"throwMs": 460,
+		"throwCurve": "cubic-bezier(.35,.15,.5,1)",
+		"throwLandScale": [1.18, 0.82],
+		"throwSpin": 360
+	},
+	"float": {
+		"fontBig": 24,
+		"fontSmall": 17,
+		"topOffset": 6,
+		"lifetimeMs": 1300,
+		"fadeMs": 170,
+		"bigTier": 6,
+		"unlockColor": "#ffffff"
+	},
+	"idle": {
+		"bestHintMs": 15000,
+		"waveIdleMs": 4000,
+		"waveGapMs": 4000,
+		"waveGapRandMs": 5000,
+		"pollMs": 400,
+		"waveColStaggerMs": 90
 	},
 	"startLayout": {
 		"generators": [
-			"blade",
-			"bow",
-			"magic"
+			{ "generator": "blade", "cell": 1 },
+			{ "generator": "bow", "cell": 3 },
+			{ "generator": "magic", "cell": 5 }
 		],
 		"seedItems": [
 			{

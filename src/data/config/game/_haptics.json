@@ -1,3 +1,6 @@
 {
-	"enabled": true
+	"enabled": true,
+	"throttleMs": { "generatorDrop": 90, "bossSlam": 500, "crit": 450 },
+	"mergeTier": { "heavy": 6, "medium": 4 },
+	"gachaTier": { "jackpot": 3, "success": 1 }
 }

@@ -52,5 +52,65 @@
 		"currencyCoin": "#ffd45e",
 		"currencyHeroXp": "#7db0ff",
 		"currencyGearXp": "#9fe0b0"
+	},
+	"hpbar": {
+		"ghostLerpSec": 0.5,
+		"wholeFlashSec": 0.24,
+		"pinkFlashSec": 0.6,
+		"whiteBlipSec": 0.06,
+		"wholeFlash": { "brightness": 2.2, "saturate": 1.5, "dropShadowPx": 7, "shadowColor": "rgba(255,255,255,0.95)" },
+		"pinkFlash": { "brightness": 1.2, "saturate": 1.5 },
+		"ghostColor": { "enemy": "#B00063", "hero": "#FF007C" }
+	},
+	"engine": {
+		"trail": { "spineN": 20, "minSpacingPx": 4, "maxAgeBase": 0.12, "lengthRef": 6, "lutN": 8, "maxParticles": 450 },
+		"spawnTrail": { "speed": 900, "head": "#dff0ff", "tail": "#3366ff", "r": 5, "width": 8, "length": 10.5, "alpha": 0.65, "glowRMul": 2.5, "glowAlpha": 0.9 },
+		"flash": { "peak": 0.8, "ms": 140, "color": "#fff" },
+		"shake": { "decayBase": 0.0015, "restThreshold": 0.2 },
+		"dprMax": 2,
+		"glow": { "peak": 0.7, "stops": [0.35, 0.7], "alphas": [0.55, 0.2] },
+		"impact": {
+			"count": 10, "sizeMin": 8, "sizeMax": 14, "speed": 120, "speedMul": 1.3, "life": 0.33, "spread": 0.6,
+			"tier": {
+				"normal": { "count": 1, "size": 1, "speed": 1, "life": 1 },
+				"heavy": { "count": 1.4, "size": 1, "speed": 1.25, "life": 1.15 },
+				"crit": { "count": 1.9, "size": 1.14, "speed": 1.5, "life": 1.36 }
+			},
+			"color": "#ffb14a", "r": 6,
+			"disc": { "dur": 0.12, "r0Mul": 1.2, "r1Mul": 2.6 },
+			"ring": { "dur": 0.45, "r1MulCrit": 7, "r1Mul": 4.5, "w0": 4 },
+			"ring2": { "delay": 0.05, "dur": 0.4, "r1Mul": 3, "w0": 2, "color": "#ffffff" },
+			"debrisSpeedMul": 2, "speedJitter": [0.55, 0.45], "ringAlpha": 0.85, "ringTaper": 0.6,
+			"shakeCrit": 6, "shakeHeavy": 3
+		},
+		"confetti": {
+			"count": 140, "speed": [120, 380], "up": [120, 280], "life": [1.7, 3], "size": [5, 9], "aspect": [0.4, 0.7],
+			"vrot": 9, "grav": [240, 340], "swayFreq": [5, 10], "swayAmp": [28, 70], "termVel": 430, "fadeFrom": 0.75, "dragBase": 0.1
+		},
+		"debris": { "stroke": "rgba(0,0,0,0.6)", "sizeBase": 0.6, "sizeAlpha": 0.4 }
+	},
+	"combat": {
+		"fallbackCanvas": { "w": 460, "h": 800 },
+		"hitFlash": { "brightness": 4, "peakOffset": 0.12, "ms": 130 },
+		"chipShake": { "ms": 150 },
+		"arenaShake": { "amp": 2, "ms": 130 },
+		"cardFlash": { "brightness": 3.8, "ms": 180 },
+		"telegraph": { "scale": 1.15, "brightness": 1.6, "hostileBrightness": 1.5, "hostileSaturate": 1.4, "offset": 0.45, "ms": 200 },
+		"heroAttack": { "stagger": 140, "trailDelay": 160, "trailSpeed": 1500, "trailR": 3, "impactCrit": 6, "impactNormal": 4, "splashDelay": 300, "deathDustDelay": 150, "critShake": 2.5 },
+		"deathDust": { "r": 6 },
+		"limitPulse": { "brightness": 2.2, "scale": 1.12, "offset": 0.35, "ms": 380 },
+		"limitCharge": { "stagger": 90, "trail": { "width": 3, "length": 8, "speed": 1150, "r": 3 }, "impactR": 5 },
+		"orderChest": { "fallbackY": 0.3, "trailSpeed": 1300, "impactR": 7, "tileStagger": 70, "baseDelay": 340 },
+		"waveClear": { "impactR": 12, "shake": 3 },
+		"levelComplete": { "originY": 0.42, "confettiX": 0.5, "confettiY": 0.34, "confettiCount": 90, "flashOpacity": 0.22, "flashMs": 220 },
+		"limitBreak": { "impactR": 16, "arenaShake": 3.5, "deathDustDelay": 120, "cineMs": 700, "cineOffset": 0.15, "beamSkew": -4, "beamMs": 420, "flashOpacity": 0.35, "flashMs": 260, "screenShake": 8 },
+		"enemyAttack": { "stagger": 130, "trailDelay": 150, "trail": { "width": 3, "length": 8, "speed": 1400, "r": 3 }, "impactR": 4, "hurtDelay": 300 },
+		"damageNumberMs": 950,
+		"comboMs": 900,
+		"comboTag": { "yOffset": 8, "fontBase": 13, "fontPerN": 1.5, "fontMax": 28, "ms": 900, "hotColor": "#ff5d6c", "warmColor": "#ff9a3c", "baseColor": "#ffe58a", "hotN": 5, "warmN": 3 },
+		"bossTelegraph": { "ringSize": 40, "fromScale": 4.2, "fromOpacity": 0.2, "toScale": 0.3, "toOpacity": 0.95 },
+		"bossSpecial": { "impactR": 18, "trail": { "width": 5, "length": 10, "speed": 1200, "r": 4 }, "hitR": 6, "stagger": 100, "numberDelay": 150, "flashOpacity": 0.5, "flashMs": 540, "screenShake": 9, "shockSize": 30, "shockFromScale": 0.2, "shockToScale": 18, "shockMs": 640, "shockCurve": "cubic-bezier(.2,.7,.3,1)" },
+		"bossHeal": { "pulseBrightness": 1.5, "pulseOffset": 0.4, "pulseMs": 480, "wisp": { "width": 2, "length": 7, "speed": 950, "r": 2 } },
+		"bossRaise": { "arenaShake": 2, "castBrightness": 2.1, "castOffset": 0.35, "castMs": 640, "ringSize": 40, "ringFromScale": 0.3, "ringFromOpacity": 0.9, "ringToScale": 4, "ringMs": 620, "minionR": 12, "riseBrightness": 3.4, "riseFromScale": 0.6, "riseMs": 420, "riseBaseDelay": 220, "riseStagger": 90 }
 	}
 }

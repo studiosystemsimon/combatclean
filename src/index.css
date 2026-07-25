@@ -324,7 +324,7 @@ body {
    (all dead/gone, or hidden during an intro). Without this the centered arena
    re-centres and the hero row shunts up/down between levels. min-height keeps the
    group height constant → the heroes stay pinned in their combat position. */
-.arena .enemy-row { position: relative; z-index: 1; min-height: 64px; align-items: flex-end; }
+.arena .enemy-row { position: relative; z-index: 1; min-height: 64px; align-items: flex-end; justify-content: center; gap: 6px; }
 .chest-mid-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .arena .hero-row { position: relative; z-index: 3; }
 .combat-chest { position: absolute; width: 58px; height: 58px; transform: translate(-50%, -50%); font-size: 46px; display: flex; align-items: center; justify-content: center; pointer-events: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)); }
@@ -808,8 +808,10 @@ body {
      • Uniform Bold            → BIG text (banners, big numbers, reveals)
      • Uniform Condensed Bold  → EVERYTHING ELSE (titles, headers, body — the default)
    Uniform Condensed Medium is NOT used for text anywhere (kept declared only as a
-   legacy fallback). Any text outline MUST be external-only: -webkit-text-stroke +
-   `paint-order: stroke fill` so the stroke sits OUTSIDE the glyph, never inside it.
+   legacy fallback). Any text outline MUST be a TRUE OUTER-ONLY ring (a text-shadow /
+   drop-shadow ring rendering only OUTSIDE the glyph) — NEVER a centered `-webkit-text-stroke`,
+   which draws through the glyph interior (visible the instant the fill is gradient/transparent).
+   See .win-word (--ol) and .dmg for the pattern.
    ═══════════════════════════════════════════════════════════════════════════ */
 @font-face {
   font-family: 'Uniform Bold';
@@ -1009,7 +1011,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   box-shadow: 0 0 22px rgba(255,45,30,.75), inset 0 0 22px rgba(255,45,30,.5); pointer-events: none; z-index: 7; }
 .boss-warn { position: absolute; left: 0; right: 0; top: 42%; text-align: center; z-index: 13; pointer-events: none; opacity: 0;
   font-weight: 900; font-size: 20px; letter-spacing: 2px; color: #fff;
-  text-shadow: 0 0 14px #ff2a1c, 0 2px 3px #000; -webkit-text-stroke: 1px #7a0010; paint-order: stroke fill; }
+  text-shadow: 0 0 14px #ff2a1c, 0 2px 3px #000; }
 .boss-shock { position: absolute; border-radius: 50%; border: 6px solid rgba(255,85,60,.95);
   box-shadow: 0 0 44px 14px rgba(255,40,20,.75), inset 0 0 44px rgba(255,60,30,.6); pointer-events: none; z-index: 12; }
 /* dedicated empty overlay for imperative boss-VFX nodes (safe from React reconciliation) */
@@ -1018,19 +1020,19 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 /* ── COMBAT VFX: floating damage numbers · combo poppers · limit-break cinematic ── */
 .dmg { position: absolute; transform: translate(-50%, -50%); font-family: 'Uniform Bold', system-ui, sans-serif;
   font-weight: 900; font-size: 15px; z-index: 9; color: #ffe58a; pointer-events: none;
-  text-shadow: 0 0 8px rgba(255,180,60,.9), 0 2px 2px #000; -webkit-text-stroke: .5px #000; paint-order: stroke fill; }
+  text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 0 8px rgba(255,180,60,.9), 0 2px 2px #000; }
 .dmg.crit { font-size: 24px; color: #ff5d6c; text-shadow: 0 0 12px rgba(255,60,80,1), 0 2px 2px #000; }
 .dmg.heal { color: #8dffb0; text-shadow: 0 0 10px rgba(60,220,120,.9), 0 2px 2px #000; }
 
 /* combo tag on an enemy hit by a series of special attacks in a row (colour/size set inline by streak) */
 .combo-tag { position: absolute; transform: translate(-50%, -50%); z-index: 10; pointer-events: none;
   font-family: 'Uniform Bold', system-ui, sans-serif; font-weight: 900; letter-spacing: 1px;
-  text-shadow: 0 0 10px rgba(255,150,40,.9), 0 2px 2px #000; -webkit-text-stroke: .75px #000; paint-order: stroke fill; }
+  text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 0 10px rgba(255,150,40,.9), 0 2px 2px #000; }
 
 /* combo popper — centred over the arena */
 .combo { position: absolute; left: 0; right: 0; top: 34%; text-align: center; z-index: 13; pointer-events: none;
   opacity: 0; font-family: 'Uniform Bold', system-ui, sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 2px;
-  color: #fff; text-shadow: 0 0 14px var(--gold), 0 2px 3px #000; -webkit-text-stroke: 1px #5a3a00; paint-order: stroke fill; }
+  color: #fff; text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 0 14px var(--gold), 0 2px 3px #000; }
 
 /* limit-break cinematic — full-panel flash + golden beam sweep */
 .lb-cine { position: absolute; inset: 0; z-index: 14; pointer-events: none; opacity: 0; }
@@ -1054,9 +1056,8 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   font-family: 'Uniform Condensed Bold', system-ui, sans-serif;
   font-style: italic;
   font-synthesis: style;
-  -webkit-text-stroke: 4px #000;
-  paint-order: stroke fill;
 }
+.lose-word { text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; }
 /* .win-word keeps the combat font/slant but NOT the centered stroke. */
 .win-word { font-synthesis: style; }
 
@@ -1351,9 +1352,9 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* HP bars: ENEMY = thick RED · HERO = thinner GREEN + gold edge (tell apart at a glance) */
-.bar.hp.enemy { height: 6px; }
+.bar.hp.enemy { height: 4px; }
 .bar.hp.enemy .hp-fill { background: #ff3b46; }
-.hero-chip .bar.hp { height: 4px; box-shadow: inset 0 0 0 1px rgba(255, 212, 94, 0.7); }
+.hero-chip .bar.hp { height: 3px; box-shadow: inset 0 0 0 1px rgba(255, 212, 94, 0.7); }
 .hero-chip .bar.hp .hp-fill { background: #46d06a; }
 
 /* Damage numbers: enemy-hit = BIG RED · hero-hit = smaller GOLD (dwell in FxLayer keyframes) */
@@ -1376,7 +1377,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hero-chip .bar.normal { height: 3px; }
 
 /* Boss telegraph text: big YELLOW + black outline (flash timing handled in FxLayer) */
-.boss-warn { font-size: 32px; color: #ffe23a; -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 2px 4px #000, 0 0 14px rgba(255, 200, 40, 0.85); }
+.boss-warn { font-size: 32px; color: #ffe23a; text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 2px 4px #000, 0 0 14px rgba(255, 200, 40, 0.85); }
 
 /* Generators read as INTERACTIVE via the top-left COG badge (see .mb-plus above) —
    no gold ring/outline. */
@@ -1493,7 +1494,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   background: radial-gradient(circle, #fff7cc, #ffcf3a 60%, #ff9f1a); box-shadow: 0 0 6px 1px rgba(255, 200, 80, 0.9); }
 .hero-float-portal { position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
 .hero-float { position: absolute; white-space: nowrap; font-family: 'Uniform Condensed Bold', system-ui, sans-serif; font-style: italic;
-  font-weight: 900; -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55); }
+  font-weight: 900; text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 2px 4px rgba(0, 0, 0, 0.55); }
 .hero-float.hd { font-size: 22px; color: #fff; letter-spacing: 0.5px; }
 .hero-float.stat { font-size: 15px; }
 .hero-float.atk { color: #ff9a6a; } .hero-float.hp { color: #8dffb0; } .hero-float.pwr { color: #ffd45e; }
@@ -1711,7 +1712,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .intro-layer .dmeter i { display: block; height: 100%; width: 0; border-radius: 5px; background: linear-gradient(90deg,#ffd45e,#ff7a3c 55%,#ff2e2e); box-shadow: 0 0 10px rgba(255,80,40,.8); }
 
 /* Enemy Lv badge (every enemy chip in combat) */
-.enemy-chip .lv-badge { position: absolute; top: -7px; left: -4px; z-index: 7; font-family: 'Uniform Condensed Bold', sans-serif; font-size: 9px; font-weight: 900; line-height: 1; color: #fff; padding: 2px 5px; border-radius: 7px; background: linear-gradient(180deg,#3a1020,#7a0e1e); border: 1px solid rgba(255,120,120,.7); box-shadow: 0 1px 4px rgba(0,0,0,.6), 0 0 8px rgba(255,60,60,.4); text-shadow: 0 1px 1px #000; white-space: nowrap; }
+.enemy-chip .lv-badge { position: absolute; top: auto; bottom: -3px; left: -2px; z-index: 7; font-family: 'Uniform Condensed Bold', sans-serif; font-size: 11px; font-weight: 900; line-height: 1; color: #fff; -webkit-text-stroke: 2.5px #000; paint-order: stroke fill; text-shadow: 0 1px 2px #000; white-space: nowrap; }
 .enemy-chip .lv-badge s { font-size: 6px; text-decoration: none; opacity: .8; margin-right: 1px; }
 .enemy-chip.boss-chip .lv-badge { font-size: 11px; top: -9px; padding: 2px 7px; }
 

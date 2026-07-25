@@ -6,7 +6,8 @@
 	},
 	"gen": {
 		"basePower": 6,
-		"perTier": 4
+		"perTier": 4,
+		"powerSpread": 3
 	},
 	"level": {
 		"maxLevel": 30,

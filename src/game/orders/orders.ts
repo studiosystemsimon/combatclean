@@ -31,7 +31,7 @@ export const rerollRarity = (cur: string, rng: Rng): string => {
 export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, forcedRarity: string | null = null): Order => {
   const rarity = forcedRarity || rollWeighted(weights, rng);
   const r = rng();
-  const n = r < C.ORDER_CONFIG.itemCount.one ? 1 : r < C.ORDER_CONFIG.itemCount.two ? 2 : 3;
+  const n = r < C.ORDER_CONFIG.itemCount.one ? 1 : r < C.ORDER_CONFIG.itemCount.two ? 2 : C.ORDER_CONFIG.itemCount.max;
   const [dlo, dhi] = C.ORDER_DOMINANT_TIER[rarity];
   const items: OrderItem[] = [];
   const c0 = pick(C.ORDER_CHAINS, rng);

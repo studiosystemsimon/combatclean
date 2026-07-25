@@ -1,5 +1,8 @@
 {
 	"id": 3064,
 	"name": "Ember Bat",
-	"iconAssetId": "enemy.ember-bat"
+	"iconAssetId": "enemy.ember-bat",
+	"combat": {
+		"scale": 1
+	}
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3044,
 	"name": "Treant Sapling",
-	"iconAssetId": "enemy.treant-sapling"
+	"iconAssetId": "enemy.treant-sapling",
+	"combat": {
+		"scale": 1.2
+	}
 }

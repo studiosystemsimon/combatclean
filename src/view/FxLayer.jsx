@@ -37,6 +37,7 @@ let gachaActive = false;
 const TRAIL_BY_CHAIN = VFX_CONFIG.trailByChain;
 const IMPACT_COLOR = VFX_CONFIG.impactColor;
 const CC = VFX_CONFIG.combatColors; // combat-special VFX colours (central config)
+const CB = VFX_CONFIG.combat; // per-effect combat VFX tuning (central config)
 const rectCenter = (el) => {
   const r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -59,10 +60,10 @@ function flashChip(el) {
     art.animate(
       [
         { filter: 'brightness(1)' },
-        { filter: 'brightness(4)', offset: 0.12 },
+        { filter: `brightness(${CB.hitFlash.brightness})`, offset: CB.hitFlash.peakOffset },
         { filter: 'brightness(1)' },
       ],
-      { duration: 130, easing: 'ease-out' },
+      { duration: CB.hitFlash.ms, easing: 'ease-out' },
     );
     art.animate(
       [
@@ -72,7 +73,7 @@ function flashChip(el) {
         { transform: 'translate(-2px,1px)' },
         { transform: 'translate(0,0)' },
       ],
-      { duration: 150, easing: 'ease-out' },
+      { duration: CB.chipShake.ms, easing: 'ease-out' },
     );
   }
 }
@@ -85,11 +86,11 @@ function deathDust(uid) {
   if (!el) return;
   const art = el.querySelector('.chip-art') || el;
   const c = fx.elCenter(art);
-  if (c) fx.impact(c.x, c.y, { tier: 'normal', color: CC.deathDust, r: 6 });
+  if (c) fx.impact(c.x, c.y, { tier: 'normal', color: CC.deathDust, r: CB.deathDust.r });
 }
 
 // A LIGHT shake confined to the combat ARENA only (never the full-screen fx.shake).
-function shakeArena(amp = 2) {
+function shakeArena(amp = CB.arenaShake.amp) {
   const arena = document.querySelector('.arena');
   if (!arena || !arena.animate) return;
   arena.animate(
@@ -100,7 +101,7 @@ function shakeArena(amp = 2) {
       { transform: `translate(${-amp * 0.5}px,${amp * 0.4}px)` },
       { transform: 'translate(0,0)' },
     ],
-    { duration: 130, easing: 'ease-out' },
+    { duration: CB.arenaShake.ms, easing: 'ease-out' },
   );
 }
 
@@ -110,8 +111,8 @@ function flashCard(card) {
   try {
     card.animate(
       // brightness-only (no animated drop-shadow blur) — cheaper, reads the same.
-      [{ filter: 'brightness(3.8)' }, { filter: 'brightness(1)' }],
-      { duration: 180, easing: 'ease-out' },
+      [{ filter: `brightness(${CB.cardFlash.brightness})` }, { filter: 'brightness(1)' }],
+      { duration: CB.cardFlash.ms, easing: 'ease-out' },
     );
   } catch {
     /* ignore */
@@ -126,10 +127,10 @@ function telegraphChip(el, hostile) {
   art.animate(
     [
       { transform: 'scale(1)', filter: 'brightness(1)' },
-      { transform: 'scale(1.15)', filter: hostile ? 'brightness(1.5) saturate(1.4)' : 'brightness(1.6)', offset: 0.45 },
+      { transform: `scale(${CB.telegraph.scale})`, filter: hostile ? `brightness(${CB.telegraph.hostileBrightness}) saturate(${CB.telegraph.hostileSaturate})` : `brightness(${CB.telegraph.brightness})`, offset: CB.telegraph.offset },
       { transform: 'scale(1)', filter: 'brightness(1)' },
     ],
-    { duration: 200, easing: 'ease-out' },
+    { duration: CB.telegraph.ms, easing: 'ease-out' },
   );
 }
 
@@ -146,19 +147,19 @@ function handleHeroAttacks(ev) {
     if (!heroEl || !to) return;
     const from = fx.elCenter(heroEl);
     const t = TRAIL_BY_CHAIN[h.weapon] || {};
-    const base = i * 140;
+    const base = i * CB.heroAttack.stagger;
     setTimeout(() => telegraphChip(heroEl), base); // WHO is attacking: the chip lunges + brightens
     setTimeout(
       () =>
         fx.spawnTrail(from, to, {
-          color: t.color, tail: t.tail, width: 3, length: 6, speed: 1500, r: 3,
+          ...t, speed: CB.heroAttack.trailSpeed, r: CB.heroAttack.trailR, // width/length from trailByChain
           onHit: () => {
-            fx.impact(to.x, to.y, { tier: h.crit ? 'heavy' : 'normal', color: IMPACT_COLOR[h.weapon] || '#ffb14a', r: h.crit ? 6 : 4 });
+            fx.impact(to.x, to.y, { tier: h.crit ? 'heavy' : 'normal', color: IMPACT_COLOR[h.weapon], r: h.crit ? CB.heroAttack.impactCrit : CB.heroAttack.impactNormal });
             flashChip(enemyEl);
             if (enemyEl) spawnNumber(enemyEl, h.dmg, h.crit ? 'crit' : 'enemy'); // THIS hero's own hit
           },
         }),
-      base + 160,
+      base + CB.heroAttack.trailDelay,
     );
   });
   // A hero SPECIAL (normal ability) landed this tick → the light, combat-local shake.
@@ -170,15 +171,15 @@ function handleHeroAttacks(ev) {
   (ev.enemyDamage || []).forEach((d) => {
     if (d.uid === ev.targetUid && basicHitTarget) return;
     const el = document.querySelector(`[data-battle-enemy="${d.uid}"]`);
-    if (el) setTimeout(() => spawnNumber(el, d.amount, 'enemy'), 300);
+    if (el) setTimeout(() => spawnNumber(el, d.amount, 'enemy'), CB.heroAttack.splashDelay);
   });
   // enemies that died this tick → white death-dust (the CSS decay does the dissolve)
-  (ev.enemyDeaths || []).forEach((uid) => setTimeout(() => deathDust(uid), 150));
+  (ev.enemyDeaths || []).forEach((uid) => setTimeout(() => deathDust(uid), CB.heroAttack.deathDustDelay));
   (ev.heals || []).forEach((h) => {
     const el = document.querySelector(`[data-battle-hero="${h.heroId}"]`);
     if (el) spawnNumber(el, h.amount, 'heal');
   });
-  if (ev.crit) { combo(STRINGS.combat.critical); shakeArena(2.5); }
+  if (ev.crit) { combo(STRINGS.combat.critical); shakeArena(CB.heroAttack.critShake); }
 }
 
 // A completed order charges every squad hero's LIMIT BREAK — make it VISIBLE:
@@ -189,10 +190,10 @@ function pulseLimitBar(bar) {
   bar.animate(
     [
       { filter: 'brightness(1)', transform: 'scale(1)' },
-      { filter: 'brightness(2.2)', transform: 'scale(1.12)', offset: 0.35 },
+      { filter: `brightness(${CB.limitPulse.brightness})`, transform: `scale(${CB.limitPulse.scale})`, offset: CB.limitPulse.offset },
       { filter: 'brightness(1)', transform: 'scale(1)' },
     ],
-    { duration: 380, easing: 'ease-out' },
+    { duration: CB.limitPulse.ms, easing: 'ease-out' },
   );
 }
 function handleLimitCharge(ev) {
@@ -215,10 +216,10 @@ function handleLimitCharge(ev) {
     if (!to) return;
     setTimeout(() => {
       fx.spawnTrail(from, to, {
-        color: CC.limitFlash, tail: CC.limitBreak, width: 3, length: 8, speed: 1150, r: 3,
-        onHit: (x, y) => { fx.impact(x, y, { tier: 'normal', color: CC.limitFlash, r: 5 }); pulseLimitBar(bar); },
+        color: CC.limitFlash, tail: CC.limitBreak, ...CB.limitCharge.trail,
+        onHit: (x, y) => { fx.impact(x, y, { tier: 'normal', color: CC.limitFlash, r: CB.limitCharge.impactR }); pulseLimitBar(bar); },
       });
-    }, i * 90); // stagger so each hero's mote reads distinctly
+    }, i * CB.limitCharge.stagger); // stagger so each hero's mote reads distinctly
   });
 }
 
@@ -226,7 +227,7 @@ function handleOrderChest(ev, chestLayer, overlay, { pauseChest, resolveChest, e
   const cards = document.querySelectorAll('.orders .order');
   const card = Array.from(cards).find((c) => c.getAttribute('data-order-id') === String(ev.orderId));
   const orderPt = card ? fx.elCenter(card) : null; // app coords (canvas trails)
-  const orderVp = card ? rectCenter(card) : { x: window.innerWidth / 2, y: window.innerHeight * 0.3 };
+  const orderVp = card ? rectCenter(card) : { x: window.innerWidth / 2, y: window.innerHeight * CB.orderChest.fallbackY };
   // 1) board tiles fly into the order card
   ev.items.forEach((it, i) => {
     const from = fx.cellCenter(it.cell);
@@ -235,16 +236,16 @@ function handleOrderChest(ev, chestLayer, overlay, { pauseChest, resolveChest, e
     setTimeout(
       () =>
         fx.spawnTrail(from, orderPt, {
-          ...t, speed: 1300,
-          onHit: (x, y) => { fx.impact(x, y, { tier: 'normal', color: IMPACT_COLOR[it.chain] || '#ffb14a', r: 7 }); flashCard(card); },
+          ...t, speed: CB.orderChest.trailSpeed,
+          onHit: (x, y) => { fx.impact(x, y, { tier: 'normal', color: IMPACT_COLOR[it.chain], r: CB.orderChest.impactR }); flashCard(card); },
         }),
-      i * 70,
+      i * CB.orderChest.tileStagger,
     );
   });
   // 2-8) card flips to chest → flies up → descends into combat (combat live) →
   // heroes cosmetic-attack it → pops → PAUSE → rarity reveal → contents fly to the
   // Gear tab as the reveal shrinks → RESUME + fill the order gap.
-  const delay = 340 + ev.items.length * 70;
+  const delay = CB.orderChest.baseDelay + ev.items.length * CB.orderChest.tileStagger;
   setTimeout(
     () =>
       runOrderChest(chestLayer, overlay, ev.gear, orderVp, {
@@ -269,13 +270,13 @@ function handleOrderChest(ev, chestLayer, overlay, { pauseChest, resolveChest, e
 // distracted player registers "I won that" even at a glance.
 function handleWaveClear() {
   const arena = document.querySelector('.enemy-row') || document.querySelector('.arena');
-  if (arena) { const c = fx.elCenter(arena); if (c) fx.impact(c.x, c.y, { tier: 'heavy', color: CC.waveClear, r: 12, shake: false }); }
+  if (arena) { const c = fx.elCenter(arena); if (c) fx.impact(c.x, c.y, { tier: 'heavy', color: CC.waveClear, r: CB.waveClear.impactR, shake: false }); }
   combo(STRINGS.combat.waveClear);
-  shakeArena(3);
+  shakeArena(CB.waveClear.shake);
 }
 
 function handleLevelComplete(ev) {
-  const from = { x: window.innerWidth / 2, y: window.innerHeight * 0.42 };
+  const from = { x: window.innerWidth / 2, y: window.innerHeight * CB.levelComplete.originY };
   const items = [];
   if (ev.coins) items.push({ ...resolve('ui.coin'), statKey: 'coins', amount: ev.coins, color: CC.currencyCoin });
   if (ev.heroXp) items.push({ ...resolve('ui.heroXp'), statKey: 'heroXp', amount: ev.heroXp, color: CC.currencyHeroXp });
@@ -284,39 +285,38 @@ function handleLevelComplete(ev) {
   // CONFETTI finale — one lean central erupt (kept small so it doesn't fight the
   // currency burst for frame budget at level-complete).
   const COLORS = VFX_CONFIG.confettiColors;
-  const W = fx.W || 460;
-  const H = fx.H || 800;
-  fx.confetti(W * 0.5, H * 0.34, { colors: COLORS, count: 90 });
-  fx.flash(0.22, 220);
+  const { levelComplete: LC, fallbackCanvas: FBC } = CB;
+  const W = fx.W || FBC.w;
+  const H = fx.H || FBC.h;
+  fx.confetti(W * LC.confettiX, H * LC.confettiY, { colors: COLORS, count: LC.confettiCount });
+  fx.flash(LC.flashOpacity, LC.flashMs);
 }
 
 function handleLimitBreak(ev) {
   const arena = document.querySelector('.enemy-row') || document.querySelector('.arena');
   if (arena) {
     const c = fx.elCenter(arena);
-    fx.impact(c.x, c.y, { tier: 'crit', color: CC.limitBreak, r: 16 });
+    fx.impact(c.x, c.y, { tier: 'crit', color: CC.limitBreak, r: CB.limitBreak.impactR });
   }
   document.querySelectorAll('[data-battle-enemy]').forEach(flashChip); // a limit break flashes EVERY enemy
-  shakeArena(3.5); // its a special → the arena shakes (combat-local, still light)
-  (ev.enemyDeaths || []).forEach((uid) => setTimeout(() => deathDust(uid), 120)); // dissolve dust for the slain
+  shakeArena(CB.limitBreak.arenaShake); // its a special → the arena shakes (combat-local, still light)
+  (ev.enemyDeaths || []).forEach((uid) => setTimeout(() => deathDust(uid), CB.limitBreak.deathDustDelay)); // dissolve dust for the slain
   // full cinematic: white/gold flash overlay + golden beam sweep + LIMIT BREAK! text + big shake
   const cine = document.querySelector('.lb-cine');
   if (cine) {
-    cine.animate([{ opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' });
+    cine.animate([{ opacity: 0 }, { opacity: 1, offset: CB.limitBreak.cineOffset }, { opacity: 0 }], { duration: CB.limitBreak.cineMs, easing: 'ease-out' });
     const beam = cine.querySelector('.beam');
     if (beam) {
+      const sk = `translateY(-50%) skewY(${CB.limitBreak.beamSkew}deg)`;
       beam.animate(
-        [
-          { transform: 'translateY(-50%) skewY(-4deg) scaleX(0)' },
-          { transform: 'translateY(-50%) skewY(-4deg) scaleX(1)' },
-        ],
-        { duration: 420, easing: 'ease-out' },
+        [{ transform: `${sk} scaleX(0)` }, { transform: `${sk} scaleX(1)` }],
+        { duration: CB.limitBreak.beamMs, easing: 'ease-out' },
       );
     }
   }
   combo(STRINGS.combat.limitBreak);
-  fx.flash(0.35, 260, CC.limitFlash);
-  fx.shake(8);
+  fx.flash(CB.limitBreak.flashOpacity, CB.limitBreak.flashMs, CC.limitFlash);
+  fx.shake(CB.limitBreak.screenShake);
   (ev?.enemyDamage || []).forEach((d) => {
     const el = document.querySelector(`[data-battle-enemy="${d.uid}"]`);
     if (el) spawnNumber(el, d.amount, 'crit');
@@ -348,19 +348,19 @@ function handleEnemyAttacks(ev) {
     if (!enemyEl || !heroEl) return;
     const from = fx.elCenter(enemyEl);
     const to = fx.elCenter(heroEl);
-    const base = i * 130;
+    const base = i * CB.enemyAttack.stagger;
     setTimeout(() => telegraphChip(enemyEl, true), base); // WHICH enemy is attacking (red tint)
     setTimeout(
       () =>
         fx.spawnTrail(from, to, {
-          color: CC.enemyTrail, tail: CC.enemyTail, width: 3, length: 8, speed: 1400, r: 3,
-          onHit: (x, y) => fx.impact(x, y, { tier: 'normal', color: CC.enemyImpact, r: 4 }),
+          color: CC.enemyTrail, tail: CC.enemyTail, ...CB.enemyAttack.trail,
+          onHit: (x, y) => fx.impact(x, y, { tier: 'normal', color: CC.enemyImpact, r: CB.enemyAttack.impactR }),
         }),
-      base + 150,
+      base + CB.enemyAttack.trailDelay,
     );
     if (hit.dmg) {
       const el = document.querySelector(`[data-battle-hero="${hit.heroId}"]`);
-      if (el) setTimeout(() => spawnNumber(el, hit.dmg, 'hero'), base + 300); // hero takes damage → gold
+      if (el) setTimeout(() => spawnNumber(el, hit.dmg, 'hero'), base + CB.enemyAttack.hurtDelay); // hero takes damage → gold
     }
   });
 }
@@ -395,7 +395,7 @@ function spawnNumber(el, amount, kind) {
       { transform: 'translate(-50%,-150%) scale(1.1)', opacity: 1, offset: 0.55 }, // DWELL at peak (~250ms) so a glance catches it
       { transform: 'translate(-50%,-260%) scale(1)', opacity: 0 },
     ],
-    { duration: 950, easing: 'ease-out' },
+    { duration: CB.damageNumberMs, easing: 'ease-out' },
   ).onfinish = () => d.remove();
 }
 
@@ -410,7 +410,7 @@ function combo(text) {
       { opacity: 1, transform: 'scale(1.15)', offset: 0.3 },
       { opacity: 0, transform: 'scale(1)' },
     ],
-    { duration: 900, easing: 'ease-out' },
+    { duration: CB.comboMs, easing: 'ease-out' },
   );
 }
 
@@ -426,9 +426,10 @@ function handleCombo(ev) {
   tag.className = 'combo-tag';
   tag.textContent = `COMBO ×${ev.n}`;
   tag.style.left = c.x + 'px';
-  tag.style.top = c.y - 8 + 'px';
-  tag.style.fontSize = Math.min(28, 13 + ev.n * 1.5) + 'px';
-  tag.style.color = ev.n >= 5 ? '#ff5d6c' : ev.n >= 3 ? '#ff9a3c' : '#ffe58a';
+  const CT = CB.comboTag;
+  tag.style.top = c.y - CT.yOffset + 'px';
+  tag.style.fontSize = Math.min(CT.fontMax, CT.fontBase + ev.n * CT.fontPerN) + 'px';
+  tag.style.color = ev.n >= CT.hotN ? CT.hotColor : ev.n >= CT.warmN ? CT.warmColor : CT.baseColor;
   overlay.appendChild(tag);
   tag.animate(
     [
@@ -436,7 +437,7 @@ function handleCombo(ev) {
       { transform: 'translate(-50%,-120%) scale(1.2)', opacity: 1, offset: 0.3 },
       { transform: 'translate(-50%,-220%) scale(1)', opacity: 0 },
     ],
-    { duration: 900, easing: 'ease-out' },
+    { duration: CT.ms, easing: 'ease-out' },
   ).onfinish = () => tag.remove();
 }
 
@@ -459,17 +460,19 @@ function handleBossTelegraph(ev) {
   if (!c) return;
   const ring = document.createElement('div');
   ring.className = 'boss-tele-ring';
-  ring.style.left = c.x - 20 + 'px'; ring.style.top = c.y - 20 + 'px'; ring.style.width = '40px'; ring.style.height = '40px';
+  const BT = CB.bossTelegraph;
+  ring.style.left = c.x - BT.ringSize / 2 + 'px'; ring.style.top = c.y - BT.ringSize / 2 + 'px'; ring.style.width = ring.style.height = BT.ringSize + 'px';
   overlay.appendChild(ring); // dedicated empty overlay → safe from React reconciliation
   // Ring COLLAPSES inward (big → small) onto the boss so it reads as "impact incoming".
-  ring.animate([{ transform: 'scale(4.2)', opacity: 0.2 }, { transform: 'scale(.3)', opacity: 0.95 }], { duration: TELEGRAPH_MS, easing: 'ease-in' }).onfinish = () => ring.remove();
+  ring.animate([{ transform: `scale(${BT.fromScale})`, opacity: BT.fromOpacity }, { transform: `scale(${BT.toScale})`, opacity: BT.toOpacity }], { duration: TELEGRAPH_MS, easing: 'ease-in' }).onfinish = () => ring.remove();
 }
 
 function handleBossSpecial(ev) {
   const arena = document.querySelector('.hero-row') || document.querySelector('.arena');
   if (!arena) return;
+  const BS = CB.bossSpecial;
   const c = fx.elCenter(arena);
-  fx.impact(c.x, c.y, { tier: 'crit', color: CC.bossImpact, r: 18 });
+  fx.impact(c.x, c.y, { tier: 'crit', color: CC.bossImpact, r: BS.impactR });
   combo(STRINGS.combat.bossSlam);
   ev.heroIds.forEach((hid, i) => {
     const heroEl = document.querySelector(`[data-battle-hero="${hid}"]`);
@@ -478,17 +481,17 @@ function handleBossSpecial(ev) {
     setTimeout(
       () =>
         fx.spawnTrail(c, to, {
-          color: CC.bossTrail, tail: CC.bossImpact, width: 5, length: 10, speed: 1200, r: 4,
-          onHit: (x, y) => fx.impact(x, y, { tier: 'heavy', color: CC.bossHitImpact, r: 6 }),
+          color: CC.bossTrail, tail: CC.bossImpact, ...BS.trail,
+          onHit: (x, y) => fx.impact(x, y, { tier: 'heavy', color: CC.bossHitImpact, r: BS.hitR }),
         }),
-      i * 100, // ≥0.1s between each hero the boss special strikes
+      i * BS.stagger, // ≥0.1s between each hero the boss special strikes
     );
-    if (ev.dmg) setTimeout(() => spawnNumber(heroEl, ev.dmg, 'crit'), i * 100 + 150);
+    if (ev.dmg) setTimeout(() => spawnNumber(heroEl, ev.dmg, 'crit'), i * BS.stagger + BS.numberDelay);
   });
   // Dramatic slam: red flash + extra shake, both via the EXISTING engine primitives
   // (no parallel shake/flash path); plus an expanding shockwave ring in the fx overlay.
-  fx.flash(0.5, 540, CC.bossFlash);
-  fx.shake(9);
+  fx.flash(BS.flashOpacity, BS.flashMs, CC.bossFlash);
+  fx.shake(BS.screenShake);
   const bossEl = ev.bossUid != null ? document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`) : null;
   const overlay = bossFxLayer();
   if (bossEl && overlay) {
@@ -496,9 +499,9 @@ function handleBossSpecial(ev) {
     if (bc) {
       const shock = document.createElement('div');
       shock.className = 'boss-shock';
-      shock.style.left = bc.x - 15 + 'px'; shock.style.top = bc.y - 15 + 'px'; shock.style.width = '30px'; shock.style.height = '30px';
+      shock.style.left = bc.x - BS.shockSize / 2 + 'px'; shock.style.top = bc.y - BS.shockSize / 2 + 'px'; shock.style.width = shock.style.height = BS.shockSize + 'px';
       overlay.appendChild(shock); // dedicated empty overlay → safe from React reconciliation
-      shock.animate([{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(18)', opacity: 0 }], { duration: 640, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => shock.remove();
+      shock.animate([{ transform: `scale(${BS.shockFromScale})`, opacity: 1 }, { transform: `scale(${BS.shockToScale})`, opacity: 0 }], { duration: BS.shockMs, easing: BS.shockCurve }).onfinish = () => shock.remove();
     }
   }
 }
@@ -516,17 +519,17 @@ function handleBossHeal(ev) {
       // no animated drop-shadow blur.
       [
         { filter: 'brightness(1)' },
-        { filter: 'brightness(1.5)', offset: 0.4 },
+        { filter: `brightness(${CB.bossHeal.pulseBrightness})`, offset: CB.bossHeal.pulseOffset },
         { filter: 'brightness(1)' },
       ],
-      { duration: 480, easing: 'ease-out' },
+      { duration: CB.bossHeal.pulseMs, easing: 'ease-out' },
     );
   }
   const to = fx.elCenter(bossEl);
   if (!to) return;
   document.querySelectorAll('.enemy-chip:not(.boss-chip):not(.dead)').forEach((acc) => {
     const from = fx.elCenter(acc);
-    if (from) fx.spawnTrail(from, to, { color: CC.bossHealWisp, tail: CC.bossHealTail, width: 2, length: 7, speed: 950, r: 2 });
+    if (from) fx.spawnTrail(from, to, { color: CC.bossHealWisp, tail: CC.bossHealTail, ...CB.bossHeal.wisp });
   });
 }
 
@@ -534,8 +537,9 @@ function handleBossHeal(ev) {
 // cast on the boss (purple pulse + shockwave ring) then each raised minion claws
 // back with a burst + rise-in pop.
 function handleBossRaise(ev) {
+  const BR = CB.bossRaise;
   combo(STRINGS.combat.raise);
-  shakeArena(2); // more theatrical so the player notices dead minions returning
+  shakeArena(BR.arenaShake); // more theatrical so the player notices dead minions returning
   const bossEl = document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`);
   if (bossEl) {
     const art = bossEl.querySelector('.chip-art') || bossEl;
@@ -545,10 +549,10 @@ function handleBossRaise(ev) {
         // combo below) — no animated drop-shadow blur.
         [
           { filter: 'brightness(1)' },
-          { filter: 'brightness(2.1)', offset: 0.35 },
+          { filter: `brightness(${BR.castBrightness})`, offset: BR.castOffset },
           { filter: 'brightness(1)' },
         ],
-        { duration: 640, easing: 'ease-out' },
+        { duration: BR.castMs, easing: 'ease-out' },
       );
     }
     const overlay = bossFxLayer();
@@ -556,10 +560,10 @@ function handleBossRaise(ev) {
     if (overlay && bc) {
       const ring = document.createElement('div');
       ring.className = 'boss-tele-ring';
-      ring.style.left = bc.x - 20 + 'px'; ring.style.top = bc.y - 20 + 'px'; ring.style.width = '40px'; ring.style.height = '40px';
+      ring.style.left = bc.x - BR.ringSize / 2 + 'px'; ring.style.top = bc.y - BR.ringSize / 2 + 'px'; ring.style.width = ring.style.height = BR.ringSize + 'px';
       ring.style.borderColor = CC.bossRaise;
       overlay.appendChild(ring); // dedicated empty overlay → safe from React reconciliation
-      ring.animate([{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(4)', opacity: 0 }], { duration: 620, easing: 'ease-out' }).onfinish = () => ring.remove();
+      ring.animate([{ transform: `scale(${BR.ringFromScale})`, opacity: BR.ringFromOpacity }, { transform: `scale(${BR.ringToScale})`, opacity: 0 }], { duration: BR.ringMs, easing: 'ease-out' }).onfinish = () => ring.remove();
     }
   }
   (ev.raised || []).forEach((uid, i) => {
@@ -567,20 +571,20 @@ function handleBossRaise(ev) {
     if (!el) return;
     setTimeout(() => {
       const c = fx.elCenter(el);
-      if (c) fx.impact(c.x, c.y, { tier: 'heavy', color: CC.bossRaise, r: 12 });
+      if (c) fx.impact(c.x, c.y, { tier: 'heavy', color: CC.bossRaise, r: BR.minionR });
       const art = el.querySelector('.chip-art') || el;
       if (art.animate) {
         art.animate(
           // brightness + scale only (purple semantics carried by the impact burst
           // above) — no animated drop-shadow blur.
           [
-            { filter: 'brightness(3.4)', transform: 'scale(.6)' },
+            { filter: `brightness(${BR.riseBrightness})`, transform: `scale(${BR.riseFromScale})` },
             { filter: 'brightness(1)', transform: 'scale(1)' },
           ],
-          { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' },
+          { duration: BR.riseMs, easing: 'cubic-bezier(.2,.8,.3,1)' },
         );
       }
-    }, 220 + i * 90); // stagger each minion rising after the cast
+    }, BR.riseBaseDelay + i * BR.riseStagger); // stagger each minion rising after the cast
   });
 }
 

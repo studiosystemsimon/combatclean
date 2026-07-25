@@ -3,7 +3,8 @@
 	"arrivalMs": 7000,
 	"itemCount": {
 		"one": 0.3,
-		"two": 0.85
+		"two": 0.85,
+		"max": 3
 	},
 	"fillerMaxLevel": 3,
 	"costPerTierBase": 2,

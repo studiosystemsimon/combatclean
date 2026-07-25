@@ -1,5 +1,8 @@
 {
 	"id": 3089,
 	"name": "Dragonkin Warrior",
-	"iconAssetId": "enemy.dragonkin-warrior"
+	"iconAssetId": "enemy.dragonkin-warrior",
+	"combat": {
+		"scale": 1.55
+	}
 }

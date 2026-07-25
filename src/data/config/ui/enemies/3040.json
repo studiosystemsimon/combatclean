@@ -1,5 +1,8 @@
 {
 	"id": 3040,
 	"name": "Swamp Hag",
-	"iconAssetId": "enemy.swamp-hag"
+	"iconAssetId": "enemy.swamp-hag",
+	"combat": {
+		"scale": 1.1
+	}
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3066,
 	"name": "Salamander",
-	"iconAssetId": "enemy.salamander"
+	"iconAssetId": "enemy.salamander",
+	"combat": {
+		"scale": 1.2
+	}
 }

@@ -1,5 +1,8 @@
 {
 	"id": 3072,
 	"name": "Magma Golem",
-	"iconAssetId": "enemy.magma-golem"
+	"iconAssetId": "enemy.magma-golem",
+	"combat": {
+		"scale": 1.55
+	}
 }

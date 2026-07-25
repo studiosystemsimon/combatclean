@@ -1,5 +1,8 @@
 {
 	"id": 3046,
 	"name": "Thornhound",
-	"iconAssetId": "enemy.thornhound"
+	"iconAssetId": "enemy.thornhound",
+	"combat": {
+		"scale": 1.2
+	}
 }

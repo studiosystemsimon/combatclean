@@ -6,6 +6,8 @@
 		"magic": 1260
 	},
 	"enemyAttackMs": 700,
+	"defaultAttackMs": 900,
+	"defaultLimitOrders": 5,
 	"attackJitterSteps": 4,
 	"attackJitterMs": 70,
 	"critChance": 0.05,

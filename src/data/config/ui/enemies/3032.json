@@ -1,5 +1,8 @@
 {
 	"id": 3032,
 	"name": "Bog Slime",
-	"iconAssetId": "enemy.bog-slime"
+	"iconAssetId": "enemy.bog-slime",
+	"combat": {
+		"scale": 1.05
+	}
 }

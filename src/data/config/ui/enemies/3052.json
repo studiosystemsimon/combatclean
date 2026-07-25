@@ -1,5 +1,8 @@
 {
 	"id": 3052,
 	"name": "Moss Troll",
-	"iconAssetId": "enemy.moss-troll"
+	"iconAssetId": "enemy.moss-troll",
+	"combat": {
+		"scale": 1.25
+	}
 }

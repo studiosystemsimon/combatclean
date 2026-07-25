@@ -1,5 +1,8 @@
 {
 	"id": 3061,
 	"name": "Banshee",
-	"iconAssetId": "enemy.banshee"
+	"iconAssetId": "enemy.banshee",
+	"combat": {
+		"scale": 1.2
+	}
 }

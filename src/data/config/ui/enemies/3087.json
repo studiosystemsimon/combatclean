@@ -1,5 +1,8 @@
 {
 	"id": 3087,
 	"name": "Wyrmling Mage",
-	"iconAssetId": "enemy.wyrmling-mage"
+	"iconAssetId": "enemy.wyrmling-mage",
+	"combat": {
+		"scale": 1.05
+	}
 }
