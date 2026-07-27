@@ -23,14 +23,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   stateRef.current = state;
 
   useEffect(() => {
-    const id = setInterval(() => { if (stateRef.current.menuHeroId) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
+    const id = setInterval(() => { if (stateRef.current.menuHeroId || stateRef.current.afkOpen) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
     return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      if (stateRef.current.menuHeroId) return; // paused while the full-screen hero menu is open (no render underneath)
+      if (stateRef.current.menuHeroId || stateRef.current.afkOpen) return; // paused while a full-screen overlay (hero menu / AFK popup) is open
       dispatch({ type: A.BATTLE_TICK, dt: C.BATTLE.tickMs });
     }, C.BATTLE.tickMs);
     return () => clearInterval(id);
@@ -75,6 +75,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const actions = useMemo(() => ({
     setScreen: (screen: string) => dispatch({ type: A.SET_SCREEN, screen }),
     setHeroMenu: (heroId: string | null) => dispatch({ type: A.SET_HERO_MENU, heroId }),
+    setAfkOpen: (open: boolean) => dispatch({ type: A.SET_AFK_OPEN, open }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
     collectAfk: () => dispatch({ type: A.COLLECT_AFK }),
     tapGenerator: (index: number) => dispatch({ type: A.TAP_GENERATOR, index, now: Date.now() }),

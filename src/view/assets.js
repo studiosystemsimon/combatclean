@@ -57,6 +57,16 @@ export function mergeStyle(a) {
   return { height: `${(s * 100).toFixed(2)}%`, width: 'auto', maxWidth: 'none', transform: `translate(${dx}%, ${dy}%) rotate(${rot}deg)` };
 }
 
+// Same placement as mergeStyle but sized in PIXELS against a base — for small fixed slots (e.g. order
+// tiles) where a %-height collapses the img to its natural size.
+export function mergeStylePx(a, px) {
+  if (!a) return undefined;
+  const an = a.anchor, ax = an?.x ?? 0.5, ay = an?.y ?? 0.5;
+  const s = a.scale ?? 1, rot = a.rotation ?? 0;
+  const dx = ((0.5 - ax) * 100).toFixed(2), dy = ((0.5 - ay) * 100).toFixed(2);
+  return { height: `${(s * px).toFixed(1)}px`, width: 'auto', maxWidth: 'none', transform: `translate(${dx}%, ${dy}%) rotate(${rot}deg)` };
+}
+
 export function portraitStyle(p) {
   if (!p) return undefined;
   const s = p.scale ?? 1, x = p.x ?? 0, y = p.y ?? 0;

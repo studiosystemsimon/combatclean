@@ -10,14 +10,15 @@
 // orders-bar height in index.css.
 import { useLayoutEffect, useEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
-import { itemAsset, resolve, mergeStyle } from './assets.js';
+import { itemAsset, resolve, mergeStylePx } from './assets.js';
 import Art from './Art.jsx';
-import { canFulfill } from '../model/orders.js';
+import { canFulfill, displayOrders } from '../model/orders.js';
 import { GEAR_RARITY } from '../data/gear.js';
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
 
 const OR = ANIM.orders;
+const REQ_ICON_PX = 40; // req-icon base height (px) in the fixed order slot — locked render size, like COMBAT_BASE_H
 
 export default function Orders() {
   const { state, actions } = useGame();
@@ -26,7 +27,7 @@ export default function Orders() {
   const prevRects = useRef({});
   const pendingStart = useRef({}); // pending id → performance.now() when its countdown began
 
-  const slots = state.orders; // array order IS the render order (orders left, pending at end)
+  const slots = displayOrders(state.orders, state.board); // completable first (rarest left), pending at end
   const flipKey = slots.map((o) => o.id + (o.pending ? 'p' : o.fulfilling ? 'f' : 'o')).join(',');
 
   // FLIP: POSITION-ONLY easing. Remember each tile's spot, then after the list
@@ -170,14 +171,12 @@ export default function Orders() {
             >
               <span className="wipe" />
               <span className="otab"><Art a={resolve(`ui.chest.${o.rarity}`)} className="otab-art" /></span>
-              <div className="side">
-                <button type="button" className="reroll" title={STRINGS.orders.rerollHint} onClick={(e) => onReroll(e, o.id)}><Art a={resolve('ui.reroll')} className="reroll-icon" /></button>
-              </div>
               <div className="reqs">
                 {o.items.map((it, i) => { const ia = itemAsset(it.chain, it.level); return (
-                  <span key={i} className="req"><Art a={ia} className="req-art" style={mergeStyle(ia)} /></span>
+                  <span key={i} className="req"><Art a={ia} className="req-art" style={mergeStylePx(ia, REQ_ICON_PX)} /></span>
                 ); })}
               </div>
+              <button type="button" className="reroll" title={STRINGS.orders.rerollHint} onClick={(e) => onReroll(e, o.id)}><Art a={resolve('ui.reroll')} className="reroll-icon" /></button>
             </div>
           );
         })}

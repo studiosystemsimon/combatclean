@@ -34,10 +34,6 @@ function BannerCard({ banner, state, actions }) {
       <div className="bcard-frame" />
       <div className="bcard-body">
         <div className="bcard-top">
-          <div className="bcard-art">
-            <div className="bcard-aura" />
-            <div className="bcard-face">{resolve(banner.faceAsset).emoji}</div>
-          </div>
           <div className="bcard-head">
             <div className="bcard-name">{banner.name}</div>
             <div className="bcard-sub">{banner.sub}</div>

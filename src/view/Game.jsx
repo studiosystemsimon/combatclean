@@ -12,21 +12,29 @@ import GearScreen from './screens/GearScreen.jsx';
 import GachaScreen from './screens/GachaScreen.jsx';
 import MapScreen from './screens/MapScreen.jsx';
 import HeroMenu from './screens/HeroMenu.jsx';
+import AfkPopup from './screens/AfkPopup.jsx';
+import AfkAlert from './AfkAlert.jsx';
+import { AFK } from '../data/config.js';
 
 export default function Game() {
   const { state } = useGame();
   // While the full-screen hero menu is open, combat is NOT rendered underneath and its
   // tick is paused (see GameContext) — the overlay owns the screen so nothing grinds.
   const menuOpen = !!state.menuHeroId;
+  // The AFK collection popup is the same kind of full-screen overlay (combat paused underneath).
+  const afkOpen = !!state.afkOpen;
+  // The AFK! tile shows in the combat zone once idle rewards reach alertMs and the popup is closed.
+  const afkAlert = !!state.pendingAfk && state.pendingAfk.ms >= AFK.alertMs && !afkOpen;
   return (
     <div className="app">
       <Header />
       {/* The persistent combat panel shows on every screen EXCEPT the map (its own full
           view) and while the hero menu is open. Combat keeps ticking underneath off-map
           (panel just unmounted); the hero menu instead PAUSES the tick + unmounts FxLayer. */}
-      {state.screen !== 'map' && !menuOpen && (
+      {state.screen !== 'map' && !menuOpen && !afkOpen && (
         <div className="combat-panel">
           <Autobattler />
+          {afkAlert && <AfkAlert />}
         </div>
       )}
       {/* The hero menu takes over the CONTEXT area (below the currency bar, above the nav),
@@ -41,7 +49,8 @@ export default function Game() {
         </>)}
       </div>
       <NavBar />
-      {!menuOpen && <FxLayer />}
+      {!menuOpen && !afkOpen && <FxLayer />}
+      {afkOpen && <AfkPopup />}
     </div>
   );
 }

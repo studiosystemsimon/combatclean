@@ -1,6 +1,8 @@
 {
 	"maxOfflineMs": 28800000,
 	"minReportMs": 60000,
+	"alertMs": 300000,
+	"monstersPerHr": 375,
 	"coinsPerHr": 120,
 	"coinsPerZone": 90,
 	"heroXpPerHr": 90,

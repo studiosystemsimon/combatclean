@@ -22,7 +22,17 @@
 
   .device{aspect-ratio:393/852;height:min(852px,90vh);width:auto;background:#05070c;border:1px solid #222b3d;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:'Uniform Condensed Bold',system-ui,sans-serif}
 
-  .afk{position:absolute;inset:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;overflow:hidden;isolation:isolate}
+  .afk{position:absolute;inset:0;overflow:hidden;isolation:isolate;background:#070a10}
+  .dim{position:absolute;inset:0;z-index:1;background:rgba(3,5,9,.6)}
+  /* POPUP — flexible height, ~20% top / 30% bottom margins on iPhone 16, shrinking as the screen
+     gets smaller: the leftover vertical space (screen − reserve) is split 40:60 (= 20:30), floored
+     at 10px so it stays a floating popup even on tiny screens. */
+  .pop{position:absolute;left:14px;right:14px;z-index:5;--reserve:426px;
+    top:max(10px,calc((100% - var(--reserve)) * 0.40));
+    bottom:max(10px,calc((100% - var(--reserve)) * 0.60));
+    display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;overflow:hidden;isolation:isolate;
+    border-radius:26px;border:1px solid #2a3346;border-top-color:rgba(255,255,255,.18);
+    box-shadow:0 24px 60px rgba(0,0,0,.72),0 0 0 1px rgba(0,0,0,.45)}
   .afk-bg{position:absolute;inset:0;z-index:0;background:#0c1410 center/cover no-repeat;background-image:url('../../assets/combatclean/zones/zone-mossbog.png');transform:scale(1.08)}
   .afk-bg::after{content:'';position:absolute;inset:0;background:
      radial-gradient(120% 70% at 50% 8%,rgba(6,10,14,.12),rgba(5,8,12,.66) 80%),
@@ -34,10 +44,10 @@
   .cur img{width:20px;height:20px;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
   .cur b{font-size:13px;color:#fff}.cur.sp{margin-left:auto}
 
-  .head{position:relative;z-index:5;text-align:center;padding:6px 14px 2px}
-  .head .wb{font-family:'Uniform Condensed Medium',sans-serif;letter-spacing:3px;font-size:12px;color:#bfe9c8;text-transform:uppercase}
-  .head .zone{font-family:'Uniform Bold',sans-serif;font-size:26px;color:#eafff0;letter-spacing:.5px;line-height:1.05;margin-top:1px}
-  .head .away{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:'Uniform Condensed Medium',sans-serif;font-size:12px;color:#cdd8ea;background:rgba(9,12,18,.5);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:3px 11px}
+  .head{position:relative;z-index:5;text-align:center;padding:8px 14px 2px}
+  .head .wb{font-family:'Uniform Condensed Medium',sans-serif;letter-spacing:2px;font-size:10.5px;color:#bfe9c8;text-transform:uppercase}
+  .head .zone{font-family:'Uniform Bold',sans-serif;font-size:22px;color:#eafff0;letter-spacing:.5px;line-height:1.05;margin-top:1px}
+  .head .away{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-family:'Uniform Condensed Medium',sans-serif;font-size:11px;color:#cdd8ea;background:rgba(9,12,18,.5);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:2px 10px}
   .head .away b{color:#fff;font-family:'Uniform Condensed Bold',sans-serif}
 
   /* ── battlefield ── */
@@ -47,8 +57,8 @@
   .killwrap{position:absolute;top:6px;left:0;right:0;z-index:7;text-align:center;pointer-events:none}
   .killwrap .lbl{font-family:'Uniform Condensed Bold',sans-serif;letter-spacing:2px;font-size:12px;color:#ffd9d9;text-transform:uppercase}
   .killrow{display:inline-flex;align-items:center;gap:8px;margin-top:-2px}
-  .killrow .sk{font-size:28px;filter:drop-shadow(0 2px 3px #000)}
-  .killnum{font-family:'Uniform Bold',sans-serif;font-size:56px;line-height:1;color:#fff;letter-spacing:1px}
+  .killrow .sk{font-size:24px;filter:drop-shadow(0 2px 3px #000)}
+  .killnum{font-family:'Uniform Bold',sans-serif;font-size:46px;line-height:1;color:#fff;letter-spacing:1px}
   .killnum.punch{animation:punch .16s ease}
   @keyframes punch{0%{transform:scale(1)}45%{transform:scale(1.1)}100%{transform:scale(1)}}
 
@@ -80,8 +90,8 @@
   @keyframes muz{0%{opacity:0;transform:scaleX(.3)}30%{opacity:1}100%{opacity:0;transform:scaleX(1.2)}}
 
   /* rewards — condensed SQUARE tiles, number underneath */
-  .rew{position:relative;z-index:6;margin:0 12px;padding:10px 12px 12px;background:rgba(10,14,20,.72);border:1px solid rgba(255,255,255,.09);border-top-color:rgba(255,255,255,.14);border-radius:16px;backdrop-filter:blur(8px);box-shadow:0 -6px 24px rgba(0,0,0,.4)}
-  .caprow{display:flex;align-items:center;gap:8px;font-family:'Uniform Condensed Medium',sans-serif;font-size:10.5px;color:var(--dim);margin-bottom:10px}
+  .rew{position:relative;z-index:6;margin:0 10px;padding:8px 10px 10px;background:rgba(10,14,20,.72);border:1px solid rgba(255,255,255,.09);border-top-color:rgba(255,255,255,.14);border-radius:14px;backdrop-filter:blur(8px);box-shadow:0 -6px 24px rgba(0,0,0,.4)}
+  .caprow{display:flex;align-items:center;gap:8px;font-family:'Uniform Condensed Medium',sans-serif;font-size:10.5px;color:var(--dim);margin-bottom:8px}
   .caprow .cap{flex:1;height:8px;border-radius:6px;background:#0c1017;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
   .caprow .cap i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#5ad17a,#9be86b);box-shadow:0 0 10px rgba(120,230,110,.6)}
   .caprow .cap.full i{background:linear-gradient(90deg,#ffb020,#ffd45e);box-shadow:0 0 12px rgba(255,200,80,.7)}
@@ -91,17 +101,17 @@
   .sq{position:relative;width:100%;max-width:80px;aspect-ratio:1/1;border-radius:15px;display:grid;place-items:center;overflow:hidden;
     background:linear-gradient(180deg,rgba(24,30,44,.95),rgba(12,16,24,.95));border:1px solid var(--line);border-top-color:rgba(255,255,255,.14)}
   .sq::before{content:'';position:absolute;inset:0;background:radial-gradient(95% 65% at 50% 0%,var(--c,#3a465e),transparent 70%);opacity:.42}
-  .sq img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 3px #000);position:relative}
+  .sq img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 3px #000);position:relative}
   .sq .rate{position:absolute;top:4px;right:6px;font-family:'Uniform Condensed Medium',sans-serif;font-size:8px;color:#dfe7f4;opacity:.85}
   .item .n{font-family:'Uniform Condensed Bold',sans-serif;font-size:16px;color:#fff;line-height:1}
   .item .n.punch{animation:punch .16s ease}
   .item .k{font-family:'Uniform Condensed Medium',sans-serif;font-size:8.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
 
-  .cta{position:relative;z-index:6;display:flex;gap:10px;align-items:stretch;padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
-  .claim{flex:1;position:relative;border:none;border-radius:15px;cursor:pointer;color:#3a2600;font-family:'Uniform Bold',sans-serif;font-size:19px;letter-spacing:.5px;
+  .cta{position:relative;z-index:6;display:flex;gap:10px;align-items:stretch;padding:9px 12px 12px}
+  .claim{flex:1;position:relative;border:none;border-radius:14px;cursor:pointer;color:#3a2600;font-family:'Uniform Bold',sans-serif;font-size:17px;letter-spacing:.5px;
     background:linear-gradient(180deg,#ffe793,#f5b829);box-shadow:0 4px 0 #b9820f,0 8px 22px rgba(245,184,41,.45);
-    display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 10px;min-height:58px;animation:cta 2.2s ease-in-out infinite}
-  .claim img{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+    display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 10px;min-height:50px;animation:cta 2.2s ease-in-out infinite}
+  .claim img{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
   .claim:active{transform:translateY(2px);box-shadow:0 2px 0 #b9820f}
   .claim.done{background:linear-gradient(180deg,#7fd39a,#3fae6a);color:#04220f;box-shadow:0 4px 0 #1f5f38;animation:none}
   @keyframes cta{0%,100%{box-shadow:0 4px 0 #b9820f,0 8px 22px rgba(245,184,41,.4)}50%{box-shadow:0 4px 0 #b9820f,0 10px 30px rgba(255,214,94,.7)}}
@@ -125,14 +135,18 @@
 
   <div class="device">
     <div class="afk" id="afk">
-      <div class="afk-bg"></div>
+      <div class="dim"></div>
 
+      <!-- persistent game HUD (stays lit above the dim) — the explosion arcs UP into these -->
       <div class="topbar">
         <div class="cur"><img src="../../assets/combatclean/ui/energy.png" alt=""><b>100</b></div>
         <div class="cur sp" data-stat="coin"><img src="../../assets/combatclean/ui/coin.png" alt=""><b id="tbCoinV">210</b></div>
         <div class="cur" data-stat="hero"><img src="../../assets/combatclean/ui/heroXp.png" alt=""><b id="tbHeroV">364</b></div>
         <div class="cur" data-stat="gear"><img src="../../assets/combatclean/ui/gearXp.png" alt=""><b id="tbGearV">364</b></div>
       </div>
+
+      <div class="pop" id="pop">
+      <div class="afk-bg"></div>
 
       <div class="head">
         <div class="wb">Welcome back — your squad held the line</div>
@@ -170,6 +184,7 @@
         <button class="claim" id="claimBtn"><img src="../../assets/combatclean/ui/chest-rare.png" alt="">CLAIM</button>
         <button class="fast" id="fastBtn"><span class="x">×2</span>FAST<small>collect</small></button>
       </div>
+      </div><!-- /.pop -->
     </div>
   </div>
 

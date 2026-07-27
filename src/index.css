@@ -204,13 +204,13 @@ body {
 /* Section height LOCKED to the shipped orders-bar height: 84px (68px card + 8/8
    padding). The rail inside drag-scrolls; tiles hug their icons. */
 .orders {
-  flex: 0 0 auto; height: 84px; box-sizing: border-box; padding: 8px 10px;
+  flex: 0 0 auto; height: 84px; box-sizing: border-box; padding: 0 10px;
   background: rgba(0, 0, 0, 0.18); overflow: visible;
 }
 /* overflow-y:clip + a clip-margin lets each order's folder TAB poke up above the
    row without a taller container (X still scrolls). */
 .rail {
-  height: 100%; display: flex; align-items: center; gap: 8px;
+  height: 100%; display: flex; align-items: center; gap: 8px; padding: 22px 0 2px;
   overflow-x: auto; overflow-y: clip; overflow-clip-margin: 20px;
   scrollbar-width: none; cursor: grab; touch-action: pan-x;
 }
@@ -220,9 +220,9 @@ body {
 /* One order — left column [chest over reroll], then req icons fill the rest at full
    height. FLAT grey body, rarity-coloured chest, gold when ready to claim. */
 .order {
-  position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
-  height: 68px; padding: 5px; border-radius: 12px; color: inherit; font: inherit; cursor: pointer;
-  background: #1a2233;                            /* all orders are GREY */
+  position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 4px;
+  height: auto; padding: 5px; border-radius: 12px; color: inherit; font: inherit; cursor: pointer;
+  background: #1a2233;                            /* all orders are GREY; box hugs its req slots */
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .order[aria-disabled="true"] { cursor: default; }
@@ -237,28 +237,28 @@ body {
    the order and overlaps its top edge. The order + section sizes are unchanged; the
    tab lives in the rail's clip-margin so it overhangs without a taller container. */
 .otab {
-  position: absolute; z-index: 3; top: -13px; left: 8px; height: 27px; min-width: 34px;
-  display: flex; align-items: center; justify-content: center; padding: 0 6px 4px;
-  border-radius: 8px 8px 0 0; background: var(--rar, #9aa7bd);
+  position: absolute; z-index: 3; top: -18px; left: 6px; height: 19px; min-width: 34px;
+  display: flex; align-items: flex-start; justify-content: center; padding: 0; overflow: visible;
+  border-radius: 8px 8px 0 0; background: color-mix(in srgb, var(--rar, #9aa7bd) 40%, #141a26);
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.35);
 }
-.otab .otab-art.art-img { width: 22px; height: 22px; display: block; }
+.otab .otab-art.art-img { width: auto; height: 32px; margin: 0 2px; display: block; }
 .art-emoji.otab-art { font-size: 18px; line-height: 1; }
 
-/* left column: reroll die (the chest moved up to the folder tab) */
-.side { flex: 0 0 auto; width: 44px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+/* reroll die — small badge in the order's bottom-right corner */
 .reroll {
-  flex: 0 0 auto; width: 40px; height: 16px; border-radius: 6px; padding: 0;
-  background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.16); color: #eef2ff;
-  font-size: 12px; line-height: 1; display: grid; place-items: center; cursor: pointer;
+  position: absolute; right: 3px; bottom: 3px; width: 22px; height: 22px; z-index: 4;
+  border-radius: 7px; padding: 0; background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18); color: #eef2ff;
+  display: grid; place-items: center; cursor: pointer;
 }
 .reroll:active { transform: scale(0.9); }
 .art-emoji.reroll-icon { font-size: 12px; line-height: 1; }
 .reroll-icon.art-img { width: 14px; height: 14px; }
 
-/* required items — full-height square icons, tight margins, never condensed */
-.reqs { flex: 0 0 auto; min-width: 117px; display: flex; align-items: center; justify-content: center; gap: 5px; height: 100%; }
-.req { flex: 0 0 auto; width: 56px; height: 100%; position: relative; border-radius: 8px; background: rgba(0, 0, 0, 0.22); display: grid; place-items: center; overflow: hidden; }
+/* required items — fixed square slots so the tile hugs its 1–2–3 items exactly */
+.reqs { flex: 0 0 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 4px; height: auto; }
+.req { flex: 0 0 auto; width: 48px; height: 48px; position: relative; border-radius: 8px; background: rgba(0, 0, 0, 0.22); display: grid; place-items: center; overflow: hidden; }
 .req-art.art-img { width: 100%; height: 100%; }
 .art-emoji.req-art { font-size: 40px; }
 
@@ -267,7 +267,7 @@ body {
 
 /* NEXT-ORDER arrival timer — a DISTINCT element (not an order tile), at the end */
 .pending {
-  flex: 0 0 auto; width: 96px; height: 68px; display: flex; flex-direction: column;
+  flex: 0 0 auto; width: 96px; height: 60px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px; border-radius: 12px;
   border: 1px dashed rgba(120, 150, 255, 0.35); background: rgba(90, 140, 255, 0.06);
 }
@@ -1193,11 +1193,12 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .banners-wrap { display: flex; flex-direction: column; gap: 12px; padding: 0 0 8px; }
 .bcard { position: relative; flex: 0 0 auto; border-radius: 18px; overflow: hidden; isolation: isolate;
   border: 1px solid rgba(255,255,255,.09); background: #12151d; box-shadow: 0 8px 24px rgba(0,0,0,.42); }
-/* Tile-background splash art (behind the theme wash + content). A readability scrim (darker on the
-   left/bottom where the name/odds/buttons sit) keeps text legible while the art shows through on the right. */
+/* Tile-background splash art (behind the theme wash + content). Horizontal scrim: art kept very
+   visible on the LEFT, fading across the 40–70% band to the existing level held on the RIGHT.
+   A bottom scrim keeps the rarity grid + buttons legible. */
 .bcard-bg { position: absolute; inset: 0; z-index: 0; border-radius: 18px; background-size: cover; background-position: center right; }
 .bcard-bg::after { content: ''; position: absolute; inset: 0; border-radius: 18px;
-  background: linear-gradient(90deg, rgba(6,8,18,.86) 26%, rgba(6,8,18,.42) 100%), linear-gradient(180deg, transparent 42%, rgba(6,8,18,.66) 100%); }
+  background: linear-gradient(90deg, rgba(6,8,18,.12) 0%, rgba(6,8,18,.12) 40%, rgba(6,8,18,.42) 70%, rgba(6,8,18,.42) 100%), linear-gradient(180deg, transparent 42%, rgba(6,8,18,.66) 100%); }
 .bcard-wash { position: absolute; inset: 0; z-index: 0;
   background:
     radial-gradient(90% 120% at 0% 0%, var(--bt, rgba(255,158,46,.2)) 0%, transparent 55%),
@@ -1215,20 +1216,14 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 
 .bcard-body { position: relative; z-index: 5; display: flex; flex-direction: column; gap: 9px; padding: 12px 13px; }
 .bcard-top { display: flex; align-items: center; gap: 12px; }
-.bcard-art { width: 66px; height: 66px; min-width: 66px; border-radius: 14px; position: relative; overflow: hidden;
-  display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, var(--bt, #ff9e2e), rgba(0,0,0,.5));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), inset 0 -10px 18px rgba(0,0,0,.4); }
-.bcard-aura { position: absolute; inset: 8px; border-radius: 50%;
-  background: radial-gradient(circle, var(--bt, #ff9e2e) 0%, transparent 68%); opacity: .6;
-  animation: bannerAuraPulse 2.6s ease-in-out infinite; }
+/* bcard-aura/face icon removed from the tile; bannerAuraPulse kept — reused by the gacha reveal FX. */
 @keyframes bannerAuraPulse { 0%,100% { transform: scale(.94); opacity: .75; } 50% { transform: scale(1.06); opacity: 1; } }
-.bcard-face { position: relative; z-index: 2; font-size: 36px; line-height: 1;
-  filter: drop-shadow(0 3px 8px rgba(0,0,0,.5)); animation: bannerBob 3.2s ease-in-out infinite; }
-@keyframes bannerBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
 
 .bcard-head { flex: 1; min-width: 0; }
-.bcard-name { font-size: 15.5px; font-weight: 900; letter-spacing: .4px; line-height: 1.1; }
-.bcard-sub { font-size: 10px; color: var(--dim, #93a0c0); margin-top: 3px; line-height: 1.35; }
+.bcard-name { font-size: 15.5px; font-weight: 900; letter-spacing: .4px; line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0,0,0,.92), 0 0 6px rgba(0,0,0,.6); }
+.bcard-sub { font-size: 10px; color: #cbd6ea; margin-top: 3px; line-height: 1.35;
+  text-shadow: 0 1px 2px rgba(0,0,0,.9); }
 .bcard-timer { display: inline-block; margin-top: 5px; font-size: 8.5px; font-weight: 900; letter-spacing: .6px;
   color: #ffe089; background: rgba(255,212,94,.12); border: 1px solid rgba(255,212,94,.32); padding: 2px 6px; border-radius: 6px; }
 
@@ -1958,3 +1953,92 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hero-menu .dl b { font-family: 'Uniform Condensed Bold', sans-serif; font-size: 14px; } .hero-menu .dl b.up { color: #5ad17a; } .hero-menu .dl b.dn { color: #ff6a6a; }
 .hero-menu .cmp-warn { margin-top: 12px; background: rgba(255,90,90,.12); border: 1px solid rgba(255,90,90,.4); border-radius: 10px; padding: 9px 11px; font-family: 'Uniform Condensed Medium', sans-serif; font-size: 12px; color: #ffb3b3; }
 .hero-menu .cmp-warn b { color: #fff; font-family: 'Uniform Condensed Bold', sans-serif; }
+
+/* ---------------------------------------------------------------------------
+   AFK COLLECTION — the welcome-back popup (src/view/screens/AfkPopup.jsx) and
+   the AFK! alert tile (src/view/AfkAlert.jsx). All popup selectors scoped under
+   .afk-popup to avoid clashing with global classes.
+   --------------------------------------------------------------------------- */
+/* keep the currency HUD lit above the popup dim (it is the currencyBurst arc target) */
+.header { position: relative; z-index: 1000; }
+
+/* AFK! alert tile — upper-centre of the combat zone, pulsing to draw the eye */
+.afk-alert { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 30;
+  display: flex; flex-direction: column; align-items: center; padding: 7px 22px 6px; border: none; cursor: pointer;
+  background: linear-gradient(180deg, #ffe07a, #f2a81c); border-radius: 14px;
+  box-shadow: 0 4px 0 #b56f0c, 0 6px 16px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.25) inset;
+  animation: afkAlertPulse 1.3s ease-in-out infinite; }
+.afk-alert:active { transform: translateX(-50%) translateY(2px); }
+.afk-alert .afk-alert-z { font-size: 13px; line-height: 1; }
+.afk-alert .afk-alert-t { font-family: 'Uniform Bold', sans-serif; font-size: 22px; line-height: 1; color: #fff; letter-spacing: 1px; }
+.afk-alert .afk-alert-sub { font-family: 'Uniform Condensed Medium', sans-serif; font-size: 8.5px; color: #4a2f00; text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+.afk-alert .ol { text-shadow: 0.09em 0 0 #000, 0.05em 0.078em 0 #000, -0.05em 0.078em 0 #000, -0.09em 0 0 #000, -0.05em -0.078em 0 #000, 0.05em -0.078em 0 #000, 0 0.09em 0 #000, 0 -0.09em 0 #000; }
+@keyframes afkAlertPulse { 0%,100% { box-shadow: 0 4px 0 #b56f0c, 0 6px 16px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.25) inset; } 50% { box-shadow: 0 4px 0 #b56f0c, 0 8px 26px rgba(255,200,80,.85), 0 0 0 2px rgba(255,255,255,.55) inset; } }
+
+/* ── popup shell ── */
+.afk-popup { position: absolute; inset: 0; z-index: 900; isolation: isolate; font-family: 'Uniform Condensed Bold', system-ui, sans-serif; }
+.afk-popup .dim { position: absolute; inset: 0; background: rgba(3,5,9,.6); }
+.afk-popup .ol { text-shadow: 0.09em 0 0 #000, 0.078em 0.045em 0 #000, 0.045em 0.078em 0 #000, 0 0.09em 0 #000, -0.045em 0.078em 0 #000, -0.078em 0.045em 0 #000, -0.09em 0 0 #000, -0.078em -0.045em 0 #000, -0.045em -0.078em 0 #000, 0 -0.09em 0 #000, 0.045em -0.078em 0 #000, 0.078em -0.045em 0 #000; }
+.afk-popup .ol-sm { text-shadow: 0.06em 0 0 #000, 0.03em 0.05em 0 #000, -0.03em 0.05em 0 #000, -0.06em 0 0 #000, -0.03em -0.05em 0 #000, 0.03em -0.05em 0 #000, 0 0.06em 0 #000, 0 -0.06em 0 #000; }
+/* the card: flexible height, ~20% top / 30% bottom margins on iPhone 16, shrinking as the screen
+   gets smaller (leftover vertical space split 40:60 = 20:30, floored so it stays a popup on tiny screens) */
+.afk-popup .card { position: absolute; left: 14px; right: 14px; --reserve: 426px;
+  top: max(10px, calc((100% - var(--reserve)) * 0.40)); bottom: max(10px, calc((100% - var(--reserve)) * 0.60));
+  display: grid; grid-template-rows: auto minmax(0,1fr) auto auto; overflow: hidden; isolation: isolate; background: #0c1410;
+  border-radius: 26px; border: 1px solid #2a3346; border-top-color: rgba(255,255,255,.18);
+  box-shadow: 0 24px 60px rgba(0,0,0,.72), 0 0 0 1px rgba(0,0,0,.45); }
+.afk-popup .afk-bg { position: absolute; inset: 0; z-index: 0; background: #0c1410 center/cover no-repeat; transform: scale(1.08); }
+.afk-popup .afk-bg::after { content: ''; position: absolute; inset: 0; background:
+  radial-gradient(120% 70% at 50% 8%, rgba(6,10,14,.12), rgba(5,8,12,.66) 80%),
+  linear-gradient(180deg, rgba(6,9,13,.5) 0%, rgba(6,9,13,.04) 26%, rgba(6,9,13,.4) 60%, rgba(5,8,12,.94) 100%); }
+
+/* head */
+.afk-popup .head { position: relative; z-index: 5; text-align: center; padding: 8px 14px 2px; }
+.afk-popup .wb { font-family: 'Uniform Condensed Medium', sans-serif; letter-spacing: 2px; font-size: 10.5px; color: #bfe9c8; text-transform: uppercase; }
+.afk-popup .zone { font-family: 'Uniform Bold', sans-serif; font-size: 22px; color: #eafff0; letter-spacing: .5px; line-height: 1.05; margin-top: 1px; text-transform: uppercase; }
+.afk-popup .away { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-family: 'Uniform Condensed Medium', sans-serif; font-size: 11px; color: #cdd8ea; background: rgba(9,12,18,.5); border: 1px solid rgba(255,255,255,.09); border-radius: 999px; padding: 2px 10px; }
+.afk-popup .away b { color: #fff; font-family: 'Uniform Condensed Bold', sans-serif; }
+
+/* scene */
+.afk-popup .scene { position: relative; z-index: 4; min-height: 0; overflow: hidden; }
+.afk-popup .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; background: linear-gradient(180deg, transparent, rgba(4,10,7,.5) 55%, rgba(3,7,5,.82)); z-index: 1; }
+.afk-popup .killwrap { position: absolute; top: 5px; left: 0; right: 0; z-index: 7; text-align: center; pointer-events: none; }
+.afk-popup .lbl { font-family: 'Uniform Condensed Bold', sans-serif; letter-spacing: 2px; font-size: 11px; color: #ffd9d9; text-transform: uppercase; }
+.afk-popup .killrow { display: inline-flex; align-items: center; gap: 8px; margin-top: -2px; }
+.afk-popup .sk { font-size: 24px; filter: drop-shadow(0 2px 3px #000); }
+.afk-popup .killnum { font-family: 'Uniform Bold', sans-serif; font-size: 46px; line-height: 1; color: #fff; letter-spacing: 1px; }
+.afk-popup .foe { position: absolute; width: 76px; height: 76px; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,.55)); z-index: 3; }
+.afk-popup .foe.hit { animation: afkFoeHit .12s ease; }
+@keyframes afkFoeHit { 0% { filter: drop-shadow(0 5px 5px rgba(0,0,0,.55)) brightness(1); } 50% { filter: brightness(3.4) drop-shadow(0 0 8px #fff); } 100% { filter: brightness(1); } }
+.afk-popup .spark { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle, #fff, #ffd45e 55%, transparent); z-index: 8; pointer-events: none; }
+.afk-popup .corpse { position: absolute; width: 70px; height: 70px; object-fit: contain; pointer-events: none; filter: grayscale(.4) brightness(.62) drop-shadow(0 3px 3px rgba(0,0,0,.6)); }
+.afk-popup .pop { position: absolute; z-index: 8; font-family: 'Uniform Bold', sans-serif; font-size: 15px; color: #ffe3a0; pointer-events: none; text-shadow: 0 1px 2px #000; }
+.afk-popup .pop.sk { color: #fff; font-size: 18px; }
+@keyframes afkpRise { 0% { opacity: 0; transform: translateY(4px) scale(.7); } 20% { opacity: 1; transform: translateY(-2px) scale(1.1); } 100% { opacity: 0; transform: translateY(-26px) scale(1); } }
+.afk-popup .hero { position: absolute; z-index: 5; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(0,0,0,.5)); animation: afkBobL 2.1s ease-in-out infinite; transform-origin: bottom center; }
+@keyframes afkBobL { 0%,100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-3px); } }
+.afk-popup .muzzle { position: absolute; right: 188px; bottom: 44px; z-index: 6; width: 40px; height: 6px; border-radius: 4px; background: linear-gradient(90deg, #fff, rgba(255,220,120,.9), transparent); opacity: 0; filter: blur(1px); transform-origin: right center; }
+.afk-popup .muzzle.fire { animation: afkMuz .16s ease-out; }
+@keyframes afkMuz { 0% { opacity: 0; transform: scaleX(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: scaleX(1.2); } }
+
+/* rewards */
+.afk-popup .rew { position: relative; z-index: 6; margin: 0 10px; padding: 8px 10px 10px; background: rgba(10,14,20,.72); border: 1px solid rgba(255,255,255,.09); border-top-color: rgba(255,255,255,.14); border-radius: 14px; backdrop-filter: blur(8px); box-shadow: 0 -6px 24px rgba(0,0,0,.4); }
+.afk-popup .caprow { display: flex; align-items: center; gap: 8px; font-family: 'Uniform Condensed Medium', sans-serif; font-size: 10.5px; color: var(--dim, #9aa7bd); margin-bottom: 8px; }
+.afk-popup .cap { flex: 1; height: 8px; border-radius: 6px; background: #0c1017; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
+.afk-popup .cap i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #5ad17a, #9be86b); box-shadow: 0 0 10px rgba(120,230,110,.6); }
+.afk-popup .caprow b { color: #fff; font-family: 'Uniform Condensed Bold', sans-serif; }
+.afk-popup .loot { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; justify-items: center; }
+.afk-popup .item { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+.afk-popup .sq { position: relative; width: 100%; max-width: 76px; aspect-ratio: 1/1; border-radius: 15px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(180deg, rgba(24,30,44,.95), rgba(12,16,24,.95)); border: 1px solid var(--line, #2a3346); border-top-color: rgba(255,255,255,.14); }
+.afk-popup .sq::before { content: ''; position: absolute; inset: 0; background: radial-gradient(95% 65% at 50% 0%, var(--c, #3a465e), transparent 70%); opacity: .42; }
+.afk-popup .sq img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 3px #000); position: relative; }
+.afk-popup .item .n { font-family: 'Uniform Condensed Bold', sans-serif; font-size: 16px; color: #fff; line-height: 1; }
+.afk-popup .item .k { font-family: 'Uniform Condensed Medium', sans-serif; font-size: 8.5px; color: var(--dim, #9aa7bd); text-transform: uppercase; letter-spacing: .5px; }
+
+/* CTA */
+.afk-popup .cta { position: relative; z-index: 6; display: flex; padding: 9px 12px 12px; }
+.afk-popup .claim { flex: 1; position: relative; border: none; border-radius: 14px; cursor: pointer; color: #3a2600; font-family: 'Uniform Bold', sans-serif; font-size: 17px; letter-spacing: .5px; background: linear-gradient(180deg, #ffe793, #f5b829); box-shadow: 0 4px 0 #b9820f, 0 8px 22px rgba(245,184,41,.45); display: flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 10px; min-height: 50px; animation: afkCta 2.2s ease-in-out infinite; }
+.afk-popup .claim img { width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.afk-popup .claim:active { transform: translateY(2px); box-shadow: 0 2px 0 #b9820f; }
+.afk-popup .claim.done { background: linear-gradient(180deg, #7fd39a, #3fae6a); color: #04220f; box-shadow: 0 4px 0 #1f5f38; animation: none; }
+@keyframes afkCta { 0%,100% { box-shadow: 0 4px 0 #b9820f, 0 8px 22px rgba(245,184,41,.4); } 50% { box-shadow: 0 4px 0 #b9820f, 0 10px 30px rgba(255,214,94,.7); } }

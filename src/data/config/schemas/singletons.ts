@@ -111,7 +111,9 @@ export const zNodeConfig = z.object({
 
 // afk — idle income (per-hour + per-zone-index terms).
 export const zAfkConfig = z.object({
-  maxOfflineMs: num, minReportMs: num,
+  maxOfflineMs: num, minReportMs: num, alertMs: num, // alertMs: idle time before the AFK! tile + auto-open popup trigger
+  monstersPerHr: num, // display-only: "monsters defeated while away" count-up rate in the AFK popup
+
   coinsPerHr: num, coinsPerZone: num, heroXpPerHr: num, heroXpPerZone: num, gearXpPerHr: num, gearXpPerZone: num,
 }).strict();
 

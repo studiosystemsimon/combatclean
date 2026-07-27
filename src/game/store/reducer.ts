@@ -119,6 +119,7 @@ export const initState = (now: number, saved: any = null): S => {
     furthestLevel: C.BATTLE.startLevel, pendingAfk: null,
     crystals: { ...C.EMPTY_CRYSTALS },
     menuHeroId: null, // UI-only: cid whose full-screen hero menu is open (unpersisted)
+    afkOpen: false, // UI-only: the AFK collection popup is open (unpersisted; auto-set on load when idle ≥ alertMs)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
   };
@@ -136,7 +137,25 @@ export const initState = (now: number, saved: any = null): S => {
   const crystals = { ...C.EMPTY_CRYSTALS, ...(saved.crystals || {}) };
   // Restore the unlocked-generator set; backfill from furthestLevel for saves predating this field.
   const loadedUnlocked = (saved.unlockedGenerators && saved.unlockedGenerators.length) ? saved.unlockedGenerators : deriveUnlockedGenerators(furthestLevel);
-  return { ...merged, battle: rebuilt.battle, nextId: rebuilt.nextId, furthestLevel, pendingAfk, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
+  // Auto-open the AFK collection popup on login when idle rewards reached the alert threshold (≥ alertMs) —
+  // the player sees the welcome-back popup BEFORE gameplay.
+  const afkOpen = !!(pendingAfk && pendingAfk.ms >= C.AFK.alertMs);
+  // Order-flow self-heal (refresh robustness). Redemption advances an order through TRANSIENT states:
+  // fulfil → `fulfilling:true` → (orderChest fx) → EMPTY_ORDER → `pending` → (rail countdown) → fill.
+  // A refresh persists that transient order (features.merge.orders) but the fx queue is rebuilt empty on
+  // load, so a `fulfilling` order never receives its EMPTY_ORDER and sits forever as a dead, un-fulfillable
+  // card. The reward was already granted at fulfil time, so finish what the lost fx would have done: turn
+  // each stranded `fulfilling` order into a fresh PENDING slot (the rail refills it normally). Pending
+  // slots and healthy active orders pass through unchanged; malformed entries collapse to pending too.
+  let oid = rebuilt.nextId;
+  const reconciledOrders = (merged.orders || []).map((o: any) => {
+    if (!o || typeof o !== 'object') return { id: oid++, pending: true, dur: C.ORDER_CONFIG.arrivalMs };
+    if (o.pending) return o;
+    if (o.fulfilling) return { id: o.id != null ? o.id : oid++, pending: true, dur: C.ORDER_CONFIG.arrivalMs };
+    if (Array.isArray(o.items) && o.items.length) return o;
+    return { id: o.id != null ? o.id : oid++, pending: true, dur: C.ORDER_CONFIG.arrivalMs };
+  });
+  return { ...merged, battle: rebuilt.battle, nextId: oid, orders: reconciledOrders, furthestLevel, pendingAfk, afkOpen, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
 };
 
 export const reducer = (state: S, action: Act): S => {
@@ -147,6 +166,9 @@ export const reducer = (state: S, action: Act): S => {
     case A.SET_HERO_MENU:
       // Opening clears the fx queue so no stale combat VFX flashes when FxLayer remounts on close.
       return { ...state, menuHeroId: action.heroId, fx: action.heroId ? [] : state.fx };
+    case A.SET_AFK_OPEN:
+      // Full-screen AFK collection popup (combat paused underneath). Clear fx on open like the hero menu.
+      return { ...state, afkOpen: action.open, fx: action.open ? [] : state.fx };
     case A.SET_BATTLE_LEVEL: {
       const target = Math.max(1, Math.min(Math.floor(action.level) || 1, state.furthestLevel));
       if (target === state.battle.level) return state;
@@ -157,7 +179,8 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.COLLECT_AFK: {
       const a = state.pendingAfk; if (!a) return state;
-      return { ...state, coins: state.coins + a.coins, heroXp: state.heroXp + a.heroXp, gearXp: state.gearXp + a.gearXp, pendingAfk: null };
+      // Claiming grants the idle rewards, clears pendingAfk (→ the AFK! tile disappears) and closes the popup.
+      return { ...state, coins: state.coins + a.coins, heroXp: state.heroXp + a.heroXp, gearXp: state.gearXp + a.gearXp, pendingAfk: null, afkOpen: false };
     }
     case A.RESUME_AFK: {
       const elapsed = action.now - state.now;
