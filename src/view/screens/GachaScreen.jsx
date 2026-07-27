@@ -2,13 +2,14 @@
 import { useGame } from '../../controller/GameContext';
 import { HEROES } from '../../data/heroes.js';
 import { BANNERS, BANNER_ORDER } from '../../data/banners.js';
-import { HERO_RARITIES, HERO_RARITY_ORDER } from '../../data/rarities.js';
+import { HERO_RARITIES } from '../../data/rarities.js';
 import { heroAsset, resolve } from '../assets.js';
 import { ownedHeroSet } from '../../model/heroes.js';
 import { STRINGS } from '../../data/strings.js';
 import { ANIM } from '../../data/config.js';
 import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
+import RarityGrid from '../RarityGrid.jsx';
 import { fmtK as fmt } from '../fmt.js';
 
 function BannerCard({ banner, state, actions }) {
@@ -16,14 +17,6 @@ function BannerCard({ banner, state, actions }) {
   const canX10 = state.coins >= banner.ten;
   const pityState = state.pity[banner.id] || {};
   const bgImg = banner.bgAsset ? resolve(banner.bgAsset).img : null; // tile-background splash art
-
-  const oddsKeys = Object.keys(banner.weights).filter((k) => HERO_RARITY_ORDER.includes(k));
-  const odds = oddsKeys.map((k) => {
-    const w = banner.weights[k];
-    const pct = w < 1 ? w : Math.round(w);
-    const meta = HERO_RARITIES[k];
-    return { key: k, pct, meta };
-  });
 
   const pityEntries = banner.pity.map((p) => {
     const cur = pityState[p.rarity] || 0;
@@ -61,15 +54,7 @@ function BannerCard({ banner, state, actions }) {
             ))}
           </div>
         </div>
-        <div className="bcard-odds">
-          {odds.map((o) => (
-            <span key={o.key} className="opill">
-              <span className="cdot" style={{ background: o.meta.color, boxShadow: `0 0 6px ${o.meta.color}` }} />
-              <span className="cpct">{o.pct}%</span>
-              <span className="cname" style={{ color: o.meta.color }}>{o.meta.name}</span>
-            </span>
-          ))}
-        </div>
+        <RarityGrid weights={banner.weights} align="right" />
         <div className="bcard-btns">
           <button
             type="button"

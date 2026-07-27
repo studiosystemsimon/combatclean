@@ -1236,13 +1236,20 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .bcard-pity-col .plabel { font-size: 8px; margin: 0 0 1px; font-weight: 900; letter-spacing: 1px; color: var(--dim, #93a0c0); text-transform: uppercase; }
 .bcard-pity-col .ppill { margin: 0; }
 
-.bcard-odds { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.opill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800;
-  padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.09); font-variant-numeric: tabular-nums; }
-.opill .cdot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
-.opill .cpct { color: var(--ink, #eef2ff); }
-.opill .cname { color: var(--dim, #93a0c0); font-weight: 700; }
+/* === Rarity Display Grid — reusable rarity-odds strip (16×37 per pair: colour hero icon + %) === */
+.rdg { display: flex; align-items: flex-start; gap: 7px; width: 100%; }
+.rdg-cell { flex: 0 0 16px; width: 16px; height: 37px; position: relative;
+  display: flex; flex-direction: column; align-items: center; }
+.rdg-icon { width: 16px; height: 16px; border-radius: 4px; overflow: hidden; position: relative;
+  border: 1px solid var(--rdg-c);
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.25)), var(--rdg-bg); }
+.rdg-icon svg { width: 100%; height: 100%; display: block; }
+.rdg-num { width: 16px; height: 16px; line-height: 16px; margin-top: 5px; font-weight: 800; color: #fff;
+  text-align: center; overflow: hidden; white-space: nowrap; letter-spacing: -.2px;
+  text-shadow: 0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; }
+.rdg-pcsign { position: absolute; left: 0; right: 0; top: 14px; transform: translateY(-50%);
+  text-align: center; font-size: 10px; font-weight: 900; color: #fff; line-height: 1; pointer-events: none; z-index: 2;
+  text-shadow: 0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; }
 .ppill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800;
   padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(255,255,255,.05);
   border: 1px solid rgba(255,255,255,.10); font-variant-numeric: tabular-nums; color: var(--dim, #93a0c0); }

@@ -54,7 +54,7 @@
     background:color-mix(in srgb, var(--rar) 40%, #141a26); }    /* 30% shorter + muted tab; chest anchored to top */
   .otab .otab-art.art-img{ width:auto; height:32px; margin:0 2px 0 2px; display:block; } /* taller chest, 2px L/R margin, no top margin (sits higher), hangs past the tab bottom */
   .reqs{ min-width:0; height:auto; gap:4px; }                  /* drop the 117px min → fit N items exactly */
-  .req{ width:48px; height:48px; }                             /* fixed item slot → 1/2/3 slots wide */
+  .req{ width:48px; height:48px; overflow:hidden; display:flex; align-items:center; justify-content:center; } /* fixed slot → 1/2/3 wide; icons px-sized to fit (contained) */
   .reroll{ position:absolute; right:3px; bottom:3px; width:22px; height:22px; border-radius:7px; padding:0; z-index:4;
     background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18); }
   #fx{ position:absolute; inset:0; z-index:500; pointer-events:none; overflow:hidden; }
@@ -189,6 +189,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const rail = document.getElementById('rail');
 const fxo = document.getElementById('fx');
 
+// Order req icons use PIXEL heights, not %. The 48px slot is tiny and a %-height into it collapses the
+// image to its natural 256px size (the board only works with % because its tiles carry explicit px dims).
+// Same assets.json scale / anchor / rotation the board applies — just sized in px against the slot.
+const REQ_SLOT = 40;
+function orderIconStyle(key){
+  const m = META[key] || {};
+  const an = m.anchor || {}, ax = an.x ?? 0.5, ay = an.y ?? 0.5;
+  const s = m.scale ?? 1, rot = m.rotation ?? 0;
+  const dx = ((0.5 - ax) * 100).toFixed(2), dy = ((0.5 - ay) * 100).toFixed(2);
+  return `height:${(s * REQ_SLOT).toFixed(1)}px;width:auto;max-width:none;transform:translate(${dx}%,${dy}%) rotate(${rot}deg)`;
+}
+
 function orderHTML(o){
   if(o.pending){
     return `<div class="pending" data-oid="${o.id}">
@@ -196,7 +208,7 @@ function orderHTML(o){
       <span class="pending-lbl">Next order</span></div>`;
   }
   const reqs = o.items.map((it) =>
-    `<span class="req"><img class="req-art art-img" src="${MERGE}${it.chain}-${it.level}.png" style="${mergeStyle(it.chain+'.'+it.level)}" alt=""></span>`
+    `<span class="req"><img class="req-art art-img" src="${MERGE}${it.chain}-${it.level}.png" style="${orderIconStyle(it.chain+'.'+it.level)}" alt=""></span>`
   ).join('');
   return `<div class="order${o.ready?' ready':''}" data-oid="${o.id}" style="--rar:${GRAR[o.rarity]}">
     <span class="wipe"></span>

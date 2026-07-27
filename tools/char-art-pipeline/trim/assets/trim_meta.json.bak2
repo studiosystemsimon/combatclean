@@ -1585,7 +1585,7 @@
     "blade/blade-1.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.05
+        "scale": 0.9
       }
     },
     "blade/blade-2.png": {
@@ -1598,7 +1598,7 @@
     "blade/blade-3.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15
+        "scale": 1.05
       },
       "reg": [
         0.504,

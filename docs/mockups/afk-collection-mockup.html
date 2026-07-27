@@ -61,6 +61,8 @@
   .foe.die{animation:foedie .44s ease-in forwards}
   @keyframes foedie{0%{opacity:1;transform:scale(1)}55%{opacity:.85;transform:scale(.78) rotate(-8deg);filter:brightness(2.6) blur(1px)}100%{opacity:0;transform:translateY(4px) scale(.1) rotate(-22deg);filter:brightness(2) blur(3px)}}
   .spark{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle,#fff,#ffd45e 55%,transparent);z-index:8;pointer-events:none;will-change:transform,opacity}
+  /* defeated enemies collapse into a pile at the squad's feet (the "stack of the ones you killed") */
+  .corpse{position:absolute;width:70px;height:70px;object-fit:contain;pointer-events:none;filter:grayscale(.4) brightness(.62) drop-shadow(0 3px 3px rgba(0,0,0,.6))}
   .pop{position:absolute;z-index:8;font-family:'Uniform Bold',sans-serif;font-size:15px;color:#ffe3a0;pointer-events:none;text-shadow:0 1px 2px #000}
   .pop.sk{color:#fff;font-size:18px}
   @keyframes rise{0%{opacity:0;transform:translateY(4px) scale(.7)}20%{opacity:1;transform:translateY(-2px) scale(1.1)}100%{opacity:0;transform:translateY(-26px) scale(1)}}
@@ -219,10 +221,10 @@
     // disintegrate ON CONTACT with the heroes (end of the march)
     setTimeout(()=>{ fireMuzzle(); img.classList.add('hit');
       const r=img.getBoundingClientRect(), l=lane.getBoundingClientRect();
-      const cx=r.left-l.left+38, cy=l.bottom-r.bottom+38;
+      const cx=r.left-l.left+38, cy=l.bottom-r.bottom+38, src=img.src;
       disintegrate(cx,cy);
       pop(cx, cy+28, Math.random()<.5?'☠':'−'+fmtNum(30+Math.floor(Math.random()*220)), Math.random()<.5);
-      setTimeout(()=>{ img.classList.add('die'); setTimeout(()=>img.remove(),460); },50);
+      setTimeout(()=>{ img.remove(); addCorpse(cx, src); },60);  // collapse into the kill-pile (stays)
     }, travel*0.9);
   }
   function disintegrate(x,y){
@@ -241,9 +243,21 @@
     p.textContent=txt; p.style.left=x+'px'; p.style.bottom=y+'px'; p.style.animation='rise .75s ease-out forwards'; lane.appendChild(p); setTimeout(()=>p.remove(),760); }
   function stopFast(){ if(fastTimer){ clearInterval(fastTimer); fastTimer=null; } }
   function startFast(ms){ stopFast(); fastTimer=setInterval(spawnFoe,90); setTimeout(stopFast,ms); }
-  // ambient trickle so the squad keeps auto-fighting after the fast fill (scene never goes empty)
-  let slowTimer=null;
-  function startSlow(){ if(slowTimer) return; slowTimer=setInterval(spawnFoe,650); }
+  // the killed enemies pile up into a stack at the squad's feet; NO infinite respawn.
+  const PILE_CAP=20; let pile=[];
+  function clearPile(){ pile.forEach(c=>c.remove()); pile=[]; }
+  function addCorpse(cx, src){
+    const lane=$('lane'); if(!lane) return;
+    const c=document.createElement('img'); c.className='corpse'; c.src=src;
+    // pile just LEFT of the front hero (where they fall), spread into a mound so it reads as a heap
+    c.style.left=(cx-70+rand(-52,26))+'px'; c.style.bottom=(2+Math.random()*22)+'px'; c.style.zIndex=String(3);
+    const rot=(58+Math.random()*54)*(Math.random()<.5?-1:1);   // toppled sideways
+    c.style.transform=`rotate(${rot}deg)`;
+    lane.appendChild(c); pile.push(c);
+    if(pile.length>PILE_CAP){ const old=pile.shift(); old.remove(); }
+    c.animate([{transform:`rotate(${rot}deg) translateY(-16px) scale(.7)`,opacity:0},{transform:`rotate(${rot}deg) translateY(0) scale(1)`,opacity:1}],
+      {duration:220,easing:'cubic-bezier(.2,1.3,.4,1)',fill:'forwards'});
+  }
 
   // ── reveal: bar + counters rise together while the squad grinds fast ──
   function reveal(){
@@ -255,7 +269,7 @@
     const b=$('claimBtn'); b.classList.remove('done'); b.disabled=false; b.innerHTML='<img src="../../assets/combatclean/ui/chest-rare.png" alt="">CLAIM';
     // reset displayed rewards to 0, top bar to current bar
     $('tbCoinV').textContent=fmtNum(bar.coin); $('tbHeroV').textContent=fmtNum(bar.hero); $('tbGearV').textContent=fmtNum(bar.gear);
-    startFast(REVEAL_MS); startSlow();
+    clearPile(); startFast(REVEAL_MS);   // one burst → they pile up dead → nothing after
     const t0=performance.now(), ci=cb.querySelector('i');
     (function frame(now){
       const p=Math.min(1,(now-t0)/REVEAL_MS), e=easeOutCubic(p);
@@ -274,14 +288,15 @@
   const overlay=()=>{ if(_overlay) return _overlay; _overlay=document.createElement('div');
     Object.assign(_overlay.style,{position:'fixed',inset:0,pointerEvents:'none',zIndex:9999,overflow:'hidden'});
     document.body.appendChild(_overlay); return _overlay; };
-  const disp={...bar}, target={...bar};
+  const disp={...bar}, target={...bar}, tileRem={};
+  const TOP={coin:'tbCoinV',hero:'tbHeroV',gear:'tbGearV'}, TILE={coin:'coinV',hero:'heroV',gear:'gearV'};
   function tgtPoint(stat){ const el=document.querySelector(`[data-stat="${stat}"]`); if(!el) return null;
     const r=el.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2,el}; }
   function pulse(el){ el&&el.animate([{transform:'scale(1)'},{transform:`scale(${CU.pulseScale})`},{transform:'scale(1)'}],{duration:CU.pulseMs,easing:'ease-out'}); }
   function burstOne(from, it){
     const tgt=tgtPoint(it.stat); if(!tgt) return;
     const n=clamp(Math.ceil(it.amount/CU.iconsPerAmount),CU.iconsMin,CU.iconsMax);
-    target[it.stat]=disp[it.stat]+it.amount; const share=it.amount/n;
+    target[it.stat]=disp[it.stat]+it.amount; tileRem[it.stat]=it.amount; const share=it.amount/n;
     for(let i=0;i<n;i++) icon(from,tgt,it,i,share,n);
   }
   function icon(from,tgt,it,i,share,total){
@@ -300,8 +315,9 @@
       if(t<CU.burstMs+CU.hangMs){ el.style.transform=`translate(${bx}px,${by}px) scale(1.3)`; requestAnimationFrame(frame); return; }
       const at=(t-CU.burstMs-CU.hangMs)/CU.arcMs;
       if(at>=1){ el.style.transform=`translate(${tgt.x}px,${tgt.y}px) scale(.4)`; el.style.opacity='0'; pulse(tgt.el);
-        if(last){ disp[it.stat]=target[it.stat]; } else { disp[it.stat]+=share; }
-        bar[it.stat]=Math.round(disp[it.stat]); $({coin:'tbCoinV',hero:'tbHeroV',gear:'tbGearV'}[it.stat]).textContent=fmtNum(bar[it.stat]);
+        if(last){ disp[it.stat]=target[it.stat]; tileRem[it.stat]=0; } else { disp[it.stat]+=share; tileRem[it.stat]=Math.max(0,tileRem[it.stat]-share); }
+        bar[it.stat]=Math.round(disp[it.stat]); $(TOP[it.stat]).textContent=fmtNum(bar[it.stat]);           // top counter fills up
+        const te=$(TILE[it.stat]); te.textContent=fmtNum(tileRem[it.stat]); te.classList.add('punch'); setTimeout(()=>te.classList.remove('punch'),150);  // tile drains to 0
         setTimeout(()=>el.remove(),CU.removeMs); return; }
       const e=easeInQuad(at); const x=bez(e,bx,cx,tgt.x), y=bez(e,by,cy,tgt.y);
       el.style.transform=`translate(${x}px,${y}px) scale(${1.3-0.9*e})`; requestAnimationFrame(frame);
