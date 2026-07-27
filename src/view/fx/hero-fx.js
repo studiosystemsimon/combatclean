@@ -210,11 +210,11 @@ export function fxMenuHeroLevelUp(nodes, before, after, cap) {
   burstInto(menuHostAt(c.x, c.y, 260, 300));
   particleBurst(c.x, c.y, multi);
   tween(nodes.lv, before.lv, after.lv, multi ? 900 : 500);
-  tween(nodes.pow, before.pow, after.pow, multi ? 900 : 720);
-  tween(nodes.hp, before.hp, after.hp, multi ? 900 : 720);
-  tween(nodes.atk, before.atk, after.atk, multi ? 900 : 720);
-  tween(nodes.def, before.def, after.def, multi ? 900 : 720);
-  const rise = (node, d, cls, delay) => { if (!node || d <= 0) return; const p = centerOf(node); floatText(p.x, p.y, '+' + d, 'stat ' + cls, delay); };
+  tween(nodes.pow, before.pow, after.pow, multi ? 900 : 720, fmt);
+  tween(nodes.hp, before.hp, after.hp, multi ? 900 : 720, fmt);
+  tween(nodes.atk, before.atk, after.atk, multi ? 900 : 720, fmt);
+  tween(nodes.def, before.def, after.def, multi ? 900 : 720, fmt);
+  const rise = (node, d, cls, delay) => { if (!node || d <= 0) return; const p = centerOf(node); floatText(p.x, p.y, '+' + fmt(d), 'stat ' + cls, delay); };
   const dp = after.pow - before.pow, dh = after.hp - before.hp, da = after.atk - before.atk, dd = after.def - before.def;
   if (!multi) {
     floatText(c.x, c.y - 4, 'LEVEL UP!', 'hd', 0);
@@ -241,9 +241,9 @@ export function fxMenuGearBurst(gearEl) {
 // Power count-up on the menu's power node + a single "+N PWR" float rising from it.
 export function fxMenuPow(powNode, fromPow, toPow) {
   if (!powNode) return;
-  tween(powNode, fromPow, toPow, 640);
+  tween(powNode, fromPow, toPow, 640, fmt);
   const d = toPow - fromPow;
-  if (d > 0) { const c = centerOf(powNode); floatText(c.x, c.y, '+' + d + ' PWR', 'stat pwr', 120); }
+  if (d > 0) { const c = centerOf(powNode); floatText(c.x, c.y, '+' + fmt(d) + ' PWR', 'stat pwr', 120); }
 }
 
 // Equip a specific item: swap pop on the gear tile + power count-up.
@@ -253,5 +253,5 @@ export function fxMenuEquip(gearEl, powNode, fromPow, toPow) {
     const flash = document.createElement('div'); flash.className = 'lvfx-flash'; fxHost(gearEl).appendChild(flash);
     flash.animate([{ opacity: 0 }, { opacity: 0.95, offset: 0.45 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' }).onfinish = () => flash.remove();
   }
-  if (powNode) setTimeout(() => tween(powNode, fromPow, toPow, 520), 200);
+  if (powNode) setTimeout(() => tween(powNode, fromPow, toPow, 520, fmt), 200);
 }

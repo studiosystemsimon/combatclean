@@ -564,7 +564,7 @@ function ReequipBody({ id, state, selSlot, setSelSlot, onEquipItem, onEquipBest,
       {selSlot ? <>
         <div className="hs-cmp-cur">
           {cur
-            ? <>Equipped: <b style={{ color: gearColor(cur.rarity) }}>{GEAR_RARITY[cur.rarity].name}</b> · ⚔ {gearPower(cur)}</>
+            ? <>Equipped: <b style={{ color: gearColor(cur.rarity) }}>{GEAR_RARITY[cur.rarity].name}</b> · ⚔ {fmt(gearPower(cur))}</>
             : <>Slot empty — pick an item below</>}
         </div>
         <div className="hs-cmp-list">
@@ -574,8 +574,8 @@ function ReequipBody({ id, state, selSlot, setSelSlot, onEquipItem, onEquipBest,
               <button key={g.id} type="button" className="hs-cmp-item" style={{ '--gr': gearColor(g.rarity) }} onClick={() => onEquipItem(id, selSlot, g.id)}>
                 <span className="hs-ci-ic">{gearIcon(selSlot)}</span>
                 <span className="hs-ci-nm" style={{ color: gearColor(g.rarity) }}>{GEAR_RARITY[g.rarity].name}</span>
-                <span className="hs-ci-pw">⚔ {gearPower(g)}</span>
-                <span className={`hs-ci-d ${d >= 0 ? 'up' : 'dn'}`}>{d >= 0 ? '▲ +' : '▼ '}{Math.abs(d)}</span>
+                <span className="hs-ci-pw">⚔ {fmt(gearPower(g))}</span>
+                <span className={`hs-ci-d ${d >= 0 ? 'up' : 'dn'}`}>{d >= 0 ? '▲ +' : '▼ '}{fmt(Math.abs(d))}</span>
               </button>
             );
           }) : <div className="hs-cmp-none">No other items for this slot</div>}

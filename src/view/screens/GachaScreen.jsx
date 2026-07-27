@@ -9,6 +9,7 @@ import { STRINGS } from '../../data/strings.js';
 import { ANIM } from '../../data/config.js';
 import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
+import { fmtK as fmt } from '../fmt.js';
 
 function BannerCard({ banner, state, actions }) {
   const canX1 = state.coins >= banner.cost;
@@ -119,7 +120,7 @@ export default function GachaScreen() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '12px 12px 0' }}>
       <div className="screen-head" style={{ flex: '0 0 auto' }}>
         <span>{resolve('ui.summonMachine').emoji} {STRINGS.screens.summon}</span>
-        <span className="pool">{resolve('ui.coin').emoji} {state.coins}</span>
+        <span className="pool">{resolve('ui.coin').emoji} {fmt(state.coins)}</span>
       </div>
 
       <PeekScroll>

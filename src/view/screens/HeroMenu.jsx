@@ -26,6 +26,7 @@ import {
   gearLevelCost, canLevelGear, canEquipBetter, canUpgradeHeroGear,
 } from '../../model/gear.js';
 import { resolve, heroAsset } from '../assets.js';
+import { fmtK as fmt } from '../fmt.js';
 import { fxMenuHeroLevelUp, fxMenuGearBurst, fxMenuPow, fxMenuEquip, fxMaxed } from '../fx/hero-fx.js';
 
 const HERO_BG = resolve('ui.hero-bg').img;
@@ -175,19 +176,19 @@ export default function HeroMenu() {
 
       <div className="hm-foot">
         <div className="hm-stats">
-          <div className="power-line"><span className="pw-ic">✊</span><span className="pw-val hm-ol" ref={powRef}>{power}</span></div>
+          <div className="power-line"><span className="pw-ic">✊</span><span className="pw-val hm-ol" ref={powRef}>{fmt(power)}</span></div>
           <div className="stat-row">
             <div className="stat"><span className="lvbadge hm-ol">LV</span><div className="sv"><b className="hm-ol" ref={lvRef}>{char.level}</b><small>Level</small></div></div>
-            <div className="stat"><span className="ico">❤️</span><div className="sv"><b className="hm-ol" ref={hpRef}>{stats.maxHp}</b><small>Health</small></div></div>
-            <div className="stat"><span className="ico">🗡️</span><div className="sv"><b className="hm-ol" ref={atkRef}>{stats.atk}</b><small>Attack</small></div></div>
-            <div className="stat"><span className="ico">🛡️</span><div className="sv"><b className="hm-ol" ref={defRef}>{stats.def}</b><small>Defense</small></div></div>
+            <div className="stat"><span className="ico">❤️</span><div className="sv"><b className="hm-ol" ref={hpRef}>{fmt(stats.maxHp)}</b><small>Health</small></div></div>
+            <div className="stat"><span className="ico">🗡️</span><div className="sv"><b className="hm-ol" ref={atkRef}>{fmt(stats.atk)}</b><small>Attack</small></div></div>
+            <div className="stat"><span className="ico">🛡️</span><div className="sv"><b className="hm-ol" ref={defRef}>{fmt(stats.def)}</b><small>Defense</small></div></div>
           </div>
         </div>
         <div className="hm-actions">
           <div className="lvl-stacks">
             <div className="lvl-stack">
               <button className="btn primary" disabled={atMax && !canLevelHero(char, state.heroXp)} onClick={doLevelUp}>
-                {atMax ? '★ MAX LEVEL' : <>LEVEL UP<small>📘 {heroLevelCost(char.level)}</small></>}
+                {atMax ? '★ MAX LEVEL' : <>LEVEL UP<small>📘 {fmt(heroLevelCost(char.level))}</small></>}
               </button>
               <button className="btn side" disabled={atMax || levelUpHeroMax(char, state.heroXp).gained <= 0} onClick={doLevelUpMax}>LEVEL UP MAX</button>
             </div>
@@ -228,7 +229,7 @@ export default function HeroMenu() {
               {cur ? <>
                 <div className="ic" ref={eqCurRef} style={{ '--gr': gColor(cur.rarity) }}><span>{gearIcon(equipSlot)}</span><span className="glvl hm-ol">{cur.level}</span></div>
                 <div><div className="nm">{cap1(cur.rarity)} {cap1(equipSlot)}</div><div className="rr" style={{ color: gColor(cur.rarity) }}>Lv {cur.level}</div></div>
-                <div className="pw">⚔ {gearPower(cur)}</div>
+                <div className="pw">⚔ {fmt(gearPower(cur))}</div>
               </> : <>
                 <div className="ic" ref={eqCurRef}><span>{gearIcon(equipSlot)}</span></div>
                 <div><div className="nm">Empty slot</div><div className="rr" style={{ color: 'var(--dim)' }}>pick an item below</div></div>
@@ -244,8 +245,8 @@ export default function HeroMenu() {
                        onClick={() => { if (on) return; setConfirmEq({ slot: equipSlot, item: g }); }}>
                     {on && <span className="eqbadge">✓</span>}
                     <span className="gi">{gearIcon(equipSlot)}</span>
-                    <span className="pw">⚔ {gearPower(g)}</span>
-                    <span className={`d ${d >= 0 ? 'up' : 'dn'}`}>{on ? 'equipped' : (d >= 0 ? `▲ +${d}` : `▼ ${Math.abs(d)}`)}</span>
+                    <span className="pw">⚔ {fmt(gearPower(g))}</span>
+                    <span className={`d ${d >= 0 ? 'up' : 'dn'}`}>{on ? 'equipped' : (d >= 0 ? `▲ +${fmt(d)}` : `▼ ${fmt(Math.abs(d))}`)}</span>
                     {owner && <span className="owner">👤{HEROES[owner.hero].name[0]}</span>}
                     <span className="glvl hm-ol">{g.level}</span>
                   </div>
@@ -254,7 +255,7 @@ export default function HeroMenu() {
             </div>
             <div className="eq-btns">
               <button className="btn primary" disabled={!cur || !canLevelGear(cur, state.gearXp)} onClick={doLevelGearOne}>
-                {cur ? <>LEVEL UP<small>🔧 {gearLevelCost(cur.level)}</small></> : 'LEVEL UP'}
+                {cur ? <>LEVEL UP<small>🔧 {fmt(gearLevelCost(cur.level))}</small></> : 'LEVEL UP'}
               </button>
               <button className="btn b" disabled={!canEquipBetter(state.gear, cid)} onClick={doEquipBest}>⚡ EQUIP BEST</button>
             </div>
@@ -268,7 +269,7 @@ export default function HeroMenu() {
         const c0 = equippedInSlot(state.gear, cid, slot);
         const owner = it.equippedTo && it.equippedTo !== cid ? state.heroes[it.equippedTo] : null;
         const col = (item, label) => item
-          ? <div className="ci" style={{ '--gr': gColor(item.rarity) }}><div className="cl">{label}</div><div className="cx">{gearIcon(slot)}<span className="clv">Lv{item.level}</span></div><div className="cn" style={{ color: gColor(item.rarity) }}>{item.rarity.toUpperCase()}</div><div className="cst">⚔ {gearPower(item)}</div></div>
+          ? <div className="ci" style={{ '--gr': gColor(item.rarity) }}><div className="cl">{label}</div><div className="cx">{gearIcon(slot)}<span className="clv">Lv{item.level}</span></div><div className="cn" style={{ color: gColor(item.rarity) }}>{item.rarity.toUpperCase()}</div><div className="cst">⚔ {fmt(gearPower(item))}</div></div>
           : <div className="ci"><div className="cl">{label}</div><div className="cx">➖</div><div className="cn" style={{ color: 'var(--dim)' }}>Empty</div><div className="cst" style={{ color: 'var(--dim)' }}>⚔ 0</div></div>;
         const d = gearPower(it) - (c0 ? gearPower(c0) : 0);
         return (
@@ -277,7 +278,7 @@ export default function HeroMenu() {
             <div className="hm-card">
               <h4>Change {cap1(slot)}</h4>
               <div className="cmp-cols">{col(c0, 'Equipped')}<div className="cmp-arrow">→</div>{col(it, 'New')}</div>
-              <div className="cmp-deltas"><div className="dl"><span>POW</span><b className={d >= 0 ? 'up' : 'dn'}>{d >= 0 ? `▲ +${d}` : `▼ ${Math.abs(d)}`}</b></div></div>
+              <div className="cmp-deltas"><div className="dl"><span>POW</span><b className={d >= 0 ? 'up' : 'dn'}>{d >= 0 ? `▲ +${fmt(d)}` : `▼ ${fmt(Math.abs(d))}`}</b></div></div>
               {owner && <div className="cmp-warn show">⚠ Currently equipped by <b>{HEROES[owner.hero].name}</b>. Equipping will remove it from them.</div>}
               <div className="eq-btns">
                 <button className="hm-close" style={{ flex: 1, marginTop: 0 }} onClick={() => setConfirmEq(null)}>Cancel</button>

@@ -10,6 +10,7 @@ import { GEAR_SLOT_META, GEAR_RARITY, GEAR_RARITY_ORDER } from '../data/gear.js'
 import { heroAsset, resolve } from './assets.js';
 import Art from './Art.jsx';
 import { gearPower } from '../model/gear.js';
+import { fmtK as fmt } from './fmt.js';
 
 export function SmallEquipmentTile({ g, slot }) {
   if (!g) {
@@ -48,7 +49,7 @@ export function MediumEquipmentTile({ g, fuseReady, justFused, onOpen, roster })
       <div className="gtile-sheen" />
       {/* item art, centred above the name bar (aspect-preserved) */}
       <Art a={resolve(GEAR_SLOT_META[g.slot].asset)} className="gt-glyph" />
-      <span className="gt-pow"><span className="ic">💪</span><b>{gearPower(g)}</b></span>
+      <span className="gt-pow"><span className="ic">💪</span><b>{fmt(gearPower(g))}</b></span>
       <span className="gt-pips">{Array.from({ length: tier + 1 }, (_, i) => <i key={i} />)}</span>
       {fuseReady ? <span className="gt-badge" title="Ready to fuse">▲</span> : null}
       <div className="gt-btm" />

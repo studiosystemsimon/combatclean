@@ -13,6 +13,7 @@ import Art from '../Art.jsx';
 import PeekScroll from '../PeekScroll.jsx';
 import { MediumEquipmentTile } from '../EquipmentTile.jsx';
 import { fx } from '../fx/fx-engine.js';
+import { fmtK as fmt } from '../fmt.js';
 import { ANIM, REVEAL, VFX_CONFIG } from '../../data/config.js';
 import {
   gearPower,
@@ -62,7 +63,7 @@ function GearSheet({ g, onClose, onLevel, onFuse }) {
         </div>
         <div className="gsheet-pow">
           <div className="pv" key={g.level} style={{ animation: `powFlash ${ANIM.gear.powFlashMs}ms ease-out` }}>
-            {gearPower(g)}
+            {fmt(gearPower(g))}
           </div>
           <div className="pl">{STRINGS.gear.power}</div>
         </div>
@@ -74,7 +75,7 @@ function GearSheet({ g, onClose, onLevel, onFuse }) {
         </button>
         <button type="button" className="gsheet-btn fuse" disabled={!fuseOk} onClick={() => onFuse(g.id)}>
           <span>{nr ? `${STRINGS.gear.fusePrefix} ${GEAR_RARITY[nr].name}` : STRINGS.gear.maxRarity}</span>
-          {nr ? <span className="cost">{resolve('ui.fuseFodder').emoji} {fodder}/{GEAR_FUSE.fodder} · {resolve('ui.coin').emoji} {cost}</span> : null}
+          {nr ? <span className="cost">{resolve('ui.fuseFodder').emoji} {fodder}/{GEAR_FUSE.fodder} · {resolve('ui.coin').emoji} {fmt(cost)}</span> : null}
         </button>
       </div>
     </div>
@@ -158,7 +159,7 @@ export default function GearScreen() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '12px 12px 0' }}>
       <div className="rd-head">
         <h2>{resolve('ui.gearXp').emoji} {STRINGS.screens.gear}</h2>
-        <span className="rd-pool">{resolve('ui.gearXp').emoji} {state.gearXp}</span>
+        <span className="rd-pool">{resolve('ui.gearXp').emoji} {fmt(state.gearXp)}</span>
       </div>
       {items.length === 0 ? (
         <div className="squad-note" style={{ flex: '0 0 auto' }}>

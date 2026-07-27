@@ -1406,10 +1406,11 @@
 			"type": "image",
 			"file": "merge/range-7.png",
 			"anchor": {
-				"x": 0.4873,
-				"y": 0.5052
+				"x": 0.5551,
+				"y": 0.4459
 			},
-			"scale": 1.15
+			"scale": 1.35,
+			"rotation": -23
 		},
 		"gen.range.1": {
 			"type": "image",

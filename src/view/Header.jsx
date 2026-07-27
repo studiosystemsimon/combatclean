@@ -6,6 +6,7 @@ import { resolve } from './assets.js';
 import Art from './Art.jsx';
 import { msToNext } from '../model/energy.js';
 import { subscribe, syncToState, getDisplay } from './fx/counter-tween.js';
+import { fmtK } from './fmt.js';
 
 function Stat({ statKey, iconKey, val, sub }) {
   return (
@@ -31,7 +32,7 @@ function TweenableStat({ statKey, iconKey, stateValue, sub }) {
     syncToState(statKey, stateValue);
   }, [statKey, stateValue]);
 
-  return <Stat statKey={statKey} iconKey={iconKey} val={displayVal} sub={sub} />;
+  return <Stat statKey={statKey} iconKey={iconKey} val={fmtK(displayVal)} sub={sub} />;
 }
 
 export default function Header() {

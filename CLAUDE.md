@@ -209,6 +209,12 @@ ordering) and reference the owning module's `README.md`.
 
 - Files: kebab-case (`movement-system.ts`); types/classes PascalCase; UTF-8 (no BOM).
 - Every gameplay number → JSON in `src/data`, typed in `src/data/types.ts`.
+- **Number display (HARD RULE):** every player-facing **quantity** number (currencies, power,
+  HP/ATK/DEF, damage, counts, costs) is formatted through the single shared `fmtK` in
+  `src/view/fmt.js` — **under 1,000** shows the integer as-is; **1,000+** shows `x.xxk`; **1,000,000+**
+  shows `x.xxm` (always 2 decimals, floored so a balance is never overstated). Never hand-roll k/m
+  abbreviation anywhere else — import `fmtK`. Non-quantity text (timers `5.2s`, percentages, ratios
+  like `100/100`) is exempt.
 - World space is `(x, y)` — define your world axes here.
 - Editor-only / dev-only code must not be reachable from `index.html` (so it stays out of the
   production bundle); guard with `import.meta.env.DEV`.

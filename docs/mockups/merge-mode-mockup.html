@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Merge Mode — Combat Clean (orders iteration)</title>
+<!--
+  MERGE-MODE SCREEN · exact render (real src/index.css + reconstructed real DOM).
+  The full column: currency bar → persistent combat panel → ORDERS rail → merge board → nav.
+  This is the baseline we iterate the ORDERS on. Orders render from the ORDERS[] data array
+  below (order = { rarity, ready, items:[{chain,level}] } | { pending }), so tweaking them is
+  a data edit. Combat backdrop reuses the approved combat-editor markup; board is faithful
+  (real tiles, mergeStyle, rarity ring, best-pair frame + connector) as context.
+-->
+<link rel="stylesheet" href="../../src/index.css" />
+<style>
+  html,body{ height:auto; min-height:100%; }
+  body{ margin:0; background:radial-gradient(120% 80% at 50% -10%, #16203a, #0a0f1c 60%, #070b15);
+    display:flex; flex-direction:column; align-items:center; gap:14px; padding:20px; color:#eef2ff;
+    font-family:system-ui, sans-serif; }
+  .page-lbl{ font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:#7f8db0; }
+  /* Phone frame: recompute the game's own layout vars against a FIXED height so it renders
+     a real device column on desktop (the game uses 100dvh; we swap in --frame-h). */
+  .frame{
+    --frame-h:880px; --header-h:52px; --orders-h:84px; --nav-h:60px;
+    --app-w:min(440px,100vw);
+    --combat-h:max(150px, calc(var(--frame-h) - var(--header-h) - var(--nav-h) - var(--orders-h) - (var(--app-w) * 5 / 7)));
+    width:var(--app-w); height:var(--frame-h); border-radius:26px; overflow:hidden; position:relative;
+    box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 8px #05070e, 0 0 0 9px #1b2540;
+  }
+  .frame .app{ height:100%; max-width:none; }
+  /* combat backdrop: match the approved combat-editor look (grounded heroes stand still; only
+     `flying` heroes bob; vertical level track) — these live in the editor mockup too. */
+  .hero-chip:not(.flying) .chip-art{ animation:none !important; }
+  .battle-top{ justify-content:space-between; padding:6px 10px 0; }
+  .lvl-col{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+  .battle-zone.zone-name{ margin:0; font-size:15px; color:#fff; -webkit-text-stroke:2px #000; paint-order:stroke fill; text-shadow:0 1px 2px #000; }
+  .level-track.vbar{ position:absolute; left:8px; top:46px; bottom:14px; width:18px; height:auto; z-index:7; -webkit-mask-image:none; mask-image:none; }
+  .level-track.vbar .track-line{ left:50%; right:auto; top:2px; bottom:2px; width:2px; height:auto; transform:translateX(-50%); }
+  .level-track.vbar .dots{ flex-direction:column-reverse; height:100%; justify-content:space-between; align-items:center; }
+  .level-track.vbar .ldot{ width:6px; height:6px; }
+  .level-track.vbar .ldot.boss{ width:8px; height:8px; }
+  .level-track.vbar .ldot.current{ width:18px; height:18px; transform:none; display:grid; place-items:center; background:var(--gold); box-shadow:0 0 8px var(--gold); }
+  .level-track.vbar .ldot.current::after{ display:none; }
+  .level-track.vbar .ldot.current b{ font-size:10px; color:#241a02; font-weight:900; line-height:1; -webkit-text-stroke:0; }
+  /* ── order-completion VFX (mockup-local) ── */
+  .order.ready{ cursor:pointer; }
+  .context-panel{ overflow:visible; }               /* let chest tabs poke out of the orders strip */
+  .orders{ position:relative; z-index:30; }         /* …and sit above the combat panel */
+  .rail{ overflow:visible; touch-action:pan-y; }    /* no clip; drag-scroll is transform-based (in JS) */
+  /* ── order-tile redesign (iteration) — tile is sized to exactly cover its 1–2–3 required items ── */
+  .order{ height:auto; padding:5px; gap:4px; }                 /* width/height hug the required-item row */
+  .otab{ top:-26px; left:6px; }                                /* chest tab sits flush on the card's top edge */
+  .reqs{ min-width:0; height:auto; gap:4px; }                  /* drop the 117px min → fit N items exactly */
+  .req{ width:48px; height:48px; }                             /* fixed item slot → 1/2/3 slots wide */
+  .reroll{ position:absolute; right:3px; bottom:3px; width:22px; height:22px; border-radius:7px; padding:0; z-index:4;
+    background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18); }
+  #fx{ position:absolute; inset:0; z-index:500; pointer-events:none; overflow:hidden; }
+  #fx .fx-flash{ position:absolute; inset:0; background:#fff; opacity:0; }
+  #fx .fx-chest{ position:absolute; left:0; top:0; width:82px; height:82px; }
+  #fx .fx-chest img{ width:100%; height:100%; object-fit:contain; }
+  #fx .fx-spark{ position:absolute; left:0; top:0; width:8px; height:8px; border-radius:50%; }
+  #fx .fx-ring{ position:absolute; left:0; top:0; width:44px; height:44px; border-radius:50%; border:3px solid #fff; }
+  #fx .fx-reward{ position:absolute; left:0; top:0; width:66px; height:66px; }
+  #fx .fx-reward img{ width:100%; height:100%; object-fit:contain; }
+</style>
+</head>
+<body>
+<div class="page-lbl">Combat Clean · merge mode — orders iteration baseline</div>
+
+<div class="frame">
+<div class="app">
+
+  <!-- ── currency bar ─────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="stat" data-stat="energy"><div class="stat-row"><img class="stat-icon art-img" src="../../assets/combatclean/ui/energy.png" alt=""><span class="stat-val">18/30</span></div><span class="stat-sub">+1 42s</span></div>
+    <div class="stat" data-stat="coins"><div class="stat-row"><img class="stat-icon art-img" src="../../assets/combatclean/ui/coin.png" alt=""><span class="stat-val">1,240</span></div></div>
+    <div class="stat" data-stat="heroXp"><div class="stat-row"><img class="stat-icon art-img" src="../../assets/combatclean/ui/heroXp.png" alt=""><span class="stat-val">86</span></div></div>
+    <div class="stat" data-stat="gearXp"><div class="stat-row"><img class="stat-icon art-img" src="../../assets/combatclean/ui/gearXp.png" alt=""><span class="stat-val">204</span></div></div>
+    <button type="button" class="reset-btn" title="Reset progress">⟲</button>
+  </header>
+
+  <!-- ── persistent combat panel (wave) ───────────────────────────────── -->
+  <div class="combat-panel">
+    <section class="battle" style="--biome-from:#173a2a; --biome-to:#0a1a12; --biome-accent:#5ad17a; --biome-img:url(../assets/combatclean/zones/zone-mossbog.png)">
+      <div class="bg bg-sky"></div><div class="bg bg-rays"></div><div class="bg-horizon"></div>
+      <div class="bg fog a"></div><div class="bg fog b"></div><div class="bg grid"></div>
+      <div class="bg biome-art"></div><div class="floor enemy"></div><div class="floor hero"></div>
+      <div class="bg vignette"></div><div class="boss-loom"></div><div class="bg-lightning"></div><div class="bg biome-tint"></div>
+
+      <div class="battle-top">
+        <div class="lvl-col"><div class="battle-zone zone-name">Mossbog Fens</div></div>
+        <div class="battle-right"><button type="button" class="challenge-btn">NEXT</button></div>
+      </div>
+      <div class="level-track vbar"><div class="track-line"></div><div class="dots">
+        <span class="ldot past"></span><span class="ldot past"></span><span class="ldot past"></span><span class="ldot current"><b>7</b></span><span class="ldot"></span><span class="ldot"></span><span class="ldot boss"></span><span class="ldot"></span><span class="ldot"></span>
+      </div></div>
+
+      <div class="arena">
+        <div class="row enemy-row">
+          <div class="chip enemy-chip focused"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-slime.png" alt="" style="height:56px"></div><div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:64%"></span><span class="hp-fill" style="width:58%"></span><span class="hp-white"></span></div><span class="focus-reticle">🎯</span></div>
+          <div class="chip enemy-chip"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-goblin.png" alt="" style="height:60px"></div><div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:92%"></span><span class="hp-fill" style="width:88%"></span><span class="hp-white"></span></div></div>
+          <div class="chip enemy-chip"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/boar-brute.png" alt="" style="height:60px"></div><div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:100%"></span><span class="hp-fill" style="width:100%"></span><span class="hp-white"></span></div></div>
+          <div class="chip enemy-chip"><span class="lv-badge"><s>Lv</s>7</span><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/enemies/bog-zombie.png" alt="" style="height:56px"></div><div class="bar hp enemy"><span class="hp-ghost" style="background:#B00063;width:40%"></span><span class="hp-fill" style="width:33%"></span><span class="hp-white"></span></div></div>
+        </div>
+        <div class="chest-mid-layer"></div>
+        <div class="row hero-row">
+          <div class="chip hero-chip"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/knight.png" alt="" style="height:60px"></div><div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:82%"></span><span class="hp-fill" style="width:78%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:55%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:40%"></span></button></div>
+          <div class="chip hero-chip"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span><span class="cp"></span></div><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/ranger.png" alt="" style="height:58px"></div><div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:95%"></span><span class="hp-fill" style="width:92%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:72%"></span></div><button type="button" class="bar limit lb-btn"><span style="width:20%"></span></button></div>
+          <div class="chip hero-chip lb-ready flying"><div class="hero-charge"><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span><span class="cp on"></span></div><div class="chip-art"><img class="art-img chip-emoji" src="../../assets/combatclean/heroes/sorceress.png" alt="" style="height:56px"></div><div class="bar hp"><span class="hp-ghost" style="background:#FF007C;width:66%"></span><span class="hp-fill" style="width:60%"></span><span class="hp-white"></span></div><div class="bar normal"><span style="width:90%"></span></div><button type="button" class="bar limit lb-btn ready"><span style="width:100%"></span><em class="lb-flash">💥</em></button></div>
+        </div>
+      </div>
+      <div class="bg vignette"></div>
+    </section>
+  </div>
+
+  <!-- ── context panel: merge mode (orders + board) ───────────────────── -->
+  <div class="context-panel">
+    <div class="merge-context">
+      <section class="orders" aria-label="Orders"><div class="rail" id="rail"></div></section>
+      <div class="board-area">
+        <div class="mb2">
+          <div class="mb-shaker" id="shaker" style="aspect-ratio:7 / 5">
+            <div class="mb-board" id="board" style="grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(5,1fr)"></div>
+            <div class="mb-tiles" id="tiles"></div>
+            <div class="mb-conn" id="conn" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── bottom nav ───────────────────────────────────────────────────── -->
+  <nav class="navbar">
+    <button type="button" class="nav-btn" data-nav="heroes"><span class="nav-icon art-emoji">🛡️</span><span class="nav-label">Heroes</span></button>
+    <button type="button" class="nav-btn" data-nav="gear"><span class="nav-icon art-emoji">⚔️</span><span class="nav-label">Gear</span></button>
+    <button type="button" class="nav-btn active" data-nav="merge"><span class="nav-icon art-emoji">🧩</span><span class="nav-label">Merge</span></button>
+    <button type="button" class="nav-btn" data-nav="gacha"><span class="nav-icon art-emoji">🎁</span><span class="nav-label">Gacha</span></button>
+    <button type="button" class="nav-btn" data-nav="map"><span class="nav-icon art-emoji">🗺️</span><span class="nav-label">Map</span></button>
+  </nav>
+
+</div>
+<div id="fx" aria-hidden="true"></div>
+</div>
+
+<script>
+// ── real data (baked from assets.json / config) ──────────────────────────────
+const MERGE = "../../assets/combatclean/merge/";
+// rarity palette — matches the game's GEAR_RARITY (hero-menu mockup uses the same map)
+const GRAR = { common:'#9aa7bd', uncommon:'#5ad17a', rare:'#4aa3ff', epic:'#b46bff', legendary:'#ffb020' };
+// per-tier ring colour ramp (_tierPresentation.json)
+const TIER_COLORS = ["#b9c4e0","#7fe6a0","#5ad17a","#5a8cff","#7aa8ff","#b46bff","#ffd45e","#ffe6a0"];
+// merge-icon registration metadata (assets.json) → 1:1 mergeStyle
+const META = {"magic.0":{"anchor":{"x":0.5,"y":0.5},"scale":0.75,"rotation":-30},"magic.1":{"anchor":{"x":0.5158,"y":0.5114},"scale":0.75,"rotation":-9},"magic.2":{"anchor":{"x":0.5,"y":0.5},"scale":0.9},"magic.3":{"anchor":{"x":0.5,"y":0.5},"scale":0.8},"magic.4":{"anchor":{"x":0.5,"y":0.5},"scale":0.9},"magic.5":{"anchor":{"x":0.4833,"y":0.5385},"scale":0.9,"rotation":-16},"magic.6":{"anchor":{"x":0.4984,"y":0.5141},"scale":1.05,"rotation":-10},"magic.7":{"anchor":{"x":0.5,"y":0.5},"rotation":-1},"blade.0":{"anchor":{"x":0.5,"y":0.5},"scale":1.05},"blade.1":{"anchor":{"x":0.5,"y":0.5},"rotation":5},"blade.2":{"anchor":{"x":0.504,"y":0.5129},"scale":1.15},"blade.3":{"anchor":{"x":0.5,"y":0.5},"scale":1.15},"blade.4":{"anchor":{"x":0.5,"y":0.5},"scale":1.2,"rotation":6},"blade.5":{"anchor":{"x":0.479,"y":0.5169},"scale":1.15,"rotation":3},"blade.6":{"anchor":{"x":0.4865,"y":0.5334},"scale":1.15,"rotation":4},"blade.7":{"anchor":{"x":0.491,"y":0.5036},"scale":1.1,"rotation":1},"range.0":{"anchor":{"x":0.4952,"y":0.5109},"scale":1.05,"rotation":15},"range.1":{"anchor":{"x":0.4929,"y":0.5282},"rotation":4},"range.2":{"anchor":{"x":0.5002,"y":0.5316},"scale":1.3,"rotation":34},"range.3":{"anchor":{"x":0.4948,"y":0.4874},"scale":1.25,"rotation":20},"range.4":{"anchor":{"x":0.4877,"y":0.512},"scale":1.25,"rotation":-22},"range.5":{"anchor":{"x":0.4749,"y":0.4785},"scale":1.25,"rotation":20},"range.6":{"anchor":{"x":0.5126,"y":0.5398},"scale":1.25,"rotation":16},"range.7":{"anchor":{"x":0.4873,"y":0.5052},"scale":1.15}};
+
+// mergeStyle — verbatim from src/view/assets.js
+function mergeStyle(key){
+  const m = META[key]; if(!m) return '';
+  const an = m.anchor||{}, ax = an.x??0.5, ay = an.y??0.5;
+  const s = m.scale??1, rot = m.rotation??0;
+  const dx = ((0.5-ax)*100).toFixed(2), dy = ((0.5-ay)*100).toFixed(2);
+  return `height:${(s*100).toFixed(2)}%;width:auto;max-width:none;transform:translate(${dx}%,${dy}%) rotate(${rot}deg)`;
+}
+const chestSrc = (r) => "../../assets/combatclean/ui/" + (r==='common' ? "chest.png" : `chest-${r}.png`);
+
+// ── ORDERS (the iteration target) ────────────────────────────────────────────
+// order = { rarity, ready?, items:[{chain,level}] }  ·  { pending, secs, p }
+// order = { id, rarity, ready?, items:[{chain,level}] }  ·  { id, pending, secs, p }
+let OID = 100;
+let ORDERS = [
+  { id:OID++, rarity:'uncommon', ready:true, items:[{chain:'range',level:1},{chain:'range',level:1}] },
+  { id:OID++, rarity:'rare',                  items:[{chain:'magic',level:3},{chain:'blade',level:2}] },
+  { id:OID++, rarity:'epic',     ready:true, items:[{chain:'range',level:5}] },
+  { id:OID++, rarity:'legendary', ready:true, items:[{chain:'magic',level:6},{chain:'blade',level:5},{chain:'range',level:4}] },
+  { id:OID++, rarity:'uncommon',              items:[{chain:'blade',level:3},{chain:'magic',level:2}] },
+  { id:OID++, pending:true, secs:'3.4s', p:0.62 },
+];
+// fresh orders cycled in after each completion, so the rail keeps flowing while iterating
+const REFILL = [
+  { rarity:'rare',      ready:true, items:[{chain:'blade',level:4},{chain:'blade',level:4}] },
+  { rarity:'uncommon',  ready:true, items:[{chain:'magic',level:1},{chain:'range',level:2}] },
+  { rarity:'epic',      ready:true, items:[{chain:'magic',level:5},{chain:'range',level:3}] },
+  { rarity:'legendary', ready:true, items:[{chain:'range',level:6},{chain:'blade',level:5},{chain:'magic',level:4}] },
+];
+let refillIx = 0;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const rail = document.getElementById('rail');
+const fxo = document.getElementById('fx');
+
+function orderHTML(o){
+  if(o.pending){
+    return `<div class="pending" data-oid="${o.id}">
+      <div class="ring" style="--p:${o.p}"><span class="pending-time">${o.secs}</span></div>
+      <span class="pending-lbl">Next order</span></div>`;
+  }
+  const reqs = o.items.map((it) =>
+    `<span class="req"><img class="req-art art-img" src="${MERGE}${it.chain}-${it.level}.png" style="${mergeStyle(it.chain+'.'+it.level)}" alt=""></span>`
+  ).join('');
+  return `<div class="order${o.ready?' ready':''}" data-oid="${o.id}" style="--rar:${GRAR[o.rarity]}">
+    <span class="wipe"></span>
+    <span class="otab"><img class="otab-art art-img" src="${chestSrc(o.rarity)}" alt=""></span>
+    <div class="reqs">${reqs}</div>
+    <button type="button" class="reroll" title="Reroll"><span class="reroll-icon art-emoji">🎲</span></button></div>`;
+}
+function railRects(){ const m={}; rail.querySelectorAll('[data-oid]').forEach((el)=>{ m[el.dataset.oid]=el.getBoundingClientRect(); }); return m; }
+function wire(){
+  rail.querySelectorAll('.order.ready').forEach((el)=>{ el.onclick=()=>completeOrder(+el.dataset.oid); });
+  rail.querySelectorAll('.reroll').forEach((b)=>{ b.onclick=(e)=>e.stopPropagation(); });
+}
+// display order: COMPLETABLE (ready) orders first — rarest furthest left — then the rest, pending last.
+// This is a DISPLAY sort only; ORDERS keeps its own order.
+const RRANK = { common:0, uncommon:1, rare:2, epic:3, legendary:4 };
+function displayList(){
+  const active = ORDERS.filter((o)=>!o.pending);
+  const ready = active.filter((o)=>o.ready).sort((a,b)=>RRANK[b.rarity]-RRANK[a.rarity]);
+  const rest  = active.filter((o)=>!o.ready);
+  return [...ready, ...rest, ...ORDERS.filter((o)=>o.pending)];
+}
+function render(){ rail.innerHTML = displayList().map(orderHTML).join(''); wire(); }
+// FLIP (position-only) — mirrors the real Orders rail: completed order vanishes, the rest slide left
+function renderFLIP(){
+  const prev = railRects();
+  render();
+  const now = railRects();
+  displayList().forEach((o)=>{
+    const el = rail.querySelector(`[data-oid="${o.id}"]`); const p=prev[o.id], n=now[o.id];
+    if(el && p && n){ const dx=p.left-n.left; if(Math.abs(dx)>0.5){
+      el.style.transition='none'; el.style.transform=`translateX(${dx}px)`;
+      requestAnimationFrame(()=>{ el.style.transition='transform .34s cubic-bezier(.2,.8,.2,1)'; el.style.transform=''; });
+    }}
+  });
+  clampRailPan(); applyRailPan(); // content width may have changed → keep the pan in range
+}
+
+// Drag-scroll the rail via transform-pan. We keep overflow VISIBLE (so chest tabs never clip), which
+// rules out native scroll — so panning is a manual translateX with clamping.
+let railPan = 0;
+function clampRailPan(){ const min = Math.min(0, rail.clientWidth - rail.scrollWidth); railPan = Math.max(min, Math.min(0, railPan)); }
+function applyRailPan(){ rail.style.transform = `translateX(${railPan}px)`; }
+function initDragScroll(){
+  let down=false, moved=false, sx=0, start=0;
+  rail.addEventListener('pointerdown', (e)=>{ if(e.target.closest('.reroll')) return; down=true; moved=false; sx=e.clientX; start=railPan; });
+  window.addEventListener('pointermove', (e)=>{ if(!down) return; const dx=e.clientX-sx; if(!moved && Math.abs(dx)>6){ moved=true; rail.classList.add('dragging'); } if(moved){ railPan=start+dx; clampRailPan(); applyRailPan(); } });
+  window.addEventListener('pointerup', ()=>{ if(!down) return; down=false; rail.classList.remove('dragging'); });
+  rail.addEventListener('click', (e)=>{ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; } }, true); // a drag never completes an order
+}
+
+// ── completion VFX (mockup) — card consumes → flips to a chest → SMASH → reward flies to the bar ──
+const easeOutBack = (t)=>{ const c1=1.70158, c3=c1+1; return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2); };
+const easeOutCubic = (t)=>1-Math.pow(1-t,3);
+function frameXY(cx, cy){ const fr=document.querySelector('.frame').getBoundingClientRect(); return { x:cx-fr.left, y:cy-fr.top }; }
+function tween(ms, ease, cb){ return new Promise((res)=>{ const t0=performance.now(); const f=(now)=>{ const k=Math.min(1,(now-t0)/ms); cb(ease?ease(k):k,k); if(k<1) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); }); }
+
+async function completeOrder(id){
+  const el = rail.querySelector(`.order[data-oid="${id}"]`); if(!el || el.dataset.busy) return; el.dataset.busy='1';
+  const o = ORDERS.find((x)=>x.id===id); if(!o) return;
+  const r = el.getBoundingClientRect(); const c = frameXY(r.left+r.width/2, r.top+r.height/2);
+  // 1) consume — required icons pop out one by one
+  el.querySelectorAll('.req').forEach((q,i)=>{ setTimeout(()=>{ q.style.transition='transform .2s ease-in, opacity .2s'; q.style.transform='scale(.15) translateY(-8px)'; q.style.opacity='0'; }, i*45); });
+  await wait(200);
+  // 2) card collapses; a chest pops in its place (overshoot)
+  el.style.transition='transform .18s ease-in, opacity .18s'; el.style.transformOrigin='50% 60%'; el.style.transform='scale(.55)'; el.style.opacity='0';
+  const chest = document.createElement('div'); chest.className='fx-chest';
+  chest.innerHTML = `<img src="${chestSrc(o.rarity)}" alt="">`;
+  chest.style.filter = `drop-shadow(0 6px 10px rgba(0,0,0,.6)) drop-shadow(0 0 12px ${GRAR[o.rarity]})`;
+  fxo.appendChild(chest);
+  await tween(300, easeOutBack, (e)=>{ chest.style.transform=`translate(${c.x}px,${c.y}px) translate(-50%,-50%) scale(${0.4+0.6*e})`; });
+  // 3) small anticipation jiggle
+  await tween(260, null, (k)=>{ const a=Math.sin(k*Math.PI*3)*(1-k)*8; chest.style.transform=`translate(${c.x}px,${c.y}px) translate(-50%,-50%) scale(1) rotate(${a}deg)`; });
+  // 4) SMASH — white flash + sparkle burst; chest scales up and fades
+  flash(); sparkleBurst(c.x, c.y, GRAR[o.rarity]);
+  await tween(180, easeOutCubic, (e)=>{ chest.style.opacity=String(1-e); chest.style.transform=`translate(${c.x}px,${c.y}px) translate(-50%,-50%) scale(${1+e*0.7})`; });
+  chest.remove();
+  // 5) reward reveal → flies to the currency bar
+  await rewardReveal(c.x, c.y, o.rarity);
+  // 6) clear order, ensure a pending exists, FLIP the rest left, then fill the pending into a fresh order
+  const ix = ORDERS.findIndex((x)=>x.id===id); if(ix>=0) ORDERS.splice(ix,1);
+  if(!ORDERS.some((x)=>x.pending)) ORDERS.push({ id:OID++, pending:true, secs:'1.5s', p:0 });
+  renderFLIP();
+  fillPending();
+}
+
+function flash(){ const f=document.createElement('div'); f.className='fx-flash'; fxo.appendChild(f);
+  f.animate([{opacity:0},{opacity:.5,offset:.15},{opacity:0}],{duration:300,easing:'ease-out'}).onfinish=()=>f.remove(); }
+function sparkleBurst(x,y,color){ const N=14; for(let i=0;i<N;i++){ const s=document.createElement('div'); s.className='fx-spark';
+  s.style.background = i%3 ? color : '#fff'; s.style.boxShadow=`0 0 6px ${color}`; fxo.appendChild(s);
+  const a=(i/N)*Math.PI*2 + Math.random()*0.4, d=42+Math.random()*46;
+  s.animate([{transform:`translate(${x}px,${y}px) scale(1)`,opacity:1},{transform:`translate(${x+Math.cos(a)*d}px,${y+Math.sin(a)*d}px) scale(.2)`,opacity:0}],{duration:520+Math.random()*180,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove(); } }
+async function rewardReveal(x,y,rarity){
+  const color = GRAR[rarity];
+  const ring = document.createElement('div'); ring.className='fx-ring'; ring.style.borderColor=color; fxo.appendChild(ring);
+  ring.animate([{transform:`translate(${x}px,${y}px) translate(-50%,-50%) scale(.3)`,opacity:.9},{transform:`translate(${x}px,${y}px) translate(-50%,-50%) scale(2.7)`,opacity:0}],{duration:520,easing:'ease-out'}).onfinish=()=>ring.remove();
+  const rw = document.createElement('div'); rw.className='fx-reward';
+  rw.innerHTML = `<img src="${chestSrc(rarity)}" style="filter:drop-shadow(0 0 10px ${color})" alt="">`;
+  fxo.appendChild(rw);
+  await tween(300, easeOutBack, (e)=>{ rw.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${0.3+0.95*e})`; });
+  await wait(240);
+  const target = document.querySelector('[data-stat="coins"]') || document.querySelector('.header');
+  const tr = target.getBoundingClientRect(); const t = frameXY(tr.left+tr.width/2, tr.top+tr.height/2);
+  await tween(420, easeOutCubic, (e)=>{ const px=x+(t.x-x)*e, py=y+(t.y-y)*e; rw.style.opacity=String(1-e*0.65); rw.style.transform=`translate(${px}px,${py}px) translate(-50%,-50%) scale(${1.25-e*0.85})`; });
+  rw.remove();
+  if(target) target.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:280,easing:'ease-out'});
+}
+function fillPending(){
+  const pend = ORDERS.find((x)=>x.pending); if(!pend) return;
+  const t0=performance.now(), dur=1500;
+  const step=(now)=>{ const k=Math.min(1,(now-t0)/dur);
+    const ring=rail.querySelector(`[data-oid="${pend.id}"] .ring`); const tt=rail.querySelector(`[data-oid="${pend.id}"] .pending-time`);
+    if(ring) ring.style.setProperty('--p', k.toFixed(3));
+    if(tt) tt.textContent = Math.max(0,(dur-(now-t0))/1000).toFixed(1)+'s';
+    if(k<1){ requestAnimationFrame(step); }
+    else { const nx=REFILL[refillIx++ % REFILL.length]; const i=ORDERS.findIndex((x)=>x.id===pend.id);
+      if(i>=0){ ORDERS[i]={ id:pend.id, rarity:nx.rarity, ready:nx.ready, items:nx.items }; renderFLIP(); } }
+  };
+  requestAnimationFrame(step);
+}
+
+// ── BOARD (faithful backdrop) ────────────────────────────────────────────────
+const G = (c,l,extra={}) => ({ kind:'item', chain:c, level:l, ...extra });
+const GEN = (c) => ({ kind:'generator', chain:c });
+const B = [
+  GEN('blade'), G('magic',0), G('magic',0), G('blade',1), null,        G('range',2), G('range',2),
+  G('blade',3), G('blade',3), null,         G('magic',4), null,        G('range',0), null,
+  GEN('magic'), G('magic',2), null,         G('blade',0), G('blade',0), null,        G('range',5,{best:true}),
+  null,         G('magic',5), G('range',5,{best:true}), null,          G('blade',2,{locked:true}), null, G('magic',1),
+  GEN('range'), G('range',1), G('range',1), null,         G('magic',3), null,        G('blade',4),
+];
+const tilt = (i) => ((i*41)%17) - 8; // deterministic tilt in [-8,8]
+
+function buildBoard(){
+  const shaker = document.getElementById('shaker');
+  const tilesEl = document.getElementById('tiles');
+  const conn = document.getElementById('conn');
+  const boardEl = document.getElementById('board');
+  if(!boardEl.children.length){ for(let i=0;i<35;i++){ const cl=document.createElement('div'); cl.className='mb-cell'; cl.setAttribute('data-cell-index', i); boardEl.appendChild(cl); } }
+  const cells = boardEl.children;
+  tilesEl.innerHTML = '';
+  const r0 = shaker.getBoundingClientRect();
+  const bestPts = [];
+  B.forEach((c,i) => {
+    if(!c) return;
+    const r = cells[i].getBoundingClientRect();
+    const g = { x:r.left-r0.left, y:r.top-r0.top, w:r.width, h:r.height };
+    const isGen = c.kind==='generator';
+    const el = document.createElement('div');
+    el.className = `mb-tile${isGen?' mb-gen':''}${c.locked?' mb-locked':''}${c.best?' mb-best':''}`;
+    el.style.width = g.w+'px'; el.style.height = g.h+'px';
+    el.style.transform = `translate(${g.x}px,${g.y}px)`;
+    const bob = document.createElement('div'); bob.className = 'mb-bob';
+    const inner = document.createElement('div'); inner.className = 'mb-inner';
+    const img = document.createElement('img'); img.className = 'mb-art'; img.draggable = false;
+    if(isGen){ img.src = `${MERGE}gen-${c.chain}.png`; }
+    else {
+      img.src = `${MERGE}${c.chain}-${c.level}.png`;
+      img.style.cssText = mergeStyle(`${c.chain}.${c.level}`);
+      el.style.setProperty('--mb-rc', TIER_COLORS[Math.min(c.level, TIER_COLORS.length-1)]);
+      el.style.setProperty('--mb-tilt', tilt(i)+'deg');
+    }
+    inner.appendChild(img); bob.appendChild(inner); el.appendChild(bob);
+    if(isGen){ const p = document.createElement('span'); p.className = 'mb-plus'; p.textContent = '⚙'; el.appendChild(p); }
+    tilesEl.appendChild(el);
+    if(c.best) bestPts.push({ x:g.x+g.w/2, y:g.y+g.h/2 });
+  });
+  // best-pair connector (the "merge next" hint) between the two flagged tiles
+  if(bestPts.length===2){
+    const a = bestPts[0], b = bestPts[1];
+    const dx = b.x-a.x, dy = b.y-a.y;
+    conn.style.display = '';
+    conn.style.width = Math.hypot(dx,dy)+'px';
+    conn.style.left = a.x+'px'; conn.style.top = a.y+'px';
+    conn.style.transform = `rotate(${Math.atan2(dy,dx)}rad)`;
+  }
+}
+
+render();
+initDragScroll();
+window.addEventListener('load', buildBoard);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { buildBoard(); clampRailPan(); applyRailPan(); }, 120); });
+</script>
+</body>
+</html>
