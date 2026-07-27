@@ -54,23 +54,26 @@
 
   /* enemies stream from the right and die before reaching the squad */
   .lane{position:absolute;inset:0;z-index:3;pointer-events:none}
-  .foe{position:absolute;width:62px;height:62px;object-fit:contain;filter:drop-shadow(0 5px 5px rgba(0,0,0,.55));transform:scaleX(-1)}
+  /* enemies: SAME scale as heroes (game COMBAT_BASE_H is shared, ~54 base); face right toward the squad */
+  .foe{position:absolute;width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 5px 5px rgba(0,0,0,.55))}
   .foe.hit{animation:foehit .12s ease}
-  @keyframes foehit{0%{filter:drop-shadow(0 5px 5px rgba(0,0,0,.55)) brightness(1)}50%{filter:brightness(3.2) drop-shadow(0 0 7px #fff)}100%{filter:brightness(1)}}
-  .foe.die{animation:foedie .34s ease-in forwards}
-  @keyframes foedie{0%{opacity:1}100%{opacity:0;transform:scaleX(-1) translateY(8px) scale(.45) rotate(14deg)}}
+  @keyframes foehit{0%{filter:drop-shadow(0 5px 5px rgba(0,0,0,.55)) brightness(1)}50%{filter:brightness(3.4) drop-shadow(0 0 8px #fff)}100%{filter:brightness(1)}}
+  .foe.die{animation:foedie .44s ease-in forwards}
+  @keyframes foedie{0%{opacity:1;transform:scale(1)}55%{opacity:.85;transform:scale(.78) rotate(-8deg);filter:brightness(2.6) blur(1px)}100%{opacity:0;transform:translateY(4px) scale(.1) rotate(-22deg);filter:brightness(2) blur(3px)}}
+  .spark{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle,#fff,#ffd45e 55%,transparent);z-index:8;pointer-events:none;will-change:transform,opacity}
   .pop{position:absolute;z-index:8;font-family:'Uniform Bold',sans-serif;font-size:15px;color:#ffe3a0;pointer-events:none;text-shadow:0 1px 2px #000}
   .pop.sk{color:#fff;font-size:18px}
   @keyframes rise{0%{opacity:0;transform:translateY(4px) scale(.7)}20%{opacity:1;transform:translateY(-2px) scale(1.1)}100%{opacity:0;transform:translateY(-26px) scale(1)}}
 
   /* squad — FIXED positions, feet aligned to the ground line via per-hero anchor offsets.
      Never re-positioned; only a constant translateY idle-bob (never toggled). */
-  .hero{position:absolute;z-index:5;width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 6px 6px rgba(0,0,0,.5));animation:bob 2.1s ease-in-out infinite;transform-origin:bottom center}
-  .hero.k{left:14px;bottom:4px}          /* knight  anchor.y 0.8745 */
-  .hero.r{left:70px;bottom:9px;width:72px;height:72px;animation-delay:.7s}  /* ranger anchor.y 0.9435 */
-  .hero.w{left:122px;bottom:10px;width:68px;height:68px;animation-delay:1.4s} /* wizard anchor.y 0.9555 */
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-  .muzzle{position:absolute;left:82px;bottom:44px;z-index:6;width:38px;height:6px;border-radius:4px;background:linear-gradient(90deg,#fff,rgba(255,220,120,.9),transparent);opacity:0;filter:blur(1px)}
+  /* squad on the RIGHT, facing LEFT toward the incoming horde; feet aligned via per-hero anchor offsets */
+  .hero{position:absolute;z-index:5;width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 6px 6px rgba(0,0,0,.5));animation:bobL 2.1s ease-in-out infinite;transform-origin:bottom center}
+  .hero.k{right:112px;bottom:4px}          /* knight FRONT line, anchor.y 0.8745 */
+  .hero.r{right:62px;bottom:9px;width:72px;height:72px;animation-delay:.7s}  /* ranger anchor.y 0.9435 */
+  .hero.w{right:14px;bottom:10px;width:68px;height:68px;animation-delay:1.4s} /* wizard (back) anchor.y 0.9555 */
+  @keyframes bobL{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-3px)}}
+  .muzzle{position:absolute;right:188px;bottom:44px;z-index:6;width:40px;height:6px;border-radius:4px;background:linear-gradient(90deg,#fff,rgba(255,220,120,.9),transparent);opacity:0;filter:blur(1px);transform-origin:right center}
   .muzzle.fire{animation:muz .16s ease-out}
   @keyframes muz{0%{opacity:0;transform:scaleX(.3)}30%{opacity:1}100%{opacity:0;transform:scaleX(1.2)}}
 
@@ -209,15 +212,29 @@
     const lane=$('lane'); if(!lane) return; const W=lane.clientWidth;
     const img=document.createElement('img'); img.className='foe';
     img.src=FOES[Math.floor(Math.random()*FOES.length)];
-    img.style.bottom=(8+Math.random()*40)+'px'; img.style.left=(W-70)+'px'; lane.appendChild(img);
-    const travel=680+Math.random()*220, dist=W*0.5;
-    img.animate([{transform:'scaleX(-1) translateX(0)'},{transform:`scaleX(-1) translateX(-${dist}px)`}],
-      {duration:travel,easing:'linear',fill:'forwards'});
+    img.style.bottom=(8+Math.random()*32)+'px'; img.style.left='-76px'; lane.appendChild(img);
+    const frontX=W-198, dist=frontX+76;   // march from off-LEFT into the squad's front line (right)
+    const travel=920+Math.random()*320;
+    img.animate([{transform:'translateX(0)'},{transform:`translateX(${dist}px)`}],{duration:travel,easing:'linear',fill:'forwards'});
+    // disintegrate ON CONTACT with the heroes (end of the march)
     setTimeout(()=>{ fireMuzzle(); img.classList.add('hit');
       const r=img.getBoundingClientRect(), l=lane.getBoundingClientRect();
-      pop(r.left-l.left+10, l.bottom-r.bottom+42, Math.random()<.5?'☠':'−'+fmtNum(30+Math.floor(Math.random()*220)), Math.random()<.5);
-      setTimeout(()=>{ img.classList.add('die'); setTimeout(()=>img.remove(),360); },70);
-    }, travel*0.48);
+      const cx=r.left-l.left+38, cy=l.bottom-r.bottom+38;
+      disintegrate(cx,cy);
+      pop(cx, cy+28, Math.random()<.5?'☠':'−'+fmtNum(30+Math.floor(Math.random()*220)), Math.random()<.5);
+      setTimeout(()=>{ img.classList.add('die'); setTimeout(()=>img.remove(),460); },50);
+    }, travel*0.9);
+  }
+  function disintegrate(x,y){
+    const lane=$('lane'); if(!lane) return;
+    for(let i=0;i<7;i++){ const s=document.createElement('div'); s.className='spark';
+      s.style.left=x+'px'; s.style.bottom=y+'px'; lane.appendChild(s);
+      const ang=rand(-Math.PI*0.92,-Math.PI*0.08), d=16+Math.random()*30;
+      const dx=Math.cos(ang)*d, dy=Math.sin(ang)*d;   // up + outward
+      s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.2)`,opacity:0}],
+        {duration:340+Math.random()*180,easing:'ease-out',fill:'forwards'});
+      setTimeout(()=>s.remove(),560);
+    }
   }
   function fireMuzzle(){ const m=$('muzzle'); m.classList.remove('fire'); void m.offsetWidth; m.classList.add('fire'); }
   function pop(x,y,txt,sk){ const lane=$('lane'); const p=document.createElement('div'); p.className='pop'+(sk?' sk':'');

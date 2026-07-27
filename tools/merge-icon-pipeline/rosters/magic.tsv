@@ -1,10 +1,10 @@
 # magic merge chain — 8 tiers. SPELLBOOKS (single object each). paper → folio → leather → ornate → arcane → cosmic → white-gold.
 # Palette: parchment tan → leather brown → brass/blue-gem → arcane blue → cosmic violet → white+gold. Single object, fills the square, no shadow.
 # Names: 1 Scrap · 2 Loose Sheets · 3 Bound Folio · 4 Leather Spellbook · 5 Ornate Spellbook · 6 Arcane Grimoire · 7 Cosmic Codex · 8 Radiant Tome
-magic-1	a small torn scrap of aged parchment paper with ragged edges
-magic-2	a thick loose stack of many overlapping sheets of aged parchment paper, a generous messy pile of loose pages
-magic-3	a loose bound folio of parchment pages tied together with a leather cord
-magic-4	a sturdy leather spellbook with brass corner caps and a small clasp
+magic-1	a small torn scrap of whitish-blue paper with ragged edges
+magic-2	a thick loose stack of many overlapping sheets of whitish-blue paper, a generous messy pile of loose pages
+magic-3	a loose bound folio of whitish-blue paper pages tied together with a leather cord
+magic-4	a sturdy BLUE-AND-PURPLE leather spellbook with brass corner caps and a small clasp
 magic-5	an ornate spellbook with metal filigree on the cover and a LARGE blue gem in the center, faint glowing blue runes
 magic-6	a large grand arcane grimoire with glowing blue-edged pages, gilded edges and a gem clasp, glowing blue runes, softly glowing
 magic-7	a large cosmic codex radiating light, its cover set with a LARGE purple gem in the center and glowing violet runes, a few floating torn page fragments
