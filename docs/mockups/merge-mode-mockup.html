@@ -50,7 +50,8 @@
   .rail{ overflow:visible; touch-action:pan-y; }    /* no clip; drag-scroll is transform-based (in JS) */
   /* ── order-tile redesign (iteration) — tile is sized to exactly cover its 1–2–3 required items ── */
   .order{ height:auto; padding:5px; gap:4px; }                 /* width/height hug the required-item row */
-  .otab{ top:-26px; left:6px; }                                /* chest tab sits flush on the card's top edge */
+  .otab{ top:-18px; left:6px; height:19px; padding:0 6px 2px; } /* chest tab 30% shorter (27→19), flush on card top */
+  .otab .otab-art.art-img{ width:28px; height:28px; }           /* larger chest icon — bulges out of the slim tab */
   .reqs{ min-width:0; height:auto; gap:4px; }                  /* drop the 117px min → fit N items exactly */
   .req{ width:48px; height:48px; }                             /* fixed item slot → 1/2/3 slots wide */
   .reroll{ position:absolute; right:3px; bottom:3px; width:22px; height:22px; border-radius:7px; padding:0; z-index:4;
