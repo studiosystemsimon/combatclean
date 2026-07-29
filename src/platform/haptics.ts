@@ -8,7 +8,21 @@ export const NotificationType = { Success: 'SUCCESS', Warning: 'WARNING', Error:
 type Impact = (typeof ImpactStyle)[keyof typeof ImpactStyle];
 type Notify = (typeof NotificationType)[keyof typeof NotificationType];
 
+// Browsers block navigator.vibrate() (and log a console "[Intervention] Blocked call…" warning) until
+// the user has made a gesture on the frame. Early haptics — e.g. the battle tick's FX firing on mount
+// before any tap — would trip that on every call. Track the first user gesture and no-op vibration until
+// it lands, so no blocked calls (and no console spam) ever occur.
+let userEngaged = false;
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  const engage = () => {
+    userEngaged = true;
+    for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.removeEventListener(ev, engage, true);
+  };
+  for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListener(ev, engage, true);
+}
+
 const vibrate = (pattern: number | number[]): void => {
+  if (!userEngaged) return; // pre-gesture: the browser would block the call — skip it silently
   try {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(pattern);
   } catch { /* no vibration engine — silent */ }

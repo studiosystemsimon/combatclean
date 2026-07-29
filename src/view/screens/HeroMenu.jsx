@@ -18,7 +18,7 @@ import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
 import { GEAR_SLOTS, GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
 import {
-  heroStats, heroPower, heroMaxLevel, heroRarity, ascensionsDone,
+  heroStats, heroPower, heroMaxLevel, heroRarity, ascensionsDone, ascendSelection, canAscendChar,
 } from '../../model/heroes.js';
 import { canLevelHero, heroLevelCost, levelUpHeroMax, heroAtMax } from '../../model/progression.js';
 import {
@@ -50,6 +50,7 @@ export default function HeroMenu() {
 
   const [equipSlot, setEquipSlot] = useState(null);   // open equip dialog for this slot
   const [confirmEq, setConfirmEq] = useState(null);   // { slot, item } awaiting confirm
+  const [confirmAsc, setConfirmAsc] = useState(null); // { keepCid, sacrificeCid } awaiting ascend confirm
   const [skillIdx, setSkillIdx] = useState(null);     // open ability detail
 
   const char = cid ? state.heroes[cid] : null;
@@ -105,6 +106,10 @@ export default function HeroMenu() {
   const ascDone = ascensionsDone(char);
   const art = heroAsset(char.hero);
   const equippedSlots = GEAR_SLOTS.filter((s) => equippedInSlot(state.gear, cid, s));
+  // Ascend (merge a duplicate copy → +1 rank). Reuses the reducer-shared selection so the confirm names
+  // the exact copy consumed; ALWAYS keeps the strongest copy and sacrifices the weakest.
+  const ascSel = ascendSelection(state.heroes, char.hero, (c) => heroPower(state.heroes[c].hero, state.heroes[c], state.ordersCompleted, heroGearPower(state.gear, c)));
+  const canAscend = !!ascSel && canAscendChar(state.heroes[ascSel.keepCid]);
 
   // ── actions (capture before → dispatch → effect fires the fx) ──
   const doLevelUp = () => { if (atMax) { fxMaxed(heroImgRef.current); return; } if (!canLevelHero(char, state.heroXp)) return; pending.current = { kind: 'hero', before: snap() }; actions.levelUpHero(cid); };
@@ -113,6 +118,11 @@ export default function HeroMenu() {
   const doEquipBest = () => { if (!canEquipBetter(state.gear, cid)) return; pending.current = { kind: 'equipbest', before: snap(), slots: GEAR_SLOTS }; actions.equipBest(cid); };
   const doLevelGearOne = () => { const g = equippedInSlot(state.gear, cid, equipSlot); if (!g || !canLevelGear(g, state.gearXp)) return; pending.current = { kind: 'gearone', before: snap(), slot: equipSlot }; actions.levelGear(g.id); };
   const doEquip = (slot, item) => { pending.current = { kind: 'equip', before: snap(), slot }; actions.equipItem(cid, item.id); setConfirmEq(null); };
+  // Ascend: count up the SURVIVING (kept) copy's stats old→new; if the menu was open on the sacrificed
+  // copy, follow the survivor so the menu doesn't vanish. Destroying a leveled copy asks to confirm first.
+  const snapOf = (c) => { const h = state.heroes[c]; const gp = heroGearPower(state.gear, c); const s = heroStats(h.hero, h, state.ordersCompleted, gp); return { lv: h.level, pow: heroPower(h.hero, h, state.ordersCompleted, gp), hp: s.maxHp, atk: s.atk, def: s.def }; };
+  const runAscend = (sel) => { pending.current = { kind: 'hero', before: snapOf(sel.keepCid) }; actions.ascendHero(sel.keepCid); if (cid !== sel.keepCid) actions.setHeroMenu(sel.keepCid); };
+  const doAscend = () => { if (!canAscend || !ascSel) return; const sac = state.heroes[ascSel.sacrificeCid]; if ((sac?.level || 1) > 1) { setConfirmAsc(ascSel); return; } runAscend(ascSel); };
 
   const cycle = (dir) => { const order = state.order; const i = order.indexOf(cid); if (i < 0) return; actions.setHeroMenu(order[(i + dir + order.length) % order.length]); };
 
@@ -133,7 +143,12 @@ export default function HeroMenu() {
       <div className="hm-header">
         <div className="hm-emblems">
           <div className="emb"><span>✨</span></div><div className="emb-line" />
-          <div className="emb diamond"><span className="g">◆</span></div><div className="emb-line" />
+          {canAscend ? (
+            <button type="button" className="emb diamond asc-ready" onClick={doAscend} aria-label="Ascend hero" title={`Ascend ${ascDone}/${HERO_UPGRADE.maxAscensions}`}><span className="g">◆</span></button>
+          ) : (
+            <div className="emb diamond"><span className="g">◆</span></div>
+          )}
+          <div className="emb-line" />
           <div className="emb"><span>✊</span></div>
         </div>
         <div className="hm-titles">
@@ -200,6 +215,25 @@ export default function HeroMenu() {
           </div>
         </div>
       </div>
+
+      {/* ascend confirm — destroying a leveled copy names the exact Character consumed */}
+      {confirmAsc && (() => {
+        const keep = state.heroes[confirmAsc.keepCid]; const sac = state.heroes[confirmAsc.sacrificeCid];
+        if (!keep || !sac) return null;
+        return (
+          <div className="hm-sheet open">
+            <div className="hm-sheet-bd" onClick={() => setConfirmAsc(null)} />
+            <div className="hm-card">
+              <h4>Ascend {HEROES[keep.hero].name}</h4>
+              <div className="skdesc">{HEROES[sac.hero].name} · Lv {sac.level} will be destroyed to ascend your {HEROES[keep.hero].name}.</div>
+              <div className="eq-btns">
+                <button className="hm-close" style={{ flex: 1, marginTop: 0 }} onClick={() => setConfirmAsc(null)}>Cancel</button>
+                <button className="btn primary" style={{ flex: 1 }} onClick={() => { const s = confirmAsc; setConfirmAsc(null); runAscend(s); }}>✦ Ascend</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ability detail */}
       {skillIdx != null && (() => {

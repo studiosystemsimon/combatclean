@@ -222,12 +222,12 @@ body {
 .order {
   position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 4px;
   height: auto; padding: 5px; border-radius: 12px; color: inherit; font: inherit; cursor: pointer;
-  background: #1a2233;                            /* all orders are GREY; box hugs its req slots */
+  background: #232d41;                            /* all orders are GREY; box hugs its req slots */
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .order[aria-disabled="true"] { cursor: default; }
 .order.ready {                                    /* GOLD when ready to claim */
-  background: color-mix(in srgb, var(--gold) 22%, #1a2233);
+  background: color-mix(in srgb, var(--gold) 22%, #232d41);
   border-color: var(--gold);
   box-shadow: inset 0 0 0 1px var(--gold), 0 0 10px rgba(255, 212, 94, 0.35);
 }
@@ -1837,6 +1837,19 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   background: radial-gradient(120% 100% at 50% 0, #2a3450, #10131d); border: 2px solid #56618a; }
 .hero-menu .emb.diamond { width: 34px; height: 34px; border-radius: 8px; transform: rotate(45deg); border-color: var(--rar); background: #171b2b; }
 .hero-menu .emb.diamond .g { transform: rotate(-45deg); font-size: 15px; color: var(--rar); }
+/* Ascend trigger: the header diamond becomes a bright, tappable gem that PULSES while a hero is
+   eligible to ascend (a spare duplicate + not max ascensions). Reverts to the plain emblem once ascended. */
+.hero-menu .emb.diamond.asc-ready { cursor: pointer; padding: 0; appearance: none; -webkit-appearance: none;
+  border: 2px solid rgba(255,255,255,.92);
+  background: radial-gradient(130% 130% at 50% 25%, rgba(255,255,255,.6), var(--rar));
+  box-shadow: 0 0 10px var(--rar), 0 0 20px var(--rar);
+  animation: ascDiamondPulse 1.05s ease-in-out infinite; }
+.hero-menu .emb.diamond.asc-ready .g { color: #fff; text-shadow: 0 0 6px rgba(0,0,0,.55); }
+.hero-menu .emb.diamond.asc-ready:active { animation: none; transform: rotate(45deg) scale(.92); }
+@keyframes ascDiamondPulse {
+  0%, 100% { transform: rotate(45deg) scale(1); box-shadow: 0 0 8px var(--rar), 0 0 2px rgba(255,255,255,.4); }
+  50% { transform: rotate(45deg) scale(1.16); box-shadow: 0 0 18px var(--rar), 0 0 30px var(--rar); }
+}
 .hero-menu .emb-line { width: 22px; height: 2px; background: linear-gradient(90deg, transparent, #b98cff, transparent); }
 .hero-menu .hm-titles { margin-top: 5px; }
 .hero-menu .t-tier { font-size: 13px; color: var(--rar); line-height: 1.28; letter-spacing: .5px; }

@@ -177,7 +177,7 @@ function isRefNumeric(propSchema, refMeta) {
 }
 
 function titleCase(s) {
-  return s.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return String(s ?? '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -377,7 +377,10 @@ function renderObjectGroup(schema, value, path, fieldPath) {
   const groupPath = fieldPath.join('.');
   const isCollapsed = state.collapsedGroups[groupPath];
 
-  const title = fieldPath.length > 0 ? titleCase(fieldPath[fieldPath.length - 1]) : '';
+  const lastKey = fieldPath[fieldPath.length - 1];
+  // Array-item object groups (last path segment is a numeric index) are already labelled by the
+  // enclosing `[i]` header — don't title them (and never titleCase a number → it throws).
+  const title = fieldPath.length > 0 && typeof lastKey !== 'number' ? titleCase(lastKey) : '';
   const headerHtml = title ? `
     <div class="collapsible-header" data-toggle="${groupPath}">
       <span class="collapsible-arrow ${isCollapsed ? '' : 'open'}">▶</span>

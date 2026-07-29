@@ -62,15 +62,16 @@ export const findMatchCells = (board: BoardCell[], order: Order): number[] | nul
 export const canFulfill = (board: BoardCell[], order: Order) => findMatchCells(board, order) !== null;
 
 // Display order (view-only, pure): completable orders first — rarest furthest left — then the rest in
-// place, pending last. Rarity rank = canonical ladder. Does not mutate state.
+// place, pending last. A FULFILLING order stays pinned in the lead group so its tile holds position
+// through the completion animation (instead of sliding away) before it's removed. Does not mutate state.
 export const displayOrders = (orders: Order[], board: BoardCell[]): Order[] => {
   const rank = (r: string) => C.GEAR_RARITY_ORDER.indexOf(r);
-  const ready: Order[] = [], rest: Order[] = [], pending: Order[] = [];
+  const lead: Order[] = [], rest: Order[] = [], pending: Order[] = [];
   for (const o of orders) {
     if (o.pending) pending.push(o);
-    else if (!o.fulfilling && canFulfill(board, o)) ready.push(o);
+    else if (o.fulfilling || canFulfill(board, o)) lead.push(o);
     else rest.push(o);
   }
-  ready.sort((a, b) => rank(b.rarity) - rank(a.rarity));
-  return [...ready, ...rest, ...pending];
+  lead.sort((a, b) => rank(b.rarity) - rank(a.rarity));
+  return [...lead, ...rest, ...pending];
 };
