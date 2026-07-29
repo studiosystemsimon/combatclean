@@ -20,6 +20,8 @@ ENEMY_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "enemy-art-pipeline")  
 ENEMY_AREAS = {"mossbog", "gloomwood", "boneyard", "emberfall", "frostvault", "dragons-ascent"}
 MERGE_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "merge-icon-pipeline")  # sibling merge-icon gen pipeline
 MERGE_CATS = {"magic", "blade", "range", "blade-gen", "range-gen", "magic-gen"}
+GEAR_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "gear-pipeline")         # sibling gear gen pipeline
+GEAR_CATS = {"armor", "weapons", "accessories"}
 GAME_ROOT = os.path.dirname(os.path.dirname(PIPELINE))          # repo root (for the post-merge-export build)
 GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
@@ -190,6 +192,8 @@ def _regen_plan(root, category):
         tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = ENEMY_PIPELINE
     elif category in MERGE_CATS:
         tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = MERGE_PIPELINE
+    elif category in GEAR_CATS:
+        tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = GEAR_PIPELINE
     else:                                             # heroes → hero pipeline
         tsv = "rosters/classes.tsv"; cwd = PIPELINE
     return cwd, tsv, env
@@ -294,45 +298,64 @@ def start_regen_worker():
 # ---- Regenerate ×N variants: generate N candidates into a temp dir (self-anchored to the current
 # tile, never overwriting it) so the user can pick a favourite from a popup ----
 VARIANTS_DIR = "/tmp/combatclean_variants"
-VARIANTS = {"slug": None, "cat": None, "total": 0, "done": 0, "status": "idle", "ready": [], "proc": None, "cancel": False}
+VARIANTS = {"slug": None, "cat": None, "total": 0, "done": 0, "status": "idle", "ready": [], "cells": {}, "procs": [], "cancel": False}
 VARIANTS_LOCK = threading.Lock()
 
 def _variants_worker(root, cat, slug, n, overrides):
     vdir = os.path.join(VARIANTS_DIR, slug)
-    tmp_out = os.path.join(vdir, "_out")
-    os.makedirs(tmp_out, exist_ok=True)
-    for f in os.listdir(vdir):                        # clear old candidates
+    os.makedirs(vdir, exist_ok=True)
+    for f in os.listdir(vdir):                                   # clear old candidates
         if f.startswith("cand-") and f.endswith(".png"):
             try: os.remove(os.path.join(vdir, f))
             except OSError: pass
-    cwd, tsv, env = _regen_plan(root, cat)
-    env["FORCE"] = "1"; env["OUT"] = tmp_out          # gen writes into the temp dir, NOT the real tile
-    if overrides: env["OVERRIDES"] = overrides
-    src = os.path.join(root, cat, slug + ".png")      # self-anchor each variant to the current tile
-    if os.path.isfile(src): env["REF"] = src
+    cwd, tsv, env0 = _regen_plan(root, cat)
+    src = os.path.join(root, cat, slug + ".png")                 # self-anchor each variant to the current tile
+    cells = {i: "running" for i in range(1, n + 1)}
     with VARIANTS_LOCK:
-        VARIANTS.update(slug=slug, cat=cat, total=n, done=0, status="running", ready=[], cancel=False)
-    for i in range(1, n + 1):
-        with VARIANTS_LOCK:
-            if VARIANTS["cancel"]: break
+        VARIANTS.update(slug=slug, cat=cat, total=n, done=0, status="running",
+                        ready=[], cells=dict(cells), procs=[], cancel=False)
+    procs = {}
+    for i in range(1, n + 1):                                    # launch ALL n concurrently, each its OWN output dir
+        outdir = os.path.join(vdir, "out-%d" % i)
+        os.makedirs(outdir, exist_ok=True)
+        try: os.remove(os.path.join(outdir, slug + ".png"))     # ensure no stale file → no duplicate on failure
+        except OSError: pass
+        env = env0.copy(); env["FORCE"] = "1"; env["OUT"] = outdir
+        var = ((overrides + " ") if overrides else "") + \
+              ("Variation %d — keep the SAME item, subject and rarity, but vary the pose, angle, composition and minor details to give a DISTINCT alternative." % i)
+        env["OVERRIDES"] = var
+        if os.path.isfile(src): env["REF"] = src
         logp = os.path.join(vdir, "gen-%d.log" % i)
         cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh %s >%s 2>&1" % (_q(cwd), _q(slug), _q(logp))]
         try:
-            p = subprocess.Popen(cmd, env=env, start_new_session=True)
-            with VARIANTS_LOCK: VARIANTS["proc"] = p
-            p.wait()
+            procs[i] = subprocess.Popen(cmd, env=env, start_new_session=True)
         except Exception:
-            pass
-        out = os.path.join(tmp_out, slug + ".png")
-        if os.path.isfile(out):
-            try:
-                shutil.copy(out, os.path.join(vdir, "cand-%d.png" % i))
-                with VARIANTS_LOCK: VARIANTS["ready"].append(i)
-            except OSError: pass
-        with VARIANTS_LOCK: VARIANTS["done"] = i
+            cells[i] = "failed"
+    with VARIANTS_LOCK: VARIANTS["procs"] = list(procs.values())
+    handled = set()
+    while len(handled) < len(procs):
+        with VARIANTS_LOCK: cancelled = VARIANTS["cancel"]
+        if cancelled: break
+        for i, p in procs.items():
+            if i in handled or p.poll() is None: continue
+            handled.add(i)
+            out = os.path.join(vdir, "out-%d" % i, slug + ".png")
+            if os.path.isfile(out):
+                try:
+                    shutil.copy(out, os.path.join(vdir, "cand-%d.png" % i))
+                    cells[i] = "done"
+                    with VARIANTS_LOCK: VARIANTS["ready"].append(i)
+                except OSError:
+                    cells[i] = "failed"
+            else:
+                cells[i] = "failed"
+        with VARIANTS_LOCK:
+            VARIANTS["cells"] = dict(cells); VARIANTS["done"] = len(handled)
+        time.sleep(0.4)
     with VARIANTS_LOCK:
+        VARIANTS["cells"] = dict(cells)
         VARIANTS["status"] = "cancelled" if VARIANTS["cancel"] else "done"
-        VARIANTS["proc"] = None
+        VARIANTS["procs"] = []
 
 def start_variants(root, cat, slug, n, overrides):
     with VARIANTS_LOCK:
@@ -344,12 +367,13 @@ def start_variants(root, cat, slug, n, overrides):
 def variants_status():
     with VARIANTS_LOCK:
         return {"slug": VARIANTS["slug"], "cat": VARIANTS["cat"], "total": VARIANTS["total"],
-                "done": VARIANTS["done"], "status": VARIANTS["status"], "ready": list(VARIANTS["ready"])}
+                "done": VARIANTS["done"], "status": VARIANTS["status"],
+                "ready": list(VARIANTS["ready"]), "cells": {str(k): v for k, v in VARIANTS["cells"].items()}}
 
 def cancel_variants():
     with VARIANTS_LOCK:
         VARIANTS["cancel"] = True
-        if VARIANTS["proc"]: _kill_group(VARIANTS["proc"])
+        for p in VARIANTS["procs"]: _kill_group(p)
     return {"ok": True}
 
 def pick_variant(root, cat, slug, index):

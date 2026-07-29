@@ -5,13 +5,13 @@
 import type { Signal } from '../core/events/signal.ts';
 
 // ── merge board ──
-export interface BoardItem { id: number; kind: 'item'; chain: string; level: number; locked?: boolean }
+export interface BoardItem { id: number; kind: 'item'; chain: string; level: number; locked?: boolean; special?: boolean }
 export interface BoardGenerator { id: number; kind: 'generator'; genId: string; level: number }
 export type BoardCell = BoardItem | BoardGenerator | null;
 
 // ── orders ──
 export interface OrderItem { chain: string; level: number }
-export interface Order { id: number; items: OrderItem[]; difficulty: number; rarity: string; pending?: boolean; dur?: number; fulfilling?: boolean }
+export interface Order { id: number; items: OrderItem[]; difficulty: number; rarity: string; pending?: boolean; dur?: number; fulfilling?: boolean; special?: boolean; rerolled?: boolean }
 
 // ── autobattler ──
 export interface Enemy {

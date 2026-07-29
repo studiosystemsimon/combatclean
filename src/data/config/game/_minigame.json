@@ -1,0 +1,4 @@
+{
+	"reward": { "coins": 100, "heroXp": 20, "gearXp": 20 },
+	"perScore": { "coins": 50, "heroXp": 10, "gearXp": 10 }
+}

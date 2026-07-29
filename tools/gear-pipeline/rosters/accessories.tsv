@@ -1,0 +1,5 @@
+# ACCESSORIES gear roster.  slug<TAB>subject   ·   slug = <subcategory>-<rarity>
+# Rarity (last token, groups the list, low→high): common  uncommon  rare  epic  legendary
+amulet-common	a simple bronze amulet with a small polished stone on a plain leather cord, humble
+amulet-rare	a silver amulet set with a clear blue gem, hanging on a fine chain, elegant
+amulet-legendary	an ornate golden amulet set with a large glowing blue gem and delicate engraving, radiant and heroic

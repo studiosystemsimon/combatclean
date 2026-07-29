@@ -114,6 +114,9 @@ export const initState = (now: number, saved: any = null): S => {
     crystals: { ...C.EMPTY_CRYSTALS },
     menuHeroId: null, // UI-only: cid whose full-screen hero menu is open (unpersisted)
     afkOpen: false, // UI-only: the AFK collection popup is open (unpersisted; auto-set on load when idle ≥ alertMs)
+    headless: false, // UI-only: background mode — view unmounted, engine keeps ticking (unpersisted)
+    minigame: null, // UI-only: active minigame { id, input } (full screen; engine runs headless), null when none (unpersisted)
+    rewardPopup: null, // UI-only: { reward, source } shown after a minigame/server reward, null when none (unpersisted)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
   };
@@ -163,6 +166,21 @@ export const reducer = (state: S, action: Act): S => {
     case A.SET_AFK_OPEN:
       // Full-screen AFK collection popup (combat paused underneath). Clear fx on open like the hero menu.
       return { ...state, afkOpen: action.open, fx: action.open ? [] : state.fx };
+    case A.SET_HEADLESS:
+      // Background mode: the view unmounts but the engine keeps ticking. Clear fx (nothing renders them).
+      return { ...state, headless: action.on, fx: action.on ? [] : state.fx };
+    case A.SET_MINIGAME:
+      // A minigame is a full screen that replaces the current one; combat runs headless underneath.
+      return { ...state, minigame: action.minigame ?? null, fx: action.minigame ? [] : state.fx };
+    case A.FINISH_MINIGAME:
+      // The (server-resolved) reward comes back → leave the minigame and reveal it in the reward popup.
+      // Amounts were computed server-side (meta endpoint); the grant happens on claim (CLOSE_REWARD).
+      return { ...state, minigame: null, fx: [], rewardPopup: { reward: action.reward || { coins: 0, heroXp: 0, gearXp: 0 }, source: action.source || 'minigame' } };
+    case A.CLOSE_REWARD: {
+      // Claim: grant the shown reward into the wallet, then dismiss.
+      const r = (state.rewardPopup && state.rewardPopup.reward) || { coins: 0, heroXp: 0, gearXp: 0 };
+      return { ...state, coins: state.coins + (r.coins || 0), heroXp: state.heroXp + (r.heroXp || 0), gearXp: state.gearXp + (r.gearXp || 0), rewardPopup: null };
+    }
     case A.SET_BATTLE_LEVEL: {
       const target = Math.max(1, Math.min(Math.floor(action.level) || 1, state.furthestLevel));
       if (target === state.battle.level) return state;
@@ -231,6 +249,13 @@ export const reducer = (state: S, action: Act): S => {
         let board = Board.withCell(state.board, to, a); board = Board.withCell(board, from, null);
         return { ...state, board };
       }
+      if (Merge.canMergeSpecial(a, b)) {
+        // Two SPECIAL (S) tiles merged → LAUNCH the minigame through the real system (state.minigame;
+        // combat runs headless underneath, per SET_MINIGAME). Both tiles are consumed; fx clears as the
+        // full-screen opens. (Only 'test-button' is registered today — swap the id when real minigames land.)
+        let board = Board.withCell(state.board, to, null); board = Board.withCell(board, from, null);
+        return { ...state, board, minigame: { id: 'test-button', input: { source: 'special-merge' } }, fx: [] };
+      }
       if (Merge.canMerge(a, b)) {
         let id = state.nextId;
         const tier = a.level + 1;
@@ -263,6 +288,15 @@ export const reducer = (state: S, action: Act): S => {
       const bHeroes = Battle.grantOrderEnergy(state.battle.heroes.map((h: any) => ({
         ...h, atk: Math.max(1, Math.round(h.atk * ratio)), maxHp: Math.max(1, Math.round(h.maxHp * ratio)), hp: Math.max(1, Math.round(h.hp * ratio)),
       })));
+      if (order.special) {
+        // SPECIAL ORDER: reward = an S-tile dropped on the board (empty → else replace lowest active),
+        // NOT a gear chest. The slot resolves straight to a fresh pending order (no chest choreography —
+        // so a refresh can't strand it). ordersCompleted / power / limit-energy are granted like any order.
+        board = Board.addTileToBoard(board, Board.makeSpecialTile(id++));
+        const orders = [...state.orders.filter((o: any) => o.id !== order.id), { id: id++, pending: true, dur: C.ORDER_CONFIG.arrivalMs }];
+        const fx = [...state.fx, { id: id++, type: 'limitCharge', orderId: order.id, heroIds: bHeroes.map((h: any) => h.id) }];
+        return { ...state, board, orders, ordersCompleted: newC, battle: { ...state.battle, heroes: bHeroes }, nextId: id, fx };
+      }
       const gid = id++;
       const zoneItems = Map.itemsForLevel(state.battle.level);
       let g: any = null;
@@ -297,10 +331,11 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.REROLL_ORDER: {
       const order = state.orders.find((o: any) => o.id === action.orderId);
-      if (!order || order.pending || order.fulfilling) return state;
+      if (!order || order.pending || order.fulfilling || order.rerolled) return state; // reroll is once-only
       const weights = Map.zoneForLevel(state.battle.level).orderRarity;
-      const next = Orders.rerollRarity(order.rarity, rng);
-      const rolled = Orders.rollOrder(order.id, rng, weights, orderChainsFor(state.unlockedGenerators), next);
+      // Re-roll the ITEMS only: keep the order's rarity (standard stays same rarity) and its special-ness
+      // (special stays special). Mark it rerolled so the reroll option then disappears.
+      const rolled = { ...Orders.rollOrder(order.id, rng, weights, orderChainsFor(state.unlockedGenerators), order.rarity, !!order.special), rerolled: true };
       const orders = state.orders.map((o: any) => (o.id === order.id ? rolled : o));
       return { ...state, orders };
     }

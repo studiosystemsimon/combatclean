@@ -59,6 +59,60 @@ body {
   font-size: 15px; line-height: 1; cursor: pointer; opacity: 0.55;
 }
 .reset-btn:hover { opacity: 1; }
+.bg-btn {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; padding: 0;
+  background: var(--panel); border: 1px solid var(--panel-line); color: var(--text);
+  font-size: 15px; line-height: 1; cursor: pointer; opacity: 0.55;
+}
+.bg-btn:hover { opacity: 1; }
+
+/* Background (headless) mode — extends .app; view unmounted, engine ticking underneath. */
+.headless { justify-content: center; align-items: center; gap: 16px;
+  background: radial-gradient(120% 80% at 50% 20%, #12192e 0%, #070b15 70%); }
+.headless-icon { width: 96px; height: 96px; border-radius: 22px; opacity: 0.92; filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.55)); }
+.headless-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #aeb9d6; }
+.headless-resume { padding: 10px 28px; border-radius: 10px; border: 1px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold);
+  font: inherit; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+.headless-resume:active { transform: scale(0.96); }
+
+/* Minigame host — a full screen in the context area; engine runs headless underneath. */
+.minigame { height: 100%; display: flex; align-items: center; justify-content: center; }
+.minigame-body { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.minigame-title { font-size: 18px; font-weight: 700; letter-spacing: 1px; text-transform: capitalize; color: #dfe7ff; }
+.minigame-back { padding: 10px 24px; border-radius: 10px; border: 1px solid var(--panel-line);
+  background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+.minigame-back:active { transform: scale(0.96); }
+.minigame-exit { position: absolute; top: 10px; right: 12px; width: 30px; height: 30px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--panel-line); color: var(--text); font-size: 14px;
+  line-height: 1; cursor: pointer; opacity: 0.6; }
+.minigame-exit:hover { opacity: 1; }
+
+/* Test minigame — a single centered button. */
+.mg-test { height: 100%; display: flex; align-items: center; justify-content: center; }
+.mg-test-btn { padding: 18px 40px; border-radius: 14px; border: 1px solid var(--gold); cursor: pointer;
+  background: color-mix(in srgb, var(--gold) 20%, #141a26); color: var(--gold);
+  font: inherit; font-weight: 700; font-size: 18px; letter-spacing: 1px;
+  box-shadow: 0 0 18px rgba(255, 212, 94, 0.35); }
+.mg-test-btn:active { transform: scale(0.96); }
+
+/* Reward popup — modal reveal of a server-resolved reward (granted on Collect). Mirrors .afk-popup. */
+.reward-pop { position: absolute; inset: 0; z-index: 950; display: grid; place-items: center; }
+.reward-dim { position: absolute; inset: 0; background: rgba(3, 5, 9, 0.62); }
+.reward-card { position: relative; z-index: 1; width: min(300px, 82%); padding: 20px 22px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px; border-radius: 16px;
+  background: linear-gradient(180deg, #1b2540, #121a30); border: 1px solid var(--gold);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 212, 94, 0.25); }
+.reward-title { font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+.reward-rows { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; }
+.reward-row { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; }
+.reward-ic.art-img { width: 26px; height: 26px; }
+.reward-ic.art-emoji { font-size: 22px; }
+.reward-amt { color: var(--text); }
+.reward-claim { margin-top: 4px; padding: 10px 30px; border-radius: 10px; border: 1px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold);
+  font: inherit; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+.reward-claim:active { transform: scale(0.96); }
 
 /* ── Screen area + nav ────────────────────────────────────────────────────── */
 .screen { flex: 1; min-height: 0; position: relative; display: flex; }
@@ -244,6 +298,27 @@ body {
 }
 .otab .otab-art.art-img { width: auto; height: 32px; margin: 0 2px; display: block; }
 .art-emoji.otab-art { font-size: 18px; line-height: 1; }
+
+/* SPECIAL order — rewards an S-tile (not a gear chest). Distinct gold↔violet pulsing look + ribbon. */
+.order.special { background: linear-gradient(180deg, #2a2140, #1a1530); border-color: var(--gold);
+  animation: specOrderPulse 1.6s ease-in-out infinite; }
+@keyframes specOrderPulse {
+  0%,100% { box-shadow: inset 0 0 0 1px var(--gold), 0 0 8px rgba(180,107,255,.35); }
+  50% { box-shadow: inset 0 0 0 1px #fff, 0 0 16px rgba(255,212,94,.6), 0 0 22px rgba(180,107,255,.6); }
+}
+.order.special .oribbon { position: absolute; z-index: 4; top: -9px; right: 6px; font-size: 8px; font-weight: 900;
+  letter-spacing: 1px; color: #2a1a00; background: linear-gradient(90deg, #ff9e2e, var(--gold)); padding: 2px 7px;
+  border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,.4); }
+.order.special .otab { background: linear-gradient(180deg, #3a2a5a, #141a26); }
+.otab-s { display: flex; align-items: center; justify-content: center; height: 32px; min-width: 22px; padding: 0 5px;
+  font-weight: 900; font-size: 18px; color: #2a1a00; background: linear-gradient(135deg, var(--gold), #ff9e2e);
+  border-radius: 6px; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+
+/* S-tile on the merge board */
+.cell-special { background: linear-gradient(180deg, rgba(255,212,94,.28), rgba(255,158,46,.14)) !important;
+  border-color: rgba(255,212,94,.7); box-shadow: inset 0 0 0 1px rgba(255,212,94,.5), 0 0 10px rgba(255,212,94,.4); }
+.cell-art.cell-s { font-weight: 900; font-size: 24px; color: #ffe9a8; animation: pop 0.18s ease-out;
+  text-shadow: 0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; }
 
 /* reroll die — small badge in the order's bottom-right corner */
 .reroll {

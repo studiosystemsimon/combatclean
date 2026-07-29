@@ -9,9 +9,22 @@ import { A } from '../game/store/actions.ts';
 import { C } from '../game/content.ts';
 import { seedSim } from '../game/sim-random.ts';
 import { loadSaved, save, clearSaved } from '../game/store/persistence.ts';
+import { submitMinigame as metaSubmitMinigame } from '../game/minigame/meta.ts';
 
 const StateContext = createContext<any>(null);
 const ActionsContext = createContext<any>(null);
+
+// A "full screen" takes over the play area (combat panel + FxLayer hidden) and runs the engine HEADLESS
+// — the sim keeps ticking, so returning to a combat screen resumes the exact, still-advancing gameplay.
+// (The AFK collect popup is deliberately NOT one — it freezes the sim while you claim offline rewards.)
+const FULL_SCREENS = ['map', 'gacha'];
+export const isFullScreen = (s: any): boolean => !!s.menuHeroId || !!s.minigame || FULL_SCREENS.includes(s.screen);
+// Engine runs headless during any full screen, or the manual background toggle.
+export const engineHeadless = (s: any): boolean => !!s.headless || isFullScreen(s);
+// The fx overlay (FxLayer) hosts BOTH combat VFX and cross-screen REVEALS (gacha pull, chest, currency),
+// so it must stay mounted on combat screens AND the map/gacha full screens — only the hero menu,
+// minigame, AFK popup, and manual background hide it. When it's absent, fx are drained here instead.
+export const fxVisible = (s: any): boolean => !s.headless && !s.menuHeroId && !s.afkOpen && !s.minigame;
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, () => {
@@ -23,18 +36,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
   stateRef.current = state;
 
   useEffect(() => {
-    const id = setInterval(() => { if (stateRef.current.menuHeroId || stateRef.current.afkOpen) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
+    const id = setInterval(() => { if (stateRef.current.afkOpen) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
     return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
+      const s = stateRef.current;
+      if (s.afkOpen) return; // the AFK collect popup is the one surface that freezes the sim
+      // Full screens / background mode keep ticking regardless of tab visibility (seamless resume).
+      if (engineHeadless(s)) { dispatch({ type: A.BATTLE_TICK, dt: C.BATTLE.tickMs }); return; }
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      if (stateRef.current.menuHeroId || stateRef.current.afkOpen) return; // paused while a full-screen overlay (hero menu / AFK popup) is open
       dispatch({ type: A.BATTLE_TICK, dt: C.BATTLE.tickMs });
     }, C.BATTLE.tickMs);
     return () => clearInterval(id);
   }, []);
+
+  // Whenever the combat view is unmounted (full screen / background), nothing drains the fx queue — the
+  // auto-battle would pile up combat-fx events unbounded. Clear them as they arrive (view-only, safe to drop).
+  useEffect(() => {
+    if (!fxVisible(state) && state.fx.length) dispatch({ type: A.CLEAR_FX, ids: state.fx.map((f: any) => f.id) });
+  }, [state.fx, state.headless, state.menuHeroId, state.afkOpen, state.minigame]);
 
   useEffect(() => {
     const s = state.battle.status;
@@ -65,7 +87,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const flush = () => save(stateRef.current);
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
-      else dispatch({ type: A.RESUME_AFK, now: Date.now() });
+      else if (!engineHeadless(stateRef.current)) dispatch({ type: A.RESUME_AFK, now: Date.now() }); // engine kept running headless — no offline catch-up
     };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', flush);
@@ -76,6 +98,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setScreen: (screen: string) => dispatch({ type: A.SET_SCREEN, screen }),
     setHeroMenu: (heroId: string | null) => dispatch({ type: A.SET_HERO_MENU, heroId }),
     setAfkOpen: (open: boolean) => dispatch({ type: A.SET_AFK_OPEN, open }),
+    setHeadless: (on: boolean) => dispatch({ type: A.SET_HEADLESS, on }),
+    startMinigame: (id: string, input: unknown = null) => dispatch({ type: A.SET_MINIGAME, minigame: { id, input } }),
+    exitMinigame: () => dispatch({ type: A.SET_MINIGAME, minigame: null }),
+    // A finished minigame submits its result to the (simulated) server, which resolves the reward; the
+    // controller owns this async round-trip and dispatches the outcome (grant + reward popup).
+    submitMinigame: async (id: string, result: unknown) => {
+      const outcome = await metaSubmitMinigame({ minigameId: id, result: (result || {}) as any });
+      dispatch({ type: A.FINISH_MINIGAME, reward: outcome.reward, source: 'minigame' });
+    },
+    closeReward: () => dispatch({ type: A.CLOSE_REWARD }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
     collectAfk: () => dispatch({ type: A.COLLECT_AFK }),
     tapGenerator: (index: number) => dispatch({ type: A.TAP_GENERATOR, index, now: Date.now() }),

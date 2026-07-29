@@ -158,25 +158,27 @@ export default function Orders() {
           }
           const rar = GEAR_RARITY[o.rarity];
           const ready = !o.fulfilling && canFulfill(state.board, o);
+          const special = !!o.special; // rewards an S-tile (not a gear chest) — distinct gold↔violet look
           return (
             <div
               key={o.id}
               role="button"
               aria-disabled={!ready}
               data-order-id={o.id}
-              className={`order${ready ? ' ready' : ''}${o.fulfilling ? ' fulfilling' : ''}`}
+              className={`order${ready ? ' ready' : ''}${o.fulfilling ? ' fulfilling' : ''}${special ? ' special' : ''}`}
               style={rar ? { '--rar': rar.color } : undefined}
               ref={(el) => { cardRefs.current[o.id] = el; }}
               onClick={() => ready && actions.fulfillOrder(o.id)}
             >
               <span className="wipe" />
-              <span className="otab"><Art a={resolve(`ui.chest.${o.rarity}`)} className="otab-art" /></span>
+              {special && <span className="oribbon">{STRINGS.orders.special}</span>}
+              <span className="otab">{special ? <span className="otab-s">S</span> : <Art a={resolve(`ui.chest.${o.rarity}`)} className="otab-art" />}</span>
               <div className="reqs">
                 {o.items.map((it, i) => { const ia = itemAsset(it.chain, it.level); return (
                   <span key={i} className="req"><Art a={ia} className="req-art" style={mergeStylePx(ia, REQ_ICON_PX)} /></span>
                 ); })}
               </div>
-              <button type="button" className="reroll" title={STRINGS.orders.rerollHint} onClick={(e) => onReroll(e, o.id)}><Art a={resolve('ui.reroll')} className="reroll-icon" /></button>
+              {!o.rerolled && <button type="button" className="reroll" title={STRINGS.orders.rerollHint} onClick={(e) => onReroll(e, o.id)}><Art a={resolve('ui.reroll')} className="reroll-icon" /></button>}
             </div>
           );
         })}

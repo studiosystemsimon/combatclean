@@ -131,9 +131,9 @@ export const zProgressionConfig = z.object({
 export const zOrdersConfig = z.object({
   active: int, arrivalMs: num, itemCount: z.object({ one: num, two: num, max: int.describe('Item count above the `two` roll threshold (order size ceiling).') }).strict(),
   fillerMaxLevel: int, costPerTierBase: num.describe('Tile build-cost base: a tier-t item costs base^t tier-0 drops.'),
+  specialChance: num.describe('Chance [0..1] a rolled order is a SPECIAL order (drops an S-tile instead of a gear chest).'),
   orderChains: z.array(stringConfigRef('chains', 'key')),
   dominantTier: configRecord('gearRarities', 'key', z.tuple([int, int])).describe('Dominant-item tier [min,max] per reward rarity band (keys → gearRarities).'),
-  reroll: z.object({ downNear: num, downFar: num, same: num, up: num }).strict(),
 }).strict();
 
 // gearTuning — gear generation / leveling / fusion / chest-rarity tuning.
@@ -159,6 +159,13 @@ export const zRuntimeConfig = z.object({
   regenTickMs: num.describe('Energy-regen recompute interval (ms) owned by the controller.'),
   persistThrottleMs: num.describe('Minimum interval (ms) between throttled saves.'),
   tenPullCount: int.describe('Pulls in a multi-pull ("ten-pull"); selects banner.ten pricing.'),
+}).strict();
+
+// minigame — reward RULES the (server-authoritative) meta endpoint applies to a submitted minigame
+// result. Reward = base + perScore × result.score. Amounts are exposed data (never hardcoded server-side).
+export const zMinigameConfig = z.object({
+  reward: z.object({ coins: int, heroXp: int, gearXp: int }).strict().describe('Flat reward for completing any minigame.'),
+  perScore: z.object({ coins: int, heroXp: int, gearXp: int }).strict().describe('Extra reward per point of the minigame result score.'),
 }).strict();
 
 // reveal — reward/reveal-sequence tuning (gacha pull, chest smash, hero level-up FX, currency pickup).

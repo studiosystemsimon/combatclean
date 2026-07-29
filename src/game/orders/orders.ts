@@ -1,6 +1,7 @@
 // === orders — roll/match/reroll (ported from MergeCombat model/orders.js) ===
 // Reward RARITY rolled from the current zone's rarity table (passed in). Requested items sized so the
-// tile build-cost (Σ costPerTierBase^tier) lands in that rarity band. Reroll biases downward. rng injected.
+// tile build-cost (Σ costPerTierBase^tier) lands in that rarity band. Reroll re-rolls the ITEMS but keeps
+// the order's rarity + special-ness, and is allowed once per order. rng injected.
 import { C } from '../content.ts';
 import type { Rng } from '../rng.ts';
 import type { BoardCell, Order, OrderItem } from '../types.ts';
@@ -19,19 +20,10 @@ const rollWeighted = (weights: Record<string, number>, rng: Rng): string => {
   return keys[0];
 };
 
-export const rerollRarity = (cur: string, rng: Rng): string => {
-  const ci = C.GEAR_RARITY_ORDER.indexOf(cur);
-  const w: Record<string, number> = {};
-  C.GEAR_RARITY_ORDER.forEach((r: string, i: number) => {
-    w[r] = i < ci ? (i === ci - 1 ? C.ORDER_REROLL.downNear : C.ORDER_REROLL.downFar) : i === ci ? C.ORDER_REROLL.same : C.ORDER_REROLL.up;
-  });
-  return rollWeighted(w, rng);
-};
-
 // `eligibleChains` restricts which chains an order may request — the caller passes the chains whose
 // generator is currently UNLOCKED, so no order asks for an item the player can't yet produce (e.g. no
 // magic orders until the magic generator is unlocked). Defaults to the full order-chain list.
-export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null): Order => {
+export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null, forcedSpecial: boolean | null = null): Order => {
   const chains = eligibleChains.length ? eligibleChains : C.ORDER_CHAINS;
   const rarity = forcedRarity || rollWeighted(weights, rng);
   const r = rng();
@@ -44,7 +36,10 @@ export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>,
     const c = pick(chains, rng);
     items.push({ chain: c, level: randInt(0, Math.min(C.ORDER_CONFIG.fillerMaxLevel, C.CHAINS[c].tiers - 1), rng) });
   }
-  return { id, items, difficulty: tileTotal(items), rarity };
+  // Special order (rolled by chance) rewards an S-tile instead of a gear chest. A REROLL forces the
+  // source order's special-ness (forcedSpecial) so a special reroll stays special, standard stays standard.
+  const special = forcedSpecial != null ? forcedSpecial : rng() < (C.ORDER_CONFIG.specialChance || 0);
+  return { id, items, difficulty: tileTotal(items), rarity, special };
 };
 
 export const findMatchCells = (board: BoardCell[], order: Order): number[] | null => {
@@ -61,17 +56,19 @@ export const findMatchCells = (board: BoardCell[], order: Order): number[] | nul
 };
 export const canFulfill = (board: BoardCell[], order: Order) => findMatchCells(board, order) !== null;
 
-// Display order (view-only, pure): completable orders first — rarest furthest left — then the rest in
-// place, pending last. A FULFILLING order stays pinned in the lead group so its tile holds position
-// through the completion animation (instead of sliding away) before it's removed. Does not mutate state.
+// Display order (view-only, pure), left→right: COMPLETABLE (rarest furthest left) → SPECIAL (not yet
+// completable) → STANDARD (not yet completable) → PENDING (arrival timers) last. A FULFILLING order stays
+// pinned in the completable lead group so its tile holds position through the completion animation
+// (instead of sliding away) before it's removed. Does not mutate state.
 export const displayOrders = (orders: Order[], board: BoardCell[]): Order[] => {
   const rank = (r: string) => C.GEAR_RARITY_ORDER.indexOf(r);
-  const lead: Order[] = [], rest: Order[] = [], pending: Order[] = [];
+  const lead: Order[] = [], special: Order[] = [], standard: Order[] = [], pending: Order[] = [];
   for (const o of orders) {
     if (o.pending) pending.push(o);
-    else if (o.fulfilling || canFulfill(board, o)) lead.push(o);
-    else rest.push(o);
+    else if (o.fulfilling || canFulfill(board, o)) lead.push(o); // completable (incl. mid-completion + completable specials)
+    else if (o.special) special.push(o);
+    else standard.push(o);
   }
   lead.sort((a, b) => rank(b.rarity) - rank(a.rarity));
-  return [...lead, ...rest, ...pending];
+  return [...lead, ...special, ...standard, ...pending];
 };

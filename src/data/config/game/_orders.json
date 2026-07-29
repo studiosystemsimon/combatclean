@@ -8,6 +8,7 @@
 	},
 	"fillerMaxLevel": 3,
 	"costPerTierBase": 2,
+	"specialChance": 0.12,
 	"orderChains": [
 		"blade",
 		"range",
@@ -34,11 +35,5 @@
 			7,
 			7
 		]
-	},
-	"reroll": {
-		"downNear": 10,
-		"downFar": 6,
-		"same": 2,
-		"up": 0.4
 	}
 }

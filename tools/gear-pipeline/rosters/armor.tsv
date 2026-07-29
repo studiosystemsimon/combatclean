@@ -1,0 +1,5 @@
+# ARMOR gear roster.  slug<TAB>subject   ·   slug = <subcategory>-<rarity>
+# Rarity (last token, groups the list, low→high): common  uncommon  rare  epic  legendary
+robe-common	a simple padded adventurer's tunic of leather and cloth with a rope belt, plain and practical
+robe-rare	a fine studded-leather and chainmail body coat with a cloth surcoat and polished steel trim, well-crafted
+robe-legendary	an ornate royal robe-armour with rich fabric, gold filigree trim, gem inlays at the shoulders and a faint magical glow, regal and heroic

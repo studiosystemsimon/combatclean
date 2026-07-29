@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Mossbog Run (crowd lane shooter · iPhone 16)</title>
+<style>
+  :root{ --bg:#0e1016;--line:#2a3346;--ink:#eef2fb;--dim:#9aa7bd;--faint:#6b7891;--gold:#ffd45e; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  @font-face{font-family:'Uniform Bold';src:url('../../src/fonts/Uniform-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Bold';src:url('../../src/fonts/Uniform-Condensed-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Medium';src:url('../../src/fonts/Uniform-Condensed-Medium.ttf') format('truetype');font-display:swap}
+  html,body{margin:0;background:#08090d;color:var(--ink);display:flex;flex-direction:column;align-items:center;min-height:100vh;gap:12px;padding:18px 0 40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .banner{color:var(--faint);font-size:12px;text-align:center;max-width:460px;line-height:1.5}.banner b{color:var(--gold)}
+  .ol{text-shadow:0.09em 0 0 #000,0.078em .045em 0 #000,.045em .078em 0 #000,0 .09em 0 #000,-.045em .078em 0 #000,-.078em .045em 0 #000,-.09em 0 0 #000,-.078em -.045em 0 #000,-.045em -.078em 0 #000,0 -.09em 0 #000,.045em -.078em 0 #000,.078em -.045em 0 #000}
+
+  .device{aspect-ratio:393/852;height:min(852px,90vh);width:auto;background:#05070c;border:1px solid #222b3d;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:'Uniform Condensed Bold',system-ui,sans-serif}
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #cv:active{cursor:grabbing}
+
+  .hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+  .hud .top{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px}
+  .stat{display:flex;align-items:center;gap:5px;background:rgba(9,12,18,.5);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:2px 9px 2px 6px;backdrop-filter:blur(4px)}
+  .stat img{width:16px;height:16px;object-fit:contain}.stat b{font-family:'Uniform Condensed Bold',sans-serif;font-size:13px;color:#fff}
+  .stats{display:flex;flex-direction:column;gap:3px}
+  .stats.r{align-items:flex-end}
+  .dist{position:absolute;top:12px;left:50%;transform:translateX(-50%);text-align:center}
+  .dist .lbl{font-family:'Uniform Condensed Medium',sans-serif;font-size:9px;letter-spacing:2px;color:#bfe9c8;text-transform:uppercase}
+  .dist .val{font-family:'Uniform Bold',sans-serif;font-size:20px;color:#fff;line-height:1}
+  .bossbar{position:absolute;top:44px;left:24px;right:24px;height:12px;border-radius:8px;background:#0c1017;border:1px solid rgba(255,255,255,.12);overflow:hidden;display:none}
+  .bossbar.show{display:block}.bossbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff5a5a,#ff2e6e);box-shadow:0 0 10px rgba(255,60,90,.7);transition:width .12s}
+  .bossbar .bn{position:absolute;top:-15px;left:0;font-family:'Uniform Condensed Bold',sans-serif;font-size:10px;letter-spacing:1px;color:#ffb3b3;text-transform:uppercase}
+
+  .overlay{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(4,7,11,.72);backdrop-filter:blur(3px);pointer-events:auto}
+  .overlay.hidden{display:none}
+  .overlay h1{font-family:'Uniform Bold',sans-serif;font-size:30px;margin:0;color:#eafff0;letter-spacing:.5px;text-align:center;line-height:1.05}
+  .overlay .sub{font-family:'Uniform Condensed Medium',sans-serif;font-size:12px;color:#cdd8ea;text-align:center;max-width:82%;line-height:1.5}
+  .overlay .fin{font-family:'Uniform Condensed Bold',sans-serif;font-size:14px;color:var(--gold)}
+  .btn{margin-top:6px;border:none;border-radius:14px;cursor:pointer;color:#3a2600;font-family:'Uniform Bold',sans-serif;font-size:18px;letter-spacing:.5px;background:linear-gradient(180deg,#ffe793,#f5b829);box-shadow:0 4px 0 #b9820f,0 8px 22px rgba(245,184,41,.45);padding:13px 30px}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b9820f}
+  .note{font-size:11px;color:var(--faint);text-align:center;line-height:1.5;max-width:min(460px,92vw)}
+</style>
+</head>
+<body>
+  <div class="banner"><b>MOSSBOG RUN</b> — a crowd/gate lane shooter (Count&nbsp;Masters / Mob&nbsp;Control style) from Combat Clean art. Drag to steer your squad down the lane; pick the <b>+N / ×N</b> gates to recruit duplicate rangers, auto-blast the bog horde, and out-number the marsh boss.</div>
+
+  <div class="device">
+    <canvas id="cv"></canvas>
+    <div class="hud">
+      <div class="top">
+        <div class="stats"><div class="stat"><span style="font-size:13px">🏹</span><b id="squad">1</b></div></div>
+        <div class="stats r">
+          <div class="stat"><img src="../../assets/combatclean/ui/coin.png" alt=""><b id="coins">0</b></div>
+          <div class="stat"><img src="../../assets/combatclean/ui/gem.png" alt=""><b id="gems">0</b></div>
+        </div>
+      </div>
+      <div class="dist"><div class="lbl">Distance</div><div class="val ol" id="dist">0m</div></div>
+      <div class="bossbar" id="bossbar"><span class="bn">Marsh Behemoth</span><i id="bossfill"></i></div>
+    </div>
+
+    <div class="overlay" id="start">
+      <h1 class="ol">MOSSBOG RUN</h1>
+      <div class="sub">Drag to steer. Run through <b>+N</b> and <b>×N</b> gates to grow your squad of rangers — they auto-fire. Bigger squad = more arrows. Reach the boss with an army.</div>
+      <button class="btn" id="startBtn">▶ PLAY</button>
+    </div>
+    <div class="overlay hidden" id="over">
+      <h1 class="ol" id="overTitle">WIPED!</h1>
+      <div class="fin" id="overStats"></div>
+      <button class="btn" id="retryBtn">↻ RETRY</button>
+    </div>
+  </div>
+
+  <div class="note">Prototype: canvas 2D with a perspective lane (near→far projection). Squad = duplicate <b>ranger</b> clones, enemies = the Mossbog roster, boss = <b>marsh-behemoth</b>, backdrop = <b>zone-mossbog</b>. Gates recruit members (duplicates allowed); the horde and red gates cull them.</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  let W = 0, H = 0, dpr = 1;
+  function resize(){ const r = cv.getBoundingClientRect(); dpr = Math.min(2, window.devicePixelRatio||1);
+    W = r.width; H = r.height; cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+  window.addEventListener('resize', resize);
+
+  // ── perspective lane projection: d = depth, 0 = near (bottom), 1 = far (horizon) ──
+  const HZ=0.30, GB=0.90, NH=0.44, FH=0.22, FS=0.58;   // gentle tilt + LONGER runway (far end higher, near end off the bottom)
+  const projY = (d)=> H*GB - d*(H*GB - H*HZ);
+  const halfW = (d)=> W*(NH + (FH-NH)*d);
+  const projX = (lx,d)=> W/2 + lx*halfW(d);
+  const scaleAt = (d)=> 1 + (FS-1)*d;
+  const D_CROWD = 0.05;
+
+  // ── assets ──
+  const A='../../assets/combatclean/';
+  const SRC={ member:A+'heroes/ranger.png', bg:A+'zones/zone-mossbog.png', coin:A+'ui/coin.png', gem:A+'ui/gem.png', boss:A+'enemies/marsh-behemoth.png' };
+  const FOE_SRC=['bog-goblin','bog-slime','bog-zombie','fen-lurcher','giant-leech','giant-toad','mud-golem','reed-lurker','swamp-hag'].map(s=>A+'enemies/'+s+'.png');
+  const IMG={}; const FOES=[];
+  function preload(cb){ const all=[...Object.entries(SRC),...FOE_SRC.map((s,i)=>['foe'+i,s])]; let n=all.length,done=0;
+    all.forEach(([k,s])=>{ const im=new Image(); im.onload=im.onerror=()=>{ if(++done===n) cb(); }; im.src=s; if(k.startsWith('foe'))FOES.push(im); else IMG[k]=im; }); }
+
+  // ── tunables ──
+  const CFG={ ease:0.22, fireMs:230, bulletSpd:1.05, runSpeed:0.22,   // ONE run speed → path, foes, gates, drops move together
+    renderCap:34, squadStart:1, memberW:44, gatePairMs:3000, bossHpPerMember:9, distRate:9 };
+
+  // formation offsets (phyllotaxis disc) so a growing crowd packs naturally
+  const FORM=[]; for(let i=0;i<200;i++){ const a=i*2.399963, rr=0.19*Math.sqrt(i/200); FORM.push({ox:Math.cos(a)*rr, od:Math.max(0,Math.sin(a)*rr*0.6)+0.015*(i/200)}); }
+
+  let state, last=0, raf=0, shake=0, running=false, laneScroll=0;
+  function fresh(){ return { steer:0, lane:0, squad:CFG.squadStart, fireCd:0, walkT:0, members:[],
+    bullets:[], foes:[], gates:[], parts:[], floats:[], drops:[],
+    coins:0, gems:0, dist:0, dirMs:0, gatePairs:0, boss:null, over:false }; }
+
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  function burst(x,y,color,n,spd){ for(let i=0;i<n;i++){ const a=rand(0,6.28),s=rand(spd*.3,spd); state.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.7),t:0,color,r:rand(2,4)}); } }
+  function floatText(x,y,txt,color,big){ state.floats.push({x,y,txt,color,t:0,life:big?1.1:.8,big}); }
+
+  // ── input ──
+  let dragging=false;
+  function local(e){ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left,y:t.clientY-r.top}; }
+  function dn(e){ if(!running)return; dragging=true; mv(e); e.preventDefault(); }
+  function mv(e){ if(!dragging||!running)return; const p=local(e); state.steer=clamp((p.x-W/2)/(W*NH*0.92),-1,1); e.preventDefault(); }
+  function up(){ dragging=false; }
+  cv.addEventListener('pointerdown',dn); window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up);
+
+  // ── spawns ──
+  function spawnGatePair(){
+    state.gatePairs++;
+    const good=()=>{ const r=Math.random(); return r<0.45?{type:'mul',val:2}:(r<0.6?{type:'mul',val:3}:{type:'add',val:[5,8,10,15][Math.floor(Math.random()*4)]}); };
+    // two options; occasionally one is a red trap (subtract) to force a real choice
+    let L=good(), R=good();
+    if(Math.random()<0.35){ if(Math.random()<0.5) L={type:'sub',val:[4,6,8][Math.floor(Math.random()*3)]}; else R={type:'sub',val:[4,6,8][Math.floor(Math.random()*3)]}; }
+    state.gates.push({d:1, side:-1, op:L, applied:false, pair:state.gatePairs});
+    state.gates.push({d:1, side:1, op:R, applied:false, pair:state.gatePairs});
+  }
+  function spawnFoeCluster(){
+    const n=2+Math.floor(rand(0,3+state.dist/120));
+    for(let i=0;i<n;i++){ const hp=3+Math.floor(state.dist/90)+Math.floor(rand(0,3));
+      state.foes.push({ lane:rand(-.8,.8), d:1+rand(0,0.25), img:FOES[Math.floor(rand(0,FOES.length))], hp, maxHp:hp, sz:rand(52,64), hitT:0, swayT:rand(0,6.28), sway:rand(0,0.12) }); }
+  }
+  function spawnBoss(){ const hp=Math.max(120, state.squad*CFG.bossHpPerMember*8); state.boss={ lane:0, d:0.62, hp, maxHp:hp, hitT:0, dir:1, t:0 }; $('bossbar').classList.add('show'); }
+
+  // ── director ──
+  function director(dt){
+    state.dirMs -= dt*1000;
+    if(state.boss) return;
+    if(state.dirMs<=0){
+      state.dirMs = CFG.gatePairMs;
+      // alternate: gate pair, then a foe cluster shortly after
+      spawnGatePair();
+      setTimeout(()=>{ if(running&&!state.boss) spawnFoeCluster(); }, 1100);
+      if(state.gatePairs>0 && state.gatePairs%5===0){ setTimeout(()=>{ if(running) spawnBoss(); }, 1400); }
+    }
+  }
+
+  function addSquad(op){
+    const before=state.squad;
+    if(op.type==='mul') state.squad=Math.min(999, state.squad*op.val);
+    else if(op.type==='add') state.squad=Math.min(999, state.squad+op.val);
+    else state.squad=Math.max(0, state.squad-op.val);
+    const d=state.squad-before;
+    const x=projX(state.lane,D_CROWD), y=projY(D_CROWD);
+    if(d>0){ floatText(x,y-70,(op.type==='mul'?'×'+op.val:'+'+op.val),'#aef0b8',true); burst(x,y-40,'#5ad17a',18,240); if(op.type==='mul')burst(x,y-40,'#ffd45e',14,200); shake=Math.max(shake,5); }
+    else if(d<0){ floatText(x,y-70,'−'+op.val,'#ff8a8a',true); burst(x,y-40,'#ff5a6e',14,220); shake=Math.max(shake,6); }
+    if(state.squad<=0) return gameOver('WIPED!');
+    $('squad').textContent=state.squad;
+  }
+  function loseMembers(k, x, y){ state.squad=Math.max(0,state.squad-k); $('squad').textContent=state.squad;
+    burst(x,y,'#ff6a6a',10,200); floatText(x,y-30,'−'+k,'#ff8a8a'); shake=Math.max(shake,6); if(state.squad<=0) gameOver('WIPED!'); }
+
+  // ── crowd: persistent members that LAG toward their formation slot (flow like a crowd when steering) ──
+  function syncMembers(){ const n=Math.min(state.squad,CFG.renderCap);
+    while(state.members.length<n){ const i=state.members.length; state.members.push({ lane:state.lane+FORM[i].ox, d:D_CROWD+FORM[i].od, phase:rand(0,6.28), step:rand(6.2,7.8) }); }
+    if(state.members.length>n) state.members.length=n; }
+  function updateCrowd(dt){ state.walkT += dt; syncMembers();
+    for(let i=0;i<state.members.length;i++){ const m=state.members[i]; const tx=state.lane+FORM[i].ox, td=D_CROWD+FORM[i].od;
+      m.lane += (tx-m.lane)*0.15 + rand(-0.0016,0.0016); m.d += (td-m.d)*0.15; m.lane=clamp(m.lane,-1,1); } }
+
+  // ── firing ── each member fires up the lane from its own position
+  function fire(){ for(const m of state.members){ state.bullets.push({ lane:clamp(m.lane,-1,1), d:m.d+0.02, spd:CFG.bulletSpd*rand(.92,1.08) }); }
+    const x=projX(state.lane,D_CROWD),y=projY(D_CROWD); burst(x,y-30,'#ffe08a',Math.min(6,state.members.length),90); }
+
+  function update(dt){
+    state.lane += (state.steer-state.lane)*CFG.ease;
+    updateCrowd(dt);
+    state.dist += CFG.distRate*dt; $('dist').textContent=Math.floor(state.dist)+'m';
+    laneScroll=(laneScroll+CFG.runSpeed*dt)%1;   // path scrolls at runSpeed
+    director(dt);
+    state.fireCd-=dt; if(state.fireCd<=0){ fire(); state.fireCd=CFG.fireMs/1000; }
+
+    // bullets travel far (d up)
+    for(let i=state.bullets.length-1;i>=0;i--){ const b=state.bullets[i]; b.d+=b.spd*dt; if(b.d>=1.02){ state.bullets.splice(i,1); continue; }
+      // hit foes
+      let hit=false;
+      for(let j=state.foes.length-1;j>=0;j--){ const f=state.foes[j];
+        if(Math.abs(f.lane-b.lane)<0.09 && Math.abs(f.d-b.d)<0.05){ f.hp--; f.hitT=0.12; hit=true; const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#fff',2,90);
+          if(f.hp<=0){ killFoe(f); state.foes.splice(j,1); } break; } }
+      if(!hit && state.boss){ const bo=state.boss; if(Math.abs(bo.lane-b.lane)<0.16 && Math.abs(bo.d-b.d)<0.09){ bo.hp--; bo.hitT=0.06; hit=true; const x=projX(b.lane,b.d),y=projY(b.d); burst(x,y,'#fff',2,90); if(bo.hp<=0) bossDie(); } }
+      if(hit) state.bullets.splice(i,1);
+    }
+    // gates approach
+    for(let i=state.gates.length-1;i>=0;i--){ const g=state.gates[i]; g.d-=CFG.runSpeed*dt;
+      if(!g.applied && g.d<=D_CROWD+0.02){ g.applied=true;
+        const inThis = (g.side<0)? state.lane<0 : state.lane>=0;
+        if(inThis) addSquad(g.op); }
+      if(g.d<-0.05) state.gates.splice(i,1);
+    }
+    // foes approach
+    for(let i=state.foes.length-1;i>=0;i--){ const f=state.foes[i]; f.d-=CFG.runSpeed*dt; f.swayT+=dt; f.lane=clamp(f.lane+Math.sin(f.swayT)*f.sway*dt,-.95,.95); if(f.hitT>0)f.hitT-=dt;
+      if(f.d<=D_CROWD+0.02){ // reached the crowd
+        if(Math.abs(f.lane-state.lane)<0.35){ loseMembers(1+Math.floor(f.maxHp/3), projX(f.lane,D_CROWD), projY(D_CROWD)); }
+        const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#8a6a4a',8,160); state.foes.splice(i,1); }
+    }
+    // boss
+    if(state.boss){ const bo=state.boss; bo.t+=dt; bo.lane+=bo.dir*0.18*dt; if(bo.lane>.6){bo.lane=.6;bo.dir=-1;} if(bo.lane<-.6){bo.lane=-.6;bo.dir=1;} if(bo.hitT>0)bo.hitT-=dt;
+      bo.d -= 0.005*dt; // creeps forward slowly
+      $('bossfill').style.width=clamp(bo.hp/bo.maxHp,0,1)*100+'%';
+      if(bo.d<=D_CROWD+0.1){ loseMembers(state.squad, projX(state.lane,D_CROWD), projY(D_CROWD)); } // boss overruns → wipe
+    }
+    // drops
+    for(let i=state.drops.length-1;i>=0;i--){ const dp=state.drops[i]; dp.d-=CFG.runSpeed*dt;
+      if(dp.d<=D_CROWD+0.04){ if(dp.kind==='coin'){state.coins++;$('coins').textContent=state.coins;} else {state.gems++;$('gems').textContent=state.gems;}
+        const x=projX(dp.lane,D_CROWD),y=projY(D_CROWD); burst(x,y,dp.kind==='coin'?'#ffcf4a':'#7ad0ff',6,120); state.drops.splice(i,1); continue; }
+      if(dp.d<-0.05) state.drops.splice(i,1); }
+    // particles / floats
+    for(let i=state.parts.length-1;i>=0;i--){ const q=state.parts[i]; q.t+=dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.vy+=180*dt; if(q.t>=q.life)state.parts.splice(i,1); }
+    for(let i=state.floats.length-1;i>=0;i--){ const fl=state.floats[i]; fl.t+=dt; fl.y-=30*dt; if(fl.t>=fl.life)state.floats.splice(i,1); }
+    if(shake>0) shake=Math.max(0,shake-dt*60);
+  }
+
+  function killFoe(f){ const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#8be27a',10,200); state.dist+=2;
+    const r=Math.random(); if(r<0.12) state.drops.push({lane:f.lane,d:f.d,kind:'gem'}); else if(r<0.5) state.drops.push({lane:f.lane,d:f.d,kind:'coin'}); }
+  function bossDie(){ const bo=state.boss; const x=projX(bo.lane,bo.d),y=projY(bo.d); burst(x,y,'#ff2e6e',40,320); burst(x,y,'#ffd45e',30,260); shake=14;
+    for(let k=0;k<8;k++) state.drops.push({lane:rand(-.5,.5),d:bo.d,kind:Math.random()<.5?'gem':'coin'});
+    state.boss=null; $('bossbar').classList.remove('show'); floatText(W/2,H*0.4,'BOSS DOWN!','#ffd9a0',true); state.dirMs=800; }
+
+  // ── draw ──
+  function drawImgC(img,x,y,w,h,flash){ if(!img||!img.complete)return; ctx.drawImage(img,x-w/2,y-h/2,w,h);
+    if(flash>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,flash*6); ctx.drawImage(img,x-w/2,y-h/2,w,h); ctx.restore(); } }
+  function bolt(x,y,r,color){ ctx.save(); const g=ctx.createRadialGradient(x,y,0,x,y,r*3); g.addColorStop(0,'#fff'); g.addColorStop(.4,color); g.addColorStop(1,'transparent'); ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,r,r*2.2,0,0,6.28); ctx.fill(); ctx.restore(); }
+
+  function drawLane(){
+    // sky / distant backdrop above the horizon
+    const bi=IMG.bg; const hy=projY(1);
+    if(bi&&bi.complete){ ctx.drawImage(bi,0,0,W,hy+40); } else { ctx.fillStyle='#12281f'; ctx.fillRect(0,0,W,hy); }
+    ctx.fillStyle='rgba(6,12,10,.45)'; ctx.fillRect(0,0,W,hy+40);
+    // lane trapezoid
+    ctx.beginPath(); ctx.moveTo(projX(-1,0),projY(0)); ctx.lineTo(projX(1,0),projY(0)); ctx.lineTo(projX(1,1),projY(1)); ctx.lineTo(projX(-1,1),projY(1)); ctx.closePath();
+    const lg=ctx.createLinearGradient(0,projY(1),0,projY(0)); lg.addColorStop(0,'#14301f'); lg.addColorStop(1,'#1f4a2f'); ctx.fillStyle=lg; ctx.fill();
+    // scrolling rungs (forward motion)
+    ctx.lineWidth=1; for(let k=0;k<12;k++){ let d=(k/12 - laneScroll)%1; if(d<0)d+=1; ctx.strokeStyle='rgba(180,240,190,'+(0.05+0.13*(1-d))+')'; ctx.beginPath(); ctx.moveTo(projX(-1,d),projY(d)); ctx.lineTo(projX(1,d),projY(d)); ctx.stroke(); }
+    // edges
+    ctx.strokeStyle='rgba(140,230,160,.5)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(projX(-1,0),projY(0)); ctx.lineTo(projX(-1,1),projY(1)); ctx.moveTo(projX(1,0),projY(0)); ctx.lineTo(projX(1,1),projY(1)); ctx.stroke();
+  }
+  function drawGate(g){ const d=g.d; if(d>1||d<-0.05)return; const lx0=g.side<0?-1:0, lx1=g.side<0?0:1;
+    const x0=projX(lx0,d),x1=projX(lx1,d),y=projY(d), topY=y-190*scaleAt(d);
+    const bad=g.op.type==='sub'; const col=bad?'rgba(255,70,90,':(g.op.type==='mul'?'rgba(74,163,255,':'rgba(90,209,122,');
+    ctx.fillStyle=col+'0.20)'; ctx.fillRect(Math.min(x0,x1),topY,Math.abs(x1-x0),y-topY);
+    ctx.strokeStyle=col+'0.9)'; ctx.lineWidth=2; ctx.strokeRect(Math.min(x0,x1),topY,Math.abs(x1-x0),y-topY);
+    const txt=(bad?'−':(g.op.type==='mul'?'×':'+'))+g.op.val; const fs=Math.max(14,42*scaleAt(d));
+    ctx.font='700 '+fs+'px "Uniform Bold",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    const cx=(x0+x1)/2, cy=topY+(y-topY)*0.42; ctx.fillStyle='#000'; ctx.fillText(txt,cx+1.5,cy+1.5); ctx.fillStyle=bad?'#ffd0d6':(g.op.type==='mul'?'#cfe6ff':'#d6f7dd'); ctx.fillText(txt,cx,cy);
+    ctx.textBaseline='alphabetic';
+  }
+  function drawCrowd(){
+    const arr=state.members.slice().sort((a,b)=>b.d-a.d);
+    for(const m of arr){ const sc=scaleAt(m.d); const w=state.walkT*m.step + m.phase;
+      const bob=Math.abs(Math.sin(w))*4.2*sc;          // vertical step (feet lift → walking)
+      const sway=Math.sin(w*0.5)*2.0*sc;               // side-to-side body sway
+      const rot=Math.sin(w)*0.055;                     // slight march tilt
+      const x=projX(m.lane,m.d)+sway, y=projY(m.d)-bob, s=CFG.memberW*sc*1.35;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(rot); if(IMG.member&&IMG.member.complete) ctx.drawImage(IMG.member,-s/2,-s*0.86,s,s); ctx.restore(); }
+    // squad count above the crowd (ad-style)
+    const cx=projX(state.lane,D_CROWD), cy=projY(D_CROWD)-CFG.memberW*1.2;
+    ctx.font='700 26px "Uniform Bold",sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#000'; ctx.fillText(state.squad,cx+2,cy+2); ctx.fillStyle='#fff'; ctx.fillText(state.squad,cx,cy);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    let sx=0,sy=0; if(shake>0){ sx=rand(-shake,shake); sy=rand(-shake,shake); }
+    ctx.save(); ctx.translate(sx,sy);
+    drawLane();
+    // depth-sorted world: gates, foes, boss, drops (far first)
+    const world=[];
+    for(const g of state.gates) world.push({d:g.d,kind:'gate',g});
+    for(const f of state.foes) world.push({d:f.d,kind:'foe',f});
+    for(const dp of state.drops) world.push({d:dp.d,kind:'drop',dp});
+    if(state.boss) world.push({d:state.boss.d,kind:'boss'});
+    world.sort((a,b)=>b.d-a.d);
+    for(const w of world){
+      if(w.kind==='gate') drawGate(w.g);
+      else if(w.kind==='foe'){ const f=w.f; drawImgC(f.img,projX(f.lane,f.d),projY(f.d)-f.sz*scaleAt(f.d)*0.35,f.sz*scaleAt(f.d),f.sz*scaleAt(f.d),f.hitT); }
+      else if(w.kind==='drop'){ const dp=w.dp; const im=dp.kind==='coin'?IMG.coin:IMG.gem; const s=26*scaleAt(dp.d); if(im&&im.complete)ctx.drawImage(im,projX(dp.lane,dp.d)-s/2,projY(dp.d)-s/2,s,s); }
+      else { const bo=state.boss; const s=150*scaleAt(bo.d); drawImgC(IMG.boss,projX(bo.lane,bo.d),projY(bo.d)-s*0.35,s,s,bo.hitT); }
+    }
+    // bullets (near-ish, over world)
+    for(const b of state.bullets){ bolt(projX(b.lane,b.d),projY(b.d),3.2*scaleAt(b.d)+0.6,'#ffd45e'); }
+    drawCrowd();
+    for(const q of state.parts){ ctx.globalAlpha=Math.max(0,1-q.t/q.life); ctx.fillStyle=q.color; ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,6.28); ctx.fill(); }
+    ctx.globalAlpha=1; ctx.textAlign='center';
+    for(const fl of state.floats){ ctx.globalAlpha=Math.max(0,1-fl.t/fl.life); ctx.font='700 '+(fl.big?24:14)+'px "Uniform Bold",sans-serif'; ctx.fillStyle='#000'; ctx.fillText(fl.txt,fl.x+1.5,fl.y+1.5); ctx.fillStyle=fl.color; ctx.fillText(fl.txt,fl.x,fl.y); }
+    ctx.globalAlpha=1; ctx.restore();
+  }
+
+  function frame(now){ if(!running)return; const dt=Math.min(0.033,(now-last)/1000||0); last=now; update(dt); draw(); raf=requestAnimationFrame(frame); }
+  function gameOver(title){ if(!running)return; running=false; cancelAnimationFrame(raf); $('overTitle').textContent=title;
+    $('overStats').textContent=`Distance ${Math.floor(state.dist)}m · ${state.coins}🪙 ${state.gems}💎`; $('over').classList.remove('hidden'); }
+  function start(){ resize(); state=fresh(); state.dirMs=900; $('squad').textContent=state.squad; $('coins').textContent='0'; $('gems').textContent='0'; $('dist').textContent='0m'; $('bossbar').classList.remove('show');
+    $('start').classList.add('hidden'); $('over').classList.add('hidden'); running=true; last=performance.now(); raf=requestAnimationFrame(frame); }
+
+  $('startBtn').addEventListener('click',start); $('retryBtn').addEventListener('click',start);
+  window.addEventListener('load',()=>{ resize(); preload(()=>{}); });
+})();
+</script>
+</body>
+</html>

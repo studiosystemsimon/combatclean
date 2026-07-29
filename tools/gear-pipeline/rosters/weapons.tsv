@@ -1,0 +1,5 @@
+# WEAPONS gear roster.  slug<TAB>subject   ·   slug = <subcategory>-<rarity>
+# Rarity (last token, groups the list, low→high): common  uncommon  rare  epic  legendary
+sword-common	a worn iron shortsword with a plain leather-wrapped grip and a simple crossguard, humble, honest and a little nicked
+sword-rare	a polished steel knight's sword with a silver crossguard, a blue cloth-wrapped grip and a small blue gem set in the pommel, finely made
+sword-legendary	an ornate golden hero's sword with an engraved gleaming blade, elegant filigree crossguard, a large glowing blue gem in the pommel and a faint radiant aura, magnificent

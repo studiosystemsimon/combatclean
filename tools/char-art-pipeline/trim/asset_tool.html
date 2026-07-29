@@ -104,6 +104,13 @@
   .vcell .vspin { color:#5a6069; font-size:22px; }
   .vcell .vpick { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(77,182,255,.18); color:#eaf5ff; font-weight:700; font-size:13px; }
   .vcell:hover .vpick { display:flex; }
+  .rarityhdr { padding:7px 10px 3px; margin-top:4px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#8a9099; border-top:1px solid #23262b; position:sticky; top:0; background:var(--panel); z-index:1; }
+  .rarityhdr.r-common { color:#b8bcc2; }
+  .rarityhdr.r-uncommon { color:#5fd07a; }
+  .rarityhdr.r-rare { color:#4db6ff; }
+  .rarityhdr.r-epic { color:#b57cff; }
+  .rarityhdr.r-legendary { color:#f2b34d; }
+  .rarityhdr.r-other { color:#8a9099; }
   #gameSize:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:8px; margin-left:28px; align-self:center; }
   #gameSize .cmb-chip { position:relative; width:72px; height:54px; display:flex; align-items:center; justify-content:center;
                         background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/10px 10px; border-radius:4px; }
@@ -404,8 +411,12 @@ const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, vi
 const ENEMY_AREAS = new Set(['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent']);
 const MERGE_CATS = new Set(['magic','blade','range','blade-gen','range-gen','magic-gen']);
 const MERGE_ORDER = ['blade','blade-gen','magic','magic-gen','range','range-gen'];   // chain followed by its generator
-function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
-function assetType(c){ return c==='heroes' ? 'hero' : (MERGE_CATS.has(c) ? 'merge' : 'enemy'); }
+const GEAR_CATS = new Set(['armor','weapons','accessories']);
+const GEAR_ORDER = ['armor','weapons','accessories'];
+const RARITY_ORDER = ['common','uncommon','rare','epic','legendary'];   // low→high; gear list is grouped by this
+function rarityOf(slug){ const t=String(slug||'').replace(/\.png$/i,'').split('-').pop().toLowerCase(); return RARITY_ORDER.includes(t)?t:null; }
+function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c) || GEAR_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
+function assetType(c){ return c==='heroes' ? 'hero' : ((MERGE_CATS.has(c)||GEAR_CATS.has(c)) ? 'merge' : 'enemy'); }
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
   emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
 const COMBAT_BG = 'linear-gradient(rgb(255, 36, 255), rgb(11, 15, 255))';   // combat mockup backdrop
@@ -415,15 +426,16 @@ function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(Stri
 /* ---------- two-level grouping: top = Hero/Enemy/…, second = subcategories ---------- */
 const AREA_ORDER = ['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent','enemies'];
 function groupOf(cat){ if(cat==='heroes') return 'Hero'; if(ENEMY_AREAS.has(cat)||cat==='enemies') return 'Enemy';
-  if(MERGE_CATS.has(cat)) return 'Merge Icons'; return labelFor(cat); }
+  if(MERGE_CATS.has(cat)) return 'Merge Icons'; if(GEAR_CATS.has(cat)) return 'Gear'; return labelFor(cat); }
 function countOf(cat){ const c=state.cats.find(x=>x.name===cat); return c?c.images.length:0; }
 function orderBy(list, order){ return list.slice().sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); }); }
 function groupsMap(){ const m={}; for(const c of state.cats){ const g=groupOf(c.name); (m[g] ||= []).push(c.name); }
   if(m['Enemy']) m['Enemy'] = orderBy(m['Enemy'], AREA_ORDER);
   if(m['Merge Icons']) m['Merge Icons'] = orderBy(m['Merge Icons'], MERGE_ORDER);
+  if(m['Gear']) m['Gear'] = orderBy(m['Gear'], GEAR_ORDER);
   return m; }
 function catsInGroup(g){ return groupsMap()[g] || []; }
-function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy','Merge Icons'];
+function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy','Merge Icons','Gear'];
   return [...pref.filter(n=>names.includes(n)), ...names.filter(n=>!pref.includes(n)).sort()]; }
 
 /* ---------- shared list building ---------- */
@@ -516,7 +528,7 @@ function selectCategoryTab(name){
 function renderList() {
   const el = document.getElementById('list');
   if (!state.openCat && state.cats.length) state.openCat = (cur() && cur().cat) || state.cats[0].name;
-  el.querySelectorAll('.cat,.row').forEach(n => n.remove());
+  el.querySelectorAll('.cat,.row,.rarityhdr').forEach(n => n.remove());
   const h2 = el.querySelector('h2');
   const c = state.cats.find(x => x.name === state.openCat);
   if (!c) { if (h2) h2.textContent = 'Assets'; renderTabs(); return; }
@@ -528,7 +540,14 @@ function renderList() {
       h2.appendChild(rb);
     }
   }
-  for (const n of c.images) {
+  const isGear = GEAR_CATS.has(c.name);
+  let imgs = c.images.slice();
+  if (isGear) imgs.sort((a,b)=>{ const ra=RARITY_ORDER.indexOf(rarityOf(a)), rb=RARITY_ORDER.indexOf(rarityOf(b));
+    return (ra<0?99:ra)-(rb<0?99:rb) || a.localeCompare(b); });   // gear list ordered by rarity, then name
+  let lastRar;
+  for (const n of imgs) {
+    if (isGear){ const r=rarityOf(n)||'other';                    // insert a rarity separator when it changes
+      if (r!==lastRar){ lastRar=r; const hd=document.createElement('div'); hd.className='rarityhdr r-'+r; hd.textContent=r.toUpperCase(); el.appendChild(hd); } }
     const key = `${c.name}/${n}`, idx = state.items.findIndex(it => it.key === key);
     const base = n.replace(/\.png$/i,''), boss = isBoss(c.name, n);
     const np = (state.meta[key] || {pockets:[]}).pockets.length;
@@ -1139,7 +1158,7 @@ function openVariants(cat, slug, n){
   _vSession=(_vSession+1);
   const grid=document.getElementById('vGrid'); grid.innerHTML='';
   for(let i=1;i<=n;i++){ const c=document.createElement('div'); c.className='vcell'; c.id='vcell-'+i;
-    c.innerHTML='<div class="vspin">…</div>'; grid.appendChild(c); }
+    c.innerHTML='<div class="vspin">generating…</div>'; grid.appendChild(c); }
   document.getElementById('vHead').textContent='Generating '+n+' variations…';
   document.getElementById('variantsModal').hidden=false;
   pollVariants(cat, slug, n, _vSession);
@@ -1148,16 +1167,23 @@ async function pollVariants(cat, slug, n, session){
   if(session!==_vSession) return;                         // a newer run superseded this poll
   let s=null; try{ s=await (await fetch('/api/variants-status')).json(); }catch(e){}
   if(s){
-    for(const i of (s.ready||[])){
-      const cell=document.getElementById('vcell-'+i);
-      if(cell && !cell.dataset.loaded){ cell.dataset.loaded='1';
-        cell.innerHTML=`<img src="/variant/${slug}/${i}.png?s=${session}"><div class="vpick">Keep #${i}</div>`;
-        cell.onclick=()=>pickVariant(cat, slug, i);
-      }
+    const cells=s.cells||{};
+    for(let i=1;i<=n;i++){
+      const cell=document.getElementById('vcell-'+i); if(!cell) continue;
+      const st=cells[String(i)]||'running';
+      if(st==='done'){
+        if(!cell.dataset.loaded){ cell.dataset.loaded='1';
+          cell.innerHTML=`<img src="/variant/${slug}/${i}.png?s=${session}"><div class="vpick">Keep #${i}</div>`;
+          cell.onclick=()=>pickVariant(cat, slug, i); }
+      } else if(st==='failed'){
+        if(cell.dataset.state!=='failed'){ cell.dataset.state='failed'; cell.innerHTML='<div class="vspin">✗ none — reroll</div>'; cell.onclick=null; }
+      } // else running → leave the spinner
     }
-    document.getElementById('vHead').textContent = s.status==='done' ? 'Pick your favourite' : `Generating… ${s.done}/${s.total}`;
-    if(s.status==='running'){ setTimeout(()=>pollVariants(cat,slug,n,session), 1000); return; }
-  } else { setTimeout(()=>pollVariants(cat,slug,n,session), 1000); return; }
+    const okc=(s.ready||[]).length;
+    document.getElementById('vHead').textContent = s.status==='running'
+        ? `Generating… ${s.done}/${s.total} done` : `Pick your favourite — ${okc} ready`;
+    if(s.status==='running'){ setTimeout(()=>pollVariants(cat,slug,n,session), 700); return; }
+  } else { setTimeout(()=>pollVariants(cat,slug,n,session), 700); return; }
 }
 async function pickVariant(cat, slug, index){
   try{
