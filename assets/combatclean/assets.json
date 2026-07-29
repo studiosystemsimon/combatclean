@@ -1100,7 +1100,7 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 0.75,
+			"scale": 0.7,
 			"rotation": -30
 		},
 		"magic.1": {
@@ -1110,7 +1110,7 @@
 				"x": 0.5158,
 				"y": 0.5114
 			},
-			"scale": 0.9,
+			"scale": 0.95,
 			"rotation": -9
 		},
 		"magic.2": {
@@ -1356,20 +1356,20 @@
 			"type": "image",
 			"file": "merge/range-2.png",
 			"anchor": {
-				"x": 0.5002,
-				"y": 0.5316
+				"x": 0.5022,
+				"y": 0.4964
 			},
-			"scale": 1.1,
-			"rotation": 34
+			"scale": 1.15,
+			"rotation": 15
 		},
 		"range.3": {
 			"type": "image",
 			"file": "merge/range-3.png",
 			"anchor": {
-				"x": 0.4948,
-				"y": 0.4874
+				"x": 0.5041,
+				"y": 0.5216
 			},
-			"scale": 1.2,
+			"scale": 1.25,
 			"rotation": 32
 		},
 		"range.4": {

@@ -1,9 +1,9 @@
 # magic merge chain — 8 tiers. SPELLBOOKS (single object each). paper → folio → leather → ornate → arcane → cosmic → white-gold.
 # Palette: parchment tan → leather brown → brass/blue-gem → arcane blue → cosmic violet → white+gold. Single object, fills the square, no shadow.
 # Names: 1 Scrap · 2 Loose Sheets · 3 Bound Folio · 4 Leather Spellbook · 5 Ornate Spellbook · 6 Arcane Grimoire · 7 Cosmic Codex · 8 Radiant Tome
-magic-1	a small torn scrap of MATTE magical paper covered in faint handwritten arcane script, its main body a rich magical BLUE deepening to DEFINITE PURPLE toward the ragged edges, colourful and saturated not pale, no shine
-magic-2	a small loose stack of a few overlapping sheets of MATTE magical paper covered in handwritten arcane script, each sheet a rich magical BLUE body deepening to DEFINITE PURPLE at the edges, colourful and saturated not pale, no shine, same colouring as the single scrap
-magic-3	a loose bound folio of MATTE magical paper pages covered in handwritten arcane script, each page a rich magical BLUE body deepening to DEFINITE PURPLE at the edges, colourful and saturated not pale, tied with a leather cord, no shine
+magic-1	a small torn scrap of MATTE magical paper, its CENTRE a LIGHTER pale blue so the dark handwritten arcane script in the middle is CLEARLY LEGIBLE, deepening to rich blue then DEFINITE PURPLE toward the ragged edges, no shine
+magic-2	a small loose stack of a few overlapping sheets of MATTE magical paper, each sheet's CENTRE a LIGHTER pale blue so the dark handwritten script is CLEARLY LEGIBLE, deepening to rich blue then DEFINITE PURPLE at the edges, no shine, same colouring as the single scrap
+magic-3	a loose bound folio of MATTE magical paper pages, each page's CENTRE a LIGHTER pale blue so the dark handwritten script is CLEARLY LEGIBLE, deepening to rich blue then DEFINITE PURPLE at the edges, tied with a leather cord, no shine
 magic-4	a sturdy BLUE-AND-PURPLE leather spellbook with brass corner caps and a small clasp
 magic-5	a mysterious spellbook with a DARK GRADIENT PURPLE-AND-BROWN cover, GOLD corner caps and a LARGE blue gem set in the centre, no filigree or scrollwork
 magic-6	a large grand arcane grimoire with glowing blue-edged pages and gilded edges, a central blue gem with FOUR PROMINENT blue cardinal-direction gems around it, glowing blue runes, softly glowing

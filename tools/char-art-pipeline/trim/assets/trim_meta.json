@@ -600,7 +600,12 @@
       }
     },
     "heroes/templar.png": {
-      "pockets": [],
+      "pockets": [
+        [
+          405,
+          355
+        ]
+      ],
       "reg": [
         0.5981,
         0.9585
@@ -615,7 +620,12 @@
       }
     },
     "heroes/valkyrie.png": {
-      "pockets": [],
+      "pockets": [
+        [
+          722,
+          699
+        ]
+      ],
       "reg": [
         0.5415,
         0.9765
@@ -1663,14 +1673,14 @@
     "magic/magic-1.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.75,
+        "scale": 0.7,
         "rot": -30
       }
     },
     "magic/magic-2.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.9,
+        "scale": 0.95,
         "rot": -9
       },
       "reg": [
