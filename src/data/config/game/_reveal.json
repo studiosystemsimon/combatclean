@@ -42,6 +42,7 @@
 		"rattleMs": 180,
 		"fanOffsets": [0, -72, 72, -144, 144, -216, 216],
 		"fallbackY": 0.34,
+		"dropGap": 8,
 		"clampInset": 34,
 		"viewInset": [40, 60],
 		"iconSize": 56,

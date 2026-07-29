@@ -44,6 +44,7 @@ const nextIsBoss = (level) => isBossLevel(level + 1);
 // baseline, width auto with NO clamp. This is a locked render contract with the tool, not a tunable.
 const COMBAT_BASE_H = 54;        // enemy
 const COMBAT_BASE_H_BOSS = 108;  // boss (2×)
+const COMBAT_BASE_H_HERO = 75.6; // hero avatars render 1.4× the 54px base
 
 // Ambient embers — presentation constants in _anim (no runtime randomness so it stays a
 // pure render). Each entry {l:left%, d:delay s, dur:duration s, s:size px}; a handful of
@@ -84,7 +85,7 @@ function HeroChip({ h, onLimit, fighting }) {
         {/* In-combat AVATAR, 1:1 with the trim tool: sprite HEIGHT = COMBAT_BASE_H × cooked combat.scale,
             bottom-anchored, no clamp, translated by its registration-point anchor. (The hero TILE portrait
             is a separate system — portraitStyle — and is untouched here.) */}
-        <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `${COMBAT_BASE_H * (HEROES[h.hero]?.combatScale ?? 1)}px` }} />
+        <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `${COMBAT_BASE_H_HERO * (HEROES[h.hero]?.combatScale ?? 1)}px` }} />
       </div>
       <HpBar frac={h.hp / h.maxHp} kind="hero" />
       <div className="bar normal">

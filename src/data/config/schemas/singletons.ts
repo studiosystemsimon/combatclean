@@ -175,7 +175,7 @@ export const zRevealConfig = z.object({
   chest: z.object({
     popOvershoot: num.describe('easeOutBack overshoot for the chest pop-in.'), rattleMs: num,
     fanOffsets: z.array(num).describe('Per-reward horizontal fan offsets (px) around the chest.'),
-    fallbackY: num, clampInset: num, viewInset: z.tuple([num, num]), iconSize: num, iconEmojiRatio: num,
+    fallbackY: num, dropGap: num.describe('px gap kept between a landed chest bottom and the hero-list top (the hard stop).'), clampInset: num, viewInset: z.tuple([num, num]), iconSize: num, iconEmojiRatio: num,
     popMs: num, offscreenY: num, upMs: num, descendMs: num,
     hitWindowBaseMs: num, hitWindowPerTierMs: num, shotMs: num,
     peltTrail: z.object({ color: z.string(), tail: z.string(), width: num, length: num, speed: num, r: num }).strict(),

@@ -183,11 +183,19 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
   // reads as sanely on-screen; fall back to the viewport centre when it does NOT — so a
   // chest can never be pinned off-screen. Re-read right before the descend and at landing.
   const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const computeSpot = () => {
+  const computeSpot = (chestEl) => {
     const b = arenaEl && arenaEl.getBoundingClientRect();
     const ok = b && b.width > 40 && b.height > 40 && b.top > -40 && b.top < window.innerHeight - 60;
     const cx = ok ? b.left + b.width / 2 : window.innerWidth / 2;
-    const cy = ok ? b.top + b.height / 2 : window.innerHeight * CH.fallbackY;
+    // Drop the chest LOW into the gap: its bottom rests just above the hero-list top (the hard stop),
+    // underneath the enemy row when there's room. Falls back to the arena centre if the hero row can't
+    // be measured. chestHalf is measured from the real (unscaled) chest box so the bottom aligns exactly.
+    const heroEl = arenaEl && arenaEl.querySelector('.hero-row');
+    const hr = heroEl && heroEl.getBoundingClientRect();
+    const chestHalf = ((chestEl && chestEl.getBoundingClientRect().height) || CH.iconSize) / 2;
+    const cy = (ok && hr && hr.top > b.top + 20)
+      ? hr.top - chestHalf - CH.dropGap                                   // hard stop at the hero-list top
+      : (ok ? b.top + b.height / 2 : window.innerHeight * CH.fallbackY);  // fallback: arena centre
     const rawX = cx + SLOT_DX[slot % SLOT_DX.length];
     const [vx, vy] = CH.viewInset;
     return ok
@@ -219,7 +227,7 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
 
   // 4) descend into the FRESH, on-screen combat spot — deterministic inline transform
   //    every frame, so it ALWAYS ends exactly at spot.y (never stranded off-screen).
-  spot = computeSpot();
+  spot = computeSpot(chest);
   await tweenChest(
     chest,
     (e, k) => ({ x: spot.x, y: CH.offscreenY + (spot.y - CH.offscreenY) * e, extra: k > 0.75 ? `scale(${1 + (1 - k) * 0.5})` : '' }),
@@ -229,7 +237,7 @@ export async function runOrderChest(chestFront, revealOverlay, gear, orderPt, { 
 
   // 5) LANDED. Motion is manual (no WAAPI fill), so the inline transform is already
   //    exactly at(spot.x, spot.y) and nothing can override it. Pin once more for safety.
-  spot = computeSpot();
+  spot = computeSpot(chest);
   chest.style.transform = at(spot.x, spot.y);
 
   // *** the chest has HIT THE GROUND → realign the order tray now ***

@@ -39,12 +39,6 @@ const deriveUnlockedGenerators = (furthestLevel: number): string[] => {
   return [...set];
 };
 
-// Place a generator on the board at its configured start-layout cell (used at boot + on area unlock).
-const placeGenerator = (board: any, genKey: string, id: number): any => {
-  const g = C.BOARD.startLayout.generators.find((x: any) => x.generator === genKey);
-  return g ? Board.withCell(board, g.cell, Board.makeGenerator(id, genKey)) : board;
-};
-
 const battleStatsFor = (heroesMap: any, gearMap: any, ordersCompleted: number) => (cid: string) => {
   const char = heroesMap[cid];
   return { ...heroStats(char.hero, char, ordersCompleted, Gear.heroGearPower(gearMap, cid)), abilityMul: heroAbilityMul(char), hero: char.hero };
@@ -364,19 +358,26 @@ export const reducer = (state: S, action: Act): S => {
         const zone = C.ZONES[fromZone];
         const newlyUnlocked = ((zone && zone.unlocksGenerators) || []).filter((g: string) => !state.unlockedGenerators.includes(g));
         const unlockedGenerators = newlyUnlocked.length ? [...state.unlockedGenerators, ...newlyUnlocked] : state.unlockedGenerators;
-        // Board-award cinematic: emit one generatorUnlock fx per newly-unlocked generator (FxLayer plays
-        // the appear→fly→land onto its board cell). `reward` = the boss-clear reward, for the synopsis card.
+        // Board-award cinematic: plan each generator's LANDING CELL now via the shared add-tile rule
+        // (empty → else replace the lowest active item), so the appear→fly→land cinematic flies to the
+        // exact cell ACCEPT will drop it on. Sequential picks give multiple unlocks distinct cells.
+        // `reward` = the boss-clear reward, for the synopsis card.
         let id = state.nextId;
+        let workBoard = state.board;
+        const placements: { genKey: string; cell: number }[] = [];
         const fx = [...state.fx];
         for (const gk of newlyUnlocked) {
-          const g = C.BOARD.startLayout.generators.find((x: any) => x.generator === gk);
-          fx.push({ id: id++, type: 'generatorUnlock', genKey: gk, cell: g ? g.cell : null });
+          const cell = Board.addTileIndex(workBoard);
+          if (cell < 0) continue; // board is all generators + cobwebs — nowhere to add
+          placements.push({ genKey: gk, cell });
+          workBoard = Board.withCell(workBoard, cell, Board.makeGenerator(0, gk)); // reserve the cell for the next pick (id irrelevant; discarded)
+          fx.push({ id: id++, type: 'generatorUnlock', genKey: gk, cell });
         }
         return {
           ...state, unlockedGenerators, fx, nextId: id,
           furthestLevel: Math.max(state.furthestLevel, nextLevel),
           battle: { ...state.battle, status: 'areaComplete', recovering: false },
-          pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked, reward: winReward(state.battle.level) },
+          pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked, placements, reward: winReward(state.battle.level) },
         };
       }
       if (Map.isBossLevel(nextLevel)) {
@@ -388,11 +389,20 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.ACCEPT_AREA_COMPLETE: {
       if (state.battle.status !== 'areaComplete' || !state.pendingArea) return state;
-      const { nextLevel, unlocked } = state.pendingArea;
+      const { nextLevel, unlocked, placements } = state.pendingArea;
       let id = state.nextId;
-      // Place any newly-unlocked generators on the board at their configured start-layout cell.
       let board = state.board;
-      for (const gk of unlocked) board = placeGenerator(board, gk, id++);
+      // Drop each newly-unlocked generator via the shared add-tile rule. Prefer the cell PLANNED at win
+      // (so it matches where the cinematic flew); if that cell was since filled by a generator/cobweb,
+      // re-resolve with addTileToBoard. Falls back to a fresh resolve when no plan exists.
+      const plan = (placements && placements.length) ? placements : (unlocked || []).map((genKey: string) => ({ genKey, cell: -1 }));
+      for (const p of plan) {
+        const cur = p.cell >= 0 ? board[p.cell] : null;
+        const planOk = p.cell >= 0 && !(cur && (cur.kind === 'generator' || (cur.kind === 'item' && cur.locked)));
+        board = planOk
+          ? Board.withCell(board, p.cell, Board.makeGenerator(id++, p.genKey))
+          : Board.addTileToBoard(board, Board.makeGenerator(id++, p.genKey));
+      }
       const { wave, heroes, id: id2 } = respawn(state, nextLevel, id);
       return { ...state, board, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, pendingArea: null };
     }

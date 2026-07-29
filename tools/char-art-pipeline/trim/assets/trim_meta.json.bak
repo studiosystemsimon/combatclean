@@ -1041,6 +1041,11 @@
       ],
       "combat": {
         "scale": 1.15
+      },
+      "portrait": {
+        "scale": 1,
+        "x": 0,
+        "y": 0
       }
     },
     "mossbog/bog-slime.png": {
@@ -1608,7 +1613,7 @@
     "blade/blade-3.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.05
+        "scale": 1.1
       },
       "reg": [
         0.504,
@@ -1618,20 +1623,20 @@
     "blade/blade-4.png": {
       "pockets": [],
       "combat": {
-        "scale": 1
+        "scale": 1.1
       }
     },
     "blade/blade-5.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.2,
+        "scale": 1.15,
         "rot": 6
       }
     },
     "blade/blade-6.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15,
+        "scale": 1.2,
         "rot": 3
       },
       "reg": [
@@ -1674,37 +1679,45 @@
       "pockets": [],
       "combat": {
         "scale": 0.7,
-        "rot": -30
-      }
+        "rot": -7
+      },
+      "reg": [
+        0.4919,
+        0.5135
+      ]
     },
     "magic/magic-2.png": {
       "pockets": [],
       "combat": {
         "scale": 0.95,
-        "rot": -9
+        "rot": 4
       },
       "reg": [
-        0.5158,
-        0.5114
+        0.5018,
+        0.5299
       ]
     },
     "magic/magic-3.png": {
       "pockets": [],
       "combat": {
         "scale": 0.9,
-        "rot": 0
-      }
+        "rot": -6
+      },
+      "reg": [
+        0.4976,
+        0.5179
+      ]
     },
     "magic/magic-4.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.8
+        "scale": 0.85
       }
     },
     "magic/magic-5.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.85
+        "scale": 0.9
       }
     },
     "magic/magic-6.png": {
@@ -1778,37 +1791,41 @@
     "range/range-3.png": {
       "pockets": [
         [
-          565,
-          428
+          529,
+          331
         ],
         [
-          526,
-          382
+          570,
+          328
         ],
         [
-          478,
-          354
+          619,
+          360
         ],
         [
-          552,
-          322
+          632,
+          407
         ],
         [
-          271,
-          862
+          170,
+          830
         ],
         [
-          344,
-          885
+          231,
+          838
+        ],
+        [
+          272,
+          886
         ]
       ],
       "combat": {
-        "scale": 1.15,
-        "rot": 15
+        "scale": 1.2,
+        "rot": 9
       },
       "reg": [
-        0.5022,
-        0.4964
+        0.5054,
+        0.5076
       ]
     },
     "range/range-4.png": {
@@ -2121,17 +2138,17 @@
     "magic-gen/magic-gen-3.png": {
       "pockets": [],
       "combat": {
-        "scale": 1
+        "scale": 1.1
       }
     },
     "magic-gen/magic-gen-4.png": {
       "pockets": [],
       "combat": {
-        "scale": 1.15
+        "scale": 1.1
       },
       "reg": [
         0.4983,
-        0.551
+        0.5072
       ]
     },
     "magic-gen/magic-gen-5.png": {
@@ -2147,24 +2164,16 @@
     "range-gen/range-gen-1.png": {
       "pockets": [
         [
-          623,
-          722
+          625,
+          794
         ],
         [
-          422,
-          701
+          420,
+          778
         ],
         [
           262,
-          650
-        ],
-        [
-          560,
-          403
-        ],
-        [
-          253,
-          630
+          722
         ]
       ],
       "combat": {
@@ -2178,16 +2187,16 @@
     "range-gen/range-gen-2.png": {
       "pockets": [
         [
-          250,
-          726
-        ],
-        [
-          618,
-          803
-        ],
-        [
           415,
           775
+        ],
+        [
+          630,
+          815
+        ],
+        [
+          255,
+          715
         ]
       ],
       "combat": {
@@ -2201,16 +2210,16 @@
     "range-gen/range-gen-3.png": {
       "pockets": [
         [
-          623,
-          810
-        ],
-        [
-          416,
-          783
+          425,
+          782
         ],
         [
           255,
-          734
+          719
+        ],
+        [
+          632,
+          812
         ]
       ],
       "combat": {
@@ -2228,12 +2237,12 @@
           775
         ],
         [
-          620,
-          812
-        ],
-        [
           257,
           726
+        ],
+        [
+          625,
+          824
         ]
       ],
       "reg": [

@@ -10,7 +10,7 @@
 // Wired in vite.config.ts (which already imports CATEGORIES + the UI/visual schemas, so they are passed
 // in rather than re-imported from a .ts here) — see configEditorEndpoint({ ... }).
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { validateMerged, isSingletonCategory, isIdCategory, isKeyCategory } from '@bishop/config-registry';
@@ -20,7 +20,14 @@ import { scanAssetsDir } from '@bishop/asset-registry/node';
 const REF_META = { configRef: 'configRef', stringConfigRef: 'stringConfigRef', recordKeyRef: 'recordKeyRef' };
 
 const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf-8')) : undefined);
-const writeJson = (p, v) => writeFileSync(p, `${JSON.stringify(v, null, '\t')}\n`); // tabs + trailing NL (repo style)
+// Atomic write: stage to a .tmp sibling then rename over the target. The rename is atomic, so Vite's
+// config watcher never observes a truncated/partial file mid-write (which made compose() 500 on the
+// re-bake). tabs + trailing NL (repo style).
+const writeJson = (p, v) => {
+  const tmp = `${p}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify(v, null, '\t')}\n`);
+  renameSync(tmp, p);
+};
 const jsonSchema = (schema) => z.toJSONSchema(schema, { unrepresentable: 'any', io: 'input' });
 const subdirs = (root) =>
   existsSync(root) ? readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name) : [];

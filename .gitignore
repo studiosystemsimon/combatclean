@@ -31,3 +31,7 @@ ios/
 # Generated asset manifests (re-run npm run assets:manifest)
 asset-manifest.js
 assets/skins/*/skin-manifest.js
+
+# macOS launcher app bundle (local, rebuilt from CombatClean.command + public/app-icon.png)
+CombatClean.app/
+.combatclean-launch.log

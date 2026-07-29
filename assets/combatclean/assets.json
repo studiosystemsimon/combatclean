@@ -1097,30 +1097,31 @@
 			"type": "image",
 			"file": "merge/magic-0.png",
 			"anchor": {
-				"x": 0.5,
-				"y": 0.5
+				"x": 0.4919,
+				"y": 0.5135
 			},
 			"scale": 0.7,
-			"rotation": -30
+			"rotation": -7
 		},
 		"magic.1": {
 			"type": "image",
 			"file": "merge/magic-1.png",
 			"anchor": {
-				"x": 0.5158,
-				"y": 0.5114
+				"x": 0.5018,
+				"y": 0.5299
 			},
 			"scale": 0.95,
-			"rotation": -9
+			"rotation": 4
 		},
 		"magic.2": {
 			"type": "image",
 			"file": "merge/magic-2.png",
 			"anchor": {
-				"x": 0.5,
-				"y": 0.5
+				"x": 0.4976,
+				"y": 0.5179
 			},
-			"scale": 0.9
+			"scale": 0.9,
+			"rotation": -6
 		},
 		"magic.3": {
 			"type": "image",
@@ -1129,7 +1130,7 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 0.8
+			"scale": 0.85
 		},
 		"magic.4": {
 			"type": "image",
@@ -1138,7 +1139,7 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 0.85
+			"scale": 0.9
 		},
 		"magic.5": {
 			"type": "image",
@@ -1192,16 +1193,17 @@
 			"anchor": {
 				"x": 0.5,
 				"y": 0.5
-			}
+			},
+			"scale": 1.1
 		},
 		"gen.magic.4": {
 			"type": "image",
 			"file": "gen/magic-4.png",
 			"anchor": {
 				"x": 0.4983,
-				"y": 0.551
+				"y": 0.5072
 			},
-			"scale": 1.15
+			"scale": 1.1
 		},
 		"gen.magic.5": {
 			"type": "image",
@@ -1237,7 +1239,7 @@
 				"x": 0.504,
 				"y": 0.5129
 			},
-			"scale": 1.05
+			"scale": 1.1
 		},
 		"blade.3": {
 			"type": "image",
@@ -1245,7 +1247,8 @@
 			"anchor": {
 				"x": 0.5,
 				"y": 0.5
-			}
+			},
+			"scale": 1.1
 		},
 		"blade.4": {
 			"type": "image",
@@ -1254,7 +1257,7 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 1.2,
+			"scale": 1.15,
 			"rotation": 6
 		},
 		"blade.5": {
@@ -1264,7 +1267,7 @@
 				"x": 0.479,
 				"y": 0.5169
 			},
-			"scale": 1.15,
+			"scale": 1.2,
 			"rotation": 3
 		},
 		"blade.6": {
@@ -1356,11 +1359,11 @@
 			"type": "image",
 			"file": "merge/range-2.png",
 			"anchor": {
-				"x": 0.5022,
-				"y": 0.4964
+				"x": 0.5054,
+				"y": 0.5076
 			},
-			"scale": 1.15,
-			"rotation": 15
+			"scale": 1.2,
+			"rotation": 9
 		},
 		"range.3": {
 			"type": "image",

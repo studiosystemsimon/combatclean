@@ -11,7 +11,7 @@ Run:  python3 asset_tool_server.py                 # root = ./assets, port 8790
       python3 asset_tool_server.py --root assets --port 8790
 Then open http://localhost:8790
 """
-import argparse, json, os, re, sys, subprocess, http.server, socketserver
+import argparse, json, os, re, sys, subprocess, http.server, socketserver, threading, signal, time, shutil
 from urllib.parse import urlparse, unquote, parse_qs
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../trim
@@ -173,36 +173,195 @@ def export_status():
     return {"started": bool(p), "running": bool(p) and rc is None,
             "done": bool(p) and rc is not None, "returncode": rc, "result": result, "log": full[-4000:]}
 
-# batch regen (whole enemy area, or a checked subset) — routes to the enemy pipeline
-REGEN_LOG = "/tmp/combatclean_regen.log"
-REGEN = {"proc": None, "label": ""}
-def start_regen(root, category, slugs, overrides=""):
-    slugs = [slugify(s) for s in (slugs or []) if slugify(s)]
-    slug_args = "".join(" " + _q(s) for s in slugs)
+# batch regen — a QUEUE of jobs (enemy area / merge chain / checked subset), run one at a time by a
+# background worker. Each job tracks progress (tiles done / total) and can be cancelled. The UI shows
+# a progress bar per job in the bottom-right panel; finished jobs auto-prune after a few seconds.
+REGEN_LOGDIR = "/tmp/combatclean_regen"
+os.makedirs(REGEN_LOGDIR, exist_ok=True)
+REGEN_JOBS = []                 # ordered: queued → running → done/error (then auto-pruned)
+REGEN_LOCK = threading.Lock()
+_REGEN_SEQ = [0]
+_REGEN_WORKER_STARTED = [False]
+
+def _regen_plan(root, category):
+    """(cwd, tsv_rel, env) for a category's gen.sh invocation — same routing as before."""
     env = os.environ.copy(); env["FORCE"] = "1"
-    if overrides: env["OVERRIDES"] = overrides   # enemy gen.sh reads OVERRIDES directly
     if category in ENEMY_AREAS:
-        env["TSV"] = "rosters/%s.tsv" % category      # per-area roster
-        env["OUT"] = os.path.join(root, category)     # the shared tool's area folder
-        cwd = ENEMY_PIPELINE
+        tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = ENEMY_PIPELINE
     elif category in MERGE_CATS:
-        env["TSV"] = "rosters/%s.tsv" % category      # per-chain roster (magic/blade/range)
-        env["OUT"] = os.path.join(root, category)     # the shared tool's chain folder
-        cwd = MERGE_PIPELINE
-    else:                                             # heroes → the hero gen pipeline (classes.tsv)
-        cwd = PIPELINE
-    cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh%s >%s 2>&1" % (_q(cwd), slug_args, _q(REGEN_LOG))]
-    REGEN["proc"] = subprocess.Popen(cmd, env=env, start_new_session=True)
-    REGEN["label"] = category + ((" (%d)" % len(slugs)) if slugs else " (all)")
-    return {"ok": True, "started": True, "label": REGEN["label"]}
-def regen_status():
-    p = REGEN["proc"]; log = ""
+        tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = MERGE_PIPELINE
+    else:                                             # heroes → hero pipeline
+        tsv = "rosters/classes.tsv"; cwd = PIPELINE
+    return cwd, tsv, env
+
+def _roster_count(cwd, tsv):
     try:
-        with open(REGEN_LOG, errors="replace") as f: log = f.read()[-4000:]
-    except OSError: pass
-    rc = p.poll() if p else None
-    return {"running": bool(p) and rc is None, "done": bool(p) and rc is not None,
-            "returncode": rc, "label": REGEN.get("label", ""), "log": log}
+        n = 0
+        with open(os.path.join(cwd, tsv)) as f:
+            for ln in f:
+                s = ln.strip()
+                if s and not s.startswith("#"): n += 1
+        return max(n, 1)
+    except OSError:
+        return 1
+
+def _count_done(logpath):
+    """How many tiles gen.sh has finished so far (each OK/WARN/FAIL line = one tile)."""
+    try:
+        with open(logpath, errors="replace") as f:
+            return sum(1 for ln in f if re.match(r'^(OK|WARN|FAIL)\b', ln))
+    except OSError:
+        return 0
+
+def _kill_group(proc):
+    try: os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except Exception:
+        try: proc.kill()
+        except Exception: pass
+
+def enqueue_regen(root, category, slugs, overrides=""):
+    slugs = [slugify(s) for s in (slugs or []) if slugify(s)]
+    cwd, tsv, env = _regen_plan(root, category)
+    if overrides: env["OVERRIDES"] = overrides
+    _REGEN_SEQ[0] += 1; jid = _REGEN_SEQ[0]
+    job = {"id": jid, "slugs": slugs,
+           "label": category + ((" · " + ", ".join(slugs)) if slugs else " · all"),
+           "status": "queued", "total": (len(slugs) if slugs else _roster_count(cwd, tsv)), "done": 0,
+           "cwd": cwd, "env": env, "log": os.path.join(REGEN_LOGDIR, "job-%d.log" % jid),
+           "proc": None, "cancelled": False, "ended": None}
+    with REGEN_LOCK: REGEN_JOBS.append(job)
+    return {"ok": True, "id": jid, "label": job["label"]}
+
+def cancel_regen(jid):
+    with REGEN_LOCK:
+        job = next((j for j in REGEN_JOBS if j["id"] == jid), None)
+        if not job: return {"ok": False, "error": "no such job"}
+        job["cancelled"] = True
+        if job["proc"] and job["status"] == "running": _kill_group(job["proc"])
+        REGEN_JOBS[:] = [j for j in REGEN_JOBS if j["id"] != jid]   # X = remove the row immediately
+    return {"ok": True}
+
+def regen_queue():
+    now = time.time()
+    with REGEN_LOCK:
+        REGEN_JOBS[:] = [j for j in REGEN_JOBS
+                         if not (j["ended"] and j["status"] != "running" and now - j["ended"] > 4)]
+        jobs = []
+        for j in REGEN_JOBS:
+            total = max(j["total"], 1); done = min(j["done"], total)
+            jobs.append({"id": j["id"], "label": j["label"], "status": j["status"],
+                         "total": total, "done": done,
+                         "progress": 1.0 if j["status"] == "done" else round(done / total, 3)})
+    return {"jobs": jobs}
+
+def _regen_worker():
+    while True:
+        with REGEN_LOCK:
+            job = next((j for j in REGEN_JOBS if j["status"] == "queued"), None)
+        if job is None:
+            time.sleep(0.4); continue
+        if job.get("cancelled"):
+            with REGEN_LOCK: REGEN_JOBS[:] = [j for j in REGEN_JOBS if j is not job]
+            continue
+        job["status"] = "running"
+        slug_args = "".join(" " + _q(s) for s in job["slugs"])
+        cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh%s >%s 2>&1" % (_q(job["cwd"]), slug_args, _q(job["log"]))]
+        try:
+            open(job["log"], "w").close()
+            job["proc"] = subprocess.Popen(cmd, env=job["env"], start_new_session=True)
+        except Exception as e:
+            job["status"] = "error"; job["ended"] = time.time(); continue
+        while True:
+            rc = job["proc"].poll()
+            job["done"] = _count_done(job["log"])
+            if job.get("cancelled"):
+                _kill_group(job["proc"])
+                with REGEN_LOCK: REGEN_JOBS[:] = [j for j in REGEN_JOBS if j is not job]
+                break
+            if rc is not None:
+                job["returncode"] = rc
+                if rc == 0: job["done"] = job["total"]
+                job["status"] = "done" if rc == 0 else "error"
+                job["ended"] = time.time()
+                break
+            time.sleep(0.4)
+
+def start_regen_worker():
+    if not _REGEN_WORKER_STARTED[0]:
+        _REGEN_WORKER_STARTED[0] = True
+        threading.Thread(target=_regen_worker, daemon=True).start()
+
+# ---- Regenerate ×N variants: generate N candidates into a temp dir (self-anchored to the current
+# tile, never overwriting it) so the user can pick a favourite from a popup ----
+VARIANTS_DIR = "/tmp/combatclean_variants"
+VARIANTS = {"slug": None, "cat": None, "total": 0, "done": 0, "status": "idle", "ready": [], "proc": None, "cancel": False}
+VARIANTS_LOCK = threading.Lock()
+
+def _variants_worker(root, cat, slug, n, overrides):
+    vdir = os.path.join(VARIANTS_DIR, slug)
+    tmp_out = os.path.join(vdir, "_out")
+    os.makedirs(tmp_out, exist_ok=True)
+    for f in os.listdir(vdir):                        # clear old candidates
+        if f.startswith("cand-") and f.endswith(".png"):
+            try: os.remove(os.path.join(vdir, f))
+            except OSError: pass
+    cwd, tsv, env = _regen_plan(root, cat)
+    env["FORCE"] = "1"; env["OUT"] = tmp_out          # gen writes into the temp dir, NOT the real tile
+    if overrides: env["OVERRIDES"] = overrides
+    src = os.path.join(root, cat, slug + ".png")      # self-anchor each variant to the current tile
+    if os.path.isfile(src): env["REF"] = src
+    with VARIANTS_LOCK:
+        VARIANTS.update(slug=slug, cat=cat, total=n, done=0, status="running", ready=[], cancel=False)
+    for i in range(1, n + 1):
+        with VARIANTS_LOCK:
+            if VARIANTS["cancel"]: break
+        logp = os.path.join(vdir, "gen-%d.log" % i)
+        cmd = ["/bin/zsh", "-lc", "cd %s && exec bash gen.sh %s >%s 2>&1" % (_q(cwd), _q(slug), _q(logp))]
+        try:
+            p = subprocess.Popen(cmd, env=env, start_new_session=True)
+            with VARIANTS_LOCK: VARIANTS["proc"] = p
+            p.wait()
+        except Exception:
+            pass
+        out = os.path.join(tmp_out, slug + ".png")
+        if os.path.isfile(out):
+            try:
+                shutil.copy(out, os.path.join(vdir, "cand-%d.png" % i))
+                with VARIANTS_LOCK: VARIANTS["ready"].append(i)
+            except OSError: pass
+        with VARIANTS_LOCK: VARIANTS["done"] = i
+    with VARIANTS_LOCK:
+        VARIANTS["status"] = "cancelled" if VARIANTS["cancel"] else "done"
+        VARIANTS["proc"] = None
+
+def start_variants(root, cat, slug, n, overrides):
+    with VARIANTS_LOCK:
+        if VARIANTS["status"] == "running":
+            return {"ok": False, "error": "variants already generating"}
+    threading.Thread(target=_variants_worker, args=(root, cat, slug, max(1, min(n, 12)), overrides), daemon=True).start()
+    return {"ok": True, "slug": slug, "n": n}
+
+def variants_status():
+    with VARIANTS_LOCK:
+        return {"slug": VARIANTS["slug"], "cat": VARIANTS["cat"], "total": VARIANTS["total"],
+                "done": VARIANTS["done"], "status": VARIANTS["status"], "ready": list(VARIANTS["ready"])}
+
+def cancel_variants():
+    with VARIANTS_LOCK:
+        VARIANTS["cancel"] = True
+        if VARIANTS["proc"]: _kill_group(VARIANTS["proc"])
+    return {"ok": True}
+
+def pick_variant(root, cat, slug, index):
+    cand = os.path.join(VARIANTS_DIR, slug, "cand-%d.png" % index)
+    if not os.path.isfile(cand):
+        return {"ok": False, "error": "no such candidate"}
+    dst = os.path.join(root, cat, slug + ".png")
+    try:
+        shutil.copy(cand, dst)
+    except OSError as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True}
 
 def gen_status(root, slug):
     png = os.path.join(root, "heroes", slug + ".png")
@@ -227,6 +386,29 @@ OUT_SUFFIXES = ("_trim.png", "_256.png", "_128.png")
 def is_source(fn):
     fl = fn.lower()
     return fl.endswith(".png") and not any(fl.endswith(s) for s in OUT_SUFFIXES)
+
+def flip_image(root, cat, name, axis):
+    """Mirror a tile AT SOURCE using macOS `sips` (no Python image lib, so it works under the launcher's
+    /usr/bin/python3). axis 'h' = left-right, 'v' = top-bottom. Also mirrors any existing derived outputs
+    (_trim/_256/_128) so every view stays consistent with the flipped source. Alpha + dimensions preserved."""
+    if axis not in ("h", "v"):
+        return {"ok": False, "error": "axis must be 'h' or 'v'"}
+    mode = "horizontal" if axis == "h" else "vertical"
+    base_dir = os.path.join(root, cat)
+    src = os.path.join(base_dir, name)
+    if not os.path.isfile(src):
+        return {"ok": False, "error": "source not found: %s/%s" % (cat, name)}
+    stem = name[:-4] if name.lower().endswith(".png") else name
+    flipped = []
+    for fn in [name] + [stem + s for s in OUT_SUFFIXES]:   # source first, then any derived outputs
+        p = os.path.join(base_dir, fn)
+        if os.path.isfile(p):
+            r = subprocess.run(["/usr/bin/sips", "--flip", mode, p],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            if r.returncode != 0:
+                return {"ok": False, "error": "sips failed on %s: %s" % (fn, r.stderr.decode()[:200])}
+            flipped.append(fn)
+    return {"ok": True, "flipped": flipped, "axis": axis}
 
 def boss_slugs(cat):
     """Boss slugs for an enemy area = roster rows whose subject contains 'BOSS'."""
@@ -300,8 +482,19 @@ def build_handler(root, meta_path):
                 return self._send(200, "application/json", json.dumps(gen_status(root, slug)))
             if path == "/api/export-status":
                 return self._send(200, "application/json", json.dumps(export_status()))
-            if path == "/api/regen-status":
-                return self._send(200, "application/json", json.dumps(regen_status()))
+            if path in ("/api/regen-queue", "/api/regen-status"):
+                return self._send(200, "application/json", json.dumps(regen_queue()))
+            if path == "/api/variants-status":
+                return self._send(200, "application/json", json.dumps(variants_status()))
+            if path.startswith("/variant/"):                     # /variant/<slug>/<i>.png → temp candidate
+                parts = path[len("/variant/"):].split("/")
+                if len(parts) == 2:
+                    slug = slugify(parts[0]); idx = re.sub(r"\.png$", "", parts[1])
+                    if slug and idx.isdigit():
+                        cand = os.path.join(VARIANTS_DIR, slug, "cand-%d.png" % int(idx))
+                        if os.path.isfile(cand):
+                            with open(cand, "rb") as f: return self._send(200, "image/png", f.read())
+                return self._send(404, "text/plain", "not found")
             if path.startswith("/img/"):
                 fp = self._safe(path[len("/img/"):])
                 if fp and os.path.isfile(fp):
@@ -359,9 +552,16 @@ def build_handler(root, meta_path):
                 cat = body.get("category")
                 if not cat:
                     return self._send(400, "application/json", json.dumps({"ok": False, "error": "category required"}))
-                if REGEN["proc"] and REGEN["proc"].poll() is None:
-                    return self._send(200, "application/json", json.dumps({"ok": False, "error": "a regen is already running"}))
-                return self._send(200, "application/json", json.dumps(start_regen(root, cat, body.get("slugs"), (body.get("overrides") or "").strip())))
+                return self._send(200, "application/json", json.dumps(enqueue_regen(root, cat, body.get("slugs"), (body.get("overrides") or "").strip())))
+            if path == "/api/regen-cancel":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                try: jid = int(body.get("id"))
+                except (TypeError, ValueError):
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "numeric id required"}))
+                return self._send(200, "application/json", json.dumps(cancel_regen(jid)))
             if path == "/api/delete":
                 n = int(self.headers.get("Content-Length", 0))
                 try: body = json.loads(self.rfile.read(n).decode("utf-8"))
@@ -371,6 +571,39 @@ def build_handler(root, meta_path):
                 if not cat or not name:
                     return self._send(400, "application/json", json.dumps({"ok": False, "error": "cat + name required"}))
                 return self._send(200, "application/json", json.dumps(delete_character(root, meta_path, cat, name)))
+            if path == "/api/flip":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                cat, name, axis = body.get("cat"), body.get("name"), body.get("axis")
+                if not cat or not name or axis not in ("h", "v"):
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "cat + name + axis(h|v) required"}))
+                return self._send(200, "application/json", json.dumps(flip_image(root, cat, name, axis)))
+            if path == "/api/regen-variants":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                cat = body.get("category"); slug = slugify(body.get("slug", ""))
+                if not cat or not slug:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "category + slug required"}))
+                return self._send(200, "application/json", json.dumps(
+                    start_variants(root, cat, slug, int(body.get("n") or 6), (body.get("overrides") or "").strip())))
+            if path == "/api/variants-pick":
+                n = int(self.headers.get("Content-Length", 0))
+                try: body = json.loads(self.rfile.read(n).decode("utf-8"))
+                except Exception as e:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "bad json: %s" % e}))
+                cat = body.get("category"); slug = slugify(body.get("slug", ""))
+                try: idx = int(body.get("index"))
+                except (TypeError, ValueError):
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "numeric index required"}))
+                if not cat or not slug:
+                    return self._send(400, "application/json", json.dumps({"ok": False, "error": "category + slug required"}))
+                return self._send(200, "application/json", json.dumps(pick_variant(root, cat, slug, idx)))
+            if path == "/api/variants-cancel":
+                return self._send(200, "application/json", json.dumps(cancel_variants()))
             if path == "/api/export":
                 n = int(self.headers.get("Content-Length", 0))
                 body = {}
@@ -397,6 +630,7 @@ def main():
         print("root not found:", root); sys.exit(1)
     meta_path = os.path.join(root, "trim_meta.json")
     Handler = build_handler(root, meta_path)
+    start_regen_worker()                         # background queue worker (processes regens one at a time)
     http.server.ThreadingHTTPServer.allow_reuse_address = True
     with http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler) as httpd:
         print("trim tool: http://localhost:%d   (root: %s)" % (args.port, root))

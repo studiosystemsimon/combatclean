@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Special Order — mockup</title>
+<style>
+  :root{ --ink:#eaf0ff; --dim:#9fb0d0; --gold:#ffd45e; --gold2:#ff9e2e;
+    --blade:#7f9bd6; --range:#5ad17a; --magic:#b46bff; --panel:#151a2e; --panel2:#1b2340;
+    --line:rgba(255,255,255,.10); }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 50% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%);
+    min-height:100vh; padding:30px 18px 70px; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:720px; margin:0 auto; }
+  h1{ font-size:20px; letter-spacing:.4px; margin:0 0 4px; text-align:center; }
+  .tag{ display:block; text-align:center; font-size:10px; font-weight:800; letter-spacing:1.2px; color:var(--gold); margin:0 0 26px; }
+  h2{ font-size:12px; font-weight:800; letter-spacing:1.4px; color:var(--dim); text-transform:uppercase; margin:26px 0 12px; }
+
+  /* ---------- ORDERS RAIL ---------- */
+  .rail{ display:flex; gap:10px; align-items:stretch; }
+  .order{ position:relative; height:96px; border-radius:12px; background:linear-gradient(180deg,#20263c,#171c2c);
+    border:1px solid var(--line); display:flex; align-items:stretch; padding:8px; gap:8px; overflow:hidden; }
+  .order .tab{ width:58px; flex:0 0 58px; border-radius:9px; background:#0e1220; border:1px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .order .tab .chest{ font-size:30px; line-height:1; filter:drop-shadow(0 3px 5px rgba(0,0,0,.5)); }
+  .order .tab .reroll{ font-size:12px; opacity:.7; }
+  .order .reqs{ flex:1; display:flex; align-items:center; gap:8px; padding:0 4px; }
+
+  /* merge-tile look (shared) */
+  .tile{ position:relative; width:52px; height:52px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:#fff; border:1px solid rgba(255,255,255,.22);
+    background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.25)), var(--tc, #39415e);
+    box-shadow:0 4px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.25); }
+  .tile .lv{ position:absolute; right:3px; bottom:2px; font-size:10px; font-weight:900; color:#fff;
+    text-shadow:0 1px 0 #000,0 -1px 0 #000,1px 0 0 #000,-1px 0 0 #000; }
+  .tile.blade{ --tc:var(--blade); } .tile.range{ --tc:var(--range); } .tile.magic{ --tc:var(--magic); }
+
+  /* SPECIAL order — the distinct, glowing variant */
+  .order.special{ border-color:transparent; background:linear-gradient(180deg,#2a2140,#1a1530); }
+  .order.special::before{ content:''; position:absolute; inset:-1px; border-radius:12px; padding:1px; pointer-events:none;
+    background:linear-gradient(135deg,var(--gold),var(--magic),var(--gold)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; }
+  .order.special::after{ content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+    box-shadow:0 0 18px rgba(255,212,94,.35) inset, 0 0 22px rgba(180,107,255,.4); animation:specPulse 1.6s ease-in-out infinite; }
+  @keyframes specPulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+  .order.special .ribbon{ position:absolute; top:8px; left:-30px; transform:rotate(-45deg); background:linear-gradient(90deg,var(--gold2),var(--gold));
+    color:#2a1a00; font-size:8px; font-weight:900; letter-spacing:1px; padding:2px 34px; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+  .order.special .tab{ background:radial-gradient(120% 100% at 50% 20%, #3a2a5a, #120e22); border-color:rgba(255,212,94,.5); }
+
+  /* the S-TILE — a merge tile stamped with an S (what the special order drops) */
+  .s-tile{ --tc:linear-gradient(135deg,#ffd45e,#ff9e2e); }
+  .s-tile .s{ font-size:26px; font-weight:900; color:#2a1a00; text-shadow:0 1px 0 rgba(255,255,255,.4); }
+  .s-badge{ position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#2a1a00; font-weight:900; font-size:12px;
+    display:flex; align-items:center; justify-content:center; border:2px solid #1a1530; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--dim); }
+  .legend b{ color:var(--ink); font-weight:700; }
+
+  /* ---------- BOARD placement illustration ---------- */
+  .boards{ display:flex; gap:22px; flex-wrap:wrap; }
+  .bcol{ flex:1; min-width:280px; }
+  .bcap{ font-size:11px; color:var(--dim); margin:0 0 8px; }
+  .bcap b{ color:var(--gold); }
+  .board{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; background:#0e1220; border:1px solid var(--line);
+    border-radius:12px; padding:8px; }
+  .c{ aspect-ratio:1/1; border-radius:8px; display:flex; align-items:center; justify-content:center; position:relative;
+    font-size:15px; color:#fff; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); }
+  .c.empty{ }
+  .c.item{ border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(0,0,0,.22)), var(--tc,#39415e); font-weight:800; }
+  .c.item.blade{ --tc:var(--blade); } .c.item.range{ --tc:var(--range); } .c.item.magic{ --tc:var(--magic); }
+  .c.gen{ background:radial-gradient(120% 100% at 50% 20%, #3b4670, #10131d); border:1px solid rgba(120,150,255,.5); }
+  .c.web{ background:#12141d; border:1px dashed rgba(255,255,255,.14); color:rgba(255,255,255,.28); }
+  .c .lv{ position:absolute; right:2px; bottom:1px; font-size:9px; font-weight:900; text-shadow:0 1px 0 #000; }
+  .c.drop{ animation:dropIn .9s ease-in-out infinite; }
+  .c.drop::after{ content:''; position:absolute; inset:-3px; border-radius:10px; border:2px solid var(--gold); box-shadow:0 0 12px var(--gold); }
+  .c.replaced::before{ content:'↧ replaces'; position:absolute; top:-15px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-size:8px; font-weight:800; color:var(--gold); }
+  .c.stile{ background:linear-gradient(135deg,#ffd45e,#ff9e2e); color:#2a1a00; font-weight:900; font-size:17px; }
+  @keyframes dropIn{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-3px);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Special Order</h1>
+  <span class="tag">MOCKUP · NOT WIRED</span>
+
+  <h2>In the orders rail</h2>
+  <div class="rail">
+    <!-- a normal order for contrast -->
+    <div class="order">
+      <div class="tab"><span class="chest">🧰</span><span class="reroll">🎲</span></div>
+      <div class="reqs">
+        <div class="tile blade">⚔<span class="lv">3</span></div>
+        <div class="tile range">🏹<span class="lv">2</span></div>
+      </div>
+    </div>
+    <!-- the SPECIAL order -->
+    <div class="order special">
+      <span class="ribbon">SPECIAL</span>
+      <div class="tab">
+        <div class="tile s-tile" style="width:44px;height:44px;"><span class="s">S</span></div>
+      </div>
+      <div class="reqs">
+        <div class="tile magic">✦<span class="lv">4</span></div>
+        <div class="tile blade">⚔<span class="lv">5</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><b>Reward:</b> instead of a gear chest, it drops an <b>S-tile</b> onto the board.</span>
+    <span><b>Look:</b> gold↔violet animated border, pulsing glow, SPECIAL ribbon.</span>
+  </div>
+
+  <h2>The dropped S-tile</h2>
+  <div style="display:flex; gap:26px; align-items:center;">
+    <div style="position:relative;"><div class="tile s-tile"><span class="s">S</span></div><span class="s-badge">S</span></div>
+    <div class="legend" style="margin:0;">
+      <span>A merge tile stamped with an <b>S</b> (gold) so it reads instantly as special on the board.<br/>Corner badge variant shown at right of the tile.</span>
+    </div>
+  </div>
+
+  <h2>Where it lands — the add-tile rule</h2>
+  <div class="boards">
+    <div class="bcol">
+      <p class="bcap"><b>Empty space free →</b> drops into the first empty cell.</p>
+      <div class="board">
+        <div class="c gen">⚙</div><div class="c item blade">⚔<span class="lv">2</span></div><div class="c gen">⚙</div><div class="c item range">🏹<span class="lv">1</span></div><div class="c empty"></div><div class="c item magic">✦<span class="lv">3</span></div><div class="c web">🕸</div>
+        <div class="c item blade">⚔<span class="lv">4</span></div><div class="c empty"></div><div class="c drop stile">S</div><div class="c item range">🏹<span class="lv">2</span></div><div class="c web">🕸</div><div class="c empty"></div><div class="c item magic">✦<span class="lv">1</span></div>
+        <div class="c empty"></div><div class="c item blade">⚔<span class="lv">3</span></div><div class="c empty"></div><div class="c item range">🏹<span class="lv">5</span></div><div class="c empty"></div><div class="c web">🕸</div><div class="c empty"></div>
+      </div>
+    </div>
+    <div class="bcol">
+      <p class="bcap"><b>Board full →</b> replaces the <b>lowest-tier active tile</b> (never a generator or cobweb).</p>
+      <div class="board">
+        <div class="c gen">⚙</div><div class="c item blade">⚔<span class="lv">2</span></div><div class="c gen">⚙</div><div class="c item range">🏹<span class="lv">3</span></div><div class="c item magic">✦<span class="lv">4</span></div><div class="c item magic">✦<span class="lv">3</span></div><div class="c web">🕸</div>
+        <div class="c item blade">⚔<span class="lv">4</span></div><div class="c drop replaced stile">S</div><div class="c item range">🏹<span class="lv">2</span></div><div class="c item blade">⚔<span class="lv">5</span></div><div class="c web">🕸</div><div class="c item range">🏹<span class="lv">3</span></div><div class="c item magic">✦<span class="lv">2</span></div>
+        <div class="c item blade">⚔<span class="lv">3</span></div><div class="c item range">🏹<span class="lv">5</span></div><div class="c item magic">✦<span class="lv">4</span></div><div class="c item range">🏹<span class="lv">5</span></div><div class="c web">🕸</div><div class="c item blade">⚔<span class="lv">4</span></div><div class="c item magic">✦<span class="lv">3</span></div>
+      </div>
+      <p class="bcap" style="margin-top:8px;">(the ⚔ Lv1 that was here was the lowest active tile → consumed for the S-tile)</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

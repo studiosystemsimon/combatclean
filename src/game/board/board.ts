@@ -9,3 +9,25 @@ export const makeGenerator = (id: number, genId: string, level = 1): BoardGenera
 export const firstEmptyIndex = (board: BoardCell[]) => board.indexOf(null);
 export const isBoardFull = (board: BoardCell[]) => board.indexOf(null) === -1;
 export const withCell = (board: BoardCell[], index: number, value: BoardCell): BoardCell[] => { const next = board.slice(); next[index] = value; return next; };
+
+// Where a newly-ADDED tile should land: prefer any EMPTY cell; if the board is full, replace the
+// LOWEST-TIER ACTIVE tile — an UNLOCKED item (never a generator, never a cobwebbed/locked tile).
+// Returns -1 only when the board is full of nothing but generators + cobwebs (nothing replaceable).
+// Shared by the special-order S-tile drop AND the zone-win generator addition.
+export const addTileIndex = (board: BoardCell[]): number => {
+  const empty = board.indexOf(null);
+  if (empty !== -1) return empty;
+  let best = -1, bestLevel = Infinity;
+  for (let i = 0; i < board.length; i++) {
+    const c = board[i];
+    if (c && c.kind === 'item' && !c.locked && c.level < bestLevel) { bestLevel = c.level; best = i; }
+  }
+  return best;
+};
+
+// Add a tile via addTileIndex (empty → else replace the lowest-tier active item). Returns the board
+// unchanged when nothing is replaceable (board full of generators + cobwebs).
+export const addTileToBoard = (board: BoardCell[], tile: BoardCell): BoardCell[] => {
+  const i = addTileIndex(board);
+  return i < 0 ? board : withCell(board, i, tile);
+};

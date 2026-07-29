@@ -97,6 +97,13 @@
   .trow .trm { background:#3a3d42; border:1px solid var(--line); color:#cbd0d6; border-radius:5px; padding:4px 8px; cursor:pointer; }
   .addOutline { background:#343841; color:#e7e9ec; border:1px dashed var(--line); border-radius:6px; padding:6px 10px; cursor:pointer; width:100%; }
   .modal-card .mf { padding:0 16px 14px; color:#7f868d; font-size:11px; }
+  .vgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px 16px; }
+  .vcell { position:relative; aspect-ratio:1/1; background:#0e0f12; border:2px solid #2a2d33; border-radius:10px; overflow:hidden; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .vcell:hover { border-color:#4db6ff; }
+  .vcell img { width:100%; height:100%; object-fit:contain; }
+  .vcell .vspin { color:#5a6069; font-size:22px; }
+  .vcell .vpick { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(77,182,255,.18); color:#eaf5ff; font-weight:700; font-size:13px; }
+  .vcell:hover .vpick { display:flex; }
   #gameSize:not([hidden]) { display:flex; flex-direction:column; align-items:center; gap:8px; margin-left:28px; align-self:center; }
   #gameSize .cmb-chip { position:relative; width:72px; height:54px; display:flex; align-items:center; justify-content:center;
                         background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/10px 10px; border-radius:4px; }
@@ -221,6 +228,18 @@
        background: repeating-conic-gradient(#2a2c30 0% 25%, #303339 0% 50%) 50%/14px 14px; }
 
   #status { position:fixed; bottom:14px; right:16px; background:#111; color:#8f8; padding:8px 12px; border-radius:6px; opacity:0; transition:opacity .2s; max-width:60vw; }
+  #regenQueue { position:fixed; bottom:52px; right:16px; width:280px; display:flex; flex-direction:column; gap:6px; z-index:60; }
+  #regenQueue .rq { background:#15171b; border:1px solid #2a2d33; border-radius:8px; padding:7px 9px; box-shadow:0 4px 14px rgba(0,0,0,.4); font-size:12px; color:#cfd3d8; }
+  #regenQueue .rqh { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  #regenQueue .rql { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #regenQueue .rqx { cursor:pointer; color:#8a9099; border:0; background:transparent; font-size:14px; line-height:1; padding:0 2px; }
+  #regenQueue .rqx:hover { color:#ff6b6b; }
+  #regenQueue .rqbar { height:6px; border-radius:3px; background:#2a2d33; overflow:hidden; }
+  #regenQueue .rqfill { height:100%; width:0; background:linear-gradient(90deg,#37d67a,#4db6ff); transition:width .3s; }
+  #regenQueue .rq.queued .rqfill { background:#5a6069; }
+  #regenQueue .rq.error  .rqfill { background:#ff6b6b; }
+  #regenQueue .rq.done   .rqfill { background:#37d67a; }
+  #regenQueue .rqs { font-size:10px; color:#8a9099; margin-top:3px; }
   #status.show { opacity:1; }
 </style>
 </head>
@@ -258,10 +277,13 @@
         <button id="undo">Undo point</button>
         <button id="clear">Clear points</button>
         <button id="save">Save</button>
+        <button id="flipH" title="Mirror the source image left–right (at source)">⇋ Flip H</button>
+        <button id="flipV" title="Mirror the source image top–bottom (at source)">⇅ Flip V</button>
         <button id="clipCur">Clip current</button>
         <button class="primary" id="clipAll">Clip all</button>
         <button id="delBtn" title="Delete this character + all its assets">Delete</button>
         <button id="regenChk" disabled title="Regenerate the ticked entries in this category">Regen checked</button>
+        <button id="regenx6" title="Generate 6 variations of this tile and pick one">Regenerate ×6</button>
       </div>
       <div id="hint">In <b>Source</b> view, click any area whose <b>internal fill needs removing</b>
         (e.g. a bow window). Click a point again to delete it. <b>0 points = default outer trim.</b>
@@ -347,6 +369,14 @@
     </div>
   </div>
 
+  <div id="variantsModal" class="modal" hidden>
+    <div class="modal-card" style="width:min(92vw,880px)">
+      <div class="mh"><span id="vHead">Generating 6 variations…</span><button id="vClose">✕</button></div>
+      <div id="vGrid" class="vgrid"></div>
+      <div class="mf">Click a variation to keep it as this tile's source.</div>
+    </div>
+  </div>
+
   <div id="treatModal" class="modal" hidden>
     <div class="modal-card">
       <div class="mh"><span>Treatment — outlines stroked after sizing (top = innermost)</span><button id="treatClose">✕</button></div>
@@ -365,6 +395,7 @@
   </div>
 
   <div id="status"></div>
+  <div id="regenQueue"></div>
 
 <script>
 const state = { cats:[], items:[], meta:{}, idx:0, zoom:1, natural:{w:0,h:0}, view:'source', ver:1, tab:'trim', group:'',
@@ -853,6 +884,20 @@ document.getElementById('clear').onclick=()=>{ const rec=(state.meta[cur().key] 
 document.getElementById('save').onclick=()=>save();
 document.getElementById('clipCur').onclick=()=>clip('current');
 document.getElementById('clipAll').onclick=()=>clip('all');
+async function flip(axis){
+  if(!cur()){ toast('Nothing selected'); return; }
+  const it=cur();
+  const btns=document.querySelectorAll('#bar button'); btns.forEach(b=>b.disabled=true);
+  toast('Flipping '+it.name+' '+(axis==='h'?'↔':'↕')+' …');
+  try{
+    const res=await fetch('/api/flip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cat:it.cat,name:it.name,axis})});
+    const j=await res.json();
+    toast(j.ok?('✓ flipped '+((j.flipped&&j.flipped.length)||1)+' file(s)'):('✗ '+(j.error||'failed')));
+    if(j.ok){ state.ver++; setView(state.view); }
+  }catch(e){ toast('✗ '+e); } finally{ btns.forEach(b=>b.disabled=false); } }
+document.getElementById('flipH').onclick=()=>flip('h');
+document.getElementById('flipV').onclick=()=>flip('v');
 document.getElementById('delBtn').onclick=async ()=>{
   if(!state.items.length) return;
   const it=cur(), slug=it.name.replace(/\.png$/i,'');
@@ -1029,27 +1074,101 @@ async function regenChecked(){
   startRegen(cat, slugs, '');
 }
 async function startRegen(category, slugs, overrides){
-  toast('Regenerating '+(slugs?slugs.length+' in ':'all of ')+category+'…');
   try{
     const res=await fetch('/api/regen',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({category, slugs, overrides:overrides||''})});
     const j=await res.json();
-    if(!j.started){ toast('✗ '+(j.error||'regen failed to start')); return; }
-    pollRegen();
+    if(!j.ok){ toast('✗ '+(j.error||'regen failed to start')); return; }
+    toast('Queued '+(j.label||category));
+    startQueuePoll();
   }catch(e){ toast('✗ regen error: '+e); }
 }
-async function pollRegen(){
-  try{
-    const j=await (await fetch('/api/regen-status')).json();
-    if(j.done){
-      state.ver++; state.checked.clear(); await refreshList();
-      toast(j.returncode===0 ? ('✓ regen done: '+(j.label||'')) : '✗ regen failed (see console)');
-      if(j.returncode!==0) console.log('[regen]\n'+(j.log||''));
-      return;
-    }
-  }catch(e){}
-  setTimeout(pollRegen, 3000);
+/* ---------- regen QUEUE: progress bars in the bottom-right, queue more, cancel with ✕ ---------- */
+let _qPoll=null, _qSeen=new Set();
+function startQueuePoll(){ if(!_qPoll) pollQueue(); }
+async function pollQueue(){
+  _qPoll=null;
+  let jobs=[];
+  try{ jobs=((await (await fetch('/api/regen-queue')).json()).jobs)||[]; }catch(e){}
+  renderQueue(jobs);
+  const ids=new Set(jobs.map(j=>j.id));
+  let finished=false; for(const id of _qSeen){ if(!ids.has(id)) finished=true; }
+  _qSeen=ids;
+  if(finished){ state.ver++; state.checked.clear(); await refreshList(); }   // a job cleared → show fresh art
+  if(jobs.length){ _qPoll=setTimeout(pollQueue, 800); }
 }
+function renderQueue(jobs){
+  const box=document.getElementById('regenQueue'); if(!box) return;
+  box.innerHTML='';
+  for(const j of jobs){
+    const pct=Math.round((j.progress||0)*100);
+    const row=document.createElement('div'); row.className='rq '+j.status;
+    const stat = j.status==='queued' ? 'queued'
+               : j.status==='done'   ? 'done ✓'
+               : j.status==='error'  ? 'error ✗'
+               : `${j.done}/${j.total} · ${pct}%`;
+    row.innerHTML=`<div class="rqh"><span class="rql">${j.label}</span><button class="rqx" title="Cancel / dismiss">✕</button></div>
+      <div class="rqbar"><div class="rqfill" style="width:${pct}%"></div></div>
+      <div class="rqs">${stat}</div>`;
+    row.querySelector('.rqx').onclick=()=>cancelRegen(j.id);
+    box.appendChild(row);
+  }
+}
+async function cancelRegen(id){
+  try{ await fetch('/api/regen-cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}); }catch(e){}
+  pollQueue();
+}
+startQueuePoll();   // pick up any jobs already running (e.g. after a page reload)
+
+/* ---------- Regenerate ×6: generate 6 variations, pick a favourite from a popup ---------- */
+let _vSession=0;
+document.getElementById('regenx6').onclick=regenX6;
+async function regenX6(){
+  if(!cur()){ toast('Nothing selected'); return; }
+  const it=cur(), slug=it.name.replace(/\.png$/i,'');
+  if(!isRosterCat(it.cat)){ toast('×6 works on merge / enemy tiles'); return; }
+  const N=6;
+  try{
+    const j=await (await fetch('/api/regen-variants',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({category:it.cat, slug, n:N, overrides:''})})).json();
+    if(!j.ok){ toast('✗ '+(j.error||'failed to start')); return; }
+  }catch(e){ toast('✗ '+e); return; }
+  openVariants(it.cat, slug, N);
+}
+function openVariants(cat, slug, n){
+  _vSession=(_vSession+1);
+  const grid=document.getElementById('vGrid'); grid.innerHTML='';
+  for(let i=1;i<=n;i++){ const c=document.createElement('div'); c.className='vcell'; c.id='vcell-'+i;
+    c.innerHTML='<div class="vspin">…</div>'; grid.appendChild(c); }
+  document.getElementById('vHead').textContent='Generating '+n+' variations…';
+  document.getElementById('variantsModal').hidden=false;
+  pollVariants(cat, slug, n, _vSession);
+}
+async function pollVariants(cat, slug, n, session){
+  if(session!==_vSession) return;                         // a newer run superseded this poll
+  let s=null; try{ s=await (await fetch('/api/variants-status')).json(); }catch(e){}
+  if(s){
+    for(const i of (s.ready||[])){
+      const cell=document.getElementById('vcell-'+i);
+      if(cell && !cell.dataset.loaded){ cell.dataset.loaded='1';
+        cell.innerHTML=`<img src="/variant/${slug}/${i}.png?s=${session}"><div class="vpick">Keep #${i}</div>`;
+        cell.onclick=()=>pickVariant(cat, slug, i);
+      }
+    }
+    document.getElementById('vHead').textContent = s.status==='done' ? 'Pick your favourite' : `Generating… ${s.done}/${s.total}`;
+    if(s.status==='running'){ setTimeout(()=>pollVariants(cat,slug,n,session), 1000); return; }
+  } else { setTimeout(()=>pollVariants(cat,slug,n,session), 1000); return; }
+}
+async function pickVariant(cat, slug, index){
+  try{
+    const j=await (await fetch('/api/variants-pick',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({category:cat, slug, index})})).json();
+    if(j.ok){ document.getElementById('variantsModal').hidden=true; _vSession++; state.ver++; setView('source'); toast('✓ kept variation #'+index); }
+    else toast('✗ '+(j.error||'pick failed'));
+  }catch(e){ toast('✗ '+e); }
+}
+document.getElementById('vClose').onclick=()=>{ document.getElementById('variantsModal').hidden=true; _vSession++;
+  fetch('/api/variants-cancel',{method:'POST'}).catch(()=>{}); };
 document.getElementById('regenChk').onclick=regenChecked;
 function makeJobCard(slug){
   let card=document.getElementById('job-'+slug);
