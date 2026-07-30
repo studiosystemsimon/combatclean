@@ -48,6 +48,9 @@ export const shellHandlers: Record<string, (state: S, action: Act) => S> = {
     const pendingAfk = state.pendingAfk ? sumAfk(state.pendingAfk, add) : add;
     return { ...state, pendingAfk, now: action.now };
   },
+  [A.SET_FLAG]: (state, action) =>
+    // Set a persisted feature/FTUE flag (e.g. the FTUE flips `specialOrders` on to unlock special orders).
+    ({ ...state, flags: { ...state.flags, [action.flag]: action.value } }),
   [A.REGEN_TICK]: (state, action) =>
     ({ ...state, energy: Energy.regen(state.energy, action.now), now: action.now }),
   [A.RESET_GAME]: (_state, action) => initState(action.now),

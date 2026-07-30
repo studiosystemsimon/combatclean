@@ -22,7 +22,7 @@ export function pickPersistable(state: any) {
     ordersCompleted: state.ordersCompleted, orders: state.orders, pity: state.pity,
     nextId: state.nextId, nextCid: state.nextCid, battle: { level: state.battle.level },
     clearedLevel: state.clearedLevel, replayReturn: state.replayReturn, crystals: state.crystals, pendingAfk: state.pendingAfk,
-    unlockedGenerators: state.unlockedGenerators,
+    unlockedGenerators: state.unlockedGenerators, flags: state.flags,
     lastSeen: state.now,
   };
 }
@@ -50,7 +50,7 @@ export function toBlob(slice: any): ClientAccountView {
     resources, unlocks: [], items,
     profile: {
       order: slice.order, ordersCompleted: slice.ordersCompleted, pity: slice.pity,
-      unlockedGenerators: slice.unlockedGenerators,
+      unlockedGenerators: slice.unlockedGenerators, flags: slice.flags,
       clearedLevel: slice.clearedLevel, replayReturn: slice.replayReturn, pendingAfk: slice.pendingAfk, screen: slice.screen,
       nextId: slice.nextId, nextCid: slice.nextCid, lastSeen: slice.lastSeen,
       energyLastRegenAt: slice.energy.lastRegenAt,
@@ -81,6 +81,7 @@ export function fromBlob(blob: ClientAccountView): any {
     clearedLevel: p.clearedLevel != null ? p.clearedLevel : Math.max(0, (p.furthestLevel || 1) - 1),
     replayReturn: p.replayReturn ?? null, crystals, pendingAfk: p.pendingAfk || null, lastSeen: p.lastSeen,
     unlockedGenerators: p.unlockedGenerators, // may be undefined for old saves → initState backfills from clearedLevel
+    flags: p.flags || {}, // persisted feature/FTUE flags (special-orders unlock, etc.); old saves → none set
   };
 }
 

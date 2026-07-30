@@ -417,7 +417,8 @@ export default function Board() {
           const o = boardRef.current[over];
           if (o === null) actions.moveOrMerge(d.from, over); // relocate → reconcile FLIPs it
           else if (pair(src, o)) slamMerge(o);               // two same-level generators → next level
-          else { snapBack(d); invalid(over); }
+          else if (o.kind === 'item' && o.locked) { snapBack(d); invalid(over); } // cobweb: immovable
+          else actions.moveOrMerge(d.from, over);            // swap generator ↔ tile / other generator → reconcile FLIP
         } else {
           snapBack(d);
         }

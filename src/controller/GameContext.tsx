@@ -108,6 +108,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       dispatch({ type: A.FINISH_MINIGAME, reward: outcome.reward, source: 'minigame' });
     },
     closeReward: () => dispatch({ type: A.CLOSE_REWARD }),
+    // Set a persisted feature/FTUE flag (e.g. the FTUE calls setFlag('specialOrders', true) to unlock special orders).
+    setFlag: (flag: string, value = true) => dispatch({ type: A.SET_FLAG, flag, value }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
     // Start a zone from its first room: (re)spawn that level on the zone-intro cinematic, then show the
     // merge screen (combat panel on top plays the intro; board below).

@@ -47,7 +47,12 @@ export const boardHandlers: Record<string, (state: S, action: Act) => S> = {
         const fx = [...state.fx, { id: id++, type: 'merge', tier: a.level + 1 }]; // shared merge burst + haptic
         return { ...state, board, nextId: id, fx };
       }
-      return state; // occupied by a non-mergeable cell → no-op (view snaps the generator back)
+      // Otherwise SWAP: a generator can switch places with the target — a tile, or a generator that
+      // ISN'T a same-level mergeable twin (that case merged above). A cobweb (locked) item stays
+      // immovable, matching the item-drag rule below — it's freed only by merging a matching tile.
+      if (b.kind === 'item' && b.locked) return state;
+      let board = Board.withCell(state.board, to, a); board = Board.withCell(board, from, b);
+      return { ...state, board };
     }
     if (a.kind !== 'item') return state;
     if (a.locked) return state;

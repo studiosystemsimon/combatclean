@@ -82,7 +82,7 @@
   window.addEventListener('resize', resize);
 
   // ── perspective lane projection: d = depth, 0 = near (bottom), 1 = far (horizon) ──
-  const HZ=0.16, GB=0.94, NH=0.46, FH=0.33, FS=0.74;   // long runway (fills most of the screen) + very gentle taper
+  const HZ=0.16, GB=0.94, NH=0.52, FH=0.38, FS=0.74;   // long runway + wider lane (fills the screen better) + very gentle taper
   const projY = (d)=> H*GB - d*(H*GB - H*HZ);
   const halfW = (d)=> W*(NH + (FH-NH)*d);
   const projX = (lx,d)=> W/2 + lx*halfW(d);
@@ -98,8 +98,8 @@
     all.forEach(([k,s])=>{ const im=new Image(); im.onload=im.onerror=()=>{ if(++done===n) cb(); }; im.src=s; if(k.startsWith('foe'))FOES.push(im); else IMG[k]=im; }); }
 
   // ── tunables ──
-  const CFG={ ease:0.22, fireMs:230, bulletSpd:1.05, runSpeed:0.22,   // ONE run speed → path, foes, gates, drops move together
-    renderCap:60, squadStart:8, memberW:30, gatePairMs:3000, bossHp:460, bossAt:6, distRate:9, fireJit:0.05,
+  const CFG={ ease:0.22, fireMs:230, bulletSpd:1.05, runSpeed:0.15,   // ONE (slower) run speed → path, foes, gates, drops move together
+    renderCap:60, squadStart:8, memberW:30, gatePairMs:4800, bossHp:460, bossAt:5, bossSize:200, distRate:9, fireJit:0.05,
     sniperSpeed:0.42, sniperCd:2.7, aimMs:1.15, beamHalfW:0.11, fireFlashMs:0.24 };   // back-row sniper: patrols, telegraphs a column, then blasts it
 
   // formation: a GEOMETRIC concentric-ring disc — regular, symmetric hex-ish rings at constant spacing.
@@ -115,7 +115,9 @@
 
   const rand=(a,b)=>a+Math.random()*(b-a);
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-  function burst(x,y,color,n,spd){ for(let i=0;i<n;i++){ const a=rand(0,6.28),s=rand(spd*.3,spd); state.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.7),t:0,color,r:rand(2,4)}); } }
+  function burst(x,y,color,n,spd){ for(let i=0;i<n;i++){ const a=rand(0,6.28),s=rand(spd*.3,spd); state.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.7),t:0,color,r:rand(2,4),g:1}); } }
+  // tight, crisp hit-flash (froggame-style): a few small white sparks — short life, low spread, NO gravity — that pop right at impact and vanish
+  function hitFlash(x,y){ for(let i=0;i<4;i++){ const a=rand(0,6.28),s=rand(8,38); state.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.07,.14),t:0,color:'#fff',r:rand(1.2,2.3),g:0}); } }
   function floatText(x,y,txt,color,big){ state.floats.push({x,y,txt,color,t:0,life:big?1.1:.8,big}); }
 
   // ── input ──
@@ -129,7 +131,10 @@
   // ── spawns ──
   function spawnGatePair(){
     state.gatePairs++;
-    const good=()=>{ const r=Math.random(); return r<0.45?{type:'mul',val:2}:(r<0.6?{type:'mul',val:3}:{type:'add',val:[5,8,10,15][Math.floor(Math.random()*4)]}); };
+    const good=()=>{ const r=Math.random();   // mostly + gates, only the occasional × multiplier
+      if(r<0.82) return {type:'add', val:[5,8,10,12,15][Math.floor(Math.random()*5)]};
+      if(r<0.94) return {type:'mul', val:2};
+      return {type:'mul', val:3}; };
     // two options; occasionally one is a red trap (subtract) to force a real choice
     let L=good(), R=good();
     if(Math.random()<0.35){ if(Math.random()<0.5) L={type:'sub',val:[4,6,8][Math.floor(Math.random()*3)]}; else R={type:'sub',val:[4,6,8][Math.floor(Math.random()*3)]}; }
@@ -141,7 +146,8 @@
     for(let i=0;i<n;i++){ const hp=3+Math.floor(state.dist/90)+Math.floor(rand(0,3));
       state.foes.push({ lane:rand(-.8,.8), d:1+rand(0,0.25), img:FOES[Math.floor(rand(0,FOES.length))], hp, maxHp:hp, sz:rand(52,64), hitT:0, swayT:rand(0,6.28), sway:rand(0,0.12) }); }
   }
-  function spawnBoss(){ state.boss={ lane:0, d:0.66, hp:CFG.bossHp, maxHp:CFG.bossHp, hitT:0, dir:1, t:0 }; state.snipers.length=0; $('bossbar').classList.add('show'); shake=Math.max(shake,9);
+  function spawnBoss(){ state.boss={ lane:0, d:0.66, hp:CFG.bossHp, maxHp:CFG.bossHp, hitT:0, dir:1, t:0 }; while(state.snipers.length<2) spawnSniper();   // two snipers harass you all through the boss fight
+    $('bossbar').classList.add('show'); shake=Math.max(shake,9);
     floatText(W/2,H*0.34,'⚔ BOSS ⚔','#ffd9a0',true); }
   // landmine: a hazard that rolls in with an AoE reticule; on reaching the crowd it detonates and
   // destroys every hero (leader + allies) inside its blast circle — steer the crowd out of it.
@@ -194,7 +200,7 @@
       spawnGatePair();
       setTimeout(()=>{ if(running&&!state.boss) spawnFoeCluster(); }, 1100);
       if(state.gatePairs>=2 && Math.random()<0.7) setTimeout(()=>{ if(running&&!state.boss) spawnMine(); }, 1900);
-      if((state.gatePairs===2 || state.gatePairs===4) && state.snipers.length<2) setTimeout(()=>{ if(running&&!state.boss) spawnSniper(); }, 700);
+      if(state.gatePairs===3 && state.snipers.length===0) setTimeout(()=>{ if(running&&!state.boss) spawnSniper(); }, 700);   // one mid-run warm-up sniper; the boss adds the 2nd
     }
   }
 
@@ -238,9 +244,12 @@
       // hit foes
       let hit=false;
       for(let j=state.foes.length-1;j>=0;j--){ const f=state.foes[j];
-        if(Math.abs(f.lane-b.lane)<0.09 && Math.abs(f.d-b.d)<0.05){ f.hp--; f.hitT=0.12; hit=true; const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#fff',2,90);
+        if(Math.abs(f.lane-b.lane)<0.09 && Math.abs(f.d-b.d)<0.05){ f.hp--; f.hitT=0.12; hit=true; hitFlash(projX(f.lane,f.d),projY(f.d));
           if(f.hp<=0){ killFoe(f); state.foes.splice(j,1); } break; } }
-      if(!hit && state.boss){ const bo=state.boss; if(Math.abs(bo.lane-b.lane)<0.42 && Math.abs(bo.d-b.d)<0.16){ bo.hp--; bo.hitT=0.06; hit=true; const x=projX(b.lane,b.d),y=projY(b.d); burst(x,y,'#fff',2,90); if(bo.hp<=0) bossDie(); } }
+      // boss: a CIRCULAR hit zone centred on the body (screen space), not a wide flat band
+      if(!hit && state.boss){ const bo=state.boss; const bs=CFG.bossSize*scaleAt(bo.d), bx=projX(bo.lane,bo.d), by=projY(bo.d)-bs*0.35, br=bs*0.42;
+        const px=projX(b.lane,b.d),py=projY(b.d);
+          if((px-bx)*(px-bx)+(py-by)*(py-by) < br*br){ bo.hp--; bo.hitT=0.06; hit=true; hitFlash(px,py); if(bo.hp<=0) bossDie(); } }
       if(hit) state.bullets.splice(i,1);
     }
     // gates approach
@@ -273,7 +282,7 @@
         const x=projX(dp.lane,D_CROWD),y=projY(D_CROWD); burst(x,y,dp.kind==='coin'?'#ffcf4a':'#7ad0ff',6,120); state.drops.splice(i,1); continue; }
       if(dp.d<-0.05) state.drops.splice(i,1); }
     // particles / floats
-    for(let i=state.parts.length-1;i>=0;i--){ const q=state.parts[i]; q.t+=dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.vy+=180*dt; if(q.t>=q.life)state.parts.splice(i,1); }
+    for(let i=state.parts.length-1;i>=0;i--){ const q=state.parts[i]; q.t+=dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.vy+=180*(q.g??1)*dt; if(q.t>=q.life)state.parts.splice(i,1); }
     for(let i=state.floats.length-1;i>=0;i--){ const fl=state.floats[i]; fl.t+=dt; fl.y-=30*dt; if(fl.t>=fl.life)state.floats.splice(i,1); }
     if(shake>0) shake=Math.max(0,shake-dt*60);
   }
@@ -294,7 +303,11 @@
   function drawLane(){
     // sky / distant backdrop above the horizon
     const bi=IMG.bg; const hy=projY(1);
-    if(bi&&bi.complete){ ctx.drawImage(bi,0,0,W,hy+40); } else { ctx.fillStyle='#12281f'; ctx.fillRect(0,0,W,hy); }
+    if(bi&&bi.complete){ // COVER-fit the backdrop into the sky band, preserving aspect (no stretch)
+      ctx.save(); ctx.beginPath(); ctx.rect(0,0,W,hy+40); ctx.clip();
+      const th=hy+40, sc=Math.max(W/bi.width, th/bi.height), dw=bi.width*sc, dh=bi.height*sc;
+      ctx.drawImage(bi,(W-dw)/2,(th-dh)/2,dw,dh); ctx.restore();
+    } else { ctx.fillStyle='#12281f'; ctx.fillRect(0,0,W,hy); }
     ctx.fillStyle='rgba(6,12,10,.45)'; ctx.fillRect(0,0,W,hy+40);
     // lane trapezoid
     ctx.beginPath(); ctx.moveTo(projX(-1,0),projY(0)); ctx.lineTo(projX(1,0),projY(0)); ctx.lineTo(projX(1,1),projY(1)); ctx.lineTo(projX(-1,1),projY(1)); ctx.closePath();
@@ -375,7 +388,7 @@
       else if(w.kind==='foe'){ const f=w.f; drawImgC(f.img,projX(f.lane,f.d),projY(f.d)-f.sz*scaleAt(f.d)*0.35,f.sz*scaleAt(f.d),f.sz*scaleAt(f.d),f.hitT); }
       else if(w.kind==='sniper'){ const sn=w.sn; const s=70*scaleAt(sn.d); const glow=Math.max(sn.phase==='aim'?(1-sn.aimT/CFG.aimMs)*0.4:0, sn.flash>0?sn.flash*5:0); drawImgC(IMG.sniper,projX(sn.lane,sn.d),projY(sn.d)-s*0.35,s,s,glow); }
       else if(w.kind==='drop'){ const dp=w.dp; const im=dp.kind==='coin'?IMG.coin:IMG.gem; const s=26*scaleAt(dp.d); if(im&&im.complete)ctx.drawImage(im,projX(dp.lane,dp.d)-s/2,projY(dp.d)-s/2,s,s); }
-      else { const bo=state.boss; const s=150*scaleAt(bo.d); drawImgC(IMG.boss,projX(bo.lane,bo.d),projY(bo.d)-s*0.35,s,s,bo.hitT); }
+      else { const bo=state.boss; const s=CFG.bossSize*scaleAt(bo.d); drawImgC(IMG.boss,projX(bo.lane,bo.d),projY(bo.d)-s*0.35,s,s,bo.hitT); }
     }
     // bullets (near-ish, over world)
     for(const b of state.bullets){ bolt(projX(b.lane,b.d),projY(b.d),3.2*scaleAt(b.d)+0.6,'#ffd45e'); }

@@ -91,7 +91,8 @@ export const initState = (now: number, saved: any = null): S => {
   const startWeights = Map.zoneForLevel(C.BATTLE.startLevel).orderRarity;
   const eligibleChains = orderChainsFor(unlockedGenerators);
   const orders: any[] = [];
-  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains));
+  // Special orders are LOCKED at boot (allowSpecial=false) — the FTUE flips flags.specialOrders on later.
+  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains, null, null, false));
 
   const built = buildBattle(heroes, gear, order, ordersCompleted, C.BATTLE.startLevel, id, 'intro');
   id = built.nextId;
@@ -112,6 +113,7 @@ export const initState = (now: number, saved: any = null): S => {
     minigame: null, // UI-only: active minigame { id, input } (full screen; engine runs headless), null when none (unpersisted)
     rewardPopup: null, // UI-only: { reward, source } shown after a minigame/server reward, null when none (unpersisted)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
+    flags: {}, // persisted feature/FTUE flags (e.g. flags.specialOrders gates special orders; set during the FTUE)
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
     replayReturn: null, // level to warp back to after finishing a REPLAYED earlier zone (null = normal progression)
   };

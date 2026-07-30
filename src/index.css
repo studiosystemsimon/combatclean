@@ -178,7 +178,8 @@ body {
 .bar.normal span { background: var(--blue); }
 /* Limit fill — glossy gold gradient + glow (matches docs/mockups/battle-dramatic.html,
    the approved combat design; live had drifted to a flat-gold sliver). */
-.bar.limit span { background: linear-gradient(180deg, #ffe89a, var(--gold)); box-shadow: 0 0 6px rgba(255, 212, 94, 0.6); }
+/* Limit bar: PURPLE while charging; the ready state (.lb-btn.ready span, below) overrides to the charged gold. */
+.bar.limit span { background: linear-gradient(180deg, #d9b3ff, #b46bff); box-shadow: 0 0 6px rgba(180, 107, 255, 0.6); }
 
 /* Per-hero limit break — the gold bar becomes a tap button when charged. */
 /* Limit bar/button: a clean block bar. display:block + font-size:0 removes the
