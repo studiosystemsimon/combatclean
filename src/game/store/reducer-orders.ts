@@ -51,7 +51,10 @@ export const ordersHandlers: Record<string, (state: S, action: Act) => S> = {
     const gid = id++;
     const zoneItems = Map.itemsForLevel(state.battle.level);
     let g: any = null;
-    if (zoneItems.length && rng() < C.UNIQUE_DROP.chance) g = Gear.makeUnique(String(gid), zoneItems[Math.floor(rng() * zoneItems.length)], rng);
+    // FTUE forced reward (the scripted "good armour" second order): a fixed SLOT + rarity, deterministic
+    // (skips the unique roll). `forceSlot` is set on the order in initState; normal orders never carry it.
+    if (order.forceSlot) g = Gear.rollGearInSlot(String(gid), order.forceSlot, order.rarity || Gear.chestRarityForDifficulty(order.difficulty), rng);
+    if (!g && zoneItems.length && rng() < C.UNIQUE_DROP.chance) g = Gear.makeUnique(String(gid), zoneItems[Math.floor(rng() * zoneItems.length)], rng);
     if (!g) g = Gear.rollGear(String(gid), order.rarity || Gear.chestRarityForDifficulty(order.difficulty), rng);
     const gear = { ...state.gear, [gid]: g };
     const orders = state.orders.map((o: any) => (o.id === order.id ? { ...order, fulfilling: true } : o));

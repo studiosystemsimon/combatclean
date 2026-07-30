@@ -20,5 +20,6 @@
 			"mult": 4
 		}
 	},
-	"classKey": "sorceress"
+	"classKey": "sorceress",
+	"flying": true
 }

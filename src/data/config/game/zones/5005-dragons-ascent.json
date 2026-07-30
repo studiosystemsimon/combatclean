@@ -25,5 +25,11 @@
 		4024,
 		4025,
 		4026
+	],
+	"rewardGenerators": [
+		{
+			"level": 1,
+			"generatorKey": "range"
+		}
 	]
 }

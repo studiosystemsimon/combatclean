@@ -20,5 +20,6 @@
 			"mult": 3
 		}
 	},
-	"classKey": "gunslinger"
+	"classKey": "gunslinger",
+	"flying": true
 }

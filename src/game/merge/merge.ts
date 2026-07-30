@@ -17,6 +17,7 @@ export const canMergeSpecial = (a: BoardCell, b: BoardCell) =>
   !!a && !!b && a.kind === 'item' && b.kind === 'item' && !!a.special && !!b.special;
 
 // Generators merge the same way merge items do: two same-generator, same-level tiles (below the
-// generator's max level) combine into one of the next level. Generators are 1-based (1..maxGenLevel).
+// generator's max level) combine into one of the next level. Generators are 0-based (0..maxGenLevel),
+// mirroring item tiers.
 export const canMergeGenerator = (a: BoardCell, b: BoardCell) =>
   !!a && !!b && a.kind === 'generator' && b.kind === 'generator' && a.genId === b.genId && a.level === b.level && a.level < maxGenLevel(a.genId);

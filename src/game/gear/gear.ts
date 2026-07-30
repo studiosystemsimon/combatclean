@@ -54,6 +54,23 @@ export const rollGear = (id: string, rarity: string, rng: Rng): GearItem => {
   return { id, pieceId, slot: def.slot, rarity: instRarity, level: 1, base, equippedTo: null };
 };
 
+// Scripted grant (e.g. the FTUE's forced second-order reward): roll a piece constrained to a specific
+// SLOT — otherwise identical to rollGear (rarity floor + per-piece maxRarity cap + power spread). Falls
+// back to a generic roll if the slot has no eligible (non-unique, non-class-bound) piece.
+export const rollGearInSlot = (id: string, slot: string, rarity: string, rng: Rng): GearItem => {
+  const rar = C.GEAR_RARITY[rarity] ? rarity : 'common';
+  const rIdx = Math.max(0, C.GEAR_RARITY_ORDER.indexOf(rar));
+  const pool = Object.keys(C.GEAR_PIECES).filter((pid) => C.GEAR_PIECES[pid].slot === slot && !C.GEAR_PIECES[pid].unique && !C.GEAR_PIECES[pid].classKey);
+  if (!pool.length) return rollGear(id, rarity, rng);
+  const eligible = pool.filter((pid) => C.GEAR_RARITY_ORDER.indexOf(C.GEAR_PIECES[pid].maxRarity) >= rIdx);
+  const pieceId = (eligible.length ? eligible : pool)[Math.floor(rng() * (eligible.length ? eligible.length : pool.length))];
+  const def = C.GEAR_PIECES[pieceId];
+  const capIdx = C.GEAR_RARITY_ORDER.indexOf(def.maxRarity);
+  const instRarity = C.GEAR_RARITY_ORDER[Math.min(rIdx, capIdx)];
+  const base = C.GEAR_GEN.basePower + rIdx * C.GEAR_GEN.perTier + randInt(0, C.GEAR_GEN.powerSpread, rng);
+  return { id, pieceId, slot: def.slot, rarity: instRarity, level: 1, base, equippedTo: null };
+};
+
 export const makeUnique = (id: string, pieceId: string, rng: Rng): GearItem | null => {
   const def = C.GEAR_PIECES[pieceId];
   if (!def || !def.unique) return null;

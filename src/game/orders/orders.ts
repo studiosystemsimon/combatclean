@@ -70,13 +70,16 @@ export const canFulfill = (board: BoardCell[], order: Order) => findMatchCells(b
 // (instead of sliding away) before it's removed. Does not mutate state.
 export const displayOrders = (orders: Order[], board: BoardCell[]): Order[] => {
   const rank = (r: string) => C.GEAR_RARITY_ORDER.indexOf(r);
-  const lead: Order[] = [], special: Order[] = [], standard: Order[] = [], pending: Order[] = [];
+  // Stacking, generic by order TYPE: [completable] [special] [limit] [standard] [pending].
+  const lead: Order[] = [], special: Order[] = [], limit: Order[] = [], standard: Order[] = [], pending: Order[] = [];
   for (const o of orders) {
-    if (o.pending) pending.push(o);
-    else if (o.fulfilling || canFulfill(board, o)) lead.push(o); // completable (incl. mid-completion + completable specials)
-    else if (orderReward(o) === 'special') special.push(o);
-    else standard.push(o);
+    if (o.pending) { pending.push(o); continue; }
+    if (o.fulfilling || canFulfill(board, o)) { lead.push(o); continue; } // completable (any reward type)
+    const r = orderReward(o);
+    if (r === 'special') special.push(o);
+    else if (r === 'potion') limit.push(o); // limit-POTION orders
+    else standard.push(o); // gear (default)
   }
   lead.sort((a, b) => rank(b.rarity) - rank(a.rarity));
-  return [...lead, ...special, ...standard, ...pending];
+  return [...lead, ...special, ...limit, ...standard, ...pending];
 };

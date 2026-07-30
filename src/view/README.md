@@ -10,7 +10,7 @@
   currency-pickup, counter-tween, chest-smash, hero-fx, intro/cinematic, `perf-probe`), driven by
   subscribing to `GameSignals`.
 - **`hooks/`** — view-only React hooks (`useScrollShadows`). **`combat/vsm/`** — per-entity visual
-  config (its own README).
+  config (its own README). **`ftue/`** — the detachable first-run coachmark layer (its own README).
 
 **Signals** — consumes `GameSignals` (`world.bus`) ↓; reads state via the controller. Never
 dispatches game signals.

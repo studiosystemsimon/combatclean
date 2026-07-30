@@ -176,25 +176,45 @@ body {
 }
 
 .bar.normal span { background: var(--blue); }
-/* Limit fill — glossy gold gradient + glow (matches docs/mockups/battle-dramatic.html,
-   the approved combat design; live had drifted to a flat-gold sliver). */
-/* Limit bar: PURPLE while charging; the ready state (.lb-btn.ready span, below) overrides to the charged gold. */
-.bar.limit span { background: linear-gradient(180deg, #d9b3ff, #b46bff); box-shadow: 0 0 6px rgba(180, 107, 255, 0.6); }
+/* Limit bar: PURPLE while CHARGING — a live energy fill (a bright band flows along it while it
+   pulses brighter/darker, to make you want to fill it). YELLOW/gold when FULL (.lb-btn.charged). */
+.bar.limit span { background: linear-gradient(90deg, #6a2cff, #b46bff, #ecd6ff, #b46bff, #6a2cff); background-size: 200% 100%;
+  animation: limitFlow 2.2s linear infinite, limitChargeGlow 1.5s ease-in-out infinite; }
+@keyframes limitFlow { from { background-position: 0% 0; } to { background-position: -200% 0; } }
+@keyframes limitChargeGlow { 0%, 100% { filter: brightness(.92) saturate(1); } 50% { filter: brightness(1.22) saturate(1.15); } }
 
-/* Per-hero limit break — the gold bar becomes a tap button when charged. */
-/* Limit bar/button: a clean block bar. display:block + font-size:0 removes the
-   <button> text baseline (was nudging the fill), overflow:visible lets the 💥 poke
-   above without being clipped by .bar's overflow:hidden. The gold fill span keeps
-   its own border-radius so corners stay rounded. */
-.lb-btn { height: 12px; border: none; margin: 0; padding: 0; position: relative; cursor: default;
+/* Per-hero limit break — the bar becomes a LIMIT tap button when full. display:block + font-size:0
+   removes the <button> text baseline; overflow:visible lets the pulse + the emitted blobs poke past
+   .bar's overflow:hidden. */
+.lb-btn { height: 16px; border: none; margin: 0; padding: 0; position: relative; cursor: default;
   display: block; overflow: visible; font-size: 0; line-height: 0; }
-.lb-btn.ready { cursor: pointer; box-shadow: 0 0 8px 1px rgba(255, 212, 94, 0.85); animation: lbpulse 1s ease-in-out infinite; }
-/* Ready fill sweeps a bright shine (reuses the pearlScroll keyframe = mockup's `shine`). */
-.lb-btn.ready span { background: linear-gradient(90deg, #fff6d5, #ffd45e, #fff6d5); background-size: 200% auto; animation: pearlScroll 1.2s linear infinite; }
-.lb-flash { position: absolute; right: -2px; top: -11px; font-size: 13px; line-height: 1; font-style: normal; pointer-events: none; }
-@keyframes lbpulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 94, 0.5); }
-  50% { box-shadow: 0 0 14px 3px rgba(255, 212, 94, 0.95); }
+/* FULL (charged) → gold fill + a SHARP scale pulse (a quick pop every 2s), in OR out of combat. */
+.lb-btn.charged { transform-origin: center; animation: lbPop 2s ease-in-out infinite; }
+.lb-btn.charged span { background: linear-gradient(180deg, #ffe89a, #ffcf45 55%, #e7a91f); animation: none; }
+/* In-combat + charged (canFire) → tappable. */
+.lb-btn.ready { cursor: pointer; }
+/* SHARP pulse: a quick pop in the first ~18%, then hold for the rest of the 2s. */
+@keyframes lbPop { 0% { transform: scale(1); } 5% { transform: scale(1.15); } 18% { transform: scale(1); } 100% { transform: scale(1); } }
+
+/* The LIMIT badge — WHITE italic caps with a thick OUTER black outline, centred on the gold bar; the
+   label wipes in horizontally when full. Black blobs (JS) emit from either side + scale to 0. */
+.lb-label { display: none; position: absolute; top: 0; bottom: 0; left: 50%; width: max-content; padding: 0 3px;
+  align-items: center; justify-content: center; pointer-events: none; transform: translateX(-50%); }
+.lb-btn.charged .lb-label { display: flex; animation: lbLabelIn 300ms cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+@keyframes lbLabelIn { from { transform: translateX(-50%) scaleX(0); } to { transform: translateX(-50%) scaleX(1); } }
+.lb-track { position: relative; z-index: 1; white-space: nowrap; color: #fff;
+  font-family: 'Uniform Bold', system-ui, sans-serif; font-weight: 900; font-style: italic; font-size: 13px; line-height: 1; letter-spacing: 0;
+  /* OUTER-ONLY black outline — an even 2px ring (12 samples every 30° at radius 2px, gap-free). */
+  text-shadow: 2px 0 0 #000, 1.73px 1px 0 #000, 1px 1.73px 0 #000, 0 2px 0 #000, -1px 1.73px 0 #000, -1.73px 1px 0 #000, -2px 0 0 #000, -1.73px -1px 0 #000, -1px -1.73px 0 #000, 0 -2px 0 #000, 1px -1.73px 0 #000, 1.73px -1px 0 #000; }
+/* Blob emitters sit on the horizontal centre line, just inside each end of the badge. */
+.lb-emit { position: absolute; top: 50%; width: 0; height: 0; z-index: 0; }
+.lb-emit-l { left: 5px; } .lb-emit-r { right: 5px; }
+/* Blob size/margin are set in JS from limitCharge.badge.blobPx (data-driven); this holds only the look. */
+.lb-blob { position: absolute; left: 0; top: 0; border-radius: 50%; background: #0c0c0f; will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .bar.limit span { animation: none; }
+  .lb-btn.charged { animation: none; }
+  .lb-btn.charged .lb-label { animation: none; }
 }
 
 .lose-banner {
@@ -1499,8 +1519,14 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 /* HP bars: ENEMY = thick RED · HERO = thinner GREEN + gold edge (tell apart at a glance) */
 .bar.hp.enemy { height: 4px; }
 .bar.hp.enemy .hp-fill { background: #ff3b46; }
-.hero-chip .bar.hp { height: 3px; box-shadow: inset 0 0 0 1px rgba(255, 212, 94, 0.7); }
-.hero-chip .bar.hp .hp-fill { background: #46d06a; }
+/* Hero HP + ability read as ONE joined block: rounded OUTER corners (1.5px = half the 3px bar
+   radius), SQUARE joint corners (HP bottom / ability top), a 1px black divider between them. */
+.hero-chip .bar.hp { height: 6px; box-shadow: inset 0 0 0 1px rgba(255, 212, 94, 0.7); border-radius: 1.5px 1.5px 0 0; }
+.hero-chip .bar.hp .hp-ghost, .hero-chip .bar.hp .hp-fill, .hero-chip .bar.hp .hp-white { border-radius: 1.5px 1.5px 0 0; }
+.hero-chip .bar.hp .hp-fill { background: linear-gradient(90deg, #23906a, #46d06a); } /* darker/bluer green → green, L→R */
+/* Low HP (frac < hpbar.lowFrac, toggled in HpBar.jsx) → the hero HP fill goes red and flashes red↔pink. */
+.hero-chip .bar.hp.low .hp-fill { animation: hpFlash .55s ease-in-out infinite; }
+@keyframes hpFlash { 0%, 100% { background: #ff2d3f; } 50% { background: #ff96a4; } }
 
 /* Damage numbers: enemy-hit = BIG RED · hero-hit = smaller GOLD (dwell in FxLayer keyframes) */
 .dmg.enemy { font-size: 20px; color: #ff5d6c; text-shadow: 0 0 10px rgba(255, 60, 80, 0.95), 0 2px 2px #000; }
@@ -1518,8 +1544,12 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .level-track .dots { justify-content: space-around; }
 .ldot.current::after { inset: -5px; }
 
-/* Hero charge: normal = THIN blue vs limit = thick gold button (differentiate at a glance) */
-.hero-chip .bar.normal { height: 3px; }
+/* Hero ability (special) bar = bottom half of the joined block: pulled flush up under HP (cancels the
+   .chip 3px gap) with a 1px black divider; SQUARE top corners, rounded bottom; blue→teal fill. */
+/* z-index:4 lifts the ability bar + its 1px black top-divider ABOVE the HP fill layers (ghost/fill/
+   white sit at z 1-3 in the chip's stacking context), so the divider isn't hidden by the green fill. */
+.hero-chip .bar.normal { height: 2px; margin-top: -3px; box-shadow: 0 -1px 0 0 #000; border-radius: 0 0 1.5px 1.5px; position: relative; z-index: 4; }
+.hero-chip .bar.normal span { border-radius: 0 0 1.5px 1.5px; background: linear-gradient(90deg, var(--blue), #5fe3d1); } /* blue → teal, L→R */
 
 /* Boss telegraph text: big YELLOW + black outline (flash timing handled in FxLayer) */
 .boss-warn { font-size: 32px; color: #ffe23a; text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 2px 4px #000, 0 0 14px rgba(255, 200, 40, 0.85); }
@@ -1859,7 +1889,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .intro-layer .intro-title { font-family: 'Uniform Bold', sans-serif; font-weight: 900; line-height: .96; margin: 2px 0; color: #fff; text-shadow: 0 4px 18px rgba(0,0,0,.8); }
 .intro-layer .intro-sub { font-family: 'Uniform Condensed Bold', sans-serif; font-size: 12.5px; opacity: 0; color: #cdd8f4; text-shadow: 0 2px 3px #000; margin-top: 3px; }
 .intro-layer .lvl-word { font-family: 'Uniform Condensed Bold', sans-serif; font-size: 15px; letter-spacing: 6px; color: #fff; opacity: .9; }
-.intro-layer .lvl-num { font-size: 62px; letter-spacing: -1px; background: linear-gradient(180deg,#fff6d5,var(--gold) 70%,#ff9f45); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 3px 0 #5a3a00) drop-shadow(0 6px 16px rgba(255,180,40,.5)); }
+.intro-layer .lvl-num { font-size: 62px; letter-spacing: -1px; background: linear-gradient(180deg,#fff6d5,var(--gold) 70%,#ff9f45); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; text-shadow: none; filter: drop-shadow(0 3px 0 #5a3a00) drop-shadow(0 6px 16px rgba(255,180,40,.5)); }
 .intro-layer .area-name { font-size: 32px; letter-spacing: 1px; background: linear-gradient(180deg,#fff, color-mix(in srgb, var(--biome-accent,#fff) 45%, #fff)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 3px 12px rgba(0,0,0,.7)); }
 .intro-layer .area-art { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; -webkit-mask-image: linear-gradient(180deg,#000 55%,transparent); mask-image: linear-gradient(180deg,#000 55%,transparent); }
 .intro-layer .area-wash { position: absolute; inset: 0; opacity: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--biome-accent,#5ad17a) 30%, transparent), transparent 60%); }

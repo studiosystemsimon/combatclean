@@ -85,7 +85,19 @@
 <div class="wrap">
   <h1>Combat Clean — FTUE concept map &amp; teaching order</h1>
   <p class="sub">Every teachable system, and the order to introduce them, weighted by excitement · criticality · ease · understanding-unlock.</p>
-  <span class="tag">PLANNING DOC · not wired</span>
+  <span class="tag" style="color:#8affc4;border-color:#5ad17a55;background:#5ad17a12">PARTLY SHIPPED — the core opening + the L5 gacha→Alchemist tail are live; the rest is roadmap</span>
+
+  <div class="note" style="margin-top:12px;border-color:#5ad17a44">
+    <b style="color:#8affc4">✓ Shipped (v1):</b> a coachmark run in <code>src/view/ftue/beats.js</code> — auto-battle watch → forge →
+    merge → deliver the LIMIT POTION → unleash the limit break, then at <b>level 5</b> the gacha nudge → free predetermined
+    <b>Alchemist</b> pull (battle-ready, <b>auto-returns to combat</b>) → a <b>combat-paused</b> "its limit hits EVERY enemy"
+    explain → forced AOE limit use → a <b>combat-paused</b> gear-up nudge → a <b>"hire another" cue at the boss gate</b>, plus a
+    reactive <b>combat-paused first-loss</b> lesson ("EQUIP best gear + LEVEL to the max"). Sim overrides: forced opening orders
+    (<b>[0]</b> Limit Potion, <b>[1]</b> a good <b>epic armour</b> piece) and <b>special orders suppressed until
+    <code>specialsUnlockAtLevel</code></b> (default 8). Beats are <b>advisory cards gated on observable state</b> (not the
+    input-masking gates described below). The remaining phases (energy nudge, map, AFK, hero/gear, ascension, cobweb, crystals,
+    special-order minigame) are the roadmap — designed, not yet wired.
+  </div>
 
   <h2><span class="n">§</span>How the order was chosen</h2>
   <p class="lead">The sequence balances four forces. Teach <b>early</b> when a concept scores high on all four; teach <b>late</b> when it's
@@ -203,9 +215,9 @@
     <div class="step">
       <div class="idx">10</div>
       <div class="body">
-        <div class="name">Summon heroes (gacha) <span class="sys">Gacha</span></div>
-        <div class="moment">Spend your saved coins on a pull — full reveal cinematic, a new hero joins the squad.</div>
-        <div class="why"><b>Why here:</b> the biggest single excitement spike in the game and the main power lever, but it needs a currency balance + a reason (power wall) to feel meaningful. Introduce rarities alongside the reveal.</div>
+        <div class="name">Summon heroes (gacha) — the LEVEL-5 Alchemist pull <span class="sys">Gacha</span> <span style="font-size:10px;color:#8affc4">SHIPPED</span></div>
+        <div class="moment"><b>Fires on reaching level 5</b> ("things are getting tough — hire another hero"), filling the post-keystone lull: the FTUE nudges the player to Summon. The <b>first pull is predetermined</b> — the <b>Alchemist</b> (<code>2020</code>), granted free and arriving <b>battle-ready</b> (full limit); the player may then pull more (coins).</div>
+        <div class="why"><b>Why here:</b> a big excitement spike + the main power lever, dropped exactly where the guided run had gone quiet. The Alchemist is chosen for its <code>aoe ×4</code> limit — a DISTINCT second archetype vs the knight's burst — which sets up the very next beats: a <b>combat-paused</b> explain of the AOE, then a forced "unleash it to clear the screen" use, then a gear-up nudge. Rarities are introduced alongside the reveal. <b>Shipped:</b> forced-HERO pull path in <code>SUMMON</code> gated on <code>flags.ftueFirstPull</code>, armed at <code>summonAtLevel</code>.</div>
         <div class="pills"><span class="pill hi">🎇 5</span><span class="pill">🎯 <b>4</b></span><span class="pill">🧩 <b>4</b></span><span class="pill">🔓 <b>3</b></span><span class="teach t-active">active coachmark</span></div>
       </div>
     </div>
@@ -324,6 +336,25 @@
       <tr><td class="rank">19</td><td>Special order → minigame</td><td class="c"><span class="score s5">5</span></td><td class="c"><span class="score s1">1</span></td><td class="c"><span class="score s3">3</span></td><td class="c"><span class="score s2">2</span></td><td>defer</td></tr>
     </tbody>
   </table>
+
+  <h2><span class="n">§</span>Zone 1 · enemies per level</h2>
+  <p class="lead">Zone 1 = <b>levels 1–10</b> (<code>bossEvery=10</code>; the 10th is the boss). The predetermined summon fires on reaching <b>L5</b> (not the boss gate). Enemy counts are a <b>hand-authored onboarding ramp</b>, not the default formula: L1 &amp; L2 each introduce a <b>single, distinct enemy</b>, then it climbs to 5 before the boss. Node types still theme stats/rewards (elite tougher, rest softer, treasure 2.2×). <b>Shipped:</b> <code>buildWave</code> applies these authored <code>zoneEnemyCounts</code> (overriding the formula — which would give 3,3,3,3,3,4,2,4,4 — AND the rest count-cap) + the pinned L1/L2 <code>firstEnemies</code> whenever <code>flags.ftueActive</code>.</p>
+  <table>
+    <thead><tr><th>Level</th><th>Node</th><th class="c">Enemies</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>combat</td><td class="c">1</td><td>single enemy — teach one at a time</td></tr>
+      <tr><td>2</td><td>combat</td><td class="c">1</td><td>a different single enemy</td></tr>
+      <tr><td>3</td><td>treasure</td><td class="c">2</td><td>2.2× rewards</td></tr>
+      <tr><td>4</td><td>combat</td><td class="c">2</td><td></td></tr>
+      <tr><td>5</td><td>elite</td><td class="c">3</td><td>×1.5 HP / ×1.25 ATK — the <b>gacha→Alchemist</b> summon nudge fires on reaching this level</td></tr>
+      <tr><td>6</td><td>combat</td><td class="c">3</td><td></td></tr>
+      <tr><td>7</td><td>rest</td><td class="c">3</td><td>×0.6 HP/ATK — softer</td></tr>
+      <tr><td>8</td><td>treasure</td><td class="c">4</td><td>2.2× rewards</td></tr>
+      <tr><td>9</td><td>combat</td><td class="c">5</td><td>last before the boss</td></tr>
+      <tr><td class="rank">10</td><td class="rank">BOSS</td><td class="c rank">3</td><td>boss + 2 accomplices</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="margin-top:6px"><b>24 enemies across levels 1–9</b> (+ the boss trio) — authored counts, overriding the formula + the rest count-cap.</p>
 
   <h2><span class="n">§</span>Full concept inventory (by system)</h2>
   <p class="lead">The complete surface a player eventually meets — including small mechanics folded into the beats above.</p>

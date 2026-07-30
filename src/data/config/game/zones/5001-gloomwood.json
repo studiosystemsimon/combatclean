@@ -28,5 +28,11 @@
 		4012,
 		4013,
 		4014
+	],
+	"rewardGenerators": [
+		{
+			"level": 0,
+			"generatorKey": "blade"
+		}
 	]
 }

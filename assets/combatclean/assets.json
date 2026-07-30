@@ -1174,14 +1174,22 @@
 			},
 			"rotation": -1
 		},
-		"gen.magic.1": {
+		"gen.magic.0": {
 			"type": "image",
-			"file": "gen/magic-1.png",
+			"file": "gen/magic-0.png",
 			"anchor": {
 				"x": 0.4793,
 				"y": 0.4622
 			},
 			"scale": 0.9
+		},
+		"gen.magic.1": {
+			"type": "image",
+			"file": "gen/magic-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			}
 		},
 		"gen.magic.2": {
 			"type": "image",
@@ -1189,29 +1197,21 @@
 			"anchor": {
 				"x": 0.5,
 				"y": 0.5
-			}
+			},
+			"scale": 1.1
 		},
 		"gen.magic.3": {
 			"type": "image",
 			"file": "gen/magic-3.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.1
-		},
-		"gen.magic.4": {
-			"type": "image",
-			"file": "gen/magic-4.png",
 			"anchor": {
 				"x": 0.4983,
 				"y": 0.5072
 			},
 			"scale": 1.1
 		},
-		"gen.magic.5": {
+		"gen.magic.4": {
 			"type": "image",
-			"file": "gen/magic-5.png",
+			"file": "gen/magic-4.png",
 			"anchor": {
 				"x": 0.502,
 				"y": 0.5076
@@ -1294,14 +1294,23 @@
 			"scale": 1.1,
 			"rotation": 1
 		},
-		"gen.blade.1": {
+		"gen.blade.0": {
 			"type": "image",
-			"file": "gen/blade-1.png",
+			"file": "gen/blade-0.png",
 			"anchor": {
 				"x": 0.5054,
 				"y": 0.4117
 			},
 			"scale": 0.85
+		},
+		"gen.blade.1": {
+			"type": "image",
+			"file": "gen/blade-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.05
 		},
 		"gen.blade.2": {
 			"type": "image",
@@ -1310,7 +1319,7 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 1.05
+			"scale": 1.1
 		},
 		"gen.blade.3": {
 			"type": "image",
@@ -1319,20 +1328,11 @@
 				"x": 0.5,
 				"y": 0.5
 			},
-			"scale": 1.1
+			"scale": 1.15
 		},
 		"gen.blade.4": {
 			"type": "image",
 			"file": "gen/blade-4.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.15
-		},
-		"gen.blade.5": {
-			"type": "image",
-			"file": "gen/blade-5.png",
 			"anchor": {
 				"x": 0.4981,
 				"y": 0.5047
@@ -1419,45 +1419,45 @@
 			"scale": 1.35,
 			"rotation": -23
 		},
-		"gen.range.1": {
+		"gen.range.0": {
 			"type": "image",
-			"file": "gen/range-1.png",
+			"file": "gen/range-0.png",
 			"anchor": {
 				"x": 0.5022,
 				"y": 0.4269
 			},
 			"scale": 1.05
 		},
-		"gen.range.2": {
+		"gen.range.1": {
 			"type": "image",
-			"file": "gen/range-2.png",
+			"file": "gen/range-1.png",
 			"anchor": {
 				"x": 0.4981,
 				"y": 0.4409
 			},
 			"scale": 1.1
 		},
-		"gen.range.3": {
+		"gen.range.2": {
 			"type": "image",
-			"file": "gen/range-3.png",
+			"file": "gen/range-2.png",
 			"anchor": {
 				"x": 0.4976,
 				"y": 0.4784
 			},
 			"scale": 1.2
 		},
-		"gen.range.4": {
+		"gen.range.3": {
 			"type": "image",
-			"file": "gen/range-4.png",
+			"file": "gen/range-3.png",
 			"anchor": {
 				"x": 0.5001,
 				"y": 0.4707
 			},
 			"scale": 1.2
 		},
-		"gen.range.5": {
+		"gen.range.4": {
 			"type": "image",
-			"file": "gen/range-5.png",
+			"file": "gen/range-4.png",
 			"anchor": {
 				"x": 0.5015,
 				"y": 0.4857
@@ -1471,6 +1471,15 @@
 				"x": 0.5267,
 				"y": 0.9377
 			}
+		},
+		"special.0": {
+			"type": "image",
+			"file": "merge/special-0.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.0
 		}
 	}
 }

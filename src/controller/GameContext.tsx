@@ -44,6 +44,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const id = setInterval(() => {
       const s = stateRef.current;
       if (s.afkOpen) return; // the AFK collect popup is the one surface that freezes the sim
+      if (s.flags && s.flags.ftuePaused) return; // FTUE: a pausing coachmark beat freezes combat while it explains
       // Full screens / background mode keep ticking regardless of tab visibility (seamless resume).
       if (engineHeadless(s)) { dispatch({ type: A.BATTLE_TICK, dt: C.BATTLE.tickMs }); return; }
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
@@ -77,11 +78,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [state.battle.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Persist (throttled) with a guaranteed TRAILING save + an unmount flush, so the LATEST state is never
+  // dropped. The old leading-edge-only throttle lost the last <persistThrottleMs of updates (e.g. a hero
+  // level-up) when a reload / Vite-HMR remount landed before the next state change triggered a save.
   const lastSaveRef = useRef(0);
+  const trailingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const t = Date.now();
-    if (t - lastSaveRef.current >= C.RUNTIME.persistThrottleMs) { lastSaveRef.current = t; save(state); }
+    const due = C.RUNTIME.persistThrottleMs - (Date.now() - lastSaveRef.current);
+    if (due <= 0) { lastSaveRef.current = Date.now(); save(state); }
+    else { // within the throttle window — schedule a trailing save of the LATEST state (stateRef)
+      if (trailingRef.current) clearTimeout(trailingRef.current);
+      trailingRef.current = setTimeout(() => { lastSaveRef.current = Date.now(); trailingRef.current = null; save(stateRef.current); }, due);
+    }
   }, [state]);
+  // Flush the latest state on teardown (HMR remount / unmount) — pagehide does NOT fire on an HMR swap.
+  useEffect(() => () => { if (trailingRef.current) clearTimeout(trailingRef.current); save(stateRef.current); }, []);
 
   useEffect(() => {
     const flush = () => save(stateRef.current);

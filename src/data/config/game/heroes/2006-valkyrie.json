@@ -20,5 +20,6 @@
 			"mult": 3.5
 		}
 	},
-	"classKey": "valkyrie"
+	"classKey": "valkyrie",
+	"flying": true
 }

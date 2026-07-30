@@ -18,6 +18,7 @@ import { zEnemyConfig } from './schemas/enemies.ts';
 import { zGearPieceConfig } from './schemas/gearPieces.ts';
 import { zZoneConfig } from './schemas/zones.ts';
 import { zBannerConfig } from './schemas/banners.ts';
+import { zFtueConfig } from './schemas/ftue.ts';
 import {
   zBoardConfig, zEnergyConfig, zBattleConfig, zHeroCombatConfig, zLevelScalingConfig, zNodeConfig,
   zAfkConfig, zCrystalDropConfig, zUniqueDropConfig, zProgressionConfig, zOrdersConfig,
@@ -63,4 +64,5 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'singleton', name: 'anim', schema: zAnimConfig },
   { kind: 'singleton', name: 'minigame', schema: zMinigameConfig },
   { kind: 'singleton', name: 'gearLoadout', schema: zGearLoadoutConfig },
+  { kind: 'singleton', name: 'ftue', schema: zFtueConfig },
 ];

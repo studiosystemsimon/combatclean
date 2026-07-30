@@ -16,13 +16,33 @@ import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-c
 import { HEROES } from '../data/heroes.js'; // per-hero combatScale (in-combat avatar size) + name/asset
 import { GENERATORS } from '../data/generators.js'; // generator display name for the area-unlock card
 import { STRINGS } from '../data/strings.js';
-import { ANIM } from '../data/config.js';
+import { ANIM, VFX_CONFIG } from '../data/config.js';
 import { fmtK as fmt } from './fmt.js';
 import { displayFrac } from './fx/limit-fill.js';
 import { limitReadyPop } from './fx/limit-energy.js';
 
 const AB = ANIM.autobattler;
 const AC = ANIM.areaComplete;
+const LB_BADGE = VFX_CONFIG.combat.limitCharge.badge; // charged LIMIT-badge blob emitter tuning
+
+// Charged LIMIT badge: fling one black blob from `emitter` in direction `dir` (-1 left / +1 right).
+// Random angle in a ±badge.arcDeg/2 cone centred on horizontal (even up/down), dragging to a stop +
+// scaling to 0 (no fade). Size + distances + timing are data (VFX_CONFIG.combat.limitCharge.badge).
+function spawnLimitBlob(emitter, dir, b) {
+  const el = document.createElement('i');
+  el.className = 'lb-blob';
+  el.style.width = el.style.height = `${b.blobPx}px`;
+  el.style.margin = `${-b.blobPx / 2}px 0 0 ${-b.blobPx / 2}px`;
+  emitter.appendChild(el);
+  const ang = (Math.random() - 0.5) * (b.arcDeg * Math.PI / 180);
+  const dist = b.distMin + Math.random() * (b.distMax - b.distMin);
+  const dx = dir * Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+  el.style.transform = 'translate(0,0) scale(1)';
+  void el.offsetWidth; // commit the initial frame before transitioning
+  el.style.transition = `transform ${b.flyMs}ms ease-out`;
+  el.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0)`;
+  setTimeout(() => el.remove(), b.flyMs + 50);
+}
 
 // Reward count-up for the AREA CLEARED synopsis — ease-out cubic to the target over AC.countUpMs.
 function CountUp({ to }) {
@@ -78,6 +98,7 @@ function LimitBar({ h, canFire, onLimit }) {
   const ref = useRef(null);
   const trueRef = useRef(0);
   trueRef.current = limitChargeFrac(h);
+  const [charged, setCharged] = useState(false); // fill visually FULL → yellow (independent of canFire, so it stays yellow out of combat)
   useEffect(() => {
     const btn = ref.current;
     if (!btn) return undefined;
@@ -89,6 +110,7 @@ function LimitBar({ h, canFire, onLimit }) {
       const d = displayFrac(h.id, trueRef.current);
       if (span) span.style.width = `${Math.round(100 * d)}%`;
       const full = d >= 0.999;
+      setCharged(full); // yellow when full, purple otherwise — React bails when unchanged, so it re-renders only on the transition
       if (wasFull === null) { wasFull = full; return; }
       if (full && !wasFull) limitReadyPop(btn);
       wasFull = full;
@@ -96,17 +118,35 @@ function LimitBar({ h, canFire, onLimit }) {
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [h.id]);
+  // Charged LIMIT badge: emit black blobs from either side of the LIMIT text while the bar is full.
+  useEffect(() => {
+    if (!charged) return undefined;
+    const btn = ref.current;
+    if (!btn) return undefined;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const l = btn.querySelector('.lb-emit-l');
+    const r = btn.querySelector('.lb-emit-r');
+    const id = setInterval(() => {
+      if (l) spawnLimitBlob(l, -1, LB_BADGE);
+      if (r) spawnLimitBlob(r, 1, LB_BADGE);
+    }, LB_BADGE.emitMs);
+    return () => clearInterval(id);
+  }, [charged]);
   return (
     <button
       ref={ref}
       type="button"
-      className={`bar limit lb-btn ${canFire ? 'ready' : ''}`}
+      className={`bar limit lb-btn ${charged ? 'charged' : ''} ${canFire ? 'ready' : ''}`}
       disabled={!canFire}
       onClick={() => onLimit(h.id)}
       title="Limit Break"
     >
       <span className="lb-fill" style={{ width: `${Math.round(100 * limitChargeFrac(h))}%` }} />
-      {canFire && <em className="lb-flash">💥</em>}
+      <i className="lb-label">
+        <i className="lb-track">{STRINGS.combat.limitLabel}</i>
+        <b className="lb-emit lb-emit-l" />
+        <b className="lb-emit lb-emit-r" />
+      </i>
     </button>
   );
 }

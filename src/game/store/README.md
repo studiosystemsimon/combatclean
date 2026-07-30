@@ -25,4 +25,7 @@ latter two are re-exported from `reducer.ts` so the module's public surface (`re
 PRNG (`sim-random.ts`, seeded by the controller), time from action payloads (`now`). One action.type =
 one owning slice (no key collisions across the merged maps). Persistence is lossless:
 `fromBlob(toBlob(slice))` reproduces the slice `initState` expects (wallets→`resources`,
-heroes/gear→`items`, rest→`profile`/`features`). No hidden multipliers — all tuning via `content.ts`.
+heroes/gear→`items`, rest→`profile`/`features`). The `battle` is transient (rebuilt by `buildBattle` on
+load) EXCEPT the active squad's limit-break charge, persisted as `features.battle.limitEnergy` (cid→energy)
+and re-overlaid in `initState` — so a refresh keeps limit progress, while a switched-out hero (absent from
+the map) resets to 0. No hidden multipliers — all tuning via `content.ts`.

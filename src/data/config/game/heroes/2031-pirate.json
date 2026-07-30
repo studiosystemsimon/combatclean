@@ -20,5 +20,6 @@
 			"mult": 3
 		}
 	},
-	"classKey": "pirate"
+	"classKey": "pirate",
+	"flying": true
 }

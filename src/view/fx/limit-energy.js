@@ -15,20 +15,39 @@ import { VFX_CONFIG } from '../../data/config.js';
 const CC = VFX_CONFIG.combatColors;
 const CB = VFX_CONFIG.combat;
 
-// The in-game bar flash — combat.limitPulse: whole-bar brightness+scale peak AND a background-colour
-// pulse (the bar bed flashes) at the peak, ease-out. Fires on every mote landing (merge AND order).
+// A transient absolute overlay child of the limit bar (bar is position:relative, overflow:visible).
+function overlayChild(bar, css) {
+  const el = document.createElement('i');
+  el.style.cssText = 'position:absolute;inset:0;border-radius:inherit;pointer-events:none;' + css;
+  bar.appendChild(el);
+  return el;
+}
+
+// The in-game bar flash — combat.limitPulse. A dramatic, SHARP multi-layer pop fired as each
+// limit-energy mote lands (merge AND order): (C) sharp scale pop of the whole bar, (B) a sharp
+// whole-bar white flash, (A) a bright colour WIPE sweeping across, (D) an emitted white rectangular
+// shadow that scales out + fades. All params are data (_vfx.json → combat.limitPulse).
 export function pulseLimitBar(bar) {
   if (!bar || !bar.animate) return;
-  const lp = CB.limitPulse;
-  const rest = getComputedStyle(bar).backgroundColor; // flash back to the bar's own resting bg (no duplicated value)
+  const p = CB.limitPulse;
+  // C — SHARP scale pop: snaps to peak early, then settles.
   bar.animate(
-    [
-      { filter: 'brightness(1)', transform: 'scale(1)', backgroundColor: rest },
-      { filter: `brightness(${lp.brightness})`, transform: `scale(${lp.scale})`, backgroundColor: lp.bg, offset: lp.offset },
-      { filter: 'brightness(1)', transform: 'scale(1)', backgroundColor: rest },
-    ],
-    { duration: lp.ms, easing: 'ease-out' },
+    [{ transform: 'scale(1)', offset: 0 }, { transform: `scale(${p.scale})`, offset: p.scalePeak }, { transform: 'scale(1)', offset: 1 }],
+    { duration: p.ms, easing: 'cubic-bezier(.15,.9,.25,1)' },
   );
+  // B — whole-bar WHITE flash: sharp in, quick out.
+  const flash = overlayChild(bar, 'background:#fff;z-index:6;opacity:0;');
+  flash.animate([{ opacity: 0 }, { opacity: p.white, offset: p.whitePeak }, { opacity: 0 }], { duration: p.ms, easing: 'ease-out' }).onfinish = () => flash.remove();
+  // A — colour WIPE: a bright band sweeps left→right across the bar (clipped to the bar shape).
+  const clip = overlayChild(bar, 'overflow:hidden;z-index:7;');
+  const band = document.createElement('i');
+  band.style.cssText = `position:absolute;top:0;bottom:0;left:0;width:55%;background:linear-gradient(90deg,transparent,${p.wipeColor},transparent);`;
+  clip.appendChild(band);
+  band.animate([{ transform: 'translateX(-140%)' }, { transform: 'translateX(240%)' }], { duration: p.wipeMs, easing: 'ease-out' }).onfinish = () => clip.remove();
+  // D — emitted white rectangular shadow: a glowing rect scales OUT while fading to 0.
+  const g = p.ghost;
+  const ghost = overlayChild(bar, `background:transparent;box-shadow:0 0 10px 2px ${g.color};z-index:4;`);
+  ghost.animate([{ transform: 'scale(1,1)', opacity: g.opacity }, { transform: `scale(${g.sx},${g.sy})`, opacity: 0 }], { duration: g.ms, easing: 'ease-out' }).onfinish = () => ghost.remove();
 }
 
 // The READY pop — fired by LimitBar when a bar visually caps.
@@ -37,7 +56,7 @@ export function limitReadyPop(bar) {
   const r = CB.limitCharge.ready;
   const c = fx.elCenter(bar);
   if (c) {
-    fx.impact(c.x, c.y, { tier: 'heavy', color: CC.limitFlash, r: r.impactR });
+    fx.impact(c.x, c.y, { tier: 'heavy', color: CC.limitFlash, r: r.impactR, shake: false });
     fx.confetti(c.x, c.y, { colors: [CC.limitFlash, CC.limitBreak], count: r.sparkleCount, power: CB.limitCharge.sparklePower + 0.2 });
   }
   if (bar.animate) bar.animate(
@@ -49,8 +68,9 @@ export function limitReadyPop(bar) {
 // The arrival BOF explosion + the in-game bar flash.
 function bof(x, y, bar, off) {
   const lc = CB.limitCharge, baseR = lc.tier.impactR[off];
-  fx.impact(x, y, { tier: 'heavy', color: CC.limitFlash, r: baseR * lc.explode.rMul, debris: lc.explode.debris });
-  if (lc.explode.flash) fx.impact(x, y, { tier: 'normal', color: '#ffffff', r: baseR * lc.explode.rMul * 0.7 });
+  // shake:false — do NOT shake the fx canvas (it would jerk EVERY ribbon on it); the punch is the burst itself
+  fx.impact(x, y, { tier: 'heavy', color: CC.limitFlash, r: baseR * lc.explode.rMul, debris: lc.explode.debris, shake: false });
+  if (lc.explode.flash) fx.impact(x, y, { tier: 'normal', color: '#ffffff', r: baseR * lc.explode.rMul * 0.7, shake: false });
   fx.confetti(x, y, { colors: [CC.limitFlash, CC.limitBreak, '#ffffff'], count: lc.tier.sparkle[off], power: lc.sparklePower });
   pulseLimitBar(bar);
 }
@@ -87,7 +107,7 @@ export function runLimitEnergy(ev) {
         width: lc.trail.width * lc.tier.widthMul[off], length: lc.trail.length,
         speed: lc.trail.speed, r: lc.trail.r * lc.tier.rMul[off],
         headWidthMul: lc.trail.headWidthMul, tailWidthMul: lc.trail.tailWidthMul, fadePow: lc.trail.fadePow, fadePeak: lc.trail.fadePeak,
-        popOut: lc.popOut, accel: lc.accel, head: lc.head,
+        popOut: lc.popOut, accel: lc.accel, head: lc.head, start: lc.start,
         onHit: (x, y) => { bof(x, y, barEl, off); landLimit(hid); },
       });
     }, lc.launchDelay + i * lc.stagger); // stagger so each hero's mote reads distinctly (L→R sweep)

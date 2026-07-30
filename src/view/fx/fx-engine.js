@@ -322,6 +322,7 @@ class FxEngine {
       fadePow: opts.fadePow ?? 0.5, fadePeak: opts.fadePeak ?? 0.92,
       accel: MOTE_EASINGS[opts.accel] || MOTE_EASINGS.easeInCubic,
       headCfg: opts.head || { rMul: 2.6, pulseAmp: 0.4, pulseFreq: 7, growTo: 1.8 },
+      start: opts.start || { clearDist: 0, scale: 1, alpha: 1 },
       spine: [], lastX: null, lastY: null, maxAge: MOTE_MAX_AGE * ((opts.length || 26) / MOTE_LEN_REF),
       onHit: opts.onHit,
     });
@@ -345,6 +346,12 @@ class FxEngine {
         }
       }
       if (p.fired) p.fadeT += dt;
+      // Genesis ramp keyed to DISTANCE from the source (not time): the mote stays tiny + muted until it
+      // has physically cleared the tile (clearDist px away), then grows to full. Distance, because the
+      // ease-in accel barely moves the mote off the tile early, so a time-based ramp went full-size on it.
+      const stC = p.start; const sk0 = stC.clearDist > 0 ? Math.min(1, Math.hypot(p.x - p.from.x, p.y - p.from.y) / stC.clearDist) : 1;
+      const sk = sk0 * sk0; // ease-in: hold small until it's essentially clear, then grow
+      const sizeMul = stC.scale + (1 - stC.scale) * sk, alphaMul = stC.alpha + (1 - stC.alpha) * sk;
       const pts = p.spine, n = pts.length;
       if (n >= 2) {
         const nrm = []; // per-vertex normal (smooth taper, shared edges)
@@ -352,8 +359,8 @@ class FxEngine {
         const gF = p.fired ? Math.max(0, 1 - p.fadeT / p.maxAge) : 1; // time fade-out + width-collapse during the linger
         const tpos = (k) => (n - 1 - k) / (n - 1); // 0 at HEAD → 1 at TAIL (position ALONG the ribbon)
         const oX = (k) => (k === n - 1 ? 1 : nrm[k].x), oY = (k) => (k === n - 1 ? 0 : nrm[k].y); // head end = exactly horizontal edge
-        const hwAt = (k) => p.halfW * gF * lerp(p.headMul, p.tailMul, tpos(k));
-        const colAt = (t) => { const c = rampAt(p.ramp, t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak * Math.pow(1 - t, p.fadePow) * gF).toFixed(3)})`; };
+        const hwAt = (k) => p.halfW * gF * sizeMul * lerp(p.headMul, p.tailMul, tpos(k));
+        const colAt = (t) => { const c = rampAt(p.ramp, t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak * Math.pow(1 - t, p.fadePow) * gF * alphaMul).toFixed(3)})`; };
         // colour FOLLOWS THE CURVE: each segment is a trapezoid with a mini gradient between its two vertices' ramp colours
         for (let k = 1; k < n; k++) {
           const a = pts[k - 1], b = pts[k], ta = tpos(k - 1), tb = tpos(k), hwa = hwAt(k - 1), hwb = hwAt(k);
@@ -369,11 +376,10 @@ class FxEngine {
       }
       if (!p.fired) {
         const hc = p.headCfg; const grow = 1 + (hc.growTo - 1) * p.s; const pulse = 1 + hc.pulseAmp * Math.sin(p.u * hc.pulseFreq * Math.PI * 2);
-        const birth = hc.birthFrac > 0 ? Math.min(1, p.u / hc.birthFrac) : 1; // head grows 0→full so the source tile shows before the glow covers it
-        const headR = p.r * hc.rMul * grow * pulse * birth;
-        this._stampGlow(p.x, p.y, headR * 2.4, p.head, 0.9);
-        this._stampGlow(p.x, p.y, headR * 1.1, '#ffffff', 0.55);
-        ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9;
+        const headR = p.r * hc.rMul * grow * pulse * sizeMul; // small at start, grows to full over start.frac
+        this._stampGlow(p.x, p.y, headR * 2.4, p.head, 0.9 * alphaMul);
+        this._stampGlow(p.x, p.y, headR * 1.1, '#ffffff', 0.55 * alphaMul);
+        ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9 * alphaMul;
         ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, headR * 0.42), 0, Math.PI * 2); ctx.fill();
         ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
         if (p.u >= 1) { p.fired = true; if (p.onHit) p.onHit(p.to.x, p.to.y); } // head landed → linger + fade out

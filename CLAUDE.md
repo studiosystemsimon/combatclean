@@ -103,7 +103,7 @@ CLI, and the edit hook all read.
   each entry require CODE (a coded mechanic/enum the runtime switches on) → **key-kind**
   (`zKeyConfig`). Here: `chains`/`generators`/`rarities`/`gearSlots`/`heroClasses` are key-kind;
   `heroes`/`enemies`/`gearPieces`/`zones`/`banners`/`resources` are id-kind; `battle`/`energy`/
-  `progression`/`gearLoadout` (+ `minigame`) are singletons. **Hero-class = the logical `heroes` entry
+  `progression`/`gearLoadout`/`ftue` (+ `minigame`) are singletons. **Hero-class = the logical `heroes` entry
   (the stateless template: base stats/abilities + `classKey` + optional `slots` loadout); the stateful
   instance is `Character` on the account. Equip slots are per-class** (`heroes.slots` else
   `gearLoadout.defaultSlots`); a `classBound` slot (the class accessory) only accepts pieces whose
@@ -157,6 +157,7 @@ CLI, and the edit hook all read.
 | Preview | `src/preview` | Dev-only device-frame preview (phone bezel + device picker + safe-area overlay). Not gated by DI/signals — customize freely. |
 | Marksman | `src/marksman` | Dev-only markup/feedback overlay + capture endpoint (writes captures to `.cache/markdown/` for the changeset pipeline). Not gated by DI/signals — customize freely. |
 | Config editor | `src/config-editor` | Dev-only Vite endpoint backing `config-editor.html` — reads the registries + writes edits back through the real validator. |
+| FTUE | `src/view/ftue` + `ftue` singleton | First-time-user-experience as a DETACHABLE override+flag layer. Sim-side overrides in the `ftue` config singleton (`C.FTUE`: zone-1 enemy counts, first-order potion, predetermined `summonAtLevel`-5 pull) read through guarded hooks in `buildWave`/`initState`/`RESOLVE_WIN`/`SUMMON` + the `GameContext` battle tick (honours `flags.ftuePaused` for the Alchemist explain beat); the coachmark overlay is `src/view/ftue`. `enabledByDefault:false` (or clearing `flags.ftueActive`) makes the whole layer inert with zero gameplay impact. |
 | _<your module>_ | `src/game/<module>` | _<purpose>_ |
 
 **Skeleton modules this port does NOT use** (present in the framework skeleton; restore if you add

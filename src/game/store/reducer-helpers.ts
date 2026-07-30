@@ -28,7 +28,7 @@ export const orderChainsFor = (unlocked: string[]): string[] =>
 export const deriveUnlockedGenerators = (clearedLevel: number): string[] => {
   const set = new Set<string>(C.STARTING_GENERATORS);
   C.ZONES.forEach((z: any, i: number) => {
-    if (clearedLevel >= (i + 1) * C.ZONE_LEN) (z.unlocksGenerators || []).forEach((g: string) => set.add(g));
+    if (clearedLevel >= (i + 1) * C.ZONE_LEN) (z.rewardGenerators || []).forEach((r: { generatorKey: string }) => set.add(r.generatorKey));
   });
   return [...set];
 };
@@ -46,7 +46,7 @@ export const rescaleBattle = (battle: any, statsFn: any) => battle.heroes.map((b
 
 export const respawn = (state: S, level: number, id0: number) => {
   let id = id0;
-  const wave = Battle.buildWave(level, rng, () => id++);
+  const wave = Battle.buildWave(level, rng, () => id++, !!(state.flags && state.flags.ftueActive));
   const heroes = state.battle.heroes.map((h: any) => ({ ...h, hp: h.maxHp }));
   return { wave, heroes, id };
 };
@@ -66,10 +66,10 @@ export const rollWinCrystal = (level: number) => {
 export const addCrystal = (crystals: any, drop: any) => drop ? { ...crystals, [drop.rarity]: (crystals[drop.rarity] || 0) + drop.amount } : crystals;
 export const sumAfk = (a: any, b: any) => ({ ms: (a?.ms || 0) + (b?.ms || 0), coins: (a?.coins || 0) + (b?.coins || 0), heroXp: (a?.heroXp || 0) + (b?.heroXp || 0), gearXp: (a?.gearXp || 0) + (b?.gearXp || 0) });
 
-export const buildBattle = (heroes: any, gear: any, order: string[], ordersCompleted: number, level: number, startId: number, status = 'fighting') => {
+export const buildBattle = (heroes: any, gear: any, order: string[], ordersCompleted: number, level: number, startId: number, status = 'fighting', ftueActive = false) => {
   let id = startId;
   const statsFn = battleStatsFor(heroes, gear, ordersCompleted);
-  const wave = Battle.buildWave(level, rng, () => id++);
+  const wave = Battle.buildWave(level, rng, () => id++, ftueActive);
   const battle = { level, wave, heroes: Battle.buildHeroes(squadOf(order), statsFn), status, recovering: false, focusUid: null };
   return { battle, nextId: id };
 };
@@ -90,11 +90,25 @@ export const initState = (now: number, saved: any = null): S => {
 
   const startWeights = Map.zoneForLevel(C.BATTLE.startLevel).orderRarity;
   const eligibleChains = orderChainsFor(unlockedGenerators);
+  const ftueOn = !!(C.FTUE && C.FTUE.enabledByDefault);
   const orders: any[] = [];
-  // Special orders are LOCKED at boot (allowSpecial=false) — the FTUE flips flags.specialOrders on later.
-  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains, null, null, false));
+  // Special orders roll into the opening set normally — EXCEPT on a fresh FTUE run, where they stay
+  // suppressed until specialsUnlockAtLevel (see the flags below + the RESOLVE_WIN unlock).
+  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains, null, null, !ftueOn));
 
-  const built = buildBattle(heroes, gear, order, ordersCompleted, C.BATTLE.startLevel, id, 'intro');
+  // FTUE override layer (fresh save only): activate the guided run + force the OPENING TWO orders —
+  // [0] the keystone Limit Potion, [1] a good armour piece — whose requests = tiles the guided
+  // forge+merge makes. Inert when off.
+  if (ftueOn && C.FTUE && orders.length) {
+    const items0 = [{ chain: C.FTUE.firstOrderChain, level: C.FTUE.firstOrderTier }];
+    orders[0] = { id: orders[0].id, items: items0, difficulty: Orders.tileTotal(items0), rarity: orders[0].rarity, reward: C.FTUE.firstOrderReward };
+    if (orders.length > 1) {
+      const items1 = [{ chain: C.FTUE.secondOrderChain, level: C.FTUE.secondOrderTier }];
+      orders[1] = { id: orders[1].id, items: items1, difficulty: Orders.tileTotal(items1), rarity: C.FTUE.secondOrderGearRarity, reward: C.FTUE.secondOrderReward, forceSlot: C.FTUE.secondOrderGearSlot };
+    }
+  }
+
+  const built = buildBattle(heroes, gear, order, ordersCompleted, C.BATTLE.startLevel, id, 'intro', ftueOn);
   id = built.nextId;
 
   const pity: any = {};
@@ -113,7 +127,7 @@ export const initState = (now: number, saved: any = null): S => {
     minigame: null, // UI-only: active minigame { id, input } (full screen; engine runs headless), null when none (unpersisted)
     rewardPopup: null, // UI-only: { reward, source } shown after a minigame/server reward, null when none (unpersisted)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
-    flags: {}, // persisted feature/FTUE flags (e.g. flags.specialOrders gates special orders; set during the FTUE)
+    flags: ftueOn ? { ftueActive: true } : { specialOrders: true }, // FTUE run: specials locked until specialsUnlockAtLevel; non-FTUE: specials on from the start
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
     replayReturn: null, // level to warp back to after finishing a REPLAYED earlier zone (null = normal progression)
   };
@@ -121,8 +135,15 @@ export const initState = (now: number, saved: any = null): S => {
 
   const { lastSeen = now, ...savedRest } = saved;
   const merged = { ...fresh, ...savedRest, now, fx: [], lastPull: null };
+  // Non-FTUE (+ legacy) saves keep special orders on from the start; an FTUE save keeps its own
+  // specialOrders progress (unlocked later at specialsUnlockAtLevel) so a reload can't re-enable them early.
+  merged.flags = (saved.flags && saved.flags.ftueActive) ? { ...(merged.flags || {}) } : { ...(merged.flags || {}), specialOrders: true };
   const level = (saved.battle && saved.battle.level) || fresh.battle.level;
-  const rebuilt = buildBattle(merged.heroes, merged.gear, merged.order, merged.ordersCompleted, level, merged.nextId);
+  const rebuilt = buildBattle(merged.heroes, merged.gear, merged.order, merged.ordersCompleted, level, merged.nextId, 'fighting', !!(saved.flags && saved.flags.ftueActive));
+  // Restore the active squad's limit-break charge across a refresh (buildBattle rebuilds heroes at 0).
+  // Keyed by cid; a hero not in the saved map (e.g. switched out) stays at the fresh 0 — reset on swap-out.
+  const savedLimit = (saved.battle && saved.battle.limitEnergy) || {};
+  const rebuiltHeroes = rebuilt.battle.heroes.map((h: any) => (savedLimit[h.id] != null ? { ...h, limitEnergy: savedLimit[h.id] } : h));
   // Progression stream: highest level BEATEN (persistence migrates old furthestLevel→clearedLevel). Never
   // below the current fight − 1, so it survives a replay where battle.level is lower than the frontier.
   const clearedLevel = Math.max(saved.clearedLevel ?? 0, level - 1);
@@ -151,5 +172,5 @@ export const initState = (now: number, saved: any = null): S => {
     if (Array.isArray(o.items) && o.items.length) return o;
     return { id: o.id != null ? o.id : oid++, pending: true, dur: C.ORDER_CONFIG.arrivalMs };
   });
-  return { ...merged, battle: rebuilt.battle, nextId: oid, orders: reconciledOrders, clearedLevel, pendingAfk, afkOpen, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
+  return { ...merged, battle: { ...rebuilt.battle, heroes: rebuiltHeroes }, nextId: oid, orders: reconciledOrders, clearedLevel, pendingAfk, afkOpen, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
 };

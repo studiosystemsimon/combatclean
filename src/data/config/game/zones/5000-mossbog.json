@@ -29,7 +29,10 @@
 		4010,
 		4011
 	],
-	"unlocksGeneratorKeys": [
-		"magic"
+	"rewardGenerators": [
+		{
+			"level": 0,
+			"generatorKey": "magic"
+		}
 	]
 }

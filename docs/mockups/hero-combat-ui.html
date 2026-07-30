@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hero squad combat UI — mockup</title>
+<style>
+  /* The game's condensed face (used for the LIMIT carousel). No true "extra condensed"/italic face
+     exists, so it's synthesized-italic + scaleX-squeezed below. */
+  @font-face{ font-family:'Uniform Condensed Bold'; src:url('../../src/fonts/Uniform-Condensed-Bold.ttf') format('truetype'); font-display:swap; }
+  @font-face{ font-family:'Uniform Bold'; src:url('../../src/fonts/Uniform-Bold.ttf') format('truetype'); font-display:swap; }
+
+  /* Palette + bar/chip rules are COPIED VERBATIM from src/index.css so this reads 1:1 with the game. */
+  :root{
+    --ink:#eaf0ff; --dim:#9fb0d0; --gold:#ffd45e; --red:#ff5d6c; --blue:#5a8cff;
+    --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.10);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1000px 640px at 50% 0%, #26314f 0%, #0f1424 55%, #090c16 100%);
+    min-height:100vh; padding:26px 18px 70px; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:560px; margin:0 auto; }
+  h1{ font-size:18px; margin:0 0 4px; text-align:center; }
+  .tag{ display:block; text-align:center; font-size:10px; font-weight:800; letter-spacing:1px; color:var(--gold); margin:0 0 22px; }
+
+  .stage{ position:relative; height:210px; border-radius:16px; border:1px solid var(--line); overflow:hidden;
+    background:linear-gradient(180deg,#1a2136,#0d1120); display:flex; align-items:flex-end; justify-content:center; padding:0 8px 20px; }
+  .stage .ground{ position:absolute; left:0; right:0; bottom:0; height:64px; background:linear-gradient(180deg, transparent, rgba(0,0,0,.35)); }
+
+  /* The in-game hero SQUAD: a row of hero chips (avatar + HP / special / limit bars), bottom-aligned. */
+  .hero-row{ width:100%; display:flex; align-items:flex-end; justify-content:space-evenly; position:relative; z-index:1; }
+
+  /* ── chip (verbatim: .chip width 72, gap 3; hero chip-art bottom-anchored, overflow, bob) ── */
+  .chip{ width:72px; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; }
+  .chip-art{ width:100%; height:54px; display:flex; align-items:flex-end; justify-content:center; overflow:visible; }
+  /* Idle: FLYING classes hover (bob); GROUNDED classes just breathe (a very slight scale from the feet).
+     Driven by the hero-class `flying` flag (src/data/config/game/heroes/*.json → HEROES read-model). */
+  .hero-chip.flying .chip-art{ animation:heroBob 2.4s ease-in-out infinite; }
+  .hero-chip.grounded .chip-art{ transform-origin:center bottom; animation:heroBreathe 3.4s ease-in-out infinite; }
+  .chip-art img{ height:75.6px; width:auto; max-width:none; display:block; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  @keyframes heroBob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-4px);} }
+  @keyframes heroBreathe{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.022);} }
+
+  /* ── bars (verbatim) ── */
+  .bar{ width:100%; height:4px; border-radius:3px; background:rgba(0,0,0,.5); overflow:hidden; position:relative; }
+  .bar span{ display:block; height:100%; border-radius:3px; }
+  /* HP + special read as one block. Joint corners (HP bottom / special top) are SQUARE; the OUTER corners
+     (HP top / special bottom) are 1.5px (half the 3px bar radius); a 1px black line divides the two. */
+  .bar.hp, .bar.hp .hp-fill{ border-bottom-left-radius:0; border-bottom-right-radius:0; border-top-left-radius:1.5px; border-top-right-radius:1.5px; }
+  .bar.hp{ overflow:visible; height:6px; box-shadow:inset 0 0 0 1px rgba(255,212,94,.7); } /* 6px (+1px) */
+  .bar.hp .hp-fill{ background:linear-gradient(90deg, #23906a, #46d06a); } /* flipped: darker/bluer green → green, left→right */
+  /* Low HP (< 20%): fill goes red and FLASHES red ↔ pink. */
+  .bar.hp.low .hp-fill{ animation:hpFlash .55s ease-in-out infinite; }
+  @keyframes hpFlash{ 0%,100%{ background:#ff2d3f; } 50%{ background:#ff96a4; } }
+  .bar.normal, .bar.normal span{ border-top-left-radius:0; border-top-right-radius:0; border-bottom-left-radius:1.5px; border-bottom-right-radius:1.5px; }
+  .bar.normal{ height:2px; margin-top:-3px; box-shadow:0 -1px 0 0 #000; } /* 2px (-1px); pulled up flush; 1px black divider at the joint */
+  .bar.normal span{ background:linear-gradient(90deg, var(--blue), #5fe3d1); } /* blue → lighter teal, left→right */
+  /* Limit bar: PURPLE while charging; YELLOW/gold when FULL (.lb-btn.charged) — in or out of combat. */
+  /* Charging: a LIVE purple energy fill — a bright band flows along it while it pulses brighter/darker,
+     to make you want to fill it up. Energy lives IN the fill (no glow halo). */
+  .bar.limit span{ background:linear-gradient(90deg,#6a2cff,#b46bff,#ecd6ff,#b46bff,#6a2cff); background-size:200% 100%;
+    animation:limitFlow 2.2s linear infinite, limitPulse 1.5s ease-in-out infinite; }
+  @keyframes limitFlow{ from{ background-position:0% 0; } to{ background-position:-200% 0; } }
+  @keyframes limitPulse{ 0%,100%{ filter:brightness(.92) saturate(1); } 50%{ filter:brightness(1.22) saturate(1.15); } }
+  .lb-btn{ height:16px; border:none; margin:0; padding:0; position:relative; cursor:default;
+    display:block; overflow:visible; font-size:0; line-height:0; } /* 16px tall (+2px) */
+  /* FULL (charged): a DIAGONAL BLACK LABEL slides in (horizontally) over the gold, carrying WHITE LIMIT
+     text; the whole button — text included — PULSES SCALE to pull the eye. */
+  .lb-btn.charged{ transform-origin:center; animation:lbPulse 2s ease-in-out infinite; } /* SHARP pulse every 2s; no overflow clip → blobs fly out */
+  .lb-btn.charged span{ background:linear-gradient(180deg,#ffe89a,#ffcf45 55%,#e7a91f); animation:none; } /* gold base under the label */
+  .lb-btn.ready{ cursor:pointer; }
+  /* SHARP pulse: a quick pop in the first ~18%, then hold for the rest of the 2s (not a steady scale). */
+  @keyframes lbPulse{ 0%{ transform:scale(1); } 5%{ transform:scale(1.15); } 18%{ transform:scale(1); } 100%{ transform:scale(1); } }
+  /* The LIMIT badge: a small diagonal BLACK plate that HUGS the text (width = text + a couple px either
+     side), centred on the gold bar, with WHITE upright caps. Little black blobs EMIT from each side and
+     scale to 0. The label wipes in horizontally when full; the whole button pulses scale. */
+  .lb-label{ display:none; position:absolute; top:0; bottom:0; left:50%; width:max-content; padding:0 3px;
+    align-items:center; justify-content:center; pointer-events:none; transform:translateX(-50%); }
+  .lb-btn.charged .lb-label{ display:flex; animation:labelIn 300ms cubic-bezier(0.2,0.9,0.25,1) both; }
+  @keyframes labelIn{ from{ transform:translateX(-50%) scaleX(0); } to{ transform:translateX(-50%) scaleX(1); } }
+  /* WHITE LIMIT text with a BLACK OUTLINE, Uniform Bold — stroke drawn behind the fill so the white stays crisp. */
+  .lb-track{ position:relative; z-index:1; white-space:nowrap; color:#fff;
+    font-family:'Uniform Bold', system-ui, sans-serif; font-weight:900; font-style:italic;
+    font-size:13px; line-height:1; letter-spacing:0;
+    /* OUTER-ONLY black outline (text-shadow sits BEHIND the fill). Doubled to a clean 2px ring:
+       12 samples every 30°, ALL at radius 2px, so the ring is EVEN + gap-free all the way round
+       (the old version put cardinals at 2px but diagonals at ~2.12px with only 8 samples → lumpy). */
+    text-shadow:2px 0 0 #000,1.73px 1px 0 #000,1px 1.73px 0 #000,0 2px 0 #000,-1px 1.73px 0 #000,-1.73px 1px 0 #000,-2px 0 0 #000,-1.73px -1px 0 #000,-1px -1.73px 0 #000,0 -2px 0 #000,1px -1.73px 0 #000,1.73px -1px 0 #000; }
+  /* Black blobs come from BELOW the text (bottom-centre) and fly out in EITHER direction; start bigger,
+     decay to 0 over the same time. */
+  .lb-emit{ position:absolute; top:50%; width:0; height:0; z-index:0; } /* ON the horizontal centre line → even up/down */
+  .lb-emit-l{ left:5px; } .lb-emit-r{ right:5px; } /* either side, nudged in ~2px more toward centre */
+  /* Blobs are spawned by JS (random angle in a 45° arc centred on horizontal, 2× rate, flung hard with a
+     drag ease, scaling to 0 — no fade). Base = the 2× initial size. */
+  .lb-blob{ position:absolute; left:0; top:0; width:13px; height:13px; margin:-6.5px 0 0 -6.5px; border-radius:50%; background:#0c0c0f; will-change:transform; }
+
+  /* ── controls (drive the whole squad) ── */
+  .panel{ margin-top:20px; }
+  .grp{ background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+  .grp h2{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin:0 0 3px; }
+  .grp .now{ font-size:11px; color:var(--gold); font-weight:800; margin:0 0 10px; }
+  .btns{ display:flex; flex-wrap:wrap; gap:8px; }
+  button.ctl{ font:inherit; font-size:12px; font-weight:800; color:var(--ink); cursor:pointer;
+    background:#0e1220; border:1px solid var(--line); border-radius:9px; padding:8px 11px; transform-origin:center; }
+  button.ctl:hover{ border-color:rgba(255,255,255,.28); }
+  button.ctl.on{ background:var(--gold); color:#08122a; border-color:var(--gold); }
+  button.ctl:active{ transform:scale(0.92) translateY(1px); transition:transform 80ms ease-out, filter 80ms ease-out; filter:brightness(1.2); }
+  button.ctl:not(:active){ transition:transform 280ms cubic-bezier(0.3, 0.7, 0.4, 1.5), filter 200ms ease-out; }
+  .hint{ font-size:11px; color:var(--dim); margin-top:8px; line-height:1.5; }
+  /* Reduced motion: no sweeping flash, no press scale — keep the static metallic button + text. */
+  @media (prefers-reduced-motion: reduce){
+    .bar.limit span{ animation:none; }
+    .lb-btn.charged{ animation:none; }
+    .lb-btn.charged .lb-label{ animation:none; }
+    button.ctl:active{ transform:translateY(1px); }
+    button.ctl:not(:active){ transition:filter 200ms ease-out; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hero squad combat UI</h1>
+  <span class="tag">MOCKUP · in-game squad — 5 heroes, each with HP / special / limit bars</span>
+
+  <div class="stage">
+    <div class="ground"></div>
+    <div class="hero-row" id="squad"></div>
+  </div>
+
+  <div class="panel">
+    <div class="grp">
+      <h2>Squad</h2>
+      <div class="now" id="sqNow">5 random heroes</div>
+      <div class="btns">
+        <button class="ctl" onclick="buildSquad()">🎲 Reshuffle squad</button>
+      </div>
+      <div class="hint">Each hero is placed by the asset rule (height = 75.6 × combat.scale, bottom-anchored, registration-point anchor) and idles with the real <b>heroBob</b>.</div>
+    </div>
+
+    <div class="grp">
+      <h2>HP · all heroes</h2>
+      <div class="now" id="hpNow">varied</div>
+      <div class="btns">
+        <button class="ctl" onclick="setHp(100)">100%</button>
+        <button class="ctl" onclick="setHp(50)">50%</button>
+        <button class="ctl" onclick="setHp(15)">15% (low)</button>
+        <button class="ctl" onclick="setHp(5)">5% (critical)</button>
+      </div>
+      <div class="hint">Below 20% each HP fill goes red and flashes red ↔ pink.</div>
+    </div>
+
+    <div class="grp">
+      <h2>Limit bar · all heroes</h2>
+      <div class="now" id="lbNow">varied</div>
+      <div class="btns">
+        <button class="ctl" onclick="setLimit('empty')">Empty</button>
+        <button class="ctl" onclick="setLimit('charging')">Charging 60%</button>
+        <button class="ctl" onclick="fillLimit()">▶ Fill to full</button>
+        <button class="ctl" onclick="setLimit('fullOoc')">Full · out of combat</button>
+        <button class="ctl" onclick="setLimit('fullIc')">Full · in combat</button>
+      </div>
+      <div class="hint">Purple while charging → snaps <b>yellow</b> when full, with the scrolling orange <b>LIMIT</b> carousel. Yellow holds in &amp; out of combat; only <b>in combat</b> does it pulse + become tappable.</div>
+    </div>
+
+    <div class="grp">
+      <h2>Limit energy hit (flash)</h2>
+      <div class="now" id="lbHitNow">—</div>
+      <div class="btns">
+        <button class="ctl" onclick="flashLimitHit()">⚡ Energy hits bar</button>
+      </div>
+      <div class="hint">The exact in-game <b>pulseLimitBar</b> on every hero's limit bar (fires as each limit-energy mote lands while charging). Set <b>Charging 60%</b> first to read it against purple.</div>
+    </div>
+
+    <div class="grp">
+      <h2>Ability bar (special) · all heroes</h2>
+      <div class="now" id="abNow">stopped</div>
+      <div class="btns">
+        <button class="ctl" id="abToggle" onclick="toggleAbility()">▶ Play</button>
+        <button class="ctl" onclick="resetAbility()">Reset</button>
+      </div>
+      <div class="hint">Play loops each hero's blue charge bar (out of phase, like a live squad). Stop freezes them.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Hero art placement (asset rule): height = 75.6 × combat.scale, bottom-anchored, translated by
+  //    the registration-point anchor. HERO_ART mirrors assets.json anchors + UI-config combat.scale. ──
+  const HERO_BASE_H = 75.6; // = COMBAT_BASE_H_HERO (1.4× the 54px combat base)
+  const HP_LOW_PCT = 20;
+  const AB_DUR = 2000;
+  // Limit-bar HIT flash — a DRAMATIC, SHARP multi-layer pop fired as a limit-energy mote lands.
+  // Four layers, all tunable here: (C) sharp scale pop, (B) sharp whole-bar WHITE flash,
+  // (A) a bright colour WIPE sweeping across, (D) an emitted white rectangular shadow that scales
+  // OUT + fades as it emits.
+  const LIMIT_PULSE = {
+    ms: 300,                       // overall pop length
+    scale: 1.2,                    // C: how big the sharp pop gets
+    scalePeak: 0.09,               // C: peak position — LOW = sharp snap, then settle
+    white: 0.95,                   // B: white-flash peak opacity
+    whitePeak: 0.06,               // B: peaks almost instantly = sharp
+    wipeMs: 230,                   // A: colour-wipe sweep duration
+    wipeColor: 'rgba(255,255,255,0.9)',
+    ghost: { sx: 1.7, sy: 3.2, ms: 420, opacity: 0.85, color: 'rgba(255,255,255,0.7)' }, // D: emitted rect shadow
+  };
+  const HERO_ART = {
+    'alchemist':{s:1,ax:0.5128,ay:0.963},
+    'assassin':{s:1,ax:0.5335,ay:0.972},
+    'barbarian':{s:1,ax:0.4904,ay:0.918},
+    'bard':{s:1,ax:0.4936,ay:0.966},
+    'beastmaster':{s:1,ax:0.5383,ay:0.945},
+    'berserker':{s:1,ax:0.5144,ay:0.963},
+    'bishop':{s:1,ax:0.5267,ay:0.9377},
+    'cleric':{s:1,ax:0.5958,ay:0.984},
+    'dancer':{s:1,ax:0.527,ay:0.9315},
+    'dark-knight':{s:1,ax:0.5527,ay:0.927},
+    'dragoon':{s:1,ax:0.6085,ay:0.9765},
+    'druid':{s:1,ax:0.567,ay:0.978},
+    'dwarf-warrior':{s:1,ax:0.4985,ay:0.924},
+    'elf-archer':{s:1,ax:0.5435,ay:0.9735},
+    'geomancer':{s:1,ax:0.5479,ay:0.909},
+    'gladiator':{s:1.1,ax:0.5128,ay:0.9525},
+    'gunslinger':{s:1,ax:0.4936,ay:0.9555},
+    'inquisitor':{s:1.05,ax:0.5149,ay:0.8995},
+    'knight':{s:1.1,ax:0.5686,ay:0.8745},
+    'lancer':{s:1,ax:0.5497,ay:0.9797},
+    'mage':{s:1,ax:0.5223,ay:0.9795},
+    'monk':{s:1,ax:0.5112,ay:0.951},
+    'necromancer':{s:1,ax:0.5431,ay:0.978},
+    'ninja':{s:1.15,ax:0.5317,ay:0.9181},
+    'obsidia':{s:1.05,ax:0.5096,ay:0.9391},
+    'paladin':{s:1,ax:0.5381,ay:0.9562},
+    'pirate':{s:1,ax:0.488,ay:0.9615},
+    'priest':{s:1,ax:0.5225,ay:0.9495},
+    'ranger':{s:1,ax:0.4793,ay:0.9435},
+    'rogue':{s:1.05,ax:0.5543,ay:0.936},
+    'samurai':{s:1.05,ax:0.5112,ay:0.957},
+    'shaman':{s:1.05,ax:0.5615,ay:0.981},
+    'sorceress':{s:1,ax:0.524,ay:0.9615},
+    'spellblade':{s:1,ax:0.584,ay:0.9585},
+    'summoner':{s:1.05,ax:0.5261,ay:0.9778},
+    'templar':{s:1.1,ax:0.5981,ay:0.9585},
+    'valkyrie':{s:1,ax:0.5415,ay:0.9765},
+    'warlock':{s:1,ax:0.5,ay:0.9495},
+    'warlord':{s:1.2,ax:0.5239,ay:0.948},
+    'warrior':{s:1.05,ax:0.545,ay:0.9321},
+    'witch':{s:1.1,ax:0.527,ay:0.969},
+    'wizard':{s:1.05,ax:0.5206,ay:0.9559}
+  };
+  const HERO_SLUGS = Object.keys(HERO_ART);
+  // Mirrors the `flying` flag in the real hero definitions (src/data/config/game/heroes/*.json, seeded
+  // random for now). Flying → heroBob hover; everyone else → the slight heroBreathe idle.
+  const HERO_FLYING = new Set(['assassin','barbarian','bard','beastmaster','dark-knight','dragoon','dwarf-warrior','elf-archer','geomancer','gladiator','gunslinger','knight','lancer','paladin','pirate','ranger','rogue','samurai','shaman','sorceress','spellblade','valkyrie','warlock','warlord','warrior']);
+  const LIMIT_TRACK = 'LIMIT';
+
+  function placeHero(img, slug){
+    const a = HERO_ART[slug] || { s:1, ax:0.5, ay:1 };
+    img.style.height = (HERO_BASE_H * a.s).toFixed(1) + 'px';
+    img.style.transform = 'translate(' + ((0.5 - a.ax) * 100).toFixed(2) + '%, ' + ((1 - a.ay) * 100).toFixed(2) + '%)';
+  }
+
+  // One full in-game hero chip: avatar + HP / special / limit bars. (fill/label element types match the
+  // game so the verbatim CSS lands: .hp-fill/.nf/.lb-fill are <span>; the LIMIT label/track are <i>.)
+  function chipHTML(slug){
+    return '<div class="chip hero-chip ' + (HERO_FLYING.has(slug) ? 'flying' : 'grounded') + '">'
+      + '<div class="chip-art"><img alt="' + slug + '" src="../../assets/combatclean/heroes/' + slug + '.png" onerror="this.closest(\'.chip\').style.visibility=\'hidden\'"></div>'
+      + '<div class="bar hp"><span class="hp-fill"></span></div>'
+      + '<div class="bar normal"><span class="nf"></span></div>'
+      + '<button type="button" class="bar limit lb-btn"><span class="lb-fill"></span><i class="lb-label"><i class="lb-track">' + LIMIT_TRACK + '</i><b class="lb-emit lb-emit-l"></b><b class="lb-emit lb-emit-r"></b></i></button>'
+      + '</div>';
+  }
+
+  const hpNow = document.getElementById('hpNow');
+  const lbNow = document.getElementById('lbNow');
+  const abNow = document.getElementById('abNow');
+  const abToggle = document.getElementById('abToggle');
+  const lbHitNow = document.getElementById('lbHitNow');
+  let squad = [];
+  let abRaf = null, abStart = null, fillRaf = null;
+
+  function clearFill(){ if (fillRaf){ cancelAnimationFrame(fillRaf); fillRaf = null; } }
+
+  // ── per-hero setters ──
+  function setHpOne(h, pct){ h.hpFill.style.width = pct + '%'; h.hpBar.classList.toggle('low', pct < HP_LOW_PCT); }
+  function setLimitOne(h, state){
+    h.lb.classList.remove('charged','ready');
+    if (state === 'empty'){ h.lbFill.style.width = '0%'; }
+    else if (state === 'charging'){ h.lbFill.style.width = '60%'; }
+    else if (state === 'fullOoc'){ h.lbFill.style.width = '100%'; h.lb.classList.add('charged'); }
+    else if (state === 'fullIc'){ h.lbFill.style.width = '100%'; h.lb.classList.add('charged','ready'); }
+  }
+
+  // ── squad-wide controls ──
+  function setHp(pct){ squad.forEach(h => setHpOne(h, pct)); hpNow.textContent = 'all: ' + pct + '%' + (pct < HP_LOW_PCT ? ' — LOW (red, flashing)' : ''); }
+  const LB_LABELS = { empty:'EMPTY (purple)', charging:'CHARGING 60% (purple)', fullOoc:'FULL · out of combat (yellow, steady)', fullIc:'FULL · in combat (yellow, pulsing, LIMIT tappable)' };
+  function setLimit(state){ clearFill(); squad.forEach(h => setLimitOne(h, state)); lbNow.textContent = 'all: ' + (LB_LABELS[state] || state); }
+  function fillLimit(){
+    clearFill(); squad.forEach(h => h.lb.classList.remove('charged','ready'));
+    const dur = 2000; let t0 = null; lbNow.textContent = 'all: CHARGING… (purple)';
+    const step = (t) => {
+      if (t0 === null) t0 = t;
+      const p = Math.min(1, (t - t0) / dur);
+      squad.forEach(h => h.lbFill.style.width = (p * 100).toFixed(1) + '%');
+      if (p < 1){ fillRaf = requestAnimationFrame(step); }
+      else { fillRaf = null; squad.forEach(h => h.lb.classList.add('charged')); lbNow.textContent = 'all: FULL (yellow). Try "Full · in combat" to pulse them.'; }
+    };
+    fillRaf = requestAnimationFrame(step);
+  }
+  function abLoop(t){
+    if (abStart === null) abStart = t;
+    squad.forEach(h => { let p = h.abBase + (t - abStart) / AB_DUR; p = p - Math.floor(p); h.nf.style.width = (p * 100).toFixed(1) + '%'; });
+    abRaf = requestAnimationFrame(abLoop);
+  }
+  function toggleAbility(){
+    if (abRaf){
+      cancelAnimationFrame(abRaf); abRaf = null;
+      squad.forEach(h => { h.abBase = parseFloat(h.nf.style.width) / 100 || 0; });
+      abStart = null; abToggle.textContent = '▶ Play'; abToggle.classList.remove('on'); abNow.textContent = 'stopped';
+    } else {
+      abStart = null; abToggle.textContent = '⏸ Stop'; abToggle.classList.add('on'); abNow.textContent = 'playing (looping, out of phase)';
+      abRaf = requestAnimationFrame(abLoop);
+    }
+  }
+  function resetAbility(){
+    if (abRaf){ cancelAnimationFrame(abRaf); abRaf = null; }
+    abStart = null; squad.forEach(h => { h.abBase = 0; h.nf.style.width = '0%'; });
+    abToggle.textContent = '▶ Play'; abToggle.classList.remove('on'); abNow.textContent = 'stopped';
+  }
+
+  // ── limit-bar HIT flash: dramatic, sharp, multi-layer pop ──
+  function lbHitLabel(){ const p = LIMIT_PULSE;
+    return `pop ${p.scale}× @${Math.round(p.scalePeak * 100)}% · white ${p.white} · wipe ${p.wipeMs}ms · ghost ${p.ghost.sx}×${p.ghost.sy} · ${p.ms}ms`; }
+  // transient absolute overlay child of the bar (bar is position:relative, overflow:visible)
+  function _ov(bar, css){ const el = document.createElement('i');
+    el.style.cssText = 'position:absolute;inset:0;border-radius:inherit;pointer-events:none;' + css; bar.appendChild(el); return el; }
+  function pulseLimitBar(bar){
+    if (!bar || !bar.animate) return;
+    const p = LIMIT_PULSE;
+    // C — SHARP scale pop: snaps to peak early, then settles.
+    bar.animate([
+      { transform: 'scale(1)', offset: 0 },
+      { transform: `scale(${p.scale})`, offset: p.scalePeak },
+      { transform: 'scale(1)', offset: 1 },
+    ], { duration: p.ms, easing: 'cubic-bezier(.15,.9,.25,1)' });
+    // B — whole-bar WHITE flash: sharp in, quick out.
+    const flash = _ov(bar, 'background:#fff;z-index:6;opacity:0;');
+    flash.animate([{ opacity: 0 }, { opacity: p.white, offset: p.whitePeak }, { opacity: 0 }],
+      { duration: p.ms, easing: 'ease-out' }).onfinish = () => flash.remove();
+    // A — colour WIPE: a bright band sweeps left→right across the bar (clipped to the bar shape).
+    const clip = _ov(bar, 'overflow:hidden;z-index:7;');
+    const band = document.createElement('i');
+    band.style.cssText = `position:absolute;top:0;bottom:0;left:0;width:55%;background:linear-gradient(90deg,transparent,${p.wipeColor},transparent);`;
+    clip.appendChild(band);
+    band.animate([{ transform: 'translateX(-140%)' }, { transform: 'translateX(240%)' }],
+      { duration: p.wipeMs, easing: 'ease-out' }).onfinish = () => clip.remove();
+    // D — emitted white rectangular shadow: a glowing rect scales OUT while fading to 0.
+    const g = p.ghost, ghost = _ov(bar, `background:transparent;box-shadow:0 0 10px 2px ${g.color};z-index:4;`);
+    ghost.animate([{ transform: 'scale(1,1)', opacity: g.opacity }, { transform: `scale(${g.sx},${g.sy})`, opacity: 0 }],
+      { duration: g.ms, easing: 'ease-out' }).onfinish = () => ghost.remove();
+  }
+  function flashLimitHit(){ squad.forEach(h => pulseLimitBar(h.lb)); lbHitNow.textContent = lbHitLabel(); }
+
+  // Initial VARIED states so it reads like a live squad mid-combat (one low HP, one limit-ready, etc.).
+  const INIT_HP    = [100, 78, 46, 18, 92];
+  const INIT_LIMIT = ['fullIc', 'charging', 'empty', 'fullOoc', 'charging'];
+  function buildSquad(){
+    const row = document.getElementById('squad');
+    const pool = HERO_SLUGS.slice();
+    const pick = [];
+    while (pick.length < 5 && pool.length) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    row.innerHTML = pick.map(chipHTML).join('');
+    squad = [];
+    row.querySelectorAll('.chip').forEach((chip, i) => {
+      const slug = pick[i];
+      placeHero(chip.querySelector('.chip-art img'), slug);
+      const h = {
+        slug, chip,
+        hpBar: chip.querySelector('.bar.hp'),
+        hpFill: chip.querySelector('.hp-fill'),
+        nf: chip.querySelector('.nf'),
+        lb: chip.querySelector('.lb-btn'),
+        lbFill: chip.querySelector('.lb-fill'),
+        abBase: Math.random(),
+      };
+      squad.push(h);
+      setHpOne(h, INIT_HP[i % INIT_HP.length]);
+      setLimitOne(h, INIT_LIMIT[i % INIT_LIMIT.length]);
+      h.nf.style.width = Math.round(h.abBase * 100) + '%';
+    });
+    document.getElementById('sqNow').textContent = pick.join(' · ');
+    hpNow.textContent = 'varied'; lbNow.textContent = 'varied';
+    if (abRaf){ cancelAnimationFrame(abRaf); abRaf = null; abStart = null; abToggle.textContent = '▶ Play'; abToggle.classList.remove('on'); abNow.textContent = 'stopped'; }
+  }
+
+  buildSquad();
+  lbHitNow.textContent = lbHitLabel();
+
+  // ── LIMIT particle emitter: black blobs from under either side of the text. Each blob picks a RANDOM
+  //    angle in a 45° arc centred on horizontal (equally likely up/down), is flung hard and DRAGS to a
+  //    stop (ease), and scales to 0 (no fade). Emits 2× as fast as the old CSS version.
+  const PRM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function spawnBlob(emitter, dir){
+    const b = document.createElement('i'); b.className = 'lb-blob';
+    emitter.appendChild(b);
+    const ang = (Math.random() - 0.5) * (45 * Math.PI / 180); // ±22.5° around horizontal — even up/down
+    const dist = 17 + Math.random() * 3;                       // SAME distance as before (~18px)
+    const dx = dir * Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+    b.style.transform = 'translate(0,0) scale(1)';
+    void b.offsetWidth;                                        // commit the initial frame
+    b.style.transition = 'transform 800ms ease-out';           // gentle — no massive pop, no speed increase
+    b.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(0)';
+    setTimeout(function(){ b.remove(); }, 850);
+  }
+  if (!PRM) setInterval(function(){
+    document.querySelectorAll('.lb-btn.charged').forEach(function(btn){
+      const l = btn.querySelector('.lb-emit-l'), r = btn.querySelector('.lb-emit-r');
+      if (l) spawnBlob(l, -1);
+      if (r) spawnBlob(r, 1);
+    });
+  }, 180); // 1.5× emission rate
+</script>
+</body>
+</html>

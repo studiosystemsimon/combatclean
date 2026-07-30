@@ -20,5 +20,6 @@
 			"frac": 0.35
 		}
 	},
-	"classKey": "shaman"
+	"classKey": "shaman",
+	"flying": true
 }

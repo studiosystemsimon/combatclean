@@ -1,0 +1,590 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Chaos Orb — visceral merge → black-hole crumble (mockup)</title>
+<style>
+  html,body{margin:0;height:100%;background:#05060a;color:#cdd3da;font:13px/1.4 system-ui;
+    display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;overflow:hidden}
+  h2{margin:2px 0;color:#eaf0f6;font-weight:700}.sub{color:#7f868d;font-size:12px;max-width:460px;text-align:center}
+  .stage{position:relative;height:min(80vh,822px);width:calc(min(80vh,822px)*390/844);border-radius:34px;overflow:hidden;flex:0 0 auto;
+    box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 0 7px #14161d,0 0 0 9px #23262f}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .row{display:flex;gap:10px}
+  button{background:linear-gradient(180deg,#243a66,#152447);color:#dfe9ff;border:1px solid #3f6bd0;
+    border-radius:10px;padding:10px 18px;font-weight:700;letter-spacing:.4px;cursor:pointer;text-transform:uppercase;font-size:12px}
+  button.go{background:linear-gradient(180deg,#3a2a7a,#241452);border-color:#7a4fd0}
+  button:active{transform:translateY(1px)}
+  .marker{color:#4a5678;font-size:10px;font-weight:800;letter-spacing:.6px}
+  .main{display:flex;gap:16px;align-items:flex-start;justify-content:center}
+  .stagecol{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .tuning{width:322px;max-height:min(84vh,860px);overflow:auto;background:#0d1018;border:1px solid #1e2430;border-radius:14px;padding:12px}
+  .tuning::-webkit-scrollbar{width:8px}.tuning::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+  .tuning h3{margin:2px 0 10px;font-size:13px;color:#eaf0f6}
+  .grp{border:1px solid #1e2430;border-radius:10px;padding:9px 10px 11px;margin-bottom:10px;background:#11151f}
+  .grp .gt{font-size:10px;font-weight:800;letter-spacing:1px;color:#7fa7ff;text-transform:uppercase;margin:0 0 8px}
+  .ctl{display:grid;grid-template-columns:98px 1fr 46px;align-items:center;gap:8px;margin:5px 0}
+  .ctl label{font-size:10.5px;color:#9aa4b2}
+  .ctl input[type=range]{width:100%;accent-color:#7a4fd0}
+  .ctl select{font:inherit;font-size:11px;background:#0e1220;color:#dfe9ff;border:1px solid #2a3242;border-radius:6px;padding:3px 5px;grid-column:2/4}
+  .ctl input[type=color]{width:100%;height:20px;padding:0;border:1px solid #2a3242;border-radius:6px;background:#0e1220}
+  .ctl .val{font-size:10.5px;font-weight:700;color:#dfe9ff;text-align:right;font-variant-numeric:tabular-nums}
+  .copy{width:100%;height:190px;background:#0b0f1e;color:#bcd;border:1px solid #1e2430;border-radius:8px;font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px;resize:vertical;white-space:pre}
+  #copyBtn{margin-top:8px;width:100%}
+</style></head><body>
+  <div class="row">
+    <button class="go" id="go">⚡ Merge Chaos Orbs</button>
+    <button id="replay">↺ Replay</button>
+  </div>
+  <div class="main">
+    <div class="stagecol">
+      <div class="stage"><canvas id="bg"></canvas><canvas id="screen"></canvas></div>
+      <div class="marker">chaos-orb mockup · v3 (grow+rattle → POP → synced smash) · iteration harness (not the game)</div>
+    </div>
+    <div class="tuning" id="tuning">
+      <h3>Tuning</h3>
+      <div id="controls"></div>
+      <div class="grp"><div class="gt">Export — paste this back to bake it in</div>
+        <textarea class="copy" id="copy" readonly></textarea>
+        <button id="copyBtn">Copy JSON</button>
+      </div>
+    </div>
+  </div>
+<script>
+const W=390,H=844;
+const scr=document.getElementById('screen'), sc=scr.getContext('2d');
+const bg=document.getElementById('bg'), bgc=bg.getContext('2d');
+scr.width=W;scr.height=H;bg.width=W;bg.height=H;
+const tex=document.createElement('canvas');tex.width=W;tex.height=H;const g=tex.getContext('2d');
+
+// ---- real orb art if served, else procedural fallback ----
+const orbImg=new Image();let orbReady=false;
+orbImg.onload=()=>{orbReady=true;drawScreen();idle();};
+orbImg.onerror=()=>{orbReady=false;drawScreen();idle();};
+orbImg.src="../../assets/combatclean/merge/special-0.png";
+
+// ---- REAL layout: header 52 · combat · orders 84 · board(7x5) · navbar 60 ----
+const HEADER=52, ORDERS=84, NAV=60, PAD=8, GAP=5, COLS=7, ROWS=5;
+const bw=W-PAD*2, cellW=(bw-GAP*(COLS-1))/COLS, boardH=Math.round(bw*5/7), cellH=(boardH-GAP*(ROWS-1))/ROWS;
+const boardAreaH=boardH+22, boardTop=H-NAV-boardAreaH+11, boardLeft=PAD;
+const combatTop=HEADER, combatH=H-NAV-ORDERS-boardAreaH-HEADER, ordersTop=combatTop+combatH;
+const cellPos=(c,r)=>[boardLeft+c*(cellW+GAP), boardTop+r*(cellH+GAP)];
+const ORB_A=[3,2], ORB_B=[4,2];   // two adjacent chaos orbs, board centre-ish
+const oc=([c,r])=>{const[x,y]=cellPos(c,r);return[x+cellW/2,y+cellH/2];};
+const [ax,ay]=oc(ORB_A),[bx2,by2]=oc(ORB_B);
+const CX=(ax+bx2)/2, CY=(ay+by2)/2;   // merge centre / black-hole centre = between the skulls
+
+// ── shared maths ──
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a=0,b=1)=>a+Math.random()*(b-a);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeOutBack=t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);};
+const easeInCubic=t=>t*t*t;
+const easeOutQuad=t=>1-(1-t)*(1-t);
+const EASINGS={linear:t=>t,easeOutQuad:t=>1-(1-t)*(1-t),easeOutCubic:t=>1-Math.pow(1-t,3),easeOutQuart:t=>1-Math.pow(1-t,4),easeInOutCubic:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,easeInCubic:t=>t*t*t};
+
+function rr(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function skullOrb(cx,cy,rad){
+  const fg=g.createRadialGradient(cx,cy+rad*.3,rad*.2,cx,cy,rad);
+  fg.addColorStop(0,'#ff7a1a');fg.addColorStop(.4,'#e0308a');fg.addColorStop(.7,'#7a3ff0');fg.addColorStop(1,'#1a0b2e');
+  g.beginPath();g.arc(cx,cy,rad,0,7);g.fillStyle=fg;g.fill();g.lineWidth=rad*.12;g.strokeStyle='#0a0a12';g.stroke();
+  g.fillStyle='#efe7d6';g.beginPath();g.ellipse(cx,cy-rad*.04,rad*.42,rad*.46,0,0,7);g.fill();
+  g.fillStyle='#2a1436';g.beginPath();g.ellipse(cx-rad*.17,cy-rad*.04,rad*.13,rad*.16,0,0,7);g.fill();
+  g.beginPath();g.ellipse(cx+rad*.17,cy-rad*.04,rad*.13,rad*.16,0,0,7);g.fill();
+  g.beginPath();g.moveTo(cx,cy+rad*.03);g.lineTo(cx-rad*.06,cy+rad*.16);g.lineTo(cx+rad*.06,cy+rad*.16);g.fill();
+  g.fillStyle='#efe7d6';g.fillRect(cx-rad*.18,cy+rad*.2,rad*.36,rad*.12);
+}
+function chip(x,y,w,h,c){rr(x,y,w,h,8);g.fillStyle=c;g.fill();}
+function drawScreen(){
+  const bgv=g.createLinearGradient(0,0,0,H);bgv.addColorStop(0,'#141a26');bgv.addColorStop(1,'#0a0d14');
+  g.fillStyle=bgv;g.fillRect(0,0,W,H);
+  // HEADER
+  g.fillStyle='#10141c';g.fillRect(0,0,W,HEADER);g.strokeStyle='#242b39';g.beginPath();g.moveTo(0,HEADER);g.lineTo(W,HEADER);g.stroke();
+  chip(PAD,12,96,28,'#1a2030');chip(PAD+104,12,80,28,'#1a2030');
+  g.textBaseline='middle';g.font='bold 15px system-ui';
+  g.fillStyle='#ffd45e';g.fillText('⛁ 12.4k',PAD+10,26);g.fillStyle='#8fd6ff';g.fillText('◆ 87',PAD+114,26);
+  chip(W-PAD-60,12,60,28,'#241436');g.fillStyle='#c9a6ff';g.font='bold 12px system-ui';g.fillText('LVL 24',W-PAD-52,26);
+  // COMBAT PANEL
+  g.fillStyle='#0c1119';g.fillRect(0,combatTop,W,combatH);
+  const arena=g.createRadialGradient(W/2,combatTop+combatH*.5,20,W/2,combatTop+combatH*.5,W*.7);
+  arena.addColorStop(0,'#16203a');arena.addColorStop(1,'#0a0e18');g.fillStyle=arena;g.fillRect(0,combatTop,W,combatH);
+  // enemies (top), heroes (bottom)
+  const ey=combatTop+combatH*.3;
+  for(let i=0;i<4;i++){const x=W*(0.28+i*0.15);g.fillStyle='#b23a48';g.beginPath();g.arc(x,ey,15,0,7);g.fill();
+    g.fillStyle='#000';g.fillRect(x-14,ey-24,28,4);g.fillStyle='#ff5a6a';g.fillRect(x-14,ey-24,28*(0.5+0.5*Math.sin(i)),4);
+    g.font='15px system-ui';g.textAlign='center';g.fillText('👺',x,ey);}
+  const hy=combatTop+combatH*.72;
+  for(let i=0;i<3;i++){const x=W*(0.34+i*0.16);g.fillStyle='#3a6bb2';g.beginPath();g.arc(x,hy,17,0,7);g.fill();
+    g.fillStyle='#000';g.fillRect(x-16,hy-27,32,4);g.fillStyle='#5ad06a';g.fillRect(x-16,hy-27,32*0.8,4);
+    g.font='17px system-ui';g.fillText(['⚔️','🏹','✨'][i],x,hy);}
+  g.textAlign='left';
+  // ORDERS bar
+  g.fillStyle='#12151d';g.fillRect(0,ordersTop,W,ORDERS);g.strokeStyle='#242b39';
+  g.beginPath();g.moveTo(0,ordersTop);g.lineTo(W,ordersTop);g.moveTo(0,ordersTop+ORDERS);g.lineTo(W,ordersTop+ORDERS);g.stroke();
+  const ow=(W-PAD*2-16)/3;
+  for(let i=0;i<3;i++){const x=PAD+i*(ow+8),y=ordersTop+10;rr(x,y,ow,ORDERS-20,10);
+    g.fillStyle=i===1?'#2a1836':'#1b2130';g.fill();g.strokeStyle=i===1?'#7a3ff0':'#2b3345';g.stroke();
+    g.font='20px system-ui';g.textAlign='center';g.fillText(['⚔️','💀','🏹'][i],x+ow*.3,y+26);
+    g.font='16px system-ui';g.fillText(['📦','🌀','📦'][i],x+ow*.72,y+26);
+    g.fillStyle='#7f868d';g.font='10px system-ui';g.fillText('0:'+(24+i*7),x+ow/2,y+ORDERS-30);}
+  g.textAlign='left';
+  // BOARD (7x5)
+  rr(boardLeft-4,boardTop-4,bw+8,boardH+8,16);g.fillStyle='#0f131b';g.fill();g.strokeStyle='#242b39';g.stroke();
+  const glyphs={'0,0':'⚔️','2,0':'🛡️','6,0':'🏹','0,2':'⚗️','6,2':'⚔️','1,4':'🏹','5,4':'🛡️','3,4':'⚗️','0,4':'🏹','6,4':'⚔️','1,1':'🛡️','5,1':'🏹'};
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const[x,y]=cellPos(c,r);rr(x,y,cellW,cellH,9);
+    const lv=g.createLinearGradient(0,y,0,y+cellH);lv.addColorStop(0,'#1b212c');lv.addColorStop(1,'#141a23');
+    g.fillStyle=lv;g.fill();g.strokeStyle='#232a35';g.lineWidth=1;g.stroke();
+    const isOrb=(c===ORB_A[0]&&r===ORB_A[1])||(c===ORB_B[0]&&r===ORB_B[1]);
+    if(isOrb){rr(x,y,cellW,cellH,9);g.fillStyle='rgba(120,120,255,.16)';g.fill();
+      const cx=x+cellW/2,cy=y+cellH/2,rad=Math.min(cellW,cellH)*.46;
+      if(orbReady)g.drawImage(orbImg,cx-rad,cy-rad,rad*2,rad*2);else skullOrb(cx,cy,rad);
+    } else {const gl=glyphs[c+','+r];if(gl){g.font='22px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(gl,x+cellW/2,y+cellH/2);g.textAlign='left';}}
+  }
+  // NAVBAR
+  g.fillStyle='#0a0d13';g.fillRect(0,H-NAV,W,NAV);g.strokeStyle='#242b39';g.beginPath();g.moveTo(0,H-NAV);g.lineTo(W,H-NAV);g.stroke();
+  const navs=['🧩','🛡️','🎁','🛒'];g.textAlign='center';g.textBaseline='middle';
+  for(let i=0;i<4;i++){const x=W*(0.125+i*0.25);if(i===0){chip(x-24,H-NAV+8,48,NAV-16,'#241436');}g.font='22px system-ui';g.fillText(navs[i],x,H-NAV/2);}
+  g.textAlign='left';
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FX — blue→purple energy ribbons (echo of src/view/fx/limit-energy.js). A mote
+   pops out sideways, curls in on a bezier, accelerates behind a glowing pulsing
+   head, and trails a tapered blue→purple gradient ribbon that lingers + fades.
+   Drawn straight onto the `screen` context (sc), in 390×844 space.
+   ════════════════════════════════════════════════════════════════════════════ */
+const projectiles=[], impacts=[], sparks=[];
+const glowCache={};
+const SPINE_N=90, MIN_SPACING=2.0, MAX_AGE=0.85, LEN_REF=26;
+const hexRgb=h=>{h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};};
+const hexRgba=(h,a)=>{const c=hexRgb(h);return `rgba(${c.r},${c.g},${c.b},${a})`;};
+const bez=(t,p0,p1,p2)=>{const u=1-t;return u*u*p0+2*u*t*p1+t*t*p2;};
+function rampAt(stops,t){t=clamp(t,0,1);const n=stops.length;if(t<=stops[0].p)return hexRgb(stops[0].c);if(t>=stops[n-1].p)return hexRgb(stops[n-1].c);
+  for(let i=0;i<n-1;i++){const a=stops[i],b=stops[i+1];if(t>=a.p&&t<=b.p){const k=(t-a.p)/((b.p-a.p)||1);const A=hexRgb(a.c),B=hexRgb(b.c);
+    return {r:Math.round(lerp(A.r,B.r,k)),g:Math.round(lerp(A.g,B.g,k)),b:Math.round(lerp(A.b,B.b,k))};}}return hexRgb(stops[n-1].c);}
+function bakeGlow(hex){const SZ=64,c=document.createElement('canvas');c.width=c.height=SZ;const gg=c.getContext('2d');const cx=SZ/2;const rgb=hexRgb(hex);const gs=`${rgb.r},${rgb.g},${rgb.b}`;
+  const grad=gg.createRadialGradient(cx,cx,0,cx,cx,cx);grad.addColorStop(0,`rgba(${gs},1)`);grad.addColorStop(.35,`rgba(${gs},.55)`);grad.addColorStop(.7,`rgba(${gs},.14)`);grad.addColorStop(1,`rgba(${gs},0)`);
+  gg.fillStyle=grad;gg.fillRect(0,0,SZ,SZ);return c;}
+function stampGlow(x,y,size,hex,alpha=1){const s=glowCache[hex]||(glowCache[hex]=bakeGlow(hex));sc.globalCompositeOperation='lighter';sc.globalAlpha=clamp(alpha,0,1);sc.drawImage(s,x-size,y-size,size*2,size*2);sc.globalAlpha=1;sc.globalCompositeOperation='source-over';}
+
+function spawnTrail(from,to,opts={}){
+  const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
+  const speed=opts.speed||680, dur=dist/speed;
+  const ramp=opts.ramp;
+  const po=opts.popOut||{dist:70,angleMin:45,angleMax:120};
+  const baseAng=Math.atan2(dy,dx), sign=Math.random()<.5?-1:1;
+  const off=(po.angleMin+Math.random()*(po.angleMax-po.angleMin))*Math.PI/180*sign;
+  const cpAng=baseAng+off, cpDist=po.dist*rand(0.8,1.2);
+  const cp={x:from.x+Math.cos(cpAng)*cpDist, y:from.y+Math.sin(cpAng)*cpDist};
+  projectiles.push({x:from.x,y:from.y,from,cp,to,t:0,dur,u:0,s:0,fired:false,
+    r:opts.r||6, head:opts.head||'#dfeeff', ramp, halfW:opts.width||4, fadeT:0,
+    headMul:opts.headWidthMul??2, tailMul:opts.tailWidthMul??0.12, fadePow:opts.fadePow??2, fadePeak:opts.fadePeak??1,
+    accel:opts.accel||easeInCubic, headCfg:opts.headCfg||{rMul:2.4,pulseAmp:.3,pulseFreq:2,growTo:2.4},
+    start:opts.start||{clearDist:0,scale:1,alpha:1}, offKill:!!opts.offscreenKill,
+    maxAge:MAX_AGE*((opts.length||22)/LEN_REF), spine:[], lastX:null,lastY:null, onHit:opts.onHit});
+}
+function stepFx(dt){
+  // ── ribbons (EXACT limit-energy mote anatomy: genesis → tapered gradient ribbon → glowing WHITE head) ──
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i];
+    if(!p.fired){ p.t+=dt; p.u=Math.min(1,p.t/p.dur); p.s=p.accel(p.u);
+      p.x=bez(p.s,p.from.x,p.cp.x,p.to.x); p.y=bez(p.s,p.from.y,p.cp.y,p.to.y);
+      if(p.offKill&&(p.x<-60||p.x>W+60||p.y<-60||p.y>H+60)) p.fired=true; }   // flew off-screen → drop the head, let the tail fade
+    for(const sp of p.spine)sp.age+=dt;
+    while(p.spine.length&&p.spine[0].age>p.maxAge)p.spine.shift();
+    if(!p.fired){ if(p.lastX===null||p.u>=1||(p.x-p.lastX)**2+(p.y-p.lastY)**2>MIN_SPACING**2){
+      p.spine.push({x:p.x,y:p.y,age:0}); if(p.spine.length>SPINE_N)p.spine.shift(); p.lastX=p.x;p.lastY=p.y; } }
+    if(p.fired)p.fadeT+=dt;
+    // genesis: small + muted until it has travelled clearDist from its origin (limit-energy `start`)
+    const stC=p.start; const sk0=stC.clearDist>0?Math.min(1,Math.hypot(p.x-p.from.x,p.y-p.from.y)/stC.clearDist):1; const sk=sk0*sk0;
+    const sizeMul=stC.scale+(1-stC.scale)*sk, alphaMul=stC.alpha+(1-stC.alpha)*sk;
+    const pts=p.spine, n=pts.length;
+    if(n>=2){
+      const nrm=[];
+      for(let k=0;k<n;k++){const pr=pts[Math.max(0,k-1)],nx=pts[Math.min(n-1,k+1)];let ddx=nx.x-pr.x,ddy=nx.y-pr.y;const dl=Math.hypot(ddx,ddy)||1;nrm.push({x:-ddy/dl,y:ddx/dl});}
+      const gF=p.fired?Math.max(0,1-p.fadeT/p.maxAge):1;
+      const tpos=k=>(n-1-k)/(n-1);
+      const oX=k=>k===n-1?1:nrm[k].x, oY=k=>k===n-1?0:nrm[k].y;
+      const hwAt=k=>p.halfW*gF*sizeMul*lerp(p.headMul,p.tailMul,tpos(k));
+      // Each quad is a SOLID colour sampled at its LENGTH position (tpos). The gradient emerges
+      // ALONG the ribbon quad-to-quad — no gradient object, so colour cannot map across the width.
+      for(let k=1;k<n;k++){
+        const a=pts[k-1],b=pts[k],hwa=hwAt(k-1),hwb=hwAt(k);
+        const tm=(tpos(k-1)+tpos(k))*0.5, c=rampAt(p.ramp,tm);
+        const al=p.fadePeak*Math.pow(1-tm,p.fadePow)*gF*alphaMul;
+        sc.fillStyle=`rgba(${c.r},${c.g},${c.b},${al.toFixed(3)})`;
+        sc.beginPath();
+        sc.moveTo(a.x+oX(k-1)*hwa,a.y+oY(k-1)*hwa);
+        sc.lineTo(b.x+oX(k)*hwb,  b.y+oY(k)*hwb);
+        sc.lineTo(b.x-oX(k)*hwb,  b.y-oY(k)*hwb);
+        sc.lineTo(a.x-oX(k-1)*hwa,a.y-oY(k-1)*hwa);
+        sc.closePath();sc.fill();
+      }
+    }
+    if(!p.fired){
+      // EXACT limit-energy head — coloured glow ×2.4 + white glow ×1.1 + white core ×0.42, genesis-scaled
+      const hc=p.headCfg, grow=1+(hc.growTo-1)*p.s, pulse=1+hc.pulseAmp*Math.sin(p.u*hc.pulseFreq*Math.PI*2);
+      const headR=p.r*hc.rMul*grow*pulse*sizeMul;
+      stampGlow(p.x,p.y,headR*2.4,p.head,0.9*alphaMul);
+      stampGlow(p.x,p.y,headR*1.1,'#ffffff',0.55*alphaMul);
+      sc.globalCompositeOperation='lighter';sc.fillStyle='#ffffff';sc.globalAlpha=0.9*alphaMul;
+      sc.beginPath();sc.arc(p.x,p.y,Math.max(1,headR*0.42),0,7);sc.fill();
+      sc.globalAlpha=1;sc.globalCompositeOperation='source-over';
+      if(p.u>=1){p.fired=true;if(p.onHit)p.onHit(p.to.x,p.to.y);}
+    } else if(n===0){ projectiles.splice(i,1); }
+  }
+  // ── impacts (discs + rings) ──
+  for(let i=impacts.length-1;i>=0;i--){const im=impacts[i];im.t+=dt;if(im.t<0)continue;const q=Math.min(1,im.t/im.dur);
+    if(im.kind==='disc'){const rad=im.r0+(im.r1-im.r0)*(1-Math.pow(1-q,3));stampGlow(im.x,im.y,rad,im.color,0.9*(1-q));}
+    else{const rad=im.r0+(im.r1-im.r0)*(q>=1?1:1-Math.pow(2,-10*q));sc.save();sc.globalCompositeOperation='lighter';sc.globalAlpha=(1-q)*0.9;sc.strokeStyle=im.color;sc.lineWidth=im.w*(1-q*0.7);sc.beginPath();sc.arc(im.x,im.y,rad,0,7);sc.stroke();sc.restore();}
+    if(q>=1)impacts.splice(i,1);}
+  // ── sparks ──
+  for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.t+=dt;const k=s.t/s.life;if(k>=1){sparks.splice(i,1);continue;}
+    const vel=Math.cos(k*Math.PI/2);s.x+=s.vx*vel*dt;s.y+=s.vy*vel*dt;const al=1-k;
+    sc.globalCompositeOperation='lighter';sc.globalAlpha=al;sc.fillStyle=s.color;const sz=s.size*(0.6+0.4*al);
+    sc.beginPath();sc.arc(s.x,s.y,sz,0,7);sc.fill();sc.globalAlpha=1;sc.globalCompositeOperation='source-over';}
+}
+function fxImpact(x,y,{color='#fff',r=8,heavy=false}={}){
+  impacts.push({kind:'disc',x,y,t:0,dur:0.24,r0:r*0.3,r1:r*(heavy?2.2:1.6),color});
+  impacts.push({kind:'ring',x,y,t:0,dur:0.34,r0:r,r1:r*(heavy?3:2.2),w:heavy?3:2,color});
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MERGE — tunable. Two orbs rush → collide → giant legendary orb pops + charges,
+   fed by converging blue→purple ribbons emitted on a DECELERATING cadence: the
+   gap between emissions eases from gapMin up, ceasing by emitWindow (≈2s).
+   ════════════════════════════════════════════════════════════════════════════ */
+const MCFG={
+  rushT:0.24,           // s — the two orbs rush to centre
+  growT:2.0,            // s — orb GROWS to full size + RATTLES harder over this window, then POPs
+  growEase:'easeOutCubic', // growth curve — fast at start, slower at end
+  igniteMs:140,         // ms — collapse lead-in before the shatter
+  crumbleMs:1400,       // ms — shatter duration
+  emitWindow:2.0,       // s — ambient trail emission window (dense→sparse), spans the growth
+  gapMin:0.10,          // s — initial gap between emissions
+  gapMax:0.95,          // s — gap once the window is nearly done
+  emitPerTick:2,        // per emission: N trails that LASH OUT from the orb + fly off-screen
+  suckPerTick:1,        // per emission: N trails SUCKED IN from a ring
+  ringR:260,            // px — suction spawn ring around the orb
+  offBig:1000,          // px — emission target, well off-screen
+  bigR:78,              // px — legendary orb radius (final size)
+  rattleMax:7,          // px — peak rattle amplitude at full growth
+  popBurst:22,          // trails released in the POP (all at once)
+  popSpeed:1650,        // px/s — POP-burst trail speed (very quick)
+  edge3d:0.1,           // 0..1 — white bottom-right bevel on the VORONOI SLABS (3D feel); dissipates as they fall away
+  orbGlow:'#5a4cff',    // dark blue-purple ambient
+  // LASH / SUCTION trail gradient — head(p0) → tail(p1)
+  lashRamp:[{p:0,c:'#6600ff'},{p:0.16,c:'#ffffff'},{p:0.5,c:'#0091ff'},{p:1,c:'#3a0f80'}],
+  // POP-burst ("final trails from the skull") gradient — head → tail
+  popRamp:[{p:0,c:'#ffbb00'},{p:0.2,c:'#9fd6ff'},{p:0.55,c:'#d400ff'},{p:1,c:'#480052'}],
+  // COLLAPSE
+  shardCount:205,       // voronoi shard count
+  crumbleShake:20,      // px — peak shake during the shatter
+  igniteColor:'#ffffff',// flash tint at the collapse
+  holeColorA:'#5a50ff', // event-horizon ring — inner
+  holeColorB:'#501796', // event-horizon ring — outer
+  trailW:4, trailLen:22, emitSpeed:1050, suckSpeed:720, headR:6,
+};
+let emitAcc=0, nextGap=MCFG.gapMin, collided=false, collideFlash=0, orbBoost=0;
+
+function drawRushOrbs(u){
+  const e=u*u, r=Math.min(cellW,cellH)*.46*1.12;
+  for(const [sx,sy] of [[ax,ay],[bx2,by2]]){
+    const x=sx+(CX-sx)*e, y=sy+(CY-sy)*e;
+    stampGlow(x,y,r*1.7,MCFG.orbGlow,0.55*u);
+    if(orbReady) sc.drawImage(orbImg,x-r,y-r,r*2,r*2);
+    else{const gd=sc.createRadialGradient(x,y,r*.2,x,y,r);gd.addColorStop(0,'#eaf4ff');gd.addColorStop(.5,'#6a6cff');gd.addColorStop(1,'#2a0b4e');sc.fillStyle=gd;sc.beginPath();sc.arc(x,y,r,0,7);sc.fill();}
+  }
+}
+function onCollision(){
+  fxImpact(CX,CY,{color:'#dff0ff',r:44,heavy:true});
+  fxImpact(CX,CY,{color:MCFG.orbGlow,r:74,heavy:true});
+  impacts.push({kind:'ring',x:CX,y:CY,t:0,dur:0.5,r0:20,r1:270,w:5,color:'#7fb0ff'});
+  for(let i=0;i<20;i++){const a=i/20*6.28+rand(-.3,.3),sp=rand(120,300);sparks.push({x:CX,y:CY,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t:0,life:rand(.4,.75),size:rand(2,4),color:i%2?'#8fd0ff':'#b78bff'});}
+}
+// EMISSION — lashes out FROM the orb spot on a strange curve and flies off-screen (no impact, no orphan).
+function spawnEmitTrail(){
+  const a=Math.random()*6.28, D=MCFG.offBig*rand(0.9,1.3);
+  const from={x:CX+rand(-6,6), y:CY+rand(-6,6)};
+  const to={x:CX+Math.cos(a)*D, y:CY+Math.sin(a)*D};
+  spawnTrail(from,to,{ramp:MCFG.lashRamp, head:MCFG.lashRamp[0].c, width:MCFG.trailW, length:MCFG.trailLen, speed:MCFG.emitSpeed*rand(0.8,1.35), r:MCFG.headR,
+    headWidthMul:2, tailWidthMul:0.12, fadePow:2, fadePeak:1,
+    popOut:{dist:rand(90,230),angleMin:30,angleMax:140}, accel:easeOutQuad, headCfg:{rMul:2.4,pulseAmp:.3,pulseFreq:2,growTo:2.4},
+    offscreenKill:true});
+}
+// SUCTION — pulled IN from a ring into the orb; genesis-muted at spawn so no bright head pops orphaned in space.
+function spawnSuckTrail(){
+  const a=Math.random()*6.28, r=MCFG.ringR*rand(0.82,1.15);
+  const from={x:CX+Math.cos(a)*r, y:CY+Math.sin(a)*r*0.9};
+  const jit=MCFG.bigR*0.5;
+  const to={x:CX+rand(-jit,jit), y:CY+rand(-jit,jit)};
+  spawnTrail(from,to,{ramp:MCFG.lashRamp, head:MCFG.lashRamp[0].c, width:MCFG.trailW, length:MCFG.trailLen, speed:MCFG.suckSpeed*rand(0.85,1.15), r:MCFG.headR,
+    headWidthMul:2, tailWidthMul:0.12, fadePow:2, fadePeak:1,
+    popOut:{dist:rand(50,120),angleMin:40,angleMax:120}, accel:easeInCubic, headCfg:{rMul:2.4,pulseAmp:.3,pulseFreq:2,growTo:2.4},
+    start:{clearDist:80,scale:0.08,alpha:0.12}, onHit:onSuckHit});
+}
+function onSuckHit(){ orbBoost=Math.min(1,orbBoost+0.12); }   // feed the orb; no orphaned blob left at the centre
+// POP — one instant radial spray of very-fast trails released as the orb bursts.
+function popBurst(){
+  for(let i=0;i<MCFG.popBurst;i++){
+    const a=i/MCFG.popBurst*6.28+rand(-0.15,0.15), D=MCFG.offBig*rand(0.9,1.3);
+    const from={x:CX+rand(-4,4), y:CY+rand(-4,4)};
+    const to={x:CX+Math.cos(a)*D, y:CY+Math.sin(a)*D};
+    spawnTrail(from,to,{ramp:MCFG.popRamp, head:MCFG.popRamp[0].c, width:MCFG.trailW*1.2, length:MCFG.trailLen*0.8, speed:MCFG.popSpeed*rand(0.9,1.25), r:MCFG.headR*1.1,
+      headWidthMul:2, tailWidthMul:0.12, fadePow:2, fadePeak:1,
+      popOut:{dist:rand(30,120),angleMin:10,angleMax:60}, accel:easeOutQuad, headCfg:{rMul:2.4,pulseAmp:.3,pulseFreq:2,growTo:2.0},
+      offscreenKill:true});
+  }
+}
+function runEmitter(chargeT,dt){
+  if(chargeT>MCFG.emitWindow) return;   // ← hard stop: no more emissions past the window
+  emitAcc+=dt;
+  if(emitAcc>=nextGap){
+    emitAcc=0;
+    for(let k=0;k<MCFG.emitPerTick;k++) spawnEmitTrail();
+    for(let k=0;k<MCFG.suckPerTick;k++) spawnSuckTrail();
+    const f=Math.min(1,chargeT/MCFG.emitWindow);
+    nextGap=MCFG.gapMin+(MCFG.gapMax-MCFG.gapMin)*(f*f); // ease-in: dense at first, delay grows toward the end
+  }
+}
+function drawBigOrb(chargeT){
+  const gp=Math.min(1,chargeT/MCFG.growT);                       // growth progress 0..1 (reaches full size right at the POP)
+  const s=(EASINGS[MCFG.growEase]||EASINGS.easeOutCubic)(gp);     // ease-out growth: fast at start, slower at end
+  const strain=gp>0.6?((gp-0.6)/0.4)*0.05*Math.sin(chargeT*34):0; // high-freq over-inflation wobble as it nears the pop
+  const pulse=1+0.02*Math.sin(chargeT*9)+orbBoost*0.06+strain;
+  const rattle=MCFG.rattleMax*gp*gp;                              // rattle grows with the orb
+  const jx=rand(-rattle,rattle), jy=rand(-rattle,rattle);
+  const R=MCFG.bigR*s*pulse, cx=CX+jx, cy=CY+jy;
+  const app=Math.min(1,gp*4);                                     // fade the halo in with the first sliver of growth
+  stampGlow(cx,cy,R*2.3,MCFG.orbGlow,(0.45+orbBoost*0.4)*app);
+  stampGlow(cx,cy,R*1.35,'#9b6bff',(0.3+orbBoost*0.3)*app);
+  const bright=(1+orbBoost*0.8).toFixed(2);
+  sc.save();sc.filter=`brightness(${bright})`;
+  if(orbReady) sc.drawImage(orbImg,cx-R,cy-R,R*2,R*2);
+  else{const gd=sc.createRadialGradient(cx,cy,R*.2,cx,cy,R);gd.addColorStop(0,'#eaf4ff');gd.addColorStop(.5,'#6a6cff');gd.addColorStop(1,'#2a0b4e');sc.fillStyle=gd;sc.beginPath();sc.arc(cx,cy,R,0,7);sc.fill();}
+  sc.restore();
+}
+function merge(ts,dt){
+  const el=(ts-mT0)/1000;
+  const RUSH=MCFG.rushT, TOTAL=RUSH+MCFG.growT;
+  const chargeT=Math.max(0,el-RUSH);
+  sc.setTransform(1,0,0,1,0,0);sc.clearRect(0,0,W,H);
+  let amp=0;
+  if(el>=RUSH) amp=1.2+Math.min(6,chargeT*2.2);
+  if(collideFlash>0){amp+=collideFlash*8;collideFlash=Math.max(0,collideFlash-dt*3);}
+  const shx=rand(-amp,amp), shy=rand(-amp,amp);
+  sc.save();sc.translate(shx,shy);
+  sc.drawImage(tex,0,0);
+  const dim=Math.min(0.5,chargeT*0.22);
+  if(dim>0){sc.fillStyle=`rgba(4,5,10,${dim})`;sc.fillRect(-20,-20,W+40,H+40);}
+  if(el<RUSH){
+    drawRushOrbs(el/RUSH);
+  }else{
+    if(!collided){collided=true;collideFlash=1;onCollision();}
+    runEmitter(chargeT,dt);
+    stepFx(dt);
+    drawBigOrb(chargeT);
+    orbBoost=Math.max(0,orbBoost-dt*2.2);
+  }
+  sc.restore();
+  if(el>=TOTAL){ // POP — quick pulse + fast radial burst; the shatter begins THIS exact instant
+    fxImpact(CX,CY,{color:'#ffffff',r:80,heavy:true});
+    fxImpact(CX,CY,{color:MCFG.orbGlow,r:150,heavy:true});
+    impacts.push({kind:'ring',x:CX,y:CY,t:0,dur:0.28,r0:MCFG.bigR*0.5,r1:300,w:6,color:'#bcd8ff'});
+    popBurst();
+    state='ignite';
+  }
+}
+
+/* ---- VORONOI shards (irregular polygons clipped from the screen texture) ---- */
+let shards=[],maxR=1,built=false,builtCount=0;
+function clipHP(poly,mx,my,nx,ny){const out=[];const N=poly.length;
+  for(let i=0;i<N;i++){const A=poly[i],B=poly[(i+1)%N];
+    const da=(A.x-mx)*nx+(A.y-my)*ny, db=(B.x-mx)*nx+(B.y-my)*ny;
+    if(da>=0)out.push(A);
+    if((da>=0)!==(db>=0)){const t=da/(da-db);out.push({x:A.x+t*(B.x-A.x),y:A.y+t*(B.y-A.y)});}}
+  return out;}
+function buildShards(){
+  shards=[];maxR=1;const seeds=[];const spread=Math.hypot(W,H)*0.60,N=MCFG.shardCount;
+  for(let i=0;i<N;i++){let x,y;
+    if(Math.random()<0.64){const a=Math.random()*7,r=Math.pow(Math.random(),1.7)*spread;x=CX+Math.cos(a)*r;y=CY+Math.sin(a)*r;}
+    else{x=Math.random()*W;y=Math.random()*H;}
+    seeds.push({x,y});}
+  const rect=[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
+  for(let i=0;i<seeds.length;i++){let poly=rect;
+    for(let j=0;j<seeds.length;j++){if(i===j)continue;
+      poly=clipHP(poly,(seeds[i].x+seeds[j].x)/2,(seeds[i].y+seeds[j].y)/2,seeds[i].x-seeds[j].x,seeds[i].y-seeds[j].y);
+      if(poly.length<3)break;}
+    if(poly.length<3)continue;
+    let cx=0,cy=0;for(const p of poly){cx+=p.x;cy+=p.y;}cx/=poly.length;cy/=poly.length;
+    const dj=Math.max(0,Math.hypot(cx-CX,cy-CY)+(Math.random()-0.5)*38);
+    shards.push({poly,cx,cy,dj,det:false,dx:0,dy:0,rot:0,vr:0,a:1,vx:0,vy:0});
+    if(dj>maxR)maxR=dj;}
+  built=true;builtCount=MCFG.shardCount;
+}
+
+/* ---- sim ---- */
+let state='idle',t0=0,last=0,shake=0,mgA=0, mT0=0, mLast=0;
+const ease=t=>t<0?0:t>1?1:1-Math.pow(1-t,2.2);
+function idle(){bgc.fillStyle='#000';bgc.fillRect(0,0,W,H);sc.setTransform(1,0,0,1,0,0);sc.clearRect(0,0,W,H);sc.drawImage(tex,0,0);}
+function detach(s){s.det=true;const a=Math.atan2(s.cy-CY,s.cx-CX),spd=0.05+Math.random()*0.13;
+  s.vx=Math.cos(a)*spd*(0.4+Math.random()*0.7);s.vy=Math.sin(a)*spd*0.32-(0.015+Math.random()*0.05);s.vr=(Math.random()-0.5)*0.02;}
+function crumble(R,dtS){
+  bgc.fillStyle='#000';bgc.fillRect(0,0,W,H);            // the black minigame screen behind
+  sc.setTransform(1,0,0,1,0,0);sc.clearRect(0,0,W,H);
+  const shx=(Math.random()-0.5)*shake, shy=(Math.random()-0.5)*shake;
+  sc.save();sc.translate(shx,shy);
+  sc.drawImage(tex,0,0);                                  // intact screen
+  for(const s of shards){const near=s.dj-R;if(!s.det&&near>0&&near<44){
+    sc.beginPath();sc.moveTo(s.poly[0].x,s.poly[0].y);for(let i=1;i<s.poly.length;i++)sc.lineTo(s.poly[i].x,s.poly[i].y);sc.closePath();
+    sc.strokeStyle=hexRgba(MCFG.holeColorA,(1-near/44)*0.5);sc.lineWidth=1.2;sc.stroke();}}
+  sc.globalCompositeOperation='destination-out';sc.fillStyle='#000';
+  for(const s of shards){if(s.det){sc.beginPath();sc.moveTo(s.poly[0].x,s.poly[0].y);for(let i=1;i<s.poly.length;i++)sc.lineTo(s.poly[i].x,s.poly[i].y);sc.closePath();sc.fill();}}
+  sc.globalCompositeOperation='source-over';
+  for(const s of shards){if(s.det&&s.a>0){
+    sc.save();sc.globalAlpha=Math.max(0,s.a);sc.translate(s.cx+s.dx,s.cy+s.dy);sc.rotate(s.rot);
+    sc.save();
+    sc.beginPath();sc.moveTo(s.poly[0].x-s.cx,s.poly[0].y-s.cy);for(let i=1;i<s.poly.length;i++)sc.lineTo(s.poly[i].x-s.cx,s.poly[i].y-s.cy);sc.closePath();sc.clip();
+    sc.drawImage(tex,-s.cx,-s.cy);
+    sc.fillStyle='rgba(0,0,0,'+(1-s.a)*0.8+')';sc.fill();
+    sc.restore();
+    // WHITE bevel on the slab's bottom-right-facing edges (screen-space light) → 3D; dissipates via globalAlpha=s.a as it falls
+    if(MCFG.edge3d>0){
+      const P=s.poly,ct=Math.cos(s.rot),stt=Math.sin(s.rot);
+      sc.strokeStyle=`rgba(255,255,255,${MCFG.edge3d})`;sc.lineWidth=1.5;sc.lineJoin='round';
+      for(let i=0;i<P.length;i++){
+        const A=P[i],B=P[(i+1)%P.length];
+        const ax=A.x-s.cx,ay=A.y-s.cy,bx=B.x-s.cx,by=B.y-s.cy;
+        let nx=by-ay,ny=-(bx-ax);const mx=(ax+bx)/2,my=(ay+by)/2;if(nx*mx+ny*my<0){nx=-nx;ny=-ny;} // outward normal (local)
+        const sx=nx*ct-ny*stt, sy=nx*stt+ny*ct;                                                     // → screen space
+        if(sx+sy>0){sc.beginPath();sc.moveTo(ax,ay);sc.lineTo(bx,by);sc.stroke();}                  // faces bottom-right → lit
+      }
+    }
+    sc.restore();}}
+  if(R>0&&R<maxR){const ring=sc.createRadialGradient(CX,CY,Math.max(0,R-34),CX,CY,R+20);
+    ring.addColorStop(0,'rgba(0,0,0,0)');ring.addColorStop(.72,'rgba(0,0,0,0)');
+    ring.addColorStop(.86,hexRgba(MCFG.holeColorA,.55));ring.addColorStop(.94,hexRgba(MCFG.holeColorB,.6));ring.addColorStop(1,'rgba(0,0,0,0)');
+    sc.globalCompositeOperation='screen';sc.fillStyle=ring;sc.fillRect(0,0,W,H);sc.globalCompositeOperation='source-over';}
+  stepFx(dtS);   // let the POP burst finish flying out over the shattering screen
+  sc.restore();
+}
+function ignition(p,dtS){sc.setTransform(1,0,0,1,0,0);sc.clearRect(0,0,W,H);
+  sc.save();sc.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);sc.drawImage(tex,0,0);
+  const rad=90*(1-p)+8,gl=sc.createRadialGradient(CX,CY,0,CX,CY,rad*2.6);
+  gl.addColorStop(0,'rgba(230,240,255,'+0.9*p+')');gl.addColorStop(.3,hexRgba(MCFG.igniteColor,0.8*p));
+  gl.addColorStop(.7,hexRgba(MCFG.igniteColor,0.35*p));gl.addColorStop(1,'rgba(0,0,0,0)');
+  sc.globalCompositeOperation='screen';sc.fillStyle=gl;sc.fillRect(0,0,W,H);
+  sc.globalCompositeOperation='source-over';sc.fillStyle='#000';sc.beginPath();sc.arc(CX,CY,8*p,0,7);sc.fill();
+  stepFx(dtS);   // render the POP burst + flash as the screen ignites
+  sc.restore();}
+function minigame(){bgc.fillStyle='#000';bgc.fillRect(0,0,W,H);sc.setTransform(1,0,0,1,0,0);sc.clearRect(0,0,W,H);
+  mgA=Math.min(1,mgA+0.03);bgc.globalAlpha=mgA;const p=performance.now()/500,s=1+Math.sin(p)*0.03;
+  bgc.save();bgc.translate(W/2,H/2);bgc.scale(s,s);bgc.textAlign='center';bgc.textBaseline='middle';
+  bgc.shadowColor='#6a80ff';bgc.shadowBlur=26;bgc.fillStyle='#5a4cff';bgc.font='bold 30px system-ui';bgc.fillText('⚡ CHAOS ⚡',0,-16);
+  bgc.shadowBlur=12;bgc.fillStyle='#e0e6ff';bgc.font='bold 16px system-ui';bgc.fillText('MINIGAME',0,20);bgc.restore();bgc.globalAlpha=1;
+  if(state==='done')requestAnimationFrame(minigame);}
+function loop(ts){
+  if(state==='merge'){ const dt=Math.min(0.04,(ts-mLast)/1000); mLast=ts; merge(ts,dt);
+    if(state==='merge') requestAnimationFrame(loop); else { t0=ts; last=ts; requestAnimationFrame(loop); } return; }
+  const dt=Math.min(40,ts-last);last=ts; const dtS=dt/1000;
+  if(state==='ignite'){const p=(ts-t0)/Math.max(1,MCFG.igniteMs);shake=6;if(p>=1){state='crumble';t0=ts;}else{ignition(ease(p),dtS);requestAnimationFrame(loop);return;}}
+  if(state==='crumble'){const prog=(ts-t0)/MCFG.crumbleMs,R=ease(prog)*maxR*1.03;shake=MCFG.crumbleShake*(1-Math.min(1,prog));
+    for(const s of shards){if(!s.det&&R>=s.dj)detach(s);
+      if(s.det){s.vy+=0.00022*dt;s.dx+=s.vx*dt;s.dy+=s.vy*dt;s.rot+=s.vr*dt;s.a-=0.0016*dt;}}
+    crumble(R,dtS);if(prog>=1.2){state='done';shake=0;mgA=0;minigame();return;}requestAnimationFrame(loop);}}
+function go(){
+  if(!built||builtCount!==MCFG.shardCount)buildShards();for(const s of shards){s.det=false;s.dx=s.dy=s.rot=0;s.a=1;}
+  projectiles.length=0;impacts.length=0;sparks.length=0;
+  emitAcc=0;nextGap=MCFG.gapMin;collided=false;collideFlash=0;orbBoost=0;mgA=0;
+  state='merge';mT0=performance.now();mLast=mT0;last=mT0;requestAnimationFrame(loop);
+}
+document.getElementById('go').onclick=()=>{if(state==='idle'||state==='done'){state='idle';drawScreen();idle();go();}};
+document.getElementById('replay').onclick=()=>{state='idle';mgA=0;drawScreen();idle();};
+
+/* ── tuning panel — live-edits MCFG; export JSON to bake in ── */
+const CONTROLS=[
+  {t:'Timings', items:[
+    {p:'rushT',min:0,max:1,step:.02,l:'orbs rush (s)'},
+    {p:'growT',min:0.4,max:4,step:.05,l:'grow+rattle (s)'},
+  ]},
+  {t:'Orb', items:[
+    {p:'bigR',min:30,max:170,step:2,l:'orb radius'},
+    {p:'growEase',type:'select',opts:['easeOutQuad','easeOutCubic','easeOutQuart','easeInOutCubic','linear'],l:'grow ease'},
+    {p:'rattleMax',min:0,max:24,step:.5,l:'rattle max px'},
+  ]},
+  {t:'Emission cadence', items:[
+    {p:'emitWindow',min:0.4,max:4,step:.05,l:'emit window (s)'},
+    {p:'gapMin',min:0.02,max:.6,step:.01,l:'gap min (s)'},
+    {p:'gapMax',min:.2,max:2,step:.05,l:'gap max (s)'},
+    {p:'emitPerTick',min:0,max:8,step:1,l:'lash / tick'},
+    {p:'suckPerTick',min:0,max:8,step:1,l:'suck / tick'},
+  ]},
+  {t:'Trails', items:[
+    {p:'emitSpeed',min:400,max:2200,step:50,l:'lash speed'},
+    {p:'suckSpeed',min:300,max:1600,step:50,l:'suck speed'},
+    {p:'ringR',min:120,max:420,step:10,l:'suction ring R'},
+    {p:'offBig',min:500,max:1600,step:50,l:'off-screen dist'},
+    {p:'trailW',min:1,max:10,step:.5,l:'trail width'},
+    {p:'trailLen',min:8,max:60,step:1,l:'trail length'},
+    {p:'headR',min:2,max:14,step:.5,l:'head radius'},
+  ]},
+  {t:'Lash trail colours (head → tail)', items:[
+    {type:'rampcolor',ramp:'lashRamp',idx:0,l:'head'},
+    {type:'rampcolor',ramp:'lashRamp',idx:1,l:'mid 1'},
+    {type:'rampcolor',ramp:'lashRamp',idx:2,l:'mid 2'},
+    {type:'rampcolor',ramp:'lashRamp',idx:3,l:'tail'},
+  ]},
+  {t:'POP burst', items:[
+    {p:'popBurst',min:0,max:48,step:1,l:'burst count'},
+    {p:'popSpeed',min:600,max:2600,step:50,l:'burst speed'},
+  ]},
+  {t:'POP trail colours (head → tail)', items:[
+    {type:'rampcolor',ramp:'popRamp',idx:0,l:'head'},
+    {type:'rampcolor',ramp:'popRamp',idx:1,l:'mid 1'},
+    {type:'rampcolor',ramp:'popRamp',idx:2,l:'mid 2'},
+    {type:'rampcolor',ramp:'popRamp',idx:3,l:'tail'},
+  ]},
+  {t:'Collapse', items:[
+    {p:'igniteMs',min:0,max:400,step:10,l:'collapse lead (ms)'},
+    {p:'crumbleMs',min:600,max:3000,step:50,l:'shatter (ms)'},
+    {p:'shardCount',min:40,max:280,step:5,l:'shard count'},
+    {p:'crumbleShake',min:0,max:20,step:1,l:'shatter shake'},
+    {p:'edge3d',min:0,max:1,step:.05,l:'3D slab edge'},
+    {type:'color',p:'igniteColor',l:'ignite flash'},
+    {type:'color',p:'holeColorA',l:'horizon inner'},
+    {type:'color',p:'holeColorB',l:'horizon outer'},
+  ]},
+];
+function syncExport(){ document.getElementById('copy').value=JSON.stringify(MCFG,null,2); }
+function buildControls(){
+  const root=document.getElementById('controls'); root.innerHTML='';
+  for(const grp of CONTROLS){
+    const box=document.createElement('div'); box.className='grp';
+    box.insertAdjacentHTML('beforeend',`<div class="gt">${grp.t}</div>`);
+    for(const it of grp.items){
+      const row=document.createElement('div'); row.className='ctl';
+      if(it.type==='select'){
+        row.innerHTML=`<label>${it.l}</label><select>${it.opts.map(o=>`<option ${MCFG[it.p]===o?'selected':''}>${o}</option>`).join('')}</select>`;
+        row.querySelector('select').addEventListener('change',e=>{MCFG[it.p]=e.target.value;syncExport();});
+      }else if(it.type==='color'){
+        row.innerHTML=`<label>${it.l}</label><input type="color" value="${MCFG[it.p]}"><span class="val">${MCFG[it.p]}</span>`;
+        const inp=row.querySelector('input'),val=row.querySelector('.val');
+        inp.addEventListener('input',e=>{MCFG[it.p]=e.target.value;val.textContent=e.target.value;syncExport();});
+      }else if(it.type==='rampcolor'){
+        const cur=MCFG[it.ramp][it.idx].c;
+        row.innerHTML=`<label>${it.l}</label><input type="color" value="${cur}"><span class="val">${cur}</span>`;
+        const inp=row.querySelector('input'),val=row.querySelector('.val');
+        inp.addEventListener('input',e=>{MCFG[it.ramp][it.idx].c=e.target.value;val.textContent=e.target.value;syncExport();});
+      }else{
+        row.innerHTML=`<label>${it.l}</label><input type="range" min="${it.min}" max="${it.max}" step="${it.step}" value="${MCFG[it.p]}"><span class="val">${MCFG[it.p]}</span>`;
+        const inp=row.querySelector('input'),val=row.querySelector('.val');
+        inp.addEventListener('input',e=>{MCFG[it.p]=parseFloat(e.target.value);val.textContent=e.target.value;syncExport();});
+      }
+      box.appendChild(row);
+    }
+    root.appendChild(box);
+  }
+}
+document.getElementById('copyBtn').onclick=()=>{const t=document.getElementById('copy');t.select();try{navigator.clipboard.writeText(t.value);}catch(e){document.execCommand('copy');}};
+buildControls(); syncExport();
+
+drawScreen();idle();
+</script></body></html>

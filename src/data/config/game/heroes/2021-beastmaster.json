@@ -20,5 +20,6 @@
 			"frac": 0.35
 		}
 	},
-	"classKey": "beastmaster"
+	"classKey": "beastmaster",
+	"flying": true
 }

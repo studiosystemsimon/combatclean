@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — FTUE mockup (override + flag layer)</title>
+<style>
+  :root{
+    --ink:#eaf0ff; --dim:#9fb0d0; --dim2:#6f7f9e; --gold:#ffd45e; --gold2:#ff9e2e;
+    --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.10); --code:#0b1020;
+    --ov:#b46bff; --flag:#5ad17a; --core:#5a8cff; --hp:#ff5e6c; --limit:#ffd45e; --coin:#ffcf5a;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1300px 800px at 50% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%);
+    min-height:100vh; padding:34px 20px 90px; -webkit-font-smoothing:antialiased; line-height:1.5; }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  h1{ font-size:26px; margin:0 0 4px; }
+  .sub{ color:var(--dim); font-size:14px; margin:0; max-width:820px; }
+  .tag{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:1px; color:var(--gold);
+    border:1px solid #ffd45e44; background:#ffd45e12; padding:4px 10px; border-radius:99px; margin-top:10px; }
+  h2{ font-size:15px; letter-spacing:.5px; text-transform:uppercase; color:var(--dim); margin:38px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  h2 .n{ color:var(--gold); margin-right:8px; }
+  p.lead{ color:var(--dim); font-size:13.5px; max-width:840px; }
+  code{ background:#ffffff12; color:#cfe0ff; padding:1px 6px; border-radius:5px; font-size:12px; font-family:var(--mono); }
+
+  /* layer diagram */
+  .layer{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin:16px 0; }
+  @media(max-width:800px){ .layer{ grid-template-columns:1fr; } }
+  .lbox{ border:1px solid var(--line); border-radius:14px; padding:16px; background:linear-gradient(180deg,var(--panel2),var(--panel)); }
+  .lbox.core{ border-color:#5a8cff55; } .lbox.ftue{ border-color:#b46bff66; }
+  .lbox h3{ margin:0 0 4px; font-size:14px; } .lbox .cap{ color:var(--dim2); font-size:11.5px; margin-bottom:10px; }
+  .lbox.core h3{ color:#bcd2ff; } .lbox.ftue h3{ color:#e2c8ff; }
+  .chip{ display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:8px; margin:3px 4px 3px 0; border:1px solid var(--line); color:#d7e0f5; background:#0e1220; }
+  .flow{ text-align:center; color:var(--dim2); font-size:12px; margin:8px 0 2px; font-family:var(--mono); }
+  .toggle{ display:flex; align-items:center; gap:10px; margin-top:12px; padding:10px 12px; border:1px dashed var(--flag); border-radius:10px; background:#5ad17a10; }
+  .toggle .sw{ width:42px; height:22px; border-radius:99px; background:var(--flag); position:relative; flex:0 0 auto; box-shadow:0 0 10px #5ad17a55; }
+  .toggle .sw::after{ content:''; position:absolute; right:2px; top:2px; width:18px; height:18px; border-radius:50%; background:#0b140d; }
+  .toggle .t{ font-size:12.5px; color:#c7f5d8; } .toggle .t b{ color:#eafff2; }
+
+  /* code block */
+  pre{ background:var(--code); border:1px solid var(--line); border-left:3px solid var(--ov); border-radius:10px;
+    padding:14px 16px; overflow:auto; font-family:var(--mono); font-size:12px; line-height:1.6; color:#cdd9e5; margin:12px 0; }
+  pre .c{ color:#6b7a99; } pre .k{ color:#7fb0ff; } pre .s{ color:#8affc4; } pre .o{ color:#e2b6ff; } pre .n{ color:#ffcf8a; }
+
+  /* registry columns */
+  .reg{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:800px){ .reg{ grid-template-columns:1fr; } }
+  .regc{ border:1px solid var(--line); border-radius:12px; padding:14px; background:linear-gradient(180deg,var(--panel2),var(--panel)); }
+  .regc h3{ margin:0 0 8px; font-size:12px; letter-spacing:.5px; text-transform:uppercase; }
+  .regc.f h3{ color:var(--flag); } .regc.o h3{ color:var(--ov); }
+  .regc ul{ margin:0; padding:0; list-style:none; }
+  .regc li{ font-size:12.5px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.06); color:#d7e0f5; }
+  .regc li:last-child{ border-bottom:0; }
+  .regc li b{ color:#fff; font-family:var(--mono); font-size:12px; }
+  .regc li span{ color:var(--dim2); }
+
+  /* phone screens */
+  .screens{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:10px; }
+  .screen{ border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#0c1020; }
+  .screen .cap{ padding:8px 12px; font-size:12px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,var(--panel2),var(--panel)); display:flex; gap:8px; align-items:baseline; }
+  .screen .cap .bn{ font-family:var(--mono); color:var(--gold); font-weight:800; font-size:11px; }
+  .screen .cap .bt{ font-weight:700; font-size:12.5px; }
+  .phone{ padding:12px; display:flex; flex-direction:column; gap:9px; min-height:230px; }
+  /* combat mini */
+  .combat{ background:linear-gradient(180deg,#12203a,#0e1830); border:1px solid #23335a; border-radius:10px; padding:9px; }
+  .row{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .unit{ display:flex; flex-direction:column; align-items:center; gap:3px; width:46px; }
+  .av{ width:38px; height:38px; border-radius:9px; display:grid; place-items:center; font-size:19px; border:1px solid var(--line); }
+  .av.hero{ background:#1c2f52; border-color:#3b62a8; } .av.foe{ background:#3a1c26; border-color:#7a3243; } .av.boss{ background:#4a2140; border-color:#9a4ba0; width:46px; height:46px; font-size:24px; }
+  .bar{ width:100%; height:5px; border-radius:3px; background:#00000055; overflow:hidden; }
+  .bar > i{ display:block; height:100%; }
+  .bar.hpb > i{ background:var(--hp); } .bar.lim > i{ background:var(--limit); box-shadow:0 0 6px var(--limit); }
+  .u-lbl{ font-size:8.5px; color:var(--dim2); font-family:var(--mono); }
+  .limbar{ display:flex; align-items:center; gap:6px; font-size:10px; color:var(--limit); font-family:var(--mono); }
+  .limbar .bar{ flex:1; height:7px; }
+  /* board mini */
+  .board{ display:grid; grid-template-columns:repeat(6,1fr); gap:3px; }
+  .cell{ aspect-ratio:1; border-radius:5px; background:#0e1424; border:1px solid #1c2740; display:grid; place-items:center; font-size:12px; color:#9fb0d0; }
+  .cell.gen{ background:#1a2340; border-color:#39508c; } .cell.tile{ background:#22304e; border-color:#3a5487; color:#dbe6ff; font-family:var(--mono); font-size:9px; }
+  /* order rail */
+  .rail{ display:flex; gap:6px; }
+  .order{ flex:1; border:1px solid var(--line); border-radius:8px; padding:6px; font-size:10px; text-align:center; background:#141a2e; }
+  .order.potion{ border-color:#3bc9b0; background:#0f2b28; color:#8afce8; }
+  .order.gold{ border-color:var(--gold); box-shadow:0 0 10px #ffd45e33; }
+  .note{ font-size:10.5px; color:var(--dim); line-height:1.45; }
+  .note b{ color:#dfe7fb; }
+  .kpi{ display:flex; gap:8px; flex-wrap:wrap; margin-top:2px; }
+  .kpi span{ font-size:10px; font-family:var(--mono); color:#cbd6ee; background:#0e1424; border:1px solid var(--line); border-radius:6px; padding:2px 7px; }
+  .kpi span b{ color:var(--gold); }
+
+  /* ramp strip */
+  .ramp{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .lvl{ flex:1 1 78px; border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center; background:linear-gradient(180deg,var(--panel2),var(--panel)); }
+  .lvl .L{ font-family:var(--mono); font-size:10px; color:var(--dim2); }
+  .lvl .cnt{ font-size:22px; font-weight:900; color:var(--ink); line-height:1.1; }
+  .lvl .en{ font-size:15px; } .lvl .nt{ font-size:9px; color:var(--dim2); text-transform:uppercase; letter-spacing:.4px; }
+  .lvl.elite{ border-color:#ff9e2e66; } .lvl.rest{ border-color:#5ad17a55; } .lvl.tre{ border-color:#5a8cff55; }
+  .lvl.boss{ border-color:#b46bff88; background:linear-gradient(180deg,#2a1a3e,#170f28); }
+  .lvl.summon{ border-color:var(--gold); box-shadow:0 0 12px #ffd45e22; }
+
+  /* tables */
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+  th,td{ text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); }
+  th{ color:var(--dim2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+  td.c,th.c{ text-align:center; } td .mono,.mono{ font-family:var(--mono); }
+  .note-box{ color:var(--dim); font-size:12.5px; background:#ffffff08; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:12px; }
+  .warn{ border-left:3px solid var(--gold2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Combat Clean — FTUE mockup</h1>
+  <p class="sub">The first-run experience as a <b>flexible layer of OVERRIDES + FLAGS on top of gameplay</b> — every number below is the live config. Toggle the layer off and the game runs exactly as normal, with no residue.</p>
+  <span class="tag">MOCKUP · numerically accurate · not wired</span>
+
+  <!-- ARCHITECTURE -->
+  <h2><span class="n">1</span>The layer model — how it detaches from gameplay</h2>
+  <p class="lead">Gameplay never contains tutorial logic. Instead, each system exposes a tiny <b>read-hook</b>: "is there an FTUE override for this decision? use it — else take the normal path." The FTUE is a config object + a set of persisted flags. Turn it off (or delete it) and every hook falls through to vanilla gameplay.</p>
+
+  <div class="layer">
+    <div class="lbox core">
+      <h3>GAMEPLAY CORE (untouched)</h3>
+      <div class="cap">Pure sim — reducer, buildWave, rollOrder, gacha. No <code>if (ftue)</code> branches beyond the read-hooks.</div>
+      <span class="chip">buildWave(level)</span><span class="chip">rollOrder()</span><span class="chip">Gacha.pull()</span>
+      <span class="chip">initState() board</span><span class="chip">limitEnergy</span>
+      <div class="flow">▲ reads override / ▼ nothing flows back</div>
+    </div>
+    <div class="lbox ftue">
+      <h3>FTUE LAYER (opt-in, removable)</h3>
+      <div class="cap">One config of overrides + a flag set. Lives outside <code>src/game</code> logic; consumed only through the hooks.</div>
+      <span class="chip" style="border-color:#b46bff55">enemyCounts[]</span><span class="chip" style="border-color:#b46bff55">firstOrder = potion</span>
+      <span class="chip" style="border-color:#b46bff55">firstPullHero</span><span class="chip" style="border-color:#b46bff55">boardSeed</span>
+      <span class="chip" style="border-color:#5ad17a55">flags.seen.*</span><span class="chip" style="border-color:#5ad17a55">flags.ftueFirstPull</span>
+      <div class="toggle"><div class="sw"></div><div class="t"><b>flags.ftueActive</b> — flip to <b>false</b> → all hooks fall through → pure gameplay, zero code change.</div></div>
+    </div>
+  </div>
+
+  <p class="lead" style="margin-top:14px">The read-hook pattern (illustrative — every override is the same shape):</p>
+  <pre><span class="c">// each gameplay decision checks the layer first, then falls through — the ONLY ftue-aware lines.</span>
+<span class="k">buildWave</span>(level)      → count = ftue?.<span class="o">enemyCounts</span>[level] <span class="k">??</span> formula(level)         <span class="c">// 1,1,2,2,3,3,3,4,5 vs base 3+1/5lvl</span>
+<span class="k">rollOrder</span>(firstEver) → reward = ftue.on &amp;&amp; !flags.seen.<span class="o">firstOrder</span> ? <span class="s">'potion'</span> : rollReward()
+<span class="k">summon</span>(bannerId)     → hero   = flags.<span class="o">ftueFirstPull</span> ? ftue.<span class="o">firstPullHero</span> : Gacha.pull(...)  <span class="c">// then clear the flag</span>
+<span class="k">initState</span>()          → board  = flags.ftueActive ? ftue.<span class="o">boardSeed</span> : normalSeed()
+
+<span class="c">// REMOVE THE FTUE: set flags.ftueActive=false (or drop the config). Every line above takes the</span>
+<span class="c">// right branch automatically. No gameplay file changes, no dangling references.</span></pre>
+
+  <!-- REGISTRY -->
+  <h2><span class="n">2</span>The override + flag registry</h2>
+  <div class="reg">
+    <div class="regc o">
+      <h3>Overrides — active only while the layer is on</h3>
+      <ul>
+        <li><b>enemyCounts</b> <span>— per zone-1 level: <span class="mono">[1,1,2,2,3,3,3,4,5]</span> (L10 = boss). Overrides <code>buildWave</code>'s formula + the rest count-cap.</span></li>
+        <li><b>firstEnemies</b> <span>— L1 &amp; L2 pinned to two <b>distinct</b> archetypes (teach one at a time) instead of a random pool pick.</span></li>
+        <li><b>firstOrder</b> <span>— the opening order forced to <b>Limit Potion</b> (<code>reward:'potion'</code>), request = exactly the tile the guided forge+merge makes.</span></li>
+        <li><b>boardSeed</b> <span>— the guided opening board (which generators + seed tiles + which cells).</span></li>
+        <li><b>firstPullHero</b> <span>— the <b>predetermined</b> pre-boss pull (a fixed hero ref, not a roll). <i>hero TBD.</i></span></li>
+      </ul>
+    </div>
+    <div class="regc f">
+      <h3>Flags — persisted, one-shot, on the account</h3>
+      <ul>
+        <li><b>ftueActive</b> <span>— master switch. false → the whole layer is inert.</span></li>
+        <li><b>seen.&lt;beat&gt;</b> <span>— each beat fires once, then records itself (forge, merge, potion, limitBreak, energy, map, summon…).</span></li>
+        <li><b>ftueFirstPull</b> <span>— armed at the pre-boss gate; consumed by the predetermined pull, then cleared → later pulls roll normally.</span></li>
+        <li><b>specialOrders</b> <span>— stays locked through the FTUE; unlocked later (already wired: <code>flags.specialOrders</code>).</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note-box"><b>Why this shape:</b> the layer touches gameplay at ~4 read-hooks and nothing else. Designers tune the ramp / potion / pull by editing the FTUE config (data). QA disables the whole tutorial with one flag. Shipping without an FTUE = don't include the config. No parallel tutorial renderer, no forked reward path — the Limit Potion &amp; the predetermined pull are just <i>values</i> the existing systems already accept (potion is a real order-reward; the pull just needs a forced-hero branch).</div>
+
+  <!-- WALKTHROUGH -->
+  <h2><span class="n">3</span>Beat walkthrough — numerically accurate</h2>
+  <p class="lead">Knight starter: <span class="mono">ATK 14 · HP 270 · DEF 15</span> (rare). Limit charge cap <span class="mono">5</span>; a normal order adds <span class="mono">+0.48</span> (≈10%), a tier-3+ merge adds <span class="mono">+0.34/tier</span> — a <b>tier-1 merge adds nothing</b> (min tier 3), which is exactly why the opener uses a <b>Limit Potion</b> (fills the whole bar, <span class="mono">potionFrac 1.0 → +5</span>). Limit break = knight burst <span class="mono">×5.5</span>.</p>
+
+  <div class="screens">
+    <!-- A -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B1</span><span class="bt">Cold open · Level 1</span></div>
+      <div class="phone">
+        <div class="combat">
+          <div class="row" style="justify-content:space-between">
+            <div class="unit"><div class="av hero">🛡️</div><div class="bar hpb"><i style="width:100%"></i></div><div class="u-lbl">270hp</div></div>
+            <div class="unit"><div class="av foe">🦇</div><div class="bar hpb"><i style="width:78%"></i></div><div class="u-lbl">180hp</div></div>
+          </div>
+          <div class="limbar" style="margin-top:8px">LIMIT <div class="bar lim"><i style="width:0%"></i></div> 0.0 / 5</div>
+        </div>
+        <div class="kpi"><span>enemies <b>1</b></span><span>ATK <b>14</b></span><span>foe HP <b>180</b></span></div>
+        <div class="note">Opens mid-fight. <b>1 enemy</b> (authored — L1 override). Autos chip but the limit bar sits at <b>0/5</b>.</div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B3–5</span><span class="bt">Forge → merge</span></div>
+      <div class="phone">
+        <div class="board">
+          <div class="cell gen">⚙</div><div class="cell tile">blade·t1</div><div class="cell"></div>
+          <div class="cell gen">⚙</div><div class="cell"></div><div class="cell"></div>
+        </div>
+        <div class="limbar">LIMIT <div class="bar lim"><i style="width:0%"></i></div> 0.0 / 5</div>
+        <div class="kpi"><span>tap = <b>1</b> energy</span><span>t0 + t0 → <b>t1</b></span></div>
+        <div class="note"><b>Accurate:</b> forging &amp; the tier-1 merge charge the limit by <b>0</b> — merges only feed limit at <b>tier 3+</b>. The bar stays empty until the potion. (Sets up the payoff.)</div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B6</span><span class="bt">Deliver the LIMIT POTION</span></div>
+      <div class="phone">
+        <div class="rail">
+          <div class="order potion gold">🧪 LIMIT<br>t1 blade</div>
+          <div class="order">📦 gear</div>
+          <div class="order">📦 gear</div>
+        </div>
+        <div class="limbar">LIMIT <div class="bar lim"><i style="width:100%"></i></div> 5.0 / 5</div>
+        <div class="kpi"><span>potionFrac <b>1.0</b></span><span>fill <b>+5 = full</b></span></div>
+        <div class="note">The pre-authored first order is a <b>Limit Potion</b> (override). Deliver → bar surges <b>0 → 5 (100%)</b> on the spot.</div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B7</span><span class="bt">Unleash — wipe the wave</span></div>
+      <div class="phone">
+        <div class="combat">
+          <div class="row" style="justify-content:space-between">
+            <div class="unit"><div class="av hero" style="box-shadow:0 0 14px var(--limit)">🛡️</div><div class="u-lbl">READY</div></div>
+            <div class="unit"><div class="av foe" style="opacity:.25">💥</div><div class="u-lbl">0hp</div></div>
+          </div>
+          <div class="limbar" style="margin-top:8px">LIMIT <div class="bar lim"><i style="width:0%"></i></div> spent</div>
+        </div>
+        <div class="kpi"><span>burst <b>×5.5</b></span><span>wave <b>cleared</b></span></div>
+        <div class="note">Tap the glowing hero → limit break (knight <b>×5.5</b>) wipes the enemy. <b>The hook has landed.</b></div>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B15</span><span class="bt">Pre-boss summon (L9→10 gate)</span></div>
+      <div class="phone">
+        <div class="combat" style="background:linear-gradient(180deg,#241a3e,#140f26);border-color:#5a3b8c">
+          <div style="text-align:center;font-size:22px">✨🎴✨</div>
+          <div class="note" style="text-align:center;color:#e2c8ff;margin-top:4px">PREDETERMINED HERO<br><span style="font-size:9px;color:var(--dim2)">(fixed · granted free)</span></div>
+        </div>
+        <div class="kpi"><span>1st pull <b>free</b></span><span>extra <b>100</b> 🪙</span><span>banked <b>~433</b> 🪙</span></div>
+        <div class="note">At the boss gate, Summon opens: the <b>first pull is predetermined</b>. Player may pull more (mega banner <b>100</b> coins; ~433 banked by now) or face the boss.</div>
+      </div>
+    </div>
+
+    <!-- F -->
+    <div class="screen">
+      <div class="cap"><span class="bn">B18</span><span class="bt">The boss · Level 10</span></div>
+      <div class="phone">
+        <div class="combat">
+          <div class="row" style="justify-content:center;gap:5px">
+            <div class="unit"><div class="av foe">👺</div><div class="bar hpb"><i style="width:100%"></i></div><div class="u-lbl">466</div></div>
+            <div class="unit"><div class="av boss">👑</div><div class="bar hpb"><i style="width:100%"></i></div><div class="u-lbl">2226</div></div>
+            <div class="unit"><div class="av foe">👺</div><div class="bar hpb"><i style="width:100%"></i></div><div class="u-lbl">466</div></div>
+          </div>
+        </div>
+        <div class="kpi"><span>boss HP <b>2226</b></span><span>ATK <b>29</b></span><span>+2 accomplices</span></div>
+        <div class="note">Boss = boss + 2 accomplices (<b>3</b> units). Beating it fires the area-clear → the magic generator award.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAMP -->
+  <h2><span class="n">4</span>Zone 1 enemy ramp (the authored override)</h2>
+  <p class="lead">The FTUE <code>enemyCounts</code> override replaces the formula for zone 1 — a deliberately gentle onboarding curve. L1 &amp; L2 are single, <b>distinct</b> enemies; then it climbs to 5 before the boss.</p>
+  <div class="ramp">
+    <div class="lvl"><div class="L">L1</div><div class="cnt">1</div><div class="nt">combat</div></div>
+    <div class="lvl"><div class="L">L2</div><div class="cnt">1</div><div class="nt">combat*</div></div>
+    <div class="lvl tre"><div class="L">L3</div><div class="cnt">2</div><div class="nt">treasure</div></div>
+    <div class="lvl"><div class="L">L4</div><div class="cnt">2</div><div class="nt">combat</div></div>
+    <div class="lvl elite"><div class="L">L5</div><div class="cnt">3</div><div class="nt">elite</div></div>
+    <div class="lvl"><div class="L">L6</div><div class="cnt">3</div><div class="nt">combat</div></div>
+    <div class="lvl rest"><div class="L">L7</div><div class="cnt">3</div><div class="nt">rest</div></div>
+    <div class="lvl tre"><div class="L">L8</div><div class="cnt">4</div><div class="nt">treasure</div></div>
+    <div class="lvl summon"><div class="L">L9</div><div class="cnt">5</div><div class="nt">→ summon</div></div>
+    <div class="lvl boss"><div class="L">L10</div><div class="cnt">3</div><div class="nt">BOSS</div></div>
+  </div>
+  <p class="lead" style="margin-top:8px">* L2 = a <b>different</b> enemy from L1. <b>24 enemies across L1–9</b> + the boss trio. Node types still theme stats/rewards (elite ×1.5 HP, rest ×0.6, treasure 2.2× rewards) — the override changes <i>counts</i>, not the node identity.</p>
+
+  <!-- NUMBERS -->
+  <h2><span class="n">5</span>Numerical reference (live config)</h2>
+  <div class="reg">
+    <div class="regc">
+      <h3 style="color:var(--limit)">Limit energy · knight</h3>
+      <table>
+        <tr><td>Charge cap</td><td class="c mono">5</td></tr>
+        <tr><td>Normal order</td><td class="c mono">+0.48 (≈10%)</td></tr>
+        <tr><td>Tier-3+ merge</td><td class="c mono">+0.34 +0.22/tier</td></tr>
+        <tr><td>Tier-1/2 merge</td><td class="c mono">+0</td></tr>
+        <tr><td>Limit POTION</td><td class="c mono">+5 (full)</td></tr>
+        <tr><td>Limit break burst</td><td class="c mono">×5.5</td></tr>
+      </table>
+    </div>
+    <div class="regc">
+      <h3 style="color:var(--hp)">Enemy curve (base ×arch 0.75–1.0)</h3>
+      <table>
+        <tr><th>Lvl</th><th class="c">HP</th><th class="c">ATK</th></tr>
+        <tr><td>1</td><td class="c mono">180</td><td class="c mono">8</td></tr>
+        <tr><td>5 · elite</td><td class="c mono">489</td><td class="c mono">16</td></tr>
+        <tr><td>7 · rest</td><td class="c mono">263</td><td class="c mono">9</td></tr>
+        <tr><td>9</td><td class="c mono">591</td><td class="c mono">20</td></tr>
+        <tr><td>10 · boss</td><td class="c mono">2226</td><td class="c mono">29</td></tr>
+      </table>
+    </div>
+    <div class="regc">
+      <h3 style="color:var(--coin)">Economy</h3>
+      <table>
+        <tr><td>Win coins</td><td class="c mono">(10 + 5·lvl) × node</td></tr>
+        <tr><td>Win XP (hero/gear)</td><td class="c mono">18 + 8·lvl</td></tr>
+        <tr><td>Node mul</td><td class="c mono">treasure 2.2 · elite 1.8 · boss 3</td></tr>
+        <tr><td>Banked by pre-boss</td><td class="c mono">~433 🪙</td></tr>
+        <tr><td>Pull cost</td><td class="c mono">mega 100 · excl 120 · mythic 180</td></tr>
+        <tr><td>Order power bonus</td><td class="c mono">+5% squad / order</td></tr>
+      </table>
+    </div>
+    <div class="regc">
+      <h3 style="color:var(--core)">Generator drops (0-based)</h3>
+      <table>
+        <tr><th>Gen lvl</th><th>Drops (tier → %)</th></tr>
+        <tr><td>0</td><td class="mono">t0 100</td></tr>
+        <tr><td>1</td><td class="mono">t0 56 · t1 34 · t2 10</td></tr>
+        <tr><td>2</td><td class="mono">t1 56 · t2 39 · t3 5</td></tr>
+        <tr><td>3</td><td class="mono">t2 53 · t3 42 · t4 5</td></tr>
+        <tr><td>4</td><td class="mono">t3 56 · t4 44</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="note-box warn"><b>Accuracy note:</b> enemy HP is the base curve <span class="mono">180·1.16^(lvl−1)</span> / ATK <span class="mono">8·1.12^(lvl−1)</span> at archetype ×1.0; mossbog archetypes scale it 0.75–1.0×, and elite/rest/boss multipliers are applied on top (shown for L5/7/10). The boss is <span class="mono">685 × 2.5 × 1.3</span>. All values read from <code>_levelScaling.json</code>, <code>_node.json</code>, <code>_battle.json</code>, the generator configs, and <code>2000-knight.json</code>.</div>
+
+  <div class="note-box"><b>Still to wire (from the plan):</b> the coachmark/gate overlay (spotlight + input mask), the deterministic opening seed (board + first order = potion matching the forged tile), and the one remaining gameplay gap — a <b>forced-hero</b> pull path for the predetermined summon (today <code>Gacha.pull</code> forces a rarity only). Everything else here is the existing systems, read through the layer's hooks.</div>
+</div>
+</body>
+</html>

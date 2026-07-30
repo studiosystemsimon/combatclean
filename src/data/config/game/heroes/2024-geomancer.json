@@ -20,5 +20,6 @@
 			"mult": 4
 		}
 	},
-	"classKey": "geomancer"
+	"classKey": "geomancer",
+	"flying": true
 }

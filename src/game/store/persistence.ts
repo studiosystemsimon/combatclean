@@ -8,9 +8,9 @@ import { createLocalStore } from '../../account/store.ts';
 import { RES, ACCOUNT_DOC } from '../../account/account.ts';
 import { C } from '../content.ts';
 
-// v2: generators became levelled board tiles (BoardGenerator gained `level`); bumping discards
-// pre-v2 saves whose board could hold level-less generators or stale pre-migration chains.
-const SCHEMA_VERSION = 2;
+// v3: generator `level` is now 0-based (0..4), mirroring item tiers (was 1-based 1..5); bumping
+// discards pre-v3 saves whose board holds 1-based generator levels (would be off by one).
+const SCHEMA_VERSION = 3;
 const store = createLocalStore();
 
 // The persistable runtime slice (exactly MergeCombat's pickPersistable set).
@@ -20,7 +20,10 @@ export function pickPersistable(state: any) {
     coins: state.coins, heroXp: state.heroXp, gearXp: state.gearXp,
     heroes: state.heroes, gear: state.gear, order: state.order,
     ordersCompleted: state.ordersCompleted, orders: state.orders, pity: state.pity,
-    nextId: state.nextId, nextCid: state.nextCid, battle: { level: state.battle.level },
+    nextId: state.nextId, nextCid: state.nextCid,
+    // battle is transient (rebuilt on load) EXCEPT the active squad's limit-break charge, which persists
+    // across a refresh — keyed by cid so a switched-out hero (absent here) is naturally reset to 0.
+    battle: { level: state.battle.level, limitEnergy: Object.fromEntries((state.battle.heroes || []).map((h: any) => [h.id, h.limitEnergy || 0])) },
     clearedLevel: state.clearedLevel, replayReturn: state.replayReturn, crystals: state.crystals, pendingAfk: state.pendingAfk,
     unlockedGenerators: state.unlockedGenerators, flags: state.flags,
     lastSeen: state.now,
@@ -55,7 +58,7 @@ export function toBlob(slice: any): ClientAccountView {
       nextId: slice.nextId, nextCid: slice.nextCid, lastSeen: slice.lastSeen,
       energyLastRegenAt: slice.energy.lastRegenAt,
     },
-    features: { merge: { board: slice.board, orders: slice.orders }, battle: { level: slice.battle.level } },
+    features: { merge: { board: slice.board, orders: slice.orders }, battle: { level: slice.battle.level, limitEnergy: slice.battle.limitEnergy || {} } },
   };
 }
 
@@ -75,7 +78,7 @@ export function fromBlob(blob: ClientAccountView): any {
     screen: p.screen, board: f.merge?.board, energy: { current: res[String(RES.energy())] || 0, max: C.ENERGY.max, lastRegenAt: p.energyLastRegenAt || 0 },
     coins: res[String(RES.coins())] || 0, heroXp: res[String(RES.heroXp())] || 0, gearXp: res[String(RES.gearXp())] || 0,
     heroes, gear, order: p.order || [], ordersCompleted: p.ordersCompleted || 0, orders: f.merge?.orders || [],
-    pity: p.pity || {}, nextId: p.nextId || 1, nextCid: p.nextCid || 1, battle: { level: f.battle?.level || 1 },
+    pity: p.pity || {}, nextId: p.nextId || 1, nextCid: p.nextCid || 1, battle: { level: f.battle?.level || 1, limitEnergy: f.battle?.limitEnergy || {} },
     // Progression stream: highest level BEATEN. Migrate pre-rename saves whose profile.furthestLevel was
     // "reached" (= cleared + 1). Persist the replay warp-back so it survives a refresh mid-replay.
     clearedLevel: p.clearedLevel != null ? p.clearedLevel : Math.max(0, (p.furthestLevel || 1) - 1),

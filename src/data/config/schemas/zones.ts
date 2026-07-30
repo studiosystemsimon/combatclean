@@ -16,7 +16,10 @@ export const zZoneConfig = zConfig
     crystalRarityKey: stringConfigRef('rarities', 'key').describe('Which ascension-crystal tier drops here (→ rarities.key).'),
     orderRarity: configRecord('gearRarities', 'key', z.number()).describe('Order reward-rarity weights (map keys → gearRarities).'),
     itemConfigIds: z.array(configRef('gearPieces')).describe('Zone unique gear pieces in the chest pool (→ gearPieces).'),
-    unlocksGeneratorKeys: z.array(stringConfigRef('generators', 'key')).default([]).describe('Generators UNLOCKED when this area is FIRST completed (→ generators.key). Empty = none. Systemic: any number of generators per zone; the unlocked set drives board placement + order eligibility.'),
+    rewardGenerators: z.array(z.object({
+      generatorKey: stringConfigRef('generators', 'key').describe('Which generator (→ generators.key).'),
+      level: z.number().int().min(0).default(0).describe('The EXACT 0-based level the awarded generator is placed at (hardcoded — never derived at runtime).'),
+    })).default([]).describe('Generators AWARDED (placed on the board) on FIRST completion of this area, each at a SPECIFIC hardcoded level. A genuinely-new generator key also joins the unlocked set (order eligibility + boot placement); an already-unlocked key is still placed as a mergeable duplicate. The roster rotates magic→blade→range across zones.'),
     // Biome colour tint (from/to/accent) is presentation → the UI zone entry, not here.
   })
   .strict();

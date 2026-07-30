@@ -96,6 +96,7 @@ export const STRINGS = {
     bossSpecial: '⚠ BOSS SPECIAL ⚠',
     critical: 'CRITICAL!',
     limitBreak: 'LIMIT BREAK!',
+    limitLabel: 'LIMIT', // short caps badge on a charged hero limit bar
     bossSlam: 'BOSS SLAM!',
     raise: 'RAISE!',
     lose: 'LOSE',

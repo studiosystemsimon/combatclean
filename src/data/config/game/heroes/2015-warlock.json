@@ -20,5 +20,6 @@
 			"mult": 4
 		}
 	},
-	"classKey": "warlock"
+	"classKey": "warlock",
+	"flying": true
 }

@@ -63,13 +63,37 @@
 <div class="wrap">
   <h1>Combat Clean — FTUE: the exact experience</h1>
   <p class="sub">Moment-by-moment first run. Built on the ACTUAL loop: orders &amp; merges charge LIMIT ENERGY → a full limit break wipes the field.</p>
-  <span class="tag">PLANNING DOC · not wired</span>
+  <span class="tag" style="color:#8affc4;border-color:#5ad17a55;background:#5ad17a12">SHIPPED — guided opening + L5 gacha→Alchemist tail · later beats still planned</span>
 
   <div class="legend">
     <span class="lg auto">AUTO — plays itself, no input</span>
     <span class="lg gate">GATE — input locked to the coached target</span>
     <span class="lg nudge">NUDGE — highlight, not blocking</span>
     <span class="lg free">FREE PLAY — full control, ambient hint</span>
+  </div>
+
+  <!-- WHAT SHIPPED (v1) -->
+  <div class="spec" style="border-color:#5ad17a66">
+    <h3 style="color:#8affc4">✓ What shipped (v1) — the 9 live coachmark beats</h3>
+    <p>The build wires a lean subset of the roadmap below, driven by <code>src/view/ftue/beats.js</code> + the
+    <code>ftue</code> config singleton (<code>_ftue.json</code>). The coachmarks are <b>advisory click-through cards</b>
+    gated on <b>observable state</b> + persisted <code>ftueSeen_*</code> flags — NOT the input-masking / spotlight
+    gates the step cards below describe (that dim-and-lock model is still planned). The player can always act beneath
+    the card; only GOT IT captures input. Live sequence, in order:</p>
+    <ul>
+      <li><b>coldOpen</b> — "Your squad fights on its own." (info)</li>
+      <li><b>forge</b> — "Tap a generator to forge weapon tiles." (info)</li>
+      <li><b>merge</b> — "Drag two matching blade tiles together." (done: a tier-up tile OR the potion is deliverable)</li>
+      <li><b>potion</b> — "Deliver the 🧪 LIMIT POTION order." (done: a hero is limit-ready)</li>
+      <li><b>limit</b> — "Tap your glowing hero — unleash the LIMIT BREAK!" (done: <code>ftueLimitFired</code>)</li>
+      <li><b>summon</b> — at <b>level 5</b>: "Things are getting tough — hire another hero!" → free Alchemist pull, <b>auto-returns to combat</b> (done: <code>ftuePulled</code>)</li>
+      <li><b>alchemistExplain</b> — <b>pauses combat</b>: "Meet the ALCHEMIST — its LIMIT BREAK hits EVERY enemy." (info)</li>
+      <li><b>alchemistUse</b> — "Charge &amp; unleash the ALCHEMIST's limit — wipe them all!" (done: <code>ftueAlchemistUsed</code>)</li>
+      <li><b>gearUp</b> — <b>pauses combat</b>: "Now GEAR UP and LEVEL UP your squad." (info)</li>
+      <li><b>bossHire</b> — at the boss GATE: "A BOSS looms ahead — hire another hero!" (info)</li>
+      <li><b>firstLoss</b> — reactive interrupt on the FIRST defeat, <b>pauses combat</b>: "Wiped out — EQUIP your best gear + LEVEL to the MAX." (info; <code>ftueFirstLoss</code>)</li>
+    </ul>
+    <p style="color:#9fb0d0;font-size:12px;margin-top:6px">Sim-side overrides — all wired + build-green: zone-1 enemy ramp; forced opening orders (<b>[0]</b> Limit Potion, <b>[1]</b> a good <b>epic armour</b> piece via <code>forceSlot</code> → <code>rollGearInSlot</code>); <b>special orders suppressed until <code>specialsUnlockAtLevel</code></b> (default 8); the level-5 predetermined Alchemist pull (battle-ready, auto-returns to combat); combat pause for the explain / gear-up / first-loss beats. The richer roadmap beats below (input-masking gates, energy/map/AFK/ascend/cobweb/crystal/minigame) are not yet shipped.</p>
   </div>
 
   <!-- NEW FEATURE SPEC -->
@@ -86,7 +110,45 @@
       <li>Orders carry a <code>reward</code> type: <code>gear</code> (default) | <code>special</code> (S-tile) | <code>potion</code> (new). <code>orderReward()</code> reads it (back-compat with the legacy <code>special</code> flag).</li>
       <li><code>FULFILL_ORDER</code> (reducer-orders slice) branches on it: <code>potion</code> → <code>grantLimitPotion(heroes, potionFrac)</code> fills each living hero's limit + a <code>limitCharge</code> fx into the bars; no gear chest, slot → fresh pending (refresh-safe).</li>
       <li>The orders rail renders the potion with its own 🧪 tab + a teal "LIMIT" ribbon, so it reads as a different reward.</li>
-      <li>Config: <code>orders.potionChance</code> (roll rate) + <code>battle.limitEnergy.potionFrac</code> (fill amount; <code>1.0</code> = full). For the FTUE the first order will be authored as a potion (deterministic seed — the one remaining FTUE-wiring piece).</li>
+      <li>Config: <code>orders.potionChance</code> (roll rate) + <code>battle.limitEnergy.potionFrac</code> (fill amount; <code>1.0</code> = full). <b>Shipped:</b> on a fresh FTUE save <code>initState</code> forces <code>orders[0]</code> to a potion whose request = the tile the guided forge+merge makes (<code>firstOrderChain</code>/<code>firstOrderTier</code>).</li>
+    </ul></div>
+  </div>
+
+  <!-- ZONE 1 REFERENCE -->
+  <div class="spec" style="border-color:#5a8cff55">
+    <h3 style="color:#bcd2ff">Zone 1 · level-by-level (enemy counts)</h3>
+    <p>Zone 1 = <b>levels 1–10</b> (a zone is <code>bossEvery=10</code> levels; the boss is the 10th). Its enemy counts are a <b>hand-authored onboarding ramp</b> (a deliberately gentle teaching curve), NOT the default formula. Levels 1 &amp; 2 each introduce a <b>single, DISTINCT enemy</b>; it then climbs to 5 before the boss. Node types still theme stats/rewards (elite ×1.5 HP, rest ×0.6, treasure 2.2×); the <b>boss</b> is boss + 2 accomplices.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px">
+      <thead><tr style="color:#6f7f9e;text-align:left"><th style="padding:5px 8px">Lvl</th><th>Node</th><th>Enemies</th><th>Note</th></tr></thead>
+      <tbody style="color:#d7e0f5">
+        <tr><td style="padding:4px 8px">1</td><td>combat</td><td>1</td><td>single enemy — teach one at a time</td></tr>
+        <tr><td style="padding:4px 8px">2</td><td>combat</td><td>1</td><td>a DIFFERENT single enemy</td></tr>
+        <tr><td style="padding:4px 8px">3</td><td>treasure</td><td>2</td><td>2.2× rewards</td></tr>
+        <tr><td style="padding:4px 8px">4</td><td>combat</td><td>2</td><td></td></tr>
+        <tr><td style="padding:4px 8px">5</td><td>elite</td><td>3</td><td>×1.5 HP / ×1.25 ATK — the <b>gacha→Alchemist</b> summon nudge fires on reaching this level</td></tr>
+        <tr><td style="padding:4px 8px">6</td><td>combat</td><td>3</td><td></td></tr>
+        <tr><td style="padding:4px 8px">7</td><td>rest</td><td>3</td><td>×0.6 HP/ATK — softer foes</td></tr>
+        <tr><td style="padding:4px 8px">8</td><td>treasure</td><td>4</td><td>2.2× rewards</td></tr>
+        <tr><td style="padding:4px 8px">9</td><td>combat</td><td>5</td><td>last before the boss</td></tr>
+        <tr><td style="padding:4px 8px;color:#ffd45e">10</td><td style="color:#ffd45e">BOSS</td><td style="color:#ffd45e">3</td><td style="color:#ffd45e">boss + 2 accomplices</td></tr>
+      </tbody>
+    </table>
+    <p style="color:#9fb0d0;font-size:12px;margin-top:8px"><b>24 enemies across levels 1–9</b> (+ the boss trio). These are AUTHORED per-level counts — the default formula (<code>buildWave</code>: base 3, +1/5 lvls) would give 3,3,3,3,3,4,2,4,4. <b>Shipped:</b> <code>buildWave</code> applies the authored <code>zoneEnemyCounts</code> (overriding the formula AND the rest count-cap) + the pinned L1/L2 <code>firstEnemies</code> whenever <code>flags.ftueActive</code>. Node layout: <code>_node.json</code> (3 treasure · 5 elite · 7 rest · 8 treasure). The predetermined summon now fires on reaching <b>L5</b>, no longer at the boss gate.</p>
+  </div>
+
+  <!-- LEVEL-5 SUMMON → ALCHEMIST TAIL SPEC -->
+  <div class="spec" style="border-color:#b46bff66">
+    <h3 style="color:#e2c8ff">★ Level-5 summon → the Alchemist AOE lesson <span style="font-size:11px;color:#8affc4">(SHIPPED)</span></h3>
+    <p>After the potion→limit keystone there was a lull, so the gacha moment sits at <b>level 5</b> ("things are getting tough — hire another hero"), not the boss gate. The <b>first pull is predetermined</b>: a fixed hero (the <b>Alchemist</b>, <code>2020</code>) granted <b>free</b>, so every player gets the same reinforcement + a second, DISTINCT limit archetype to learn. After it, extra pulls roll normally (coins).</p>
+    <p><span class="k">Why the Alchemist</span> — its limit is <code>aoe ×4</code> (it hits EVERY enemy at once), which contrasts with the knight's near-single-target burst. That contrast is the lesson: the recruit arrives <b>battle-ready (full limit)</b>, combat <b>pauses</b> to explain the AOE, then the player is asked to unleash it and clear the screen.</p>
+    <div style="margin-top:6px"><span class="k">How it works (shipped)</span>
+    <ul>
+      <li><b>Predetermined free pull.</b> <code>SUMMON</code> (reducer-gacha) branches on <code>flags.ftueFirstPull</code> → returns <code>C.FTUE.firstPullHero</code> (from <code>firstPullHeroConfigId</code>), no coins/pity; clears the flag + sets <code>ftuePulled</code>. Extra pulls fall through to the normal roll — no parallel pull path.</li>
+      <li><b>Battle-ready arrival.</b> The recruit joins the squad with a FULL limit (<code>limitEnergyToCharge</code>) so "unleash it now" is immediate.</li>
+      <li><b>Level-5 trigger.</b> <code>RESOLVE_WIN</code> arms <code>flags.ftueFirstPull</code> when <code>nextLevel === C.FTUE.summonAtLevel</code> (5) — once; consumed by <code>SUMMON</code>.</li>
+      <li><b>Paused explain.</b> The <code>alchemistExplain</code> beat sets <code>flags.ftuePaused</code>; the controller's battle tick honours it → combat freezes while the card is up; GOT IT resumes.</li>
+      <li><b>Forced AOE use.</b> The <code>alchemistUse</code> beat completes on <code>ftueAlchemistUsed</code> — set by <code>TAP_LIMIT</code> when the recruited <code>firstPullHero</code> fires its limit. Then the <code>gearUp</code> nudge closes the sequence.</li>
+      <li><b>Config.</b> <code>_ftue.json</code>: <code>summonAtLevel</code>, <code>firstPullHeroConfigId</code> (schema refs → <code>heroes</code>). Reuses the existing Summon screen + reveal cinematic + rarities strip.</li>
     </ul></div>
   </div>
 
@@ -256,14 +318,14 @@
     </div>
   </div>
 
-  <div class="step b-nudge">
+  <div class="step b-gate key">
     <div class="num">15</div>
-    <div class="hd"><span class="title">Summon a hero</span><span class="type nudge">Nudge</span></div>
+    <div class="hd"><span class="title">Level-5 summon → Alchemist AOE lesson <span style="font-size:11px;color:#8affc4">(SHIPPED — beats 6–9)</span></span><span class="type gate">Gate</span></div>
     <div class="grid">
-      <div class="k">Trigger</div><div class="v">On the wall AND the player has ≥ one pull's worth of coins.</div>
-      <div class="k">Sees</div><div class="v">The Summon nav pulses; a full reveal cinematic on pull; a new hero + the rarity odds strip.</div>
-      <div class="k">Copy</div><div class="v copy">Summon new heroes — better odds, bigger power.</div>
-      <div class="k">Does</div><div class="v">One pull.</div>
+      <div class="k">Trigger</div><div class="v">Reaching <b>level 5</b> (<code>summonAtLevel</code>) — after the potion→limit keystone, the run has quieted. <b>Not the boss gate.</b> See the "Level-5 summon" spec above.</div>
+      <div class="k">Sees</div><div class="v">A "things are getting tough" nudge → Summon; the reveal cinematic on the predetermined pull; the <b>Alchemist</b> joins the squad <b>battle-ready</b> (full limit). Back on merge, combat <b>pauses</b> for the AOE explain.</div>
+      <div class="k">Copy</div><div class="v copy">Things are getting tough — hire another hero! → Meet the ALCHEMIST — its LIMIT BREAK hits EVERY enemy at once.</div>
+      <div class="k">Does</div><div class="v">Pull the free Alchemist → GOT IT on the paused explain (combat resumes) → tap the Alchemist to unleash its AOE limit → wipe the wave → the gear-up nudge closes the sequence.</div>
     </div>
   </div>
 
@@ -321,12 +383,14 @@
   <h2>Implementation notes (for wiring later)</h2>
   <ol class="impl">
     <li><b>Limit Potion reward — SHIPPED.</b> The whole opening hinges on it (steps 6–7): <code>reward:'potion'</code> + the <code>FULFILL_ORDER</code> branch + <code>grantLimitPotion</code> + 🧪 rail tab + config <code>potionFrac</code>/<code>potionChance</code>. See the spec box above.</li>
-    <li><b>Deterministic FTUE seed (remaining).</b> On a fresh save, seed the board + author the first order as a <b>limit potion</b> whose request = exactly the tile the two forges + one merge produce. The tutorial can never roll an unfulfillable / wrong-reward first order.</li>
+    <li><b>Deterministic FTUE seed — SHIPPED.</b> On a fresh FTUE save <code>initState</code> forces <code>orders[0]</code> to a <b>limit potion</b> whose request = exactly the tile the guided forge+merge produces (<code>firstOrderChain</code>/<code>firstOrderTier</code>/<code>firstOrderReward</code>). The tutorial can never roll an unfulfillable / wrong-reward first order.</li>
     <li><b>One schedule, persisted flags.</b> Each beat has a <code>trigger</code> + a one-shot <code>seen</code> flag (persisted). Steps 1–12 = the run-once guided opening; 13–20 fire when their condition first occurs.</li>
     <li><b>GATE = input mask.</b> During a gate, dim + block everything except the coached target (spotlight + hand icon); NUDGE only highlights.</li>
     <li><b>Limit break is now core, not deferred.</b> It's the payoff of the very first lesson (step 7), so its own coachmark lives there — there is no separate "later" limit-break beat.</li>
     <li><b>Teach on demand.</b> Energy (10), Heroes/gear (14), Summon (15), cobwebs (17) each fire the moment the player hits the problem they solve — never as upfront rules. GEAR (the normal order reward) is taught at step 14, when it first matters.</li>
     <li><b>Reuse existing systems.</b> Coachmarks ride the existing overlay/FX layer and the existing popups (AFK, area-complete, limit-charge motes) — no parallel tutorial renderer, no parallel reward path (the limit potion is a new branch of the SAME order-reward system).</li>
+    <li><b>Predetermined first pull — SHIPPED.</b> The level-5 summon (step 15) uses a forced-HERO path: <code>_ftue.json firstPullHeroConfigId</code> + a <code>flags.ftueFirstPull</code>-gated branch in <code>SUMMON</code> that returns the Alchemist (granted free, arrives battle-ready) and clears the flag; extra pulls fall through to the normal roll. Armed by <code>RESOLVE_WIN</code> on reaching <code>summonAtLevel</code> (5). Reuses the existing Summon screen + reveal — no parallel pull path.</li>
+    <li><b>Paused explain + forced AOE — SHIPPED.</b> The <code>alchemistExplain</code> beat freezes combat via <code>flags.ftuePaused</code> (honoured in the controller battle tick); the <code>alchemistUse</code> beat completes on <code>ftueAlchemistUsed</code>, set by <code>TAP_LIMIT</code> when the recruited <code>firstPullHero</code> fires its AOE limit; the <code>gearUp</code> nudge closes it.</li>
   </ol>
 </div>
 </body>

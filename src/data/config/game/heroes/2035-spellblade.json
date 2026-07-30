@@ -20,5 +20,6 @@
 			"mult": 4
 		}
 	},
-	"classKey": "spellblade"
+	"classKey": "spellblade",
+	"flying": true
 }

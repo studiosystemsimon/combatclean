@@ -126,7 +126,7 @@
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="marker">limit-energy mockup · v10 (bar-bed flash on hit) · iteration harness (not the game)</div>
+<div class="marker">limit-energy mockup · v13 (small until clear of tile, by distance) · iteration harness (not the game)</div>
 
 <div class="layout">
   <div class="stage">
@@ -184,7 +184,8 @@ const CFG = {
             ramp:[{p:0,c:'#ffffff'},{p:0.14704754601226994,c:'#ffbb00'},{p:0.4968246740797546,c:'#8bd4f9'},{p:1,c:'#8c00ff'}] },
   popOut: { dist:80, angleMin:55, angleMax:125 },      // odd-direction pop-out: control point offset px + off-axis angle range (deg)
   accel:  'easeInCubic',                                // progression easing — ease-IN = speeds up into the bar
-  head:   { rMul:2.6, pulseAmp:0.3, pulseFreq:2, growTo:2.7, birthFrac:0.35 }, // glowing head: size ×, pulse depth/Hz, grow-on-approach, birthFrac (grows 0→full over this fraction of flight so the source tile shows first)
+  head:   { rMul:2.6, pulseAmp:0.3, pulseFreq:2, growTo:2.7 }, // glowing head: size ×, pulse depth/Hz, grow-on-approach
+  start:  { clearDist:50, scale:0.05, alpha:0.05 }, // whole mote stays small (scale) + muted (alpha) until it's travelled clearDist px clear of the tile, then grows to full
 
   // ── per-tier intensity (bucket 0/1/2 = tier 3/4/5+); scales the mote + arrival ──
   tier:  { widthMul:[1,1.5,2], rMul:[1,1.5,2], impactR:[6,9,13], sparkle:[8,10,15] },
@@ -281,7 +282,7 @@ const fx = (()=>{
       r:opts.r||3.5, head, ramp, halfW:opts.width||3.5, fadeT:0,
       headMul:opts.headWidthMul??2, tailMul:opts.tailWidthMul??0.5, fadePow:opts.fadePow??0.5, fadePeak:opts.fadePeak??0.92,
       accel:EASINGS[opts.accel]||EASINGS.easeInCubic,
-      headCfg:opts.head||{rMul:2.6,pulseAmp:.4,pulseFreq:7,growTo:1.8},
+      headCfg:opts.head||{rMul:2.6,pulseAmp:.4,pulseFreq:7,growTo:1.8}, start:opts.start||{clearDist:0,scale:1,alpha:1},
       maxAge:MAX_AGE*((opts.length||26)/LEN_REF), spine:[], lastX:null,lastY:null, onHit:opts.onHit,
     });
     wake();
@@ -306,6 +307,8 @@ const fx = (()=>{
       //    gradient fill. No per-segment round caps → NO overlap beads. Alpha fades
       //    gently along the length (fadePow<1 = slow Akira-light fade). ──
       if(p.fired) p.fadeT+=dt;
+      const stC=p.start||{clearDist:0,scale:1,alpha:1}; const sk0=stC.clearDist>0?Math.min(1,Math.hypot(p.x-p.from.x,p.y-p.from.y)/stC.clearDist):1; const sk=sk0*sk0;
+      const sizeMul=stC.scale+(1-stC.scale)*sk, alphaMul=stC.alpha+(1-stC.alpha)*sk; // small+muted until CLEAR of the tile (by distance), then full
       const pts=p.spine, n=pts.length;
       if(n>=2){
         const nrm=[]; // per-vertex normal (smooth taper, shared edges)
@@ -314,8 +317,8 @@ const fx = (()=>{
         const gF=p.fired?Math.max(0,1-p.fadeT/p.maxAge):1;    // time fade-out + width-collapse during the linger
         const tpos=k=>(n-1-k)/(n-1);                          // 0 at HEAD → 1 at TAIL (position ALONG the ribbon)
         const oX=k=>k===n-1?1:nrm[k].x, oY=k=>k===n-1?0:nrm[k].y; // head end = exactly horizontal edge
-        const hwAt=k=>p.halfW*gF*lerp(p.headMul,p.tailMul,tpos(k)); // head(t0)=2× → tail(t1)=0.5×
-        const colAt=t=>{ const c=rampAt(p.ramp,t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak*Math.pow(1-t,p.fadePow)*gF).toFixed(3)})`; };
+        const hwAt=k=>p.halfW*gF*sizeMul*lerp(p.headMul,p.tailMul,tpos(k)); // head(t0)=2× → tail(t1)=0.5×
+        const colAt=t=>{ const c=rampAt(p.ramp,t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak*Math.pow(1-t,p.fadePow)*gF*alphaMul).toFixed(3)})`; };
         // Colour FOLLOWS THE CURVE: each segment is a trapezoid filled with a mini gradient between its two
         // vertices' ramp colours (by position along the ribbon). source-over + shared per-vertex edges → no beads.
         for(let k=1;k<n;k++){
@@ -331,13 +334,12 @@ const fx = (()=>{
         }
       }
       if(!p.fired){
-        // big glowing pulsing head (grows as it approaches); birth: scales 0→full so the source tile shows first
+        // big glowing pulsing head — small+muted at start, grows/brightens to full over start.frac
         const hc=p.headCfg; const grow=1+(hc.growTo-1)*p.s; const pulse=1+hc.pulseAmp*Math.sin(p.u*hc.pulseFreq*Math.PI*2);
-        const birth=hc.birthFrac>0?Math.min(1,p.u/hc.birthFrac):1;
-        const headR=p.r*hc.rMul*grow*pulse*birth;
-        stampGlow(p.x,p.y,headR*2.4,p.head,0.9);
-        stampGlow(p.x,p.y,headR*1.1,'#ffffff',0.55);
-        ctx.globalCompositeOperation='lighter'; ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.9;
+        const headR=p.r*hc.rMul*grow*pulse*sizeMul;
+        stampGlow(p.x,p.y,headR*2.4,p.head,0.9*alphaMul);
+        stampGlow(p.x,p.y,headR*1.1,'#ffffff',0.55*alphaMul);
+        ctx.globalCompositeOperation='lighter'; ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.9*alphaMul;
         ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(1,headR*0.42),0,Math.PI*2); ctx.fill();
         ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
         if(p.u>=1){ p.fired=true; if(p.onHit)p.onHit(p.to.x,p.to.y); } // head landed → let the tail linger + fade out
@@ -462,7 +464,7 @@ function runLimitEnergy({cell, heroIds, tier}){
         width:CFG.trail.width*CFG.tier.widthMul[off], length:CFG.trail.length,
         speed:CFG.trail.speed, r:CFG.trail.r*CFG.tier.rMul[off],
         headWidthMul:CFG.trail.headWidthMul, tailWidthMul:CFG.trail.tailWidthMul, fadePow:CFG.trail.fadePow, fadePeak:CFG.trail.fadePeak, ramp:CFG.trail.ramp,
-        popOut:CFG.popOut, accel:CFG.accel, head:CFG.head,
+        popOut:CFG.popOut, accel:CFG.accel, head:CFG.head, start:CFG.start,
         onHit:(x,y)=>bof(x,y,barEl,off,id),
       });
     }, CFG.launchDelay + i*CFG.stagger);
@@ -601,7 +603,11 @@ const CONTROLS=[
     {p:'head.pulseAmp',min:0,max:.9,step:.05,l:'pulse depth'},
     {p:'head.pulseFreq',min:1,max:16,step:1,l:'pulse Hz'},
     {p:'head.growTo',min:1,max:3,step:.1,l:'grow on approach'},
-    {p:'head.birthFrac',min:0,max:1,step:.05,l:'birth (0→full)'},
+  ]},
+  {t:'Genesis (small + muted until clear of tile)', items:[
+    {p:'start.clearDist',min:0,max:200,step:5,l:'clear dist px'},
+    {p:'start.scale',min:0,max:1,step:.05,l:'start size ×'},
+    {p:'start.alpha',min:0,max:1,step:.05,l:'start opacity ×'},
   ]},
   {t:'Explosion (BOF)', items:[
     {p:'explode.rMul',min:1,max:5,step:.1,l:'blast radius ×'},

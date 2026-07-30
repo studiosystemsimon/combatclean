@@ -28,7 +28,7 @@ function findCell(cell, cb) {
 export function playGeneratorUnlock(overlay, ev, onDone) {
   const done = () => { onDone && onDone(); };
   if (!overlay || ev.cell == null) { done(); return; }
-  const a = generatorAsset(ev.genKey); // awarded generators appear at level 1 → gen.<genKey>.1
+  const a = generatorAsset(ev.genKey, ev.level || 1); // fly-in art matches the awarded level → gen.<genKey>.<level>
 
   const root = mk('gu-fx', 'position:absolute;inset:0;pointer-events:none;z-index:6;');
   overlay.appendChild(root);

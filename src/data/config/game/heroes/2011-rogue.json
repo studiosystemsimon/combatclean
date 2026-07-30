@@ -20,5 +20,6 @@
 			"mult": 7
 		}
 	},
-	"classKey": "rogue"
+	"classKey": "rogue",
+	"flying": true
 }

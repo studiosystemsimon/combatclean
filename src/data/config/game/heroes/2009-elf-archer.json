@@ -20,5 +20,6 @@
 			"mult": 3
 		}
 	},
-	"classKey": "elf-archer"
+	"classKey": "elf-archer",
+	"flying": true
 }

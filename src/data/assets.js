@@ -42,7 +42,7 @@ export const ASSETS = {
   'magic.7': { emoji: '✨', label: 'Radiant Tome', art: 'merge/magic-7' },
 
   // ── Generators ────────────────────────────────────────────────────────────
-  // Levelled: art keys are `gen.<chain>.<level>` (1..5), resolved straight from the baked asset
+  // Levelled: art keys are `gen.<chain>.<level>` (0..4), resolved straight from the baked asset
   // registry (assets/combatclean/gen/); the display name comes from the generator's UI config
   // (GENERATORS[g].name). No per-level emoji/label defaults here — a generator has one name, not one
   // per tier (unlike item ladders above).
@@ -155,6 +155,9 @@ export const ASSETS = {
   'node.elite': { emoji: '👹', label: 'Elite' },
   'node.rest': { emoji: '⛺', label: 'Rest' },
   'node.boss': { emoji: '🐲', label: 'Boss' },
+
+  // ── Special (S) merge tile — animated orb art from tools/anim-pipeline ────────
+  'special.0': { emoji: '💀', label: 'Special', art: 'merge/special-0' },
 
   missing: { emoji: '❓', label: 'Unknown' },
 };

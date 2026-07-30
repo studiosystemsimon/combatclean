@@ -8,14 +8,14 @@ import type { Rng } from '../rng.ts';
 import { hash32 } from '../rng.ts';
 import type { BattleState, BattleHero, Enemy } from '../types.ts';
 import { heroDef } from '../heroes/heroes.ts';
-import { zoneForLevel, isBossLevel, isEliteLevel, isRestLevel } from '../map/map.ts';
+import { zoneForLevel, zoneIndexForLevel, isBossLevel, isEliteLevel, isRestLevel } from '../map/map.ts';
 
 const mkEnemy = (arch: any, hp: number, atk: number): Enemy => ({
   arch: arch.id, asset: `enemy.${arch.id}`, name: arch.id, uid: 0,
   hp: Math.max(1, Math.round(hp)), maxHp: Math.max(1, Math.round(hp)), atk: Math.max(1, Math.round(atk)),
 });
 
-export const buildWave = (level: number, rng: Rng, nextUid: () => number): Enemy[] => {
+export const buildWave = (level: number, rng: Rng, nextUid: () => number, ftueActive = false): Enemy[] => {
   const S = C.LEVEL_SCALING;
   level = Math.max(1, Math.floor(level) || 1);
   const zone = zoneForLevel(level);
@@ -35,12 +35,18 @@ export const buildWave = (level: number, rng: Rng, nextUid: () => number): Enemy
     return [mkAcc(), boss, mkAcc()];
   }
   const count0 = Math.min(S.maxWave, S.enemiesBase + Math.floor((level - 1) / S.enemyStepLevels) * S.enemiesPerStep);
-  const count = rest ? Math.min(count0, C.NODE.restCount) : count0;
+  // FTUE override layer (zone 1 only): authored per-level count + pinned first enemies. Falls through
+  // to the formula when the FTUE is off / no override for this level, so the layer removes cleanly.
+  const ftue = ftueActive && C.FTUE && zoneIndexForLevel(level) === 0 ? C.FTUE : null;
+  const fIdx = level - 1; // 0-based index into the zone-1 authored arrays
+  const count = ftue && ftue.zoneEnemyCounts[fIdx] != null ? ftue.zoneEnemyCounts[fIdx]
+    : (rest ? Math.min(count0, C.NODE.restCount) : count0);
+  const pinned = ftue && ftue.firstEnemies[fIdx] ? C.ENEMY_BY_ID[ftue.firstEnemies[fIdx]] : null;
   const pool = zone.enemyPool.map((id: string) => C.ENEMY_BY_ID[id]).filter(Boolean);
-  const src = pool.length ? pool : C.ENEMY_ARCHETYPES.slice(0, 5);
+  const src = pinned ? [pinned] : (pool.length ? pool : C.ENEMY_ARCHETYPES.slice(0, 5));
   const wave: Enemy[] = [];
   for (let i = 0; i < count; i++) {
-    const a = src[Math.floor(rng() * src.length)];
+    const a = pinned || src[Math.floor(rng() * src.length)];
     wave.push(uid(mkEnemy(a, hpAt(a.hpMul), atkAt(a.atkMul))));
   }
   return wave;

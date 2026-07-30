@@ -17,6 +17,7 @@ import MinigameScreen from './screens/MinigameScreen.jsx';
 import AfkPopup from './screens/AfkPopup.jsx';
 import RewardPopup from './screens/RewardPopup.jsx';
 import AfkAlert from './AfkAlert.jsx';
+import FtueLayer from './ftue/FtueLayer.jsx';
 import { AFK } from '../data/config.js';
 
 export default function Game() {
@@ -60,6 +61,8 @@ export default function Game() {
       {fxVisible(state) && <FxLayer />}
       {afkOpen && <AfkPopup />}
       {state.rewardPopup && <RewardPopup />}
+      {/* FTUE coachmark layer — self-gates on flags.ftueActive; renders nothing when the FTUE is off. */}
+      <FtueLayer />
     </div>
   );
 }

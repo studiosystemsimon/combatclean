@@ -105,7 +105,7 @@ export default function HpBar({ frac, kind }) {
   const ghostColor = kind === 'enemy' ? HP.ghostColor.enemy : HP.ghostColor.hero;
 
   return (
-    <div ref={barRef} className={`bar hp ${kind === 'enemy' ? 'enemy' : ''}`}>
+    <div ref={barRef} className={`bar hp ${kind === 'enemy' ? 'enemy' : ''} ${frac < HP.lowFrac ? 'low' : ''}`}>
       <span className="hp-ghost" style={{ background: ghostColor }} />
       <span className="hp-fill" />
       <span className="hp-white" />

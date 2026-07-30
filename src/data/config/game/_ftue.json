@@ -1,0 +1,16 @@
+{
+	"enabledByDefault": true,
+	"zoneEnemyCounts": [1, 1, 2, 2, 3, 3, 3, 4, 5],
+	"firstEnemyConfigIds": [3032, 3033],
+	"firstOrderReward": "potion",
+	"firstOrderChainKey": "blade",
+	"firstOrderTier": 1,
+	"secondOrderReward": "gear",
+	"secondOrderChainKey": "range",
+	"secondOrderTier": 1,
+	"secondOrderGearSlot": "armor",
+	"secondOrderGearRarity": "epic",
+	"summonAtLevel": 5,
+	"specialsUnlockAtLevel": 8,
+	"firstPullHeroConfigId": 2020
+}

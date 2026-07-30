@@ -51,7 +51,12 @@ export const combatHandlers: Record<string, (state: S, action: Act) => S> = {
       fx = [...fx, { id: id++, type: 'waveClear' }];
       return { ...state, coins: state.coins + w.coins, heroXp: state.heroXp + w.heroXp, gearXp: state.gearXp + w.gearXp, crystals, battle: { ...battle, status: 'clearing' }, nextId: id, fx };
     }
-    if (outcome === 'lose') { fx = [...fx, { id: id++, type: 'lose', level: battle.level }]; return { ...state, battle: { ...battle, status: 'lost' }, nextId: id, fx }; }
+    if (outcome === 'lose') {
+      fx = [...fx, { id: id++, type: 'lose', level: battle.level }];
+      // FTUE: arm the first-loss coachmark (the "go equip + level up" freeze). Monotonic; inert when off.
+      const lostFlags = (state.flags && state.flags.ftueActive && !state.flags.ftueFirstLoss) ? { ...state.flags, ftueFirstLoss: true } : state.flags;
+      return { ...state, flags: lostFlags, battle: { ...battle, status: 'lost' }, nextId: id, fx };
+    }
     return { ...state, battle, nextId: id, fx };
   },
   [A.TAP_LIMIT]: (state, action) => {
@@ -60,12 +65,22 @@ export const combatHandlers: Record<string, (state: S, action: Act) => S> = {
     let id = state.nextId;
     let fx = [...state.fx, { id: id++, type: 'limitBreak', heroes: fired, heroId: action.heroId, enemyDamage, enemyDeaths, heals }];
     if (combo) fx = [...fx, { id: id++, type: 'combo', uid: combo.uid, n: combo.n }];
+    // FTUE (monotonic flags for the coachmarks): the first limit break, and specifically the alchemist's
+    // AOE limit break (the recruited hero clearing the screen). Inert when the FTUE is off.
+    let flags = state.flags;
+    if (state.flags && state.flags.ftueActive) {
+      const heroSlug = state.heroes[action.heroId] && state.heroes[action.heroId].hero;
+      const set: any = {};
+      if (!state.flags.ftueLimitFired) set.ftueLimitFired = true;
+      if (C.FTUE && heroSlug === C.FTUE.firstPullHero && !state.flags.ftueAlchemistUsed) set.ftueAlchemistUsed = true;
+      if (Object.keys(set).length) flags = { ...state.flags, ...set };
+    }
     if (outcome === 'win') {
       const w = winReward(battle.level); const crystals = addCrystal(state.crystals, rollWinCrystal(battle.level));
       fx = [...fx, { id: id++, type: 'waveClear' }];
-      return { ...state, coins: state.coins + w.coins, heroXp: state.heroXp + w.heroXp, gearXp: state.gearXp + w.gearXp, crystals, battle: { ...battle, status: 'clearing' }, nextId: id, fx };
+      return { ...state, flags, coins: state.coins + w.coins, heroXp: state.heroXp + w.heroXp, gearXp: state.gearXp + w.gearXp, crystals, battle: { ...battle, status: 'clearing' }, nextId: id, fx };
     }
-    return { ...state, battle, nextId: id, fx };
+    return { ...state, flags, battle, nextId: id, fx };
   },
   [A.SHOW_COMPLETE]: (state) => {
     if (state.battle.status !== 'clearing') return state;
@@ -92,28 +107,33 @@ export const combatHandlers: Record<string, (state: S, action: Act) => S> = {
     }
     if (toZone > fromZone && state.battle.level > state.clearedLevel) {
       const zone = C.ZONES[fromZone];
-      const newlyUnlocked = ((zone && zone.unlocksGenerators) || []).filter((g: string) => !state.unlockedGenerators.includes(g));
-      const unlockedGenerators = newlyUnlocked.length ? [...state.unlockedGenerators, ...newlyUnlocked] : state.unlockedGenerators;
+      // Zone-completion generator award (hardcoded per zone, rotating magic→blade→range at fixed levels).
+      const rewards = ((zone && zone.rewardGenerators) || []) as Array<{ generatorKey: string; level: number }>;
+      // A genuinely-NEW generator type also joins the unlocked set (order eligibility + boot placement);
+      // an already-unlocked type is still AWARDED below as a mergeable duplicate.
+      const newTypes = rewards.map((r) => r.generatorKey).filter((k: string) => !state.unlockedGenerators.includes(k));
+      const unlockedGenerators = newTypes.length ? [...state.unlockedGenerators, ...newTypes] : state.unlockedGenerators;
       // Board-award cinematic: plan each generator's LANDING CELL now via the shared add-tile rule
       // (empty → else replace the lowest active item), so the appear→fly→land cinematic flies to the
-      // exact cell ACCEPT will drop it on. Sequential picks give multiple unlocks distinct cells.
+      // exact cell ACCEPT will drop it on. Sequential picks give multiple awards distinct cells.
       // `reward` = the boss-clear reward, for the synopsis card.
       let id = state.nextId;
       let workBoard = state.board;
-      const placements: { genKey: string; cell: number }[] = [];
+      const placements: { genKey: string; level: number; cell: number }[] = [];
       const fx = [...state.fx];
-      for (const gk of newlyUnlocked) {
+      for (const r of rewards) {
         const cell = Board.addTileIndex(workBoard);
         if (cell < 0) continue; // board is all generators + cobwebs — nowhere to add
-        placements.push({ genKey: gk, cell });
-        workBoard = Board.withCell(workBoard, cell, Board.makeGenerator(0, gk)); // reserve the cell for the next pick (id irrelevant; discarded)
-        fx.push({ id: id++, type: 'generatorUnlock', genKey: gk, cell });
+        placements.push({ genKey: r.generatorKey, level: r.level, cell });
+        workBoard = Board.withCell(workBoard, cell, Board.makeGenerator(0, r.generatorKey, r.level)); // reserve the cell for the next pick (id irrelevant; discarded)
+        fx.push({ id: id++, type: 'generatorUnlock', genKey: r.generatorKey, level: r.level, cell });
       }
       return {
         ...state, unlockedGenerators, fx, nextId: id,
         clearedLevel: Math.max(state.clearedLevel, state.battle.level),
         battle: { ...state.battle, status: 'areaComplete', recovering: false },
-        pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked, placements, reward: winReward(state.battle.level) },
+        // `unlocked` = every AWARDED key (drives the area-complete popup + its nav trigger — not just new types).
+        pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: rewards.map((r) => r.generatorKey), placements, reward: winReward(state.battle.level) },
       };
     }
     if (Map.isBossLevel(nextLevel)) {
@@ -121,7 +141,15 @@ export const combatHandlers: Record<string, (state: S, action: Act) => S> = {
       return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'gate', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
     }
     const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
-    return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
+    // FTUE: arm the predetermined summon when the player reaches the configured level ("things are
+    // getting tough — hire a hero"). Once; consumed + disarmed by SUMMON. Inert when off / already pulled.
+    const armPull = !!(state.flags && state.flags.ftueActive && !state.flags.ftuePulled && C.FTUE && nextLevel === C.FTUE.summonAtLevel);
+    // FTUE: unlock special orders "later in the run" — once the player reaches specialsUnlockAtLevel.
+    const unlockSpecials = !!(state.flags && state.flags.ftueActive && !state.flags.specialOrders && C.FTUE && nextLevel >= C.FTUE.specialsUnlockAtLevel);
+    const flags = (armPull || unlockSpecials)
+      ? { ...state.flags, ...(armPull ? { ftueFirstPull: true } : {}), ...(unlockSpecials ? { specialOrders: true } : {}) }
+      : state.flags;
+    return { ...state, flags, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
   },
   [A.ACCEPT_AREA_COMPLETE]: (state) => {
     if (state.battle.status !== 'areaComplete' || !state.pendingArea) return state;
@@ -131,13 +159,13 @@ export const combatHandlers: Record<string, (state: S, action: Act) => S> = {
     // Drop each newly-unlocked generator via the shared add-tile rule. Prefer the cell PLANNED at win
     // (so it matches where the cinematic flew); if that cell was since filled by a generator/cobweb,
     // re-resolve with addTileToBoard. Falls back to a fresh resolve when no plan exists.
-    const plan = (placements && placements.length) ? placements : (unlocked || []).map((genKey: string) => ({ genKey, cell: -1 }));
+    const plan = (placements && placements.length) ? placements : (unlocked || []).map((genKey: string) => ({ genKey, level: 0, cell: -1 }));
     for (const p of plan) {
       const cur = p.cell >= 0 ? board[p.cell] : null;
       const planOk = p.cell >= 0 && !(cur && (cur.kind === 'generator' || (cur.kind === 'item' && cur.locked)));
       board = planOk
-        ? Board.withCell(board, p.cell, Board.makeGenerator(id++, p.genKey))
-        : Board.addTileToBoard(board, Board.makeGenerator(id++, p.genKey));
+        ? Board.withCell(board, p.cell, Board.makeGenerator(id++, p.genKey, p.level))
+        : Board.addTileToBoard(board, Board.makeGenerator(id++, p.genKey, p.level));
     }
     const { wave, heroes, id: id2 } = respawn(state, nextLevel, id);
     return { ...state, board, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, pendingArea: null };

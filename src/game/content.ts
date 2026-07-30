@@ -63,7 +63,7 @@ export function createContent(bundle: GameConfigBundle) {
   // ── heroes ──
   const HEROES = Object.fromEntries((b.heroes ?? []).map((h: Row) => [h.displayName, {
     id: h.displayName, rarity: h.rarityKey, weapon: h.weaponChainKey, baseAtk: h.baseAtk, baseHp: h.baseHp, baseDef: h.baseDef,
-    normal: h.normal, limit: h.limit, classKey: h.classKey, slots: h.slots,
+    normal: h.normal, limit: h.limit, classKey: h.classKey, slots: h.slots, flying: !!h.flying,
   }]));
 
   // ── enemies (slug-keyed, incl. bosses) ──
@@ -77,7 +77,7 @@ export function createContent(bundle: GameConfigBundle) {
     bossId: sid(enemyIdToSlug, z.bossConfigId), accompliceId: sid(enemyIdToSlug, z.accompliceConfigId),
     crystal: z.crystalRarityKey, orderRarity: z.orderRarity,
     items: (z.itemConfigIds ?? []).map((id: number) => sid(pieceIdToSlug, id)),
-    unlocksGenerators: (z.unlocksGeneratorKeys ?? []) as string[], // generator keys unlocked on first clearing this area
+    rewardGenerators: (z.rewardGenerators ?? []) as Array<{ generatorKey: string; level: number }>, // generators awarded (key + hardcoded level) on first clearing this area
   }));
 
   // ── banners (ordered by id; pools mapped id→slug) ──
@@ -93,6 +93,24 @@ export function createContent(bundle: GameConfigBundle) {
   // ── singletons (tuning; LEVEL_SCALING boss accomplice mapped id→slug) ──
   const LEVEL_SCALING = { ...b.levelScaling, bossAccompliceId: sid(enemyIdToSlug, b.levelScaling.bossAccompliceConfigId) };
 
+  // ── FTUE override layer (id refs → slugs; the sim reads this ONLY when flags.ftueActive) ──
+  const FTUE = b.ftue ? {
+    enabledByDefault: !!b.ftue.enabledByDefault,
+    zoneEnemyCounts: (b.ftue.zoneEnemyCounts ?? []) as number[],
+    firstEnemies: (b.ftue.firstEnemyConfigIds ?? []).map((id: number) => sid(enemyIdToSlug, id)) as string[],
+    firstOrderReward: b.ftue.firstOrderReward as string,
+    firstOrderChain: b.ftue.firstOrderChainKey as string,
+    firstOrderTier: b.ftue.firstOrderTier as number,
+    secondOrderReward: b.ftue.secondOrderReward as string,
+    secondOrderChain: b.ftue.secondOrderChainKey as string,
+    secondOrderTier: b.ftue.secondOrderTier as number,
+    secondOrderGearSlot: b.ftue.secondOrderGearSlot as string,
+    secondOrderGearRarity: b.ftue.secondOrderGearRarity as string,
+    summonAtLevel: b.ftue.summonAtLevel as number,
+    specialsUnlockAtLevel: b.ftue.specialsUnlockAtLevel as number,
+    firstPullHero: sid(heroIdToSlug, b.ftue.firstPullHeroConfigId) as string,
+  } : null;
+
   return {
     CHAINS, GENERATORS, HERO_RARITIES, HERO_RARITY_ORDER, RARITY_STAT_MUL, LEVEL_CAP,
     GEAR_RARITY, GEAR_RARITY_ORDER, GEAR_SLOTS, GEAR_SLOT_DEFS, HERO_CLASSES, GEAR_LOADOUT: b.gearLoadout, GEAR_PIECES, GEAR_FUSE, GEAR_GEN, GEAR_LEVEL, GEAR_CHEST_TIERS,
@@ -102,7 +120,7 @@ export function createContent(bundle: GameConfigBundle) {
     HERO_LEVEL: b.progression.heroLevel, HERO_UPGRADE: b.progression.heroUpgrade, ABILITY_MUL_PER_LEVEL: b.progression.abilityMulPerLevel,
     ORDER_CONFIG: { active: b.orders.active, arrivalMs: b.orders.arrivalMs, itemCount: b.orders.itemCount, fillerMaxLevel: b.orders.fillerMaxLevel, costPerTierBase: b.orders.costPerTierBase, specialChance: b.orders.specialChance, potionChance: b.orders.potionChance },
     ORDER_CHAINS: b.orders.orderChains as string[], ORDER_DOMINANT_TIER: b.orders.dominantTier as Record<string, [number, number]>,
-    CRYSTAL: b.crystalDrop, UNIQUE_DROP: b.uniqueDrop, TIER_PRESENTATION: b.tierPresentation, VFX: b.vfx, HAPTICS: b.haptics, RUNTIME: b.runtime, REVEAL: b.reveal, ANIM: b.anim, MINIGAME: b.minigame,
+    CRYSTAL: b.crystalDrop, UNIQUE_DROP: b.uniqueDrop, TIER_PRESENTATION: b.tierPresentation, VFX: b.vfx, HAPTICS: b.haptics, RUNTIME: b.runtime, REVEAL: b.reveal, ANIM: b.anim, MINIGAME: b.minigame, FTUE,
     // derived: fresh-crystal wallet (all rarities zero) + the starter hero roster + well-known refs
     EMPTY_CRYSTALS: Object.fromEntries(HERO_RARITY_ORDER.map((k: string) => [k, 0])) as Record<string, number>,
     STARTER_HEROES: [heroIdToSlug[(b.refs || {}).starterHeroConfigId]].filter(Boolean) as string[],

@@ -20,5 +20,6 @@
 			"mult": 5.5
 		}
 	},
-	"classKey": "dark-knight"
+	"classKey": "dark-knight",
+	"flying": true
 }
