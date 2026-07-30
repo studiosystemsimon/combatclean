@@ -19,6 +19,7 @@ import { playGachaReveal } from './fx/gacha-reveal.js';
 import { playGeneratorUnlock } from './fx/generator-unlock.js';
 import { startPerfProbe } from './fx/perf-probe.js';
 import { runIntro, showGate, clearIntro } from './fx/intro-director.js';
+import { runLimitEnergy } from './fx/limit-energy.js';
 import { resolve } from './assets.js';
 import { hapticForFx } from './haptics.js';
 import { STRINGS } from '../data/strings.js';
@@ -183,55 +184,8 @@ function handleHeroAttacks(ev) {
   if (ev.crit) { combo(STRINGS.combat.critical); shakeArena(CB.heroAttack.critShake); }
 }
 
-// A completed order charges every squad hero's LIMIT BREAK — make it VISIBLE:
-// gold energy motes stream from the fulfilled order card into each hero's limit
-// bar, which pulses on arrival. Fires alongside the orderChest sequence.
-function pulseLimitBar(bar) {
-  if (!bar || !bar.animate) return;
-  bar.animate(
-    [
-      { filter: 'brightness(1)', transform: 'scale(1)' },
-      { filter: `brightness(${CB.limitPulse.brightness})`, transform: `scale(${CB.limitPulse.scale})`, offset: CB.limitPulse.offset },
-      { filter: 'brightness(1)', transform: 'scale(1)' },
-    ],
-    { duration: CB.limitPulse.ms, easing: 'ease-out' },
-  );
-}
-function handleLimitCharge(ev) {
-  // Source: for an ORDER, the fulfilled order card (still in the DOM, marked fulfilling); for a
-  // MERGE, the merged board cell — so the limit energy visibly flies FROM where the merge happened.
-  // Fallback to the combat-panel centre if neither anchor resolves.
-  let from = null;
-  if (ev.orderId != null) {
-    const card = Array.from(document.querySelectorAll('.orders .order')).find((c) => c.getAttribute('data-order-id') === String(ev.orderId));
-    from = card ? fx.elCenter(card) : null;
-  } else if (ev.cell != null) {
-    from = fx.cellCenter(ev.cell);
-  }
-  if (!from) {
-    const b = document.querySelector('.battle');
-    const c = b ? fx.elCenter(b) : null;
-    if (c) from = { x: c.x, y: c.y };
-  }
-  if (!from) return;
-  (ev.heroIds || []).forEach((hid, i) => {
-    const bar = document.querySelector(`[data-battle-hero="${hid}"] .bar.limit`);
-    if (!bar) return;
-    const to = fx.elCenter(bar);
-    if (!to) return;
-    setTimeout(() => {
-      fx.spawnTrail(from, to, {
-        color: CC.limitFlash, tail: CC.limitBreak, ...CB.limitCharge.trail,
-        onHit: (x, y) => {
-          fx.impact(x, y, { tier: 'normal', color: CC.limitFlash, r: CB.limitCharge.impactR });
-          // A small sparkle pop as the energy lands on the bar (reuses the confetti particle system).
-          fx.confetti(x, y, { colors: [CC.limitFlash, CC.limitBreak], count: CB.limitCharge.sparkleCount, power: CB.limitCharge.sparklePower });
-          pulseLimitBar(bar);
-        },
-      });
-    }, i * CB.limitCharge.stagger); // stagger so each hero's mote reads distinctly
-  });
-}
+// The limit-charge mote (merge/order → each charged hero's limit bar, which fills in sync + flashes
+// on arrival) now lives in ./fx/limit-energy.js — a richer curl/gradient/BOF mote on its own path.
 
 function handleOrderChest(ev, chestLayer, overlay, { pauseChest, resolveChest, emptyOrder }) {
   const cards = document.querySelectorAll('.orders .order');
@@ -632,7 +586,7 @@ export default function FxLayer() {
       else if (ev.type === 'bossHeal') handleBossHeal(ev);
       else if (ev.type === 'bossRaise') handleBossRaise(ev);
       else if (ev.type === 'orderChest') handleOrderChest(ev, chestLayerRef.current, overlayRef.current, actions);
-      else if (ev.type === 'limitCharge') handleLimitCharge(ev);
+      else if (ev.type === 'limitCharge') runLimitEnergy(ev);
       else if (ev.type === 'waveClear') handleWaveClear();
       else if (ev.type === 'levelComplete') handleLevelComplete(ev);
       else if (ev.type === 'limitBreak') handleLimitBreak(ev);

@@ -1553,14 +1553,14 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   background: radial-gradient(120% 100% at 50% 0%, rgba(255, 212, 94, 0.14), rgba(255, 212, 94, 0.03) 70%), rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 212, 94, 0.28); box-shadow: 0 0 18px rgba(255, 212, 94, 0.1) inset; }
 
-.hs-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 10px 14px; }
+.hs-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 0 10px 14px; }
 .hs-squad-band .hs-grid { padding: 0; }
 /* content-visibility: the browser skips layout/paint/image-decode for cells not near the
    viewport, so a large roster no longer renders every tile offscreen (scroll perf). Nodes stay
    in the DOM, so drag-swap / refs / popup / VFX still resolve. contain-intrinsic-size reserves
    each skipped cell's box (auto = remember the real size once rendered) so scroll height + the
    5-col grid stay correct. Squad cells are always on-screen, so this is a no-op for them. */
-.hs-cell { display: flex; flex-direction: column; gap: 2px; transition: opacity 0.18s ease, filter 0.18s ease;
+.hs-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; transition: opacity 0.18s ease, filter 0.18s ease;
   content-visibility: auto; contain-intrinsic-size: auto 96px; }
 
 .hs-tile { --rar: #9aa7bd; position: relative; aspect-ratio: 1 / 1; border-radius: 11px; overflow: hidden; cursor: pointer;
@@ -1819,6 +1819,11 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .mp-pop-s { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
 .mp-pop-d { color: #c9d2ee; font-size: 13.5px; margin-top: 10px; }
 .mp-pop-x { margin-top: 14px; width: 100%; padding: 9px; border: 0; border-radius: 10px; font: inherit; font-weight: 800; color: #04122e; background: var(--gold); cursor: pointer; }
+/* zone-start: unlocked tiles are tappable; confirm dialog uses a two-button row */
+.mtile.startable { cursor: pointer; }
+.mp-pop-btns { display: flex; gap: 8px; margin-top: 14px; }
+.mp-pop-btns .mp-pop-x { margin-top: 0; flex: 1; }
+.mp-pop-cancel { flex: 1; padding: 9px; border: 1px solid var(--panel-line); border-radius: 10px; font: inherit; font-weight: 800; color: #c9d2ee; background: rgba(255,255,255,.06); cursor: pointer; }
 
 /* hero ascend popup — crystal requirement chip */
 .hs-asc-req { font-size: 11px; font-weight: 800; }

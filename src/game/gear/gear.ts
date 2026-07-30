@@ -17,6 +17,23 @@ export const gearAtMax = (g: GearItem) => g.level >= C.GEAR_LEVEL.maxLevel;
 export const equippedFor = (gearMap: GearMap, heroId: string) => Object.values(gearMap).filter((g) => g.equippedTo === heroId);
 export const heroGearPower = (gearMap: GearMap, heroId: string) => equippedFor(gearMap, heroId).reduce((s, g) => s + gearPower(g), 0);
 
+// ── per-class loadout + equip gating ─────────────────────────────────────────
+// The generic modular slot system: a hero-class declares its slot loadout (its own `slots`, else the
+// shared gearLoadout.defaultSlots), and a class-bound slot only accepts pieces whose classKey matches.
+type Cls = { slots: string[]; classKey?: string };
+export const slotClassBound = (slotKey: string) => !!(C.GEAR_SLOT_DEFS[slotKey] && C.GEAR_SLOT_DEFS[slotKey].classBound);
+export const heroClassOf = (heroSlug: string): Cls => {
+  const h = C.HEROES[heroSlug];
+  return { slots: ((h && h.slots) || C.GEAR_LOADOUT.defaultSlots) as string[], classKey: h && h.classKey };
+};
+export const slotsForClass = (heroSlug: string) => heroClassOf(heroSlug).slots;
+// A gear instance fits a class's slot: right family, the class HAS that slot, and (class-bound slots
+// only) the piece's classKey matches the class.
+export const fitsSlot = (g: GearItem, cls: Cls, slotKey: string) =>
+  !!g && g.slot === slotKey && cls.slots.includes(slotKey)
+  && (!slotClassBound(slotKey) || (pieceDef(g)?.classKey ?? null) === (cls.classKey ?? null));
+export const canEquip = (g: GearItem, cls: Cls) => fitsSlot(g, cls, g.slot);
+
 const randInt = (a: number, b: number, rng: Rng) => a + Math.floor(rng() * (b - a + 1));
 
 export const chestRarityForDifficulty = (difficulty: number) => {
@@ -27,7 +44,7 @@ export const chestRarityForDifficulty = (difficulty: number) => {
 export const rollGear = (id: string, rarity: string, rng: Rng): GearItem => {
   const rar = C.GEAR_RARITY[rarity] ? rarity : 'common';
   const rIdx = Math.max(0, C.GEAR_RARITY_ORDER.indexOf(rar));
-  const ids = Object.keys(C.GEAR_PIECES).filter((pid) => !C.GEAR_PIECES[pid].unique);
+  const ids = Object.keys(C.GEAR_PIECES).filter((pid) => !C.GEAR_PIECES[pid].unique && !C.GEAR_PIECES[pid].classKey);
   const eligible = ids.filter((pid) => C.GEAR_RARITY_ORDER.indexOf(C.GEAR_PIECES[pid].maxRarity) >= rIdx);
   const pieceId = (eligible.length ? eligible : ids)[Math.floor(rng() * (eligible.length ? eligible.length : ids.length))];
   const def = C.GEAR_PIECES[pieceId];
@@ -46,21 +63,20 @@ export const makeUnique = (id: string, pieceId: string, rng: Rng): GearItem | nu
   return { id, pieceId, slot: def.slot, rarity, level: 1, base, equippedTo: null, unique: true };
 };
 
-export const autoEquipAll = (gearMap: GearMap, rankedHeroIds: string[]): GearMap => {
-  const next: GearMap = {};
+// Rank-ordered heroes each greedily take their best free gear per THEIR class's slots (heroes may have
+// different loadouts + class-bound slots), so the highest-ranked hero fills first.
+export const autoEquipAll = (gearMap: GearMap, ranked: { id: string; cls: Cls }[]): GearMap => {
+  let next: GearMap = {};
   for (const k in gearMap) next[k] = { ...gearMap[k], equippedTo: null };
-  for (const slot of C.GEAR_SLOTS) {
-    const pool = Object.values(next).filter((g) => g.slot === slot).sort((a, b) => gearPower(b) - gearPower(a));
-    rankedHeroIds.forEach((hid, i) => { if (pool[i]) next[pool[i].id].equippedTo = hid; });
-  }
+  for (const { id, cls } of ranked) next = autoEquipHero(next, id, cls);
   return next;
 };
 
-export const autoEquipHero = (gearMap: GearMap, heroId: string): GearMap => {
+export const autoEquipHero = (gearMap: GearMap, heroId: string, cls: Cls): GearMap => {
   const next: GearMap = {};
   for (const k in gearMap) next[k] = { ...gearMap[k] };
-  for (const slot of C.GEAR_SLOTS) {
-    const cand = Object.values(next).filter((g) => g.slot === slot && (g.equippedTo === null || g.equippedTo === heroId)).sort((a, b) => gearPower(b) - gearPower(a));
+  for (const slot of cls.slots) {
+    const cand = Object.values(next).filter((g) => fitsSlot(g, cls, slot) && (g.equippedTo === null || g.equippedTo === heroId)).sort((a, b) => gearPower(b) - gearPower(a));
     for (const g of Object.values(next)) if (g.slot === slot && g.equippedTo === heroId) g.equippedTo = null;
     if (cand[0]) next[cand[0].id].equippedTo = heroId;
   }
@@ -101,7 +117,9 @@ export const nextRarityFor = (g: GearItem) => {
 export const fuseFodder = (gearMap: GearMap, id: string) => {
   const g = gearMap[id];
   if (!g || !nextRarityFor(g)) return [];
-  return Object.values(gearMap).filter((x) => x.id !== g.id && x.slot === g.slot && x.rarity === g.rarity && !x.equippedTo);
+  const bound = slotClassBound(g.slot);
+  const ck = bound ? (pieceDef(g)?.classKey ?? null) : null;
+  return Object.values(gearMap).filter((x) => x.id !== g.id && x.slot === g.slot && x.rarity === g.rarity && !x.equippedTo && (!bound || (pieceDef(x)?.classKey ?? null) === ck));
 };
 export const canFuse = (gearMap: GearMap, id: string) => fuseFodder(gearMap, id).length >= C.GEAR_FUSE.fodder;
 export const fuseCost = (rarity: string) => C.GEAR_FUSE.coinBase + Math.max(0, C.GEAR_RARITY_ORDER.indexOf(rarity)) * C.GEAR_FUSE.coinPerTier;
@@ -118,14 +136,14 @@ export const fuseGear = (gearMap: GearMap, id: string): GearMap => {
 };
 
 export const equippedInSlot = (gearMap: GearMap, heroId: string, slot: string) => Object.values(gearMap).find((g) => g.slot === slot && g.equippedTo === heroId) || null;
-export const slotCandidates = (gearMap: GearMap, heroId: string, slot: string) => {
+export const slotCandidates = (gearMap: GearMap, heroId: string, slot: string, cls: Cls) => {
   const cur = equippedInSlot(gearMap, heroId, slot);
-  return Object.values(gearMap).filter((g) => g.slot === slot && (g.equippedTo === null || g.equippedTo === heroId) && (!cur || g.id !== cur.id)).sort((a, b) => gearPower(b) - gearPower(a));
+  return Object.values(gearMap).filter((g) => fitsSlot(g, cls, slot) && (g.equippedTo === null || g.equippedTo === heroId) && (!cur || g.id !== cur.id)).sort((a, b) => gearPower(b) - gearPower(a));
 };
-// Items of this slot currently worn by OTHER heroes — offered AFTER the free pool. equipItem moves
-// them off the other hero on equip; the view gates that behind a confirm dialog.
-export const otherHeroSlotItems = (gearMap: GearMap, heroId: string, slot: string) =>
-  Object.values(gearMap).filter((g) => g.slot === slot && g.equippedTo && g.equippedTo !== heroId).sort((a, b) => gearPower(b) - gearPower(a));
+// Items of this slot currently worn by OTHER heroes THIS class can wear — offered AFTER the free pool.
+// equipItem moves them off the other hero on equip; the view gates that behind a confirm dialog.
+export const otherHeroSlotItems = (gearMap: GearMap, heroId: string, slot: string, cls: Cls) =>
+  Object.values(gearMap).filter((g) => fitsSlot(g, cls, slot) && g.equippedTo && g.equippedTo !== heroId).sort((a, b) => gearPower(b) - gearPower(a));
 export const equipItem = (gearMap: GearMap, id: string, heroId: string): GearMap => {
   const g = gearMap[id];
   if (!g) return gearMap;
@@ -142,9 +160,9 @@ export const levelAllHeroOnce = (gearMap: GearMap, heroId: string, pool: number)
   for (const g of Object.values(next)) { if (g.equippedTo !== heroId || gearAtMax(g)) continue; const c = gearLevelCost(g.level); if (c <= xp) { g.level += 1; xp -= c; } }
   return { gear: next, xp };
 };
-export const canEquipBetter = (gearMap: GearMap, heroId: string) => {
-  const after = autoEquipHero(gearMap, heroId);
+export const canEquipBetter = (gearMap: GearMap, heroId: string, cls: Cls) => {
+  const after = autoEquipHero(gearMap, heroId, cls);
   const slotId = (map: GearMap, slot: string) => { const g = Object.values(map).find((x) => x.slot === slot && x.equippedTo === heroId); return g ? g.id : null; };
-  return C.GEAR_SLOTS.some((slot: string) => slotId(gearMap, slot) !== slotId(after, slot));
+  return cls.slots.some((slot: string) => slotId(gearMap, slot) !== slotId(after, slot));
 };
 export const canUpgradeHeroGear = (gearMap: GearMap, heroId: string, pool: number) => equippedFor(gearMap, heroId).some((g) => !gearAtMax(g) && gearLevelCost(g.level) <= pool);

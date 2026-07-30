@@ -19,5 +19,6 @@
 			"type": "aoe",
 			"mult": 6.5
 		}
-	}
+	},
+	"classKey": "obsidia"
 }

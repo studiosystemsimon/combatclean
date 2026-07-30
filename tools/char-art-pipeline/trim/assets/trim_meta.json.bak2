@@ -466,21 +466,34 @@
       }
     },
     "heroes/obsidia.png": {
-      "pockets": [],
+      "pockets": [
+        [
+          163,
+          301
+        ],
+        [
+          806,
+          420
+        ]
+      ],
       "portrait": {
         "scale": 1.45,
         "x": -0.025,
         "y": -0.217
       },
       "combat": {
-        "scale": 0.95
-      }
+        "scale": 1.05
+      },
+      "reg": [
+        0.5133,
+        0.9735
+      ]
     },
     "heroes/paladin.png": {
       "pockets": [],
       "reg": [
-        0.5351,
-        0.924
+        0.5381,
+        0.9562
       ],
       "portrait": {
         "scale": 1.5,
@@ -2313,7 +2326,7 @@
     "accessories/amulet-legendary.png": {
       "pockets": [],
       "combat": {
-        "scale": 0.75
+        "scale": 0.9
       }
     },
     "accessories/amulet-rare.png": {
@@ -2588,6 +2601,72 @@
       "combat": {
         "scale": 1.05
       }
+    },
+    "chests/common.png": {
+      "pockets": []
+    },
+    "chests/epic.png": {
+      "pockets": []
+    },
+    "chests/legendary.png": {
+      "pockets": []
+    },
+    "chests/rare.png": {
+      "pockets": []
+    },
+    "chests/uncommon.png": {
+      "pockets": []
+    },
+    "sacks/common.png": {
+      "pockets": []
+    },
+    "sacks/epic.png": {
+      "pockets": []
+    },
+    "sacks/legendary.png": {
+      "pockets": []
+    },
+    "sacks/rare.png": {
+      "pockets": []
+    },
+    "sacks/uncommon.png": {
+      "pockets": []
+    },
+    "heroes/bishop.png": {
+      "pockets": [
+        [
+          286,
+          675
+        ],
+        [
+          205,
+          302
+        ],
+        [
+          114,
+          363
+        ],
+        [
+          910,
+          572
+        ],
+        [
+          294,
+          344
+        ]
+      ],
+      "portrait": {
+        "scale": 1.7,
+        "x": 0.022,
+        "y": -0.479
+      },
+      "combat": {
+        "scale": 1.05
+      },
+      "reg": [
+        0.5267,
+        0.9377
+      ]
     }
   }
 }

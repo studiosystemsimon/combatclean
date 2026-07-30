@@ -22,6 +22,8 @@ MERGE_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "merge-icon-pipeline") 
 MERGE_CATS = {"magic", "blade", "range", "blade-gen", "range-gen", "magic-gen"}
 GEAR_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "gear-pipeline")         # sibling gear gen pipeline
 GEAR_CATS = {"armor", "weapons", "accessories"}
+LOOT_PIPELINE = os.path.join(os.path.dirname(PIPELINE), "loot-pipeline")         # sibling loot gen pipeline
+LOOT_CATS = {"chests", "sacks"}
 GAME_ROOT = os.path.dirname(os.path.dirname(PIPELINE))          # repo root (for the post-merge-export build)
 GEN_SH   = os.path.join(PIPELINE, "generate.sh")
 JSX     = os.path.join(ROOT_DIR, "trim.jsx")
@@ -194,6 +196,8 @@ def _regen_plan(root, category):
         tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = MERGE_PIPELINE
     elif category in GEAR_CATS:
         tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = GEAR_PIPELINE
+    elif category in LOOT_CATS:
+        tsv = "rosters/%s.tsv" % category; env["TSV"] = tsv; env["OUT"] = os.path.join(root, category); cwd = LOOT_PIPELINE
     else:                                             # heroes → hero pipeline
         tsv = "rosters/classes.tsv"; cwd = PIPELINE
     return cwd, tsv, env

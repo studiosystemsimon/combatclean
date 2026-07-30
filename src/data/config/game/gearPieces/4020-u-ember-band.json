@@ -1,7 +1,7 @@
 {
 	"id": 4020,
 	"displayName": "u-ember-band",
-	"slot": "trinket",
+	"slot": "accessory",
 	"maxRarityKey": "epic",
 	"unique": true
 }

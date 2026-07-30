@@ -52,7 +52,9 @@ export function createContent(bundle: GameConfigBundle) {
   const GEAR_RARITY: Record<string, any> = Object.fromEntries(grar.map((r: Row) => [r.key, { mul: r.mul }]));
   const GEAR_RARITY_ORDER: string[] = grar.map((r: Row) => r.key);
   const GEAR_SLOTS: string[] = (b.gearSlots ?? []).map((s: Row) => s.key);
-  const GEAR_PIECES = Object.fromEntries((b.gearPieces ?? []).map((p: Row) => [p.displayName, { slot: p.slot, name: p.displayName, maxRarity: p.maxRarityKey, unique: !!p.unique, asset: p.displayName }]));
+  const GEAR_SLOT_DEFS = Object.fromEntries((b.gearSlots ?? []).map((s: Row) => [s.key, { classBound: !!s.classBound }])) as Record<string, { classBound: boolean }>;
+  const HERO_CLASSES: string[] = (b.heroClasses ?? []).map((c: Row) => c.key);
+  const GEAR_PIECES = Object.fromEntries((b.gearPieces ?? []).map((p: Row) => [p.displayName, { slot: p.slot, name: p.displayName, maxRarity: p.maxRarityKey, classKey: p.classKey, unique: !!p.unique, asset: p.displayName }]));
   const gt = b.gearTuning ?? {};
   const GEAR_FUSE = gt.fuse; const GEAR_GEN = gt.gen; const GEAR_LEVEL = gt.level;
   // chest tiers: null maxDifficulty (JSON) → Infinity (the model uses <= comparisons).
@@ -61,7 +63,7 @@ export function createContent(bundle: GameConfigBundle) {
   // ── heroes ──
   const HEROES = Object.fromEntries((b.heroes ?? []).map((h: Row) => [h.displayName, {
     id: h.displayName, rarity: h.rarityKey, weapon: h.weaponChainKey, baseAtk: h.baseAtk, baseHp: h.baseHp, baseDef: h.baseDef,
-    normal: h.normal, limit: h.limit,
+    normal: h.normal, limit: h.limit, classKey: h.classKey, slots: h.slots,
   }]));
 
   // ── enemies (slug-keyed, incl. bosses) ──
@@ -93,7 +95,7 @@ export function createContent(bundle: GameConfigBundle) {
 
   return {
     CHAINS, GENERATORS, HERO_RARITIES, HERO_RARITY_ORDER, RARITY_STAT_MUL, LEVEL_CAP,
-    GEAR_RARITY, GEAR_RARITY_ORDER, GEAR_SLOTS, GEAR_PIECES, GEAR_FUSE, GEAR_GEN, GEAR_LEVEL, GEAR_CHEST_TIERS,
+    GEAR_RARITY, GEAR_RARITY_ORDER, GEAR_SLOTS, GEAR_SLOT_DEFS, HERO_CLASSES, GEAR_LOADOUT: b.gearLoadout, GEAR_PIECES, GEAR_FUSE, GEAR_GEN, GEAR_LEVEL, GEAR_CHEST_TIERS,
     HEROES, ENEMY_BY_ID, ENEMY_ARCHETYPES, ZONES, ZONE_LEN: b.levelScaling.bossEvery, BANNERS, BANNER_ORDER, EXCLUSIVE_POOL,
     LEVEL_SCALING,
     BATTLE: b.battle, NODE: b.node, AFK: b.afk, ENERGY: b.energy, BOARD: b.board, HERO_COMBAT: b.heroCombat,

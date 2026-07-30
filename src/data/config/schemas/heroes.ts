@@ -29,5 +29,7 @@ export const zHeroConfig = zConfig
       orders: z.number().int().describe('Completed orders required to charge the limit break.'),
       effect: zEffect,
     }).strict().describe('The limit break, charged by order fulfilment, fired on tap.'),
+    classKey: stringConfigRef('heroClasses', 'key').describe("This hero-class's class (→ heroClasses.key); gates class-bound equip slots (the class accessory)."),
+    slots: z.array(stringConfigRef('gearSlots', 'key')).optional().describe('The equip loadout THIS class has (→ gearSlots.key), ordered. Omit to inherit gearLoadout.defaultSlots.'),
   })
   .strict();

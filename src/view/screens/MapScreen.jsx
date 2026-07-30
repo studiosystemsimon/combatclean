@@ -45,8 +45,8 @@ const crystalEntry = (zone) => {
   };
 };
 
-function AfkPanel({ furthest, pending, onCollect }) {
-  const r = afkRatesForLevel(furthest);
+function AfkPanel({ afkLevel, pending, onCollect }) {
+  const r = afkRatesForLevel(afkLevel); // AFK income is dictated by the highest level BEATEN (clearedLevel)
   const s = STRINGS.map;
   return (
     <div className="mp-afk">
@@ -73,7 +73,7 @@ function AfkPanel({ furthest, pending, onCollect }) {
   );
 }
 
-function ZoneRow({ zi, currentLevel, furthest, innerRef, onPop }) {
+function ZoneRow({ zi, currentLevel, furthest, innerRef, onPop, onStart }) {
   const zone = ZONES[zi];
   const a = zoneStartLevel(zi);
   const b = zoneBossLevel(zi);
@@ -106,7 +106,11 @@ function ZoneRow({ zi, currentLevel, furthest, innerRef, onPop }) {
         <span className="station">{b}{isLast ? '+' : ''}</span>
         {markerTop != null && <span className="marker" style={{ top: markerTop }} />}
       </div>
-      <div className={`mtile ${locked ? 'locked' : ''} ${isCur ? 'cur' : ''}`}>
+      <div
+        className={`mtile ${locked ? 'locked' : ''} ${isCur ? 'cur' : ''} ${locked ? '' : 'startable'}`}
+        role={locked ? undefined : 'button'}
+        onClick={locked ? undefined : onStart}
+      >
         <Art a={resolve(zone.keyArt)} className="mtile-bg" />
         <div className="mtile-scrim" />
         <div className="mtile-head">
@@ -139,7 +143,7 @@ function ZoneRow({ zi, currentLevel, furthest, innerRef, onPop }) {
                     type="button"
                     className="mic"
                     style={{ '--rc': rarColor(GEAR_PIECES[pid].maxRarity) }}
-                    onClick={() => onPop(itemEntry(zone, pid))}
+                    onClick={(e) => { e.stopPropagation(); onPop(itemEntry(zone, pid)); }}
                   >
                     <Art a={resolve(GEAR_PIECES[pid].asset)} className="mic-img" />
                     <span className="mic-rq" style={{ background: rarColor(GEAR_PIECES[pid].maxRarity) }} />
@@ -157,9 +161,11 @@ function ZoneRow({ zi, currentLevel, furthest, innerRef, onPop }) {
 export default function MapScreen() {
   const { state, actions } = useGame();
   const currentLevel = state.battle.level;
-  const furthest = state.furthestLevel ?? currentLevel;
+  const clearedLevel = state.clearedLevel ?? 0;   // AFK/progression stream — highest level BEATEN
+  const reached = clearedLevel + 1;                // frontier the player can navigate to (for zone lock/fill)
   const curZone = zoneIndexForLevel(currentLevel);
   const [pop, setPop] = useState(null);
+  const [confirmZone, setConfirmZone] = useState(null); // zone index awaiting the "start from first room" confirm
   const hereRef = useRef(null);
   const scrollRef = useRef(null);
   useEffect(() => { hereRef.current?.scrollIntoView({ block: 'center' }); }, []);
@@ -200,10 +206,10 @@ export default function MapScreen() {
   const order = ZONES.map((_, i) => i).reverse();
   return (
     <div className="map-screen">
-      <AfkPanel furthest={furthest} pending={state.pendingAfk} onCollect={actions.collectAfk} />
+      <AfkPanel afkLevel={clearedLevel} pending={state.pendingAfk} onCollect={actions.collectAfk} />
       <div className="map-scroll" ref={scrollRef}>
         {order.map((zi) => (
-          <ZoneRow key={ZONES[zi].id} zi={zi} currentLevel={currentLevel} furthest={furthest} innerRef={zi === curZone ? hereRef : null} onPop={setPop} />
+          <ZoneRow key={ZONES[zi].id} zi={zi} currentLevel={currentLevel} furthest={reached} innerRef={zi === curZone ? hereRef : null} onPop={setPop} onStart={() => setConfirmZone(zi)} />
         ))}
       </div>
       {pop && (
@@ -221,6 +227,27 @@ export default function MapScreen() {
           </div>
         </div>
       )}
+      {confirmZone != null && (() => {
+        const z = ZONES[confirmZone];
+        return (
+          <div className="mp-pop" onClick={() => setConfirmZone(null)}>
+            <div className="mp-pop-card" onClick={(e) => e.stopPropagation()}>
+              <div className="mp-pop-hd">
+                <span className="mp-pop-ic"><Art a={resolve(z.keyArt)} className="mp-pop-img" /></span>
+                <div>
+                  <div className="mp-pop-t">{zoneName(z)}</div>
+                  <div className="mp-pop-s">Lv {zoneStartLevel(confirmZone)}–{zoneBossLevel(confirmZone)}</div>
+                </div>
+              </div>
+              <div className="mp-pop-d">{STRINGS.map.startBody}</div>
+              <div className="mp-pop-btns">
+                <button type="button" className="mp-pop-cancel" onClick={() => setConfirmZone(null)}>{STRINGS.map.startCancel}</button>
+                <button type="button" className="mp-pop-x" onClick={() => { const lvl = zoneStartLevel(confirmZone); setConfirmZone(null); actions.startZone(lvl); }}>{STRINGS.map.startGo}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

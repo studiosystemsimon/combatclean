@@ -19,5 +19,6 @@
 			"type": "aoe",
 			"mult": 3.5
 		}
-	}
+	},
+	"classKey": "barbarian"
 }

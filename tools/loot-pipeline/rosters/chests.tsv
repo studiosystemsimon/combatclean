@@ -1,0 +1,6 @@
+# CHESTS loot roster.  slug<TAB>subject   ·   slug = <rarity>  (one closed treasure chest per rarity)
+common	a closed COMMON wooden treasure chest — plain rough planks, simple iron bands and a basic latch, humble and a little worn
+uncommon	a closed UNCOMMON reinforced wooden chest — sturdier timber with steel corner brackets, iron banding and a solid lock, well-built
+rare	a closed RARE ornate chest — dark polished wood with engraved SILVER bands, decorative trim and a small BLUE gem set in the lock, finely crafted
+epic	a closed EPIC chest — rich dark wood with gold-and-silver filigree bands, PURPLE gem inlays on the corners and a soft magical glow at the seams, luxurious
+legendary	a closed LEGENDARY golden treasure chest — ornate solid-gold filigree, large radiant gems, glowing runic trim and rays of light escaping the lid seam, magnificent

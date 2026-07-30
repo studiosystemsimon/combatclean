@@ -82,12 +82,12 @@
   window.addEventListener('resize', resize);
 
   // ── perspective lane projection: d = depth, 0 = near (bottom), 1 = far (horizon) ──
-  const HZ=0.30, GB=0.90, NH=0.44, FH=0.22, FS=0.58;   // gentle tilt + LONGER runway (far end higher, near end off the bottom)
+  const HZ=0.16, GB=0.94, NH=0.46, FH=0.33, FS=0.74;   // long runway (fills most of the screen) + very gentle taper
   const projY = (d)=> H*GB - d*(H*GB - H*HZ);
   const halfW = (d)=> W*(NH + (FH-NH)*d);
   const projX = (lx,d)=> W/2 + lx*halfW(d);
   const scaleAt = (d)=> 1 + (FS-1)*d;
-  const D_CROWD = 0.05;
+  const D_CROWD = 0.06;   // leader anchor near the bottom; surrounding disc stays on-screen (clamped)
 
   // ── assets ──
   const A='../../assets/combatclean/';
@@ -99,15 +99,22 @@
 
   // ── tunables ──
   const CFG={ ease:0.22, fireMs:230, bulletSpd:1.05, runSpeed:0.22,   // ONE run speed → path, foes, gates, drops move together
-    renderCap:34, squadStart:1, memberW:44, gatePairMs:3000, bossHpPerMember:9, distRate:9 };
+    renderCap:46, squadStart:8, memberW:44, gatePairMs:3000, bossHp:460, bossAt:6, distRate:9 };
 
-  // formation offsets (phyllotaxis disc) so a growing crowd packs naturally
-  const FORM=[]; for(let i=0;i<200;i++){ const a=i*2.399963, rr=0.19*Math.sqrt(i/200); FORM.push({ox:Math.cos(a)*rr, od:Math.max(0,Math.sin(a)*rr*0.6)+0.015*(i/200)}); }
+  // formation: a POISSON-DISC (blue-noise) scatter in a unit circle — random but evenly spaced (no clumps),
+  // vaguely circular. Sorted centre-out so the crowd fills inner points first and grows outward.
+  const POISSON=(()=>{ const pts=[], N=140, minD=0.135; let tries=0;
+    while(pts.length<N && tries<6000){ tries++; const a=Math.random()*6.2832, r=Math.sqrt(Math.random()); const x=Math.cos(a)*r, y=Math.sin(a)*r;
+      let ok=true; for(const p of pts){ if((p.x-x)**2+(p.y-y)**2 < minD*minD){ ok=false; break; } } if(ok) pts.push({x,y}); }
+    pts.sort((p,q)=>(p.x*p.x+p.y*p.y)-(q.x*q.x+q.y*q.y)); return pts; })();
+  // radius of the crowd disc grows with the count so the army visibly widens; od flattened for the ground ellipse.
+  function formSlot(i,n){ const spread=Math.min(0.92,0.18+0.078*Math.sqrt(n+1)); const p=POISSON[i%POISSON.length];
+    return { ox:p.x*spread, od:p.y*spread*0.38 }; }
 
   let state, last=0, raf=0, shake=0, running=false, laneScroll=0;
   function fresh(){ return { steer:0, lane:0, squad:CFG.squadStart, fireCd:0, walkT:0, members:[],
-    bullets:[], foes:[], gates:[], parts:[], floats:[], drops:[],
-    coins:0, gems:0, dist:0, dirMs:0, gatePairs:0, boss:null, over:false }; }
+    bullets:[], foes:[], gates:[], mines:[], parts:[], floats:[], drops:[],
+    coins:0, gems:0, dist:0, dirMs:0, gatePairs:0, boss:null, won:false, over:false }; }
 
   const rand=(a,b)=>a+Math.random()*(b-a);
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -137,18 +144,35 @@
     for(let i=0;i<n;i++){ const hp=3+Math.floor(state.dist/90)+Math.floor(rand(0,3));
       state.foes.push({ lane:rand(-.8,.8), d:1+rand(0,0.25), img:FOES[Math.floor(rand(0,FOES.length))], hp, maxHp:hp, sz:rand(52,64), hitT:0, swayT:rand(0,6.28), sway:rand(0,0.12) }); }
   }
-  function spawnBoss(){ const hp=Math.max(120, state.squad*CFG.bossHpPerMember*8); state.boss={ lane:0, d:0.62, hp, maxHp:hp, hitT:0, dir:1, t:0 }; $('bossbar').classList.add('show'); }
+  function spawnBoss(){ state.boss={ lane:0, d:0.66, hp:CFG.bossHp, maxHp:CFG.bossHp, hitT:0, dir:1, t:0 }; $('bossbar').classList.add('show'); shake=Math.max(shake,9);
+    floatText(W/2,H*0.34,'⚔ BOSS ⚔','#ffd9a0',true); }
+  // landmine: a hazard that rolls in with an AoE reticule; on reaching the crowd it detonates and
+  // destroys every hero (leader + allies) inside its blast circle — steer the crowd out of it.
+  function spawnMine(){ state.mines.push({ lane:rand(-.62,.62), d:1+rand(0,0.2), radius:rand(0.30,0.46), t:0 }); }
+  function explodeMine(mn){
+    // coverage ellipse sits ON the crowd plane so it matches the reticule the player saw
+    const mx=projX(mn.lane,D_CROWD), my=projY(D_CROWD), rx=mn.radius*halfW(D_CROWD), ry=rx*0.55;
+    const covers=(px,py)=>{ const nx=(px-mx)/rx, ny=(py-my)/ry; return nx*nx+ny*ny<1; };
+    let killed=0;
+    // REMOVE (not just count) every ally inside the blast — each pops where it stood
+    for(let i=state.members.length-1;i>=0;i--){ const m=state.members[i]; const px=projX(m.lane,m.d),py=projY(m.d);
+      if(covers(px,py)){ burst(px,py,'#ff7a3a',6,190); state.members.splice(i,1); killed++; } }
+    const leaderHit = covers(projX(state.lane,D_CROWD),projY(D_CROWD));
+    const total = killed + (leaderHit?1:0);
+    if(total>0){ state.squad=Math.max(0,state.squad-total); $('squad').textContent=state.squad; floatText(mx,my-34,'−'+total,'#ff8a8a',true); }
+    burst(mx,my,'#ff5a2e',30,360); burst(mx,my,'#ffd45e',18,240); shake=Math.max(shake,13);
+    if(state.squad<=0) gameOver('BLOWN UP!'); }
 
-  // ── director ──
+  // ── director: a FINITE run — gate-pairs + foe clusters + mines, then the boss finale (no endless loop) ──
   function director(dt){
+    if(state.boss||state.won) return;
     state.dirMs -= dt*1000;
-    if(state.boss) return;
     if(state.dirMs<=0){
+      if(state.gatePairs>=CFG.bossAt){ state.dirMs=1e9; spawnBoss(); return; }  // FINALE
       state.dirMs = CFG.gatePairMs;
-      // alternate: gate pair, then a foe cluster shortly after
       spawnGatePair();
       setTimeout(()=>{ if(running&&!state.boss) spawnFoeCluster(); }, 1100);
-      if(state.gatePairs>0 && state.gatePairs%5===0){ setTimeout(()=>{ if(running) spawnBoss(); }, 1400); }
+      if(state.gatePairs>=2 && Math.random()<0.7) setTimeout(()=>{ if(running&&!state.boss) spawnMine(); }, 1900);
     }
   }
 
@@ -167,17 +191,18 @@
   function loseMembers(k, x, y){ state.squad=Math.max(0,state.squad-k); $('squad').textContent=state.squad;
     burst(x,y,'#ff6a6a',10,200); floatText(x,y-30,'−'+k,'#ff8a8a'); shake=Math.max(shake,6); if(state.squad<=0) gameOver('WIPED!'); }
 
-  // ── crowd: persistent members that LAG toward their formation slot (flow like a crowd when steering) ──
-  function syncMembers(){ const n=Math.min(state.squad,CFG.renderCap);
-    while(state.members.length<n){ const i=state.members.length; state.members.push({ lane:state.lane+FORM[i].ox, d:D_CROWD+FORM[i].od, phase:rand(0,6.28), step:rand(6.2,7.8) }); }
+  // ── crowd: allies surround the controlled leader in a disc; they LAG toward their slot (flow when steering) ──
+  function syncMembers(){ const n=Math.min(Math.max(0,state.squad-1),CFG.renderCap);  // leader is drawn separately
+    while(state.members.length<n){ state.members.push({ lane:state.lane, d:D_CROWD, phase:rand(0,6.28), step:rand(6.2,7.8) }); }
     if(state.members.length>n) state.members.length=n; }
-  function updateCrowd(dt){ state.walkT += dt; syncMembers();
-    for(let i=0;i<state.members.length;i++){ const m=state.members[i]; const tx=state.lane+FORM[i].ox, td=D_CROWD+FORM[i].od;
-      m.lane += (tx-m.lane)*0.15 + rand(-0.0016,0.0016); m.d += (td-m.d)*0.15; m.lane=clamp(m.lane,-1,1); } }
+  function updateCrowd(dt){ state.walkT += dt; syncMembers(); const n=state.members.length;
+    for(let i=0;i<n;i++){ const m=state.members[i]; const f=formSlot(i,n); const tx=clamp(state.lane+f.ox,-1,1), td=D_CROWD+f.od;
+      m.lane += (tx-m.lane)*0.15 + rand(-0.0016,0.0016); m.d += (td-m.d)*0.15; m.d=Math.max(0.02,m.d); } }
 
-  // ── firing ── each member fires up the lane from its own position
-  function fire(){ for(const m of state.members){ state.bullets.push({ lane:clamp(m.lane,-1,1), d:m.d+0.02, spd:CFG.bulletSpd*rand(.92,1.08) }); }
-    const x=projX(state.lane,D_CROWD),y=projY(D_CROWD); burst(x,y-30,'#ffe08a',Math.min(6,state.members.length),90); }
+  // ── firing ── the leader and every ally fire up the lane from their own position
+  function fire(){ const shoot=(lane,d)=>state.bullets.push({ lane:clamp(lane,-1,1), d:d+0.02, spd:CFG.bulletSpd*rand(.92,1.08) });
+    shoot(state.lane,D_CROWD); for(const m of state.members) shoot(m.lane,m.d);
+    const x=projX(state.lane,D_CROWD),y=projY(D_CROWD); burst(x,y-30,'#ffe08a',Math.min(6,state.members.length+1),90); }
 
   function update(dt){
     state.lane += (state.steer-state.lane)*CFG.ease;
@@ -194,7 +219,7 @@
       for(let j=state.foes.length-1;j>=0;j--){ const f=state.foes[j];
         if(Math.abs(f.lane-b.lane)<0.09 && Math.abs(f.d-b.d)<0.05){ f.hp--; f.hitT=0.12; hit=true; const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#fff',2,90);
           if(f.hp<=0){ killFoe(f); state.foes.splice(j,1); } break; } }
-      if(!hit && state.boss){ const bo=state.boss; if(Math.abs(bo.lane-b.lane)<0.16 && Math.abs(bo.d-b.d)<0.09){ bo.hp--; bo.hitT=0.06; hit=true; const x=projX(b.lane,b.d),y=projY(b.d); burst(x,y,'#fff',2,90); if(bo.hp<=0) bossDie(); } }
+      if(!hit && state.boss){ const bo=state.boss; if(Math.abs(bo.lane-b.lane)<0.42 && Math.abs(bo.d-b.d)<0.16){ bo.hp--; bo.hitT=0.06; hit=true; const x=projX(b.lane,b.d),y=projY(b.d); burst(x,y,'#fff',2,90); if(bo.hp<=0) bossDie(); } }
       if(hit) state.bullets.splice(i,1);
     }
     // gates approach
@@ -204,6 +229,10 @@
         if(inThis) addSquad(g.op); }
       if(g.d<-0.05) state.gates.splice(i,1);
     }
+    // landmines approach → detonate at the crowd (destroys heroes inside the reticule)
+    for(let i=state.mines.length-1;i>=0;i--){ const mn=state.mines[i]; mn.d-=CFG.runSpeed*dt; mn.t+=dt;
+      if(mn.d<=D_CROWD+0.02){ explodeMine(mn); state.mines.splice(i,1); continue; }
+      if(mn.d<-0.05) state.mines.splice(i,1); }
     // foes approach
     for(let i=state.foes.length-1;i>=0;i--){ const f=state.foes[i]; f.d-=CFG.runSpeed*dt; f.swayT+=dt; f.lane=clamp(f.lane+Math.sin(f.swayT)*f.sway*dt,-.95,.95); if(f.hitT>0)f.hitT-=dt;
       if(f.d<=D_CROWD+0.02){ // reached the crowd
@@ -212,7 +241,7 @@
     }
     // boss
     if(state.boss){ const bo=state.boss; bo.t+=dt; bo.lane+=bo.dir*0.18*dt; if(bo.lane>.6){bo.lane=.6;bo.dir=-1;} if(bo.lane<-.6){bo.lane=-.6;bo.dir=1;} if(bo.hitT>0)bo.hitT-=dt;
-      bo.d -= 0.005*dt; // creeps forward slowly
+      bo.d -= 0.02*dt; // creeps forward — out-DPS it before it overruns you
       $('bossfill').style.width=clamp(bo.hp/bo.maxHp,0,1)*100+'%';
       if(bo.d<=D_CROWD+0.1){ loseMembers(state.squad, projX(state.lane,D_CROWD), projY(D_CROWD)); } // boss overruns → wipe
     }
@@ -229,9 +258,11 @@
 
   function killFoe(f){ const x=projX(f.lane,f.d),y=projY(f.d); burst(x,y,'#8be27a',10,200); state.dist+=2;
     const r=Math.random(); if(r<0.12) state.drops.push({lane:f.lane,d:f.d,kind:'gem'}); else if(r<0.5) state.drops.push({lane:f.lane,d:f.d,kind:'coin'}); }
-  function bossDie(){ const bo=state.boss; const x=projX(bo.lane,bo.d),y=projY(bo.d); burst(x,y,'#ff2e6e',40,320); burst(x,y,'#ffd45e',30,260); shake=14;
-    for(let k=0;k<8;k++) state.drops.push({lane:rand(-.5,.5),d:bo.d,kind:Math.random()<.5?'gem':'coin'});
-    state.boss=null; $('bossbar').classList.remove('show'); floatText(W/2,H*0.4,'BOSS DOWN!','#ffd9a0',true); state.dirMs=800; }
+  function bossDie(){ const bo=state.boss; const x=projX(bo.lane,bo.d),y=projY(bo.d);
+    burst(x,y,'#ff2e6e',44,340); burst(x,y,'#ffd45e',34,280); shake=16;
+    for(let k=0;k<10;k++) state.drops.push({lane:rand(-.5,.5),d:bo.d,kind:Math.random()<.5?'gem':'coin'});
+    state.won=true; state.boss=null; $('bossbar').classList.remove('show'); floatText(W/2,H*0.4,'VICTORY!','#ffe08a',true);
+    setTimeout(win,850); }
 
   // ── draw ──
   function drawImgC(img,x,y,w,h,flash){ if(!img||!img.complete)return; ctx.drawImage(img,x-w/2,y-h/2,w,h);
@@ -246,8 +277,8 @@
     // lane trapezoid
     ctx.beginPath(); ctx.moveTo(projX(-1,0),projY(0)); ctx.lineTo(projX(1,0),projY(0)); ctx.lineTo(projX(1,1),projY(1)); ctx.lineTo(projX(-1,1),projY(1)); ctx.closePath();
     const lg=ctx.createLinearGradient(0,projY(1),0,projY(0)); lg.addColorStop(0,'#14301f'); lg.addColorStop(1,'#1f4a2f'); ctx.fillStyle=lg; ctx.fill();
-    // scrolling rungs (forward motion)
-    ctx.lineWidth=1; for(let k=0;k<12;k++){ let d=(k/12 - laneScroll)%1; if(d<0)d+=1; ctx.strokeStyle='rgba(180,240,190,'+(0.05+0.13*(1-d))+')'; ctx.beginPath(); ctx.moveTo(projX(-1,d),projY(d)); ctx.lineTo(projX(1,d),projY(d)); ctx.stroke(); }
+    // scrolling rungs — same runSpeed as foes/gates/mines, so the ground carries them in lockstep
+    const RUNGS=18; ctx.lineWidth=2; for(let k=0;k<RUNGS;k++){ let d=(k/RUNGS - laneScroll)%1; if(d<0)d+=1; ctx.strokeStyle='rgba(190,245,200,'+(0.08+0.16*(1-d))+')'; ctx.beginPath(); ctx.moveTo(projX(-1,d),projY(d)); ctx.lineTo(projX(1,d),projY(d)); ctx.stroke(); }
     // edges
     ctx.strokeStyle='rgba(140,230,160,.5)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(projX(-1,0),projY(0)); ctx.lineTo(projX(-1,1),projY(1)); ctx.moveTo(projX(1,0),projY(0)); ctx.lineTo(projX(1,1),projY(1)); ctx.stroke();
@@ -262,16 +293,25 @@
     const cx=(x0+x1)/2, cy=topY+(y-topY)*0.42; ctx.fillStyle='#000'; ctx.fillText(txt,cx+1.5,cy+1.5); ctx.fillStyle=bad?'#ffd0d6':(g.op.type==='mul'?'#cfe6ff':'#d6f7dd'); ctx.fillText(txt,cx,cy);
     ctx.textBaseline='alphabetic';
   }
+  function drawMine(mn){ const d=mn.d; if(d>1.05)return; const mx=projX(mn.lane,d), my=projY(d); const rx=mn.radius*halfW(d), ry=rx*0.42; const pulse=0.5+0.5*Math.sin(mn.t*9);
+    ctx.save();
+    ctx.fillStyle='rgba(255,60,40,'+(0.10+0.06*pulse)+')'; ctx.beginPath(); ctx.ellipse(mx,my,rx,ry,0,0,6.28); ctx.fill();
+    ctx.setLineDash([7,6]); ctx.lineWidth=2; ctx.strokeStyle='rgba(255,80,60,'+(0.5+0.4*pulse)+')'; ctx.beginPath(); ctx.ellipse(mx,my,rx,ry,0,0,6.28); ctx.stroke(); ctx.setLineDash([]);
+    const s=Math.max(16,26*scaleAt(d)); ctx.font=s+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣',mx,my-ry*0.6); ctx.textBaseline='alphabetic';
+    ctx.restore(); }
+  function drawUnit(lane,d,phase,step,lead){ const sc=scaleAt(d); const w=state.walkT*step+phase;
+    const bob=Math.abs(Math.sin(w))*4.2*sc, sway=Math.sin(w*0.5)*2.0*sc, rot=Math.sin(w)*0.055;
+    const s=CFG.memberW*sc*(lead?1.5:1.28);
+    if(lead){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,214,94,.45)'; ctx.beginPath(); ctx.ellipse(projX(lane,d),projY(d),s*0.42,s*0.16,0,0,6.28); ctx.fill(); ctx.restore(); }
+    ctx.save(); ctx.translate(projX(lane,d)+sway, projY(d)-bob); ctx.rotate(rot);
+    if(IMG.member&&IMG.member.complete){ ctx.drawImage(IMG.member,-s/2,-s*0.86,s,s);
+      if(lead){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.22; ctx.drawImage(IMG.member,-s/2,-s*0.86,s,s); ctx.globalAlpha=1; } }
+    ctx.restore(); }
   function drawCrowd(){
-    const arr=state.members.slice().sort((a,b)=>b.d-a.d);
-    for(const m of arr){ const sc=scaleAt(m.d); const w=state.walkT*m.step + m.phase;
-      const bob=Math.abs(Math.sin(w))*4.2*sc;          // vertical step (feet lift → walking)
-      const sway=Math.sin(w*0.5)*2.0*sc;               // side-to-side body sway
-      const rot=Math.sin(w)*0.055;                     // slight march tilt
-      const x=projX(m.lane,m.d)+sway, y=projY(m.d)-bob, s=CFG.memberW*sc*1.35;
-      ctx.save(); ctx.translate(x,y); ctx.rotate(rot); if(IMG.member&&IMG.member.complete) ctx.drawImage(IMG.member,-s/2,-s*0.86,s,s); ctx.restore(); }
-    // squad count above the crowd (ad-style)
-    const cx=projX(state.lane,D_CROWD), cy=projY(D_CROWD)-CFG.memberW*1.2;
+    const arr=state.members.slice().sort((a,b)=>b.d-a.d);         // allies (disc) far→near
+    for(const m of arr) drawUnit(m.lane,m.d,m.phase,m.step,false);
+    drawUnit(state.lane,D_CROWD,0,7.0,true);                       // controlled leader — bigger + gold ring, on top
+    const cx=projX(state.lane,D_CROWD), cy=projY(D_CROWD)-CFG.memberW*1.35;
     ctx.font='700 26px "Uniform Bold",sans-serif'; ctx.textAlign='center';
     ctx.fillStyle='#000'; ctx.fillText(state.squad,cx+2,cy+2); ctx.fillStyle='#fff'; ctx.fillText(state.squad,cx,cy);
   }
@@ -284,12 +324,14 @@
     // depth-sorted world: gates, foes, boss, drops (far first)
     const world=[];
     for(const g of state.gates) world.push({d:g.d,kind:'gate',g});
+    for(const mn of state.mines) world.push({d:mn.d,kind:'mine',mn});
     for(const f of state.foes) world.push({d:f.d,kind:'foe',f});
     for(const dp of state.drops) world.push({d:dp.d,kind:'drop',dp});
     if(state.boss) world.push({d:state.boss.d,kind:'boss'});
     world.sort((a,b)=>b.d-a.d);
     for(const w of world){
       if(w.kind==='gate') drawGate(w.g);
+      else if(w.kind==='mine') drawMine(w.mn);
       else if(w.kind==='foe'){ const f=w.f; drawImgC(f.img,projX(f.lane,f.d),projY(f.d)-f.sz*scaleAt(f.d)*0.35,f.sz*scaleAt(f.d),f.sz*scaleAt(f.d),f.hitT); }
       else if(w.kind==='drop'){ const dp=w.dp; const im=dp.kind==='coin'?IMG.coin:IMG.gem; const s=26*scaleAt(dp.d); if(im&&im.complete)ctx.drawImage(im,projX(dp.lane,dp.d)-s/2,projY(dp.d)-s/2,s,s); }
       else { const bo=state.boss; const s=150*scaleAt(bo.d); drawImgC(IMG.boss,projX(bo.lane,bo.d),projY(bo.d)-s*0.35,s,s,bo.hitT); }
@@ -305,7 +347,9 @@
 
   function frame(now){ if(!running)return; const dt=Math.min(0.033,(now-last)/1000||0); last=now; update(dt); draw(); raf=requestAnimationFrame(frame); }
   function gameOver(title){ if(!running)return; running=false; cancelAnimationFrame(raf); $('overTitle').textContent=title;
-    $('overStats').textContent=`Distance ${Math.floor(state.dist)}m · ${state.coins}🪙 ${state.gems}💎`; $('over').classList.remove('hidden'); }
+    $('overStats').textContent=`Squad ${state.squad} · ${Math.floor(state.dist)}m · ${state.coins}🪙 ${state.gems}💎`; $('over').classList.remove('hidden'); }
+  function win(){ if(!running)return; running=false; cancelAnimationFrame(raf); $('overTitle').textContent='VICTORY!';
+    $('overStats').textContent=`Army of ${state.squad} · ${state.coins}🪙 ${state.gems}💎`; $('over').classList.remove('hidden'); }
   function start(){ resize(); state=fresh(); state.dirMs=900; $('squad').textContent=state.squad; $('coins').textContent='0'; $('gems').textContent='0'; $('dist').textContent='0m'; $('bossbar').classList.remove('show');
     $('start').classList.add('hidden'); $('over').classList.add('hidden'); running=true; last=performance.now(); raf=requestAnimationFrame(frame); }
 

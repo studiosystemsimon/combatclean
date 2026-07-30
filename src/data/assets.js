@@ -50,7 +50,7 @@ export const ASSETS = {
   // ── Gear (emoji only) ──────────────────────────────────────────────────────
   'gear.weapon': { emoji: '⚔️', label: 'Weapon', art: 'gear/weapon' },
   'gear.armor': { emoji: '🛡️', label: 'Armor', art: 'gear/armor' },
-  'gear.trinket': { emoji: '💍', label: 'Trinket', art: 'gear/trinket' },
+  'gear.accessory': { emoji: '💍', label: 'Accessory', art: 'gear/accessory' },
 
   // ── Heroes (art/heroes/<id>.png) ────────────────────────────────────────────
   'hero.knight': { emoji: '🤺', label: 'Knight', art: 'heroes/knight' },

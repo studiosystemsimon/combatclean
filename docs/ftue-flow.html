@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — FTUE: exact step-by-step experience</title>
+<style>
+  :root{
+    --ink:#eaf0ff; --dim:#9fb0d0; --dim2:#6f7f9e; --gold:#ffd45e;
+    --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.10);
+    --auto:#5a8cff; --gate:#5ad17a; --nudge:#ffb020; --free:#b46bff;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1300px 800px at 50% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%);
+    min-height:100vh; padding:34px 20px 90px; -webkit-font-smoothing:antialiased; line-height:1.5; }
+  .wrap{ max-width:900px; margin:0 auto; }
+  h1{ font-size:25px; margin:0 0 4px; }
+  .sub{ color:var(--dim); font-size:14px; margin:0; }
+  .tag{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:1px; color:var(--gold);
+    border:1px solid #ffd45e44; background:#ffd45e12; padding:4px 10px; border-radius:99px; margin-top:10px; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 4px; }
+  .lg{ font-size:11px; font-weight:800; padding:3px 10px; border-radius:99px; }
+  .lg.auto{ background:#5a8cff22; color:#bcd2ff; border:1px solid #5a8cff55; }
+  .lg.gate{ background:#5ad17a22; color:#8affc4; border:1px solid #5ad17a55; }
+  .lg.nudge{ background:#ffb02022; color:#ffdf9a; border:1px solid #ffb02055; }
+  .lg.free{ background:#b46bff22; color:#e2c8ff; border:1px solid #b46bff55; }
+
+  h2{ font-size:14px; letter-spacing:.5px; text-transform:uppercase; color:var(--dim); margin:32px 0 6px; }
+  .chapter{ color:var(--dim2); font-size:12.5px; margin:0 0 14px; }
+
+  .spec{ background:linear-gradient(180deg,#2a2140,#141126); border:1px solid #ffd45e55; border-radius:14px; padding:16px 18px; margin:16px 0; }
+  .spec h3{ margin:0 0 6px; font-size:15px; color:var(--gold); }
+  .spec p{ margin:6px 0; font-size:13px; color:#e6ecfb; }
+  .spec .k{ color:var(--dim2); font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+  .spec ul{ margin:6px 0 0; padding-left:18px; } .spec li{ font-size:13px; margin:4px 0; color:#d7e0f5; }
+
+  .step{ position:relative; background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); border-radius:14px; padding:14px 16px 14px 58px; margin:10px 0; }
+  .step .num{ position:absolute; left:12px; top:14px; width:34px; height:34px; border-radius:50%;
+    display:grid; place-items:center; font-weight:900; font-size:15px; background:#0e1220; border:1px solid var(--line); color:var(--gold); }
+  .step.b-auto{ border-left:3px solid var(--auto); } .step.b-gate{ border-left:3px solid var(--gate); }
+  .step.b-nudge{ border-left:3px solid var(--nudge); } .step.b-free{ border-left:3px solid var(--free); }
+  .step.key{ box-shadow:0 0 0 1px #ffd45e55, 0 0 22px rgba(255,212,94,.18); }
+  .step .hd{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .step .title{ font-weight:800; font-size:15.5px; }
+  .step .type{ font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; padding:2px 8px; border-radius:6px; margin-left:auto; }
+  .type.auto{ background:#5a8cff22; color:#bcd2ff; } .type.gate{ background:#5ad17a22; color:#8affc4; }
+  .type.nudge{ background:#ffb02022; color:#ffdf9a; } .type.free{ background:#b46bff22; color:#e2c8ff; }
+  .grid{ margin-top:10px; display:grid; grid-template-columns:76px 1fr; gap:4px 12px; font-size:13px; }
+  .grid .k{ color:var(--dim2); font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding-top:2px; }
+  .grid .v{ color:#d7e0f5; }
+  .grid .v.copy{ color:#fff; font-style:italic; }
+  .grid .v.copy::before{ content:'“'; } .grid .v.copy::after{ content:'”'; }
+  ol.impl{ margin:8px 0 0; padding-left:20px; } ol.impl li{ font-size:13px; margin:5px 0; color:#d7e0f5; }
+  ol.impl li b{ color:#fff; }
+  code{ background:#ffffff12; color:#cfe0ff; padding:1px 6px; border-radius:5px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Combat Clean — FTUE: the exact experience</h1>
+  <p class="sub">Moment-by-moment first run. Built on the ACTUAL loop: orders &amp; merges charge LIMIT ENERGY → a full limit break wipes the field.</p>
+  <span class="tag">PLANNING DOC · not wired</span>
+
+  <div class="legend">
+    <span class="lg auto">AUTO — plays itself, no input</span>
+    <span class="lg gate">GATE — input locked to the coached target</span>
+    <span class="lg nudge">NUDGE — highlight, not blocking</span>
+    <span class="lg free">FREE PLAY — full control, ambient hint</span>
+  </div>
+
+  <!-- NEW FEATURE SPEC -->
+  <div class="spec">
+    <h3>★ New order-reward type: the LIMIT ENERGY CHEST</h3>
+    <p>The real mechanics: fulfilling a normal order grants a <b>gear chest + a small limit-energy drip</b> (~0.48 to every hero),
+    and a tier-3+ merge drips limit energy too. A hero's limit break needs <b>5</b> to charge — so a normal order is only ~10% of a
+    charge: far too small to be a satisfying <i>first</i> lesson. The Limit Energy Chest exists to make "deliver → unleash" land in one beat.</p>
+    <p><span class="k">What</span> — an order whose reward is a <b>large slug of LIMIT ENERGY</b> to your hero (instead of a gear chest),
+    enough to fully (or nearly) charge their limit break on the spot.</p>
+    <p><span class="k">Why</span> — it's the payoff that teaches the whole point of merging/ordering: <b>orders feed your limit → the limit wipes the screen.</b></p>
+    <div style="margin-top:6px"><span class="k">How it plugs in (to build)</span>
+    <ul>
+      <li>Orders gain a <code>reward</code> type: <code>gear</code> (default, existing) | <code>limitEnergy</code> (new).</li>
+      <li><code>FULFILL_ORDER</code> branches: <code>gear</code> → the current chest; <code>limitEnergy</code> → grant <code>limitChestFrac × limitEnergyToCharge</code> (config, e.g. <code>1.0</code> = full) to the fulfilling hero (or squad), + a distinct chest VFX flying into the limit bar.</li>
+      <li>The orders rail renders the limit-energy chest with its own icon (a charged-battery / bolt chest), so it reads as "different reward".</li>
+      <li>How it's offered: rare roll in <code>rollOrder</code> later; for the FTUE the first order is <b>authored</b> as a limit-energy chest (deterministic seed).</li>
+    </ul></div>
+  </div>
+
+  <h2>Session 1 · The guided opening</h2>
+  <p class="chapter">All on the <b>Merge screen</b> (combat panel on top, board below). Steps 1–12 run once, on a fresh save. Everything not being coached is dimmed and non-interactive during a GATE.</p>
+
+  <div class="step b-auto">
+    <div class="num">1</div>
+    <div class="hd"><span class="title">Cold open — on a fight already in progress</span><span class="type auto">Auto</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Fresh save, first boot. Skip all menus — land straight on the Merge screen.</div>
+      <div class="k">Sees</div><div class="v">Board dimmed; combat panel spotlit with a fight already mid-swing — heroes trading blows, enemies at full-ish HP. The hero's gold LIMIT bar sits EMPTY at their feet.</div>
+      <div class="k">Copy</div><div class="v copy">Your squad fights on its own.</div>
+      <div class="k">Does</div><div class="v">Nothing (~3s watch).</div>
+      <div class="k">Advances</div><div class="v">After the beat → step 2.</div>
+    </div>
+  </div>
+
+  <div class="step b-auto">
+    <div class="num">2</div>
+    <div class="hd"><span class="title">The wall: enemies too tough to finish</span><span class="type auto">Auto</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">After step 1.</div>
+      <div class="k">Sees</div><div class="v">The auto-attacks chip away but stall — the wave won't die on its own. A glance flicks to the empty LIMIT bar. Nav bar fades in.</div>
+      <div class="k">Copy</div><div class="v copy">…but you'll need more than autos to break through.</div>
+      <div class="k">Advances</div><div class="v">~1s → step 3. (Foreshadows: the limit break is the answer.)</div>
+    </div>
+  </div>
+
+  <div class="step b-gate">
+    <div class="num">3</div>
+    <div class="hd"><span class="title">Forge your first piece</span><span class="type gate">Gate</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">After step 2.</div>
+      <div class="k">Sees</div><div class="v">Board brightens; everything dim except the <b>blade generator</b>, which pulses with a hand-tap icon.</div>
+      <div class="k">Copy</div><div class="v copy">Tap to forge a weapon.</div>
+      <div class="k">Does</div><div class="v">Tap the blade generator (only it is tappable).</div>
+      <div class="k">Advances</div><div class="v">A tile drops onto the board → step 4.</div>
+    </div>
+  </div>
+
+  <div class="step b-gate">
+    <div class="num">4</div>
+    <div class="hd"><span class="title">Forge a second — you'll want a pair</span><span class="type gate">Gate</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">First tile forged.</div>
+      <div class="k">Sees</div><div class="v">Generator keeps pulsing; the first tile settled beside an empty cell.</div>
+      <div class="k">Copy</div><div class="v copy">Again — two of a kind can be merged.</div>
+      <div class="k">Does</div><div class="v">Tap once more → a second matching tile.</div>
+      <div class="k">Advances</div><div class="v">Two matching tiles on the board → step 5.</div>
+    </div>
+  </div>
+
+  <div class="step b-gate">
+    <div class="num">5</div>
+    <div class="hd"><span class="title">Merge them — and watch the limit tick up</span><span class="type gate">Gate</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Two matching tiles present.</div>
+      <div class="k">Sees</div><div class="v">Both tiles glow; a drag-path arcs between them. On the merge pop, a small charge mote flies to the hero's LIMIT bar and it ticks up a sliver.</div>
+      <div class="k">Copy</div><div class="v copy">Drag one onto its twin. Merging charges your limit.</div>
+      <div class="k">Does</div><div class="v">Drag tile → tile → a higher-tier tile.</div>
+      <div class="k">Advances</div><div class="v">Merge completes → step 6. (Plants the seed: merging = limit energy.)</div>
+    </div>
+  </div>
+
+  <div class="step b-gate key">
+    <div class="num">6</div>
+    <div class="hd"><span class="title">Deliver the LIMIT ENERGY CHEST order</span><span class="type gate">Gate · keystone</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Merge from step 5 complete.</div>
+      <div class="k">Sees</div><div class="v">The pre-authored first order — a <b>Limit Energy Chest</b> (distinct bolt/battery icon) — flips to gold "ready" (its request = the tile you just made). Arrow points at it; rest dimmed.</div>
+      <div class="k">Copy</div><div class="v copy">Deliver it — some orders reward LIMIT ENERGY.</div>
+      <div class="k">Does</div><div class="v">Tap the order → the chest flies into the hero's LIMIT bar, which <b>surges to full</b> and starts pulsing gold.</div>
+      <div class="k">Advances</div><div class="v">Limit bar full → step 7.</div>
+    </div>
+  </div>
+
+  <div class="step b-gate key">
+    <div class="num">7</div>
+    <div class="hd"><span class="title">Unleash the LIMIT BREAK → wipe the wave</span><span class="type gate">Gate · payoff</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Hero's limit is charged.</div>
+      <div class="k">Sees</div><div class="v">The charged hero glows; everything else dims; a big tap-prompt on them.</div>
+      <div class="k">Copy</div><div class="v copy">Tap your hero — unleash their limit break!</div>
+      <div class="k">Does</div><div class="v">Tap the hero → full-screen limit-break VFX → the AOE wipes ALL enemies at once.</div>
+      <div class="k">Advances</div><div class="v">Wave cleared by the limit → step 8. <b>The hook has landed.</b></div>
+    </div>
+  </div>
+
+  <div class="step b-auto">
+    <div class="num">8</div>
+    <div class="hd"><span class="title">Name the loop</span><span class="type auto">Auto</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Limit break resolves the wave.</div>
+      <div class="k">Sees</div><div class="v">A clean beat; the loop drawn as a one-line ring: merge → deliver → charge → unleash.</div>
+      <div class="k">Copy</div><div class="v copy">Merge &amp; deliver orders to charge your limit — then unleash it. (Orders also drop gear.)</div>
+      <div class="k">Advances</div><div class="v">→ step 9. Core loop taught; the gear side-reward is named but taught properly later.</div>
+    </div>
+  </div>
+
+  <div class="step b-free">
+    <div class="num">9</div>
+    <div class="hd"><span class="title">Run the loop yourself</span><span class="type free">Free play</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">After step 8.</div>
+      <div class="k">Sees</div><div class="v">Full board + rail live; coachmarks off. A soft glow marks the best merge; the limit bar is the visible goal to refill.</div>
+      <div class="k">Does</div><div class="v">Forge / merge / deliver freely, recharge &amp; fire another limit (2–4 actions).</div>
+      <div class="k">Advances</div><div class="v">After ~2 more deliveries, OR the moment they tap an empty energy bar → step 10.</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">10</div>
+    <div class="hd"><span class="title">Energy — taught at the wall</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Player taps a generator with too little energy (or after N forges) — never earlier.</div>
+      <div class="k">Sees</div><div class="v">The energy bar highlights with a refill shimmer.</div>
+      <div class="k">Copy</div><div class="v copy">Forging costs energy — it refills over time. Combat keeps running while it does.</div>
+      <div class="k">Advances</div><div class="v">Dismiss on the next successful forge / tap-to-continue.</div>
+    </div>
+  </div>
+
+  <div class="step b-auto">
+    <div class="num">11</div>
+    <div class="hd"><span class="title">Level cleared → advance</span><span class="type auto">Auto</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Enough combat wins (autos + limits) to clear the level.</div>
+      <div class="k">Sees</div><div class="v">Level ticks up; a slightly tougher foe arrives; brief "LEVEL 2" beat.</div>
+      <div class="k">Copy</div><div class="v copy">Cleared! It only gets bigger from here.</div>
+      <div class="k">Advances</div><div class="v">Auto → step 12.</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">12</div>
+    <div class="hd"><span class="title">Peek the map — the destination</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">First level clear (or first map-nav tap).</div>
+      <div class="k">Sees</div><div class="v">Map opens once, auto-scrolls to reveal the zone road + boss silhouettes ahead, then eases back.</div>
+      <div class="k">Copy</div><div class="v copy">Your road ahead — new zones, new powers to unlock.</div>
+      <div class="k">Advances</div><div class="v">Tap to continue. <b>End of the mandatory opening.</b></div>
+    </div>
+  </div>
+
+  <h2>Session 2 &amp; the first wall · Growth beats</h2>
+  <p class="chapter">Triggered by return &amp; by need — lighter touch. Each fires once, when its condition is met.</p>
+
+  <div class="step b-nudge">
+    <div class="num">13</div>
+    <div class="hd"><span class="title">Welcome back — AFK income</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Returning after idle ≥ the alert threshold.</div>
+      <div class="k">Sees</div><div class="v">The existing welcome-back popup with earned coins / XP.</div>
+      <div class="k">Copy</div><div class="v copy">Welcome back — your squad earned this while resting. It scales with your best cleared level.</div>
+      <div class="k">Does</div><div class="v">Collect.</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">14</div>
+    <div class="hd"><span class="title">First power wall → Heroes &amp; gear</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">A level can't be cleared after ~2 attempts (limits alone no longer enough).</div>
+      <div class="k">Sees</div><div class="v">The Heroes nav pulses; the hero screen shows squad power + the gear you've been banking from normal orders.</div>
+      <div class="k">Copy</div><div class="v copy">Stuck? Spend the gear your orders dropped — grow your squad here.</div>
+      <div class="k">Does</div><div class="v">Open Heroes; LEVEL UP + EQUIP BEST buttons pulse. (This is where the GEAR order-reward finally pays off.)</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">15</div>
+    <div class="hd"><span class="title">Summon a hero</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">On the wall AND the player has ≥ one pull's worth of coins.</div>
+      <div class="k">Sees</div><div class="v">The Summon nav pulses; a full reveal cinematic on pull; a new hero + the rarity odds strip.</div>
+      <div class="k">Copy</div><div class="v copy">Summon new heroes — better odds, bigger power.</div>
+      <div class="k">Does</div><div class="v">One pull.</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">16</div>
+    <div class="hd"><span class="title">Ascend a duplicate</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Player owns a duplicate of any hero (the diamond becomes eligible).</div>
+      <div class="k">Sees</div><div class="v">The hero-menu header diamond pulses gold.</div>
+      <div class="k">Copy</div><div class="v copy">Ascend — merge a spare copy for a big rank-up.</div>
+      <div class="k">Does</div><div class="v">Tap the pulsing diamond.</div>
+    </div>
+  </div>
+
+  <h2>Deferred · Discovery beats (on first encounter, one line, never gated)</h2>
+  <p class="chapter">Optional depth. Each is a single tip the first (and only the first) time its trigger occurs.</p>
+
+  <div class="step b-nudge">
+    <div class="num">17</div>
+    <div class="hd"><span class="title">Cobwebbed tile</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Player first tries to move a webbed/locked tile and can't.</div>
+      <div class="k">Copy</div><div class="v copy">Merge a matching tile onto it to free it.</div>
+    </div>
+  </div>
+
+  <div class="step b-auto">
+    <div class="num">18</div>
+    <div class="hd"><span class="title">Area complete → new generator</span><span class="type auto">Auto</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">The first zone boss is beaten.</div>
+      <div class="k">Sees</div><div class="v">The AREA CLEARED cinematic auto-routes to the merge tab; a brand-new generator (magic) flies onto the board. The cinematic IS the lesson.</div>
+      <div class="k">Copy</div><div class="v">— (the "NEW GENERATOR" label on the cinematic)</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">19</div>
+    <div class="hd"><span class="title">Replay a cleared zone (warp back)</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">Player taps a previous zone on the map for the first time.</div>
+      <div class="k">Copy</div><div class="v copy">Farm an earlier zone — you'll warp back to your frontier when it's cleared.</div>
+    </div>
+  </div>
+
+  <div class="step b-nudge">
+    <div class="num">20</div>
+    <div class="hd"><span class="title">Special order → S-tile → minigame</span><span class="type nudge">Nudge</span></div>
+    <div class="grid">
+      <div class="k">Trigger</div><div class="v">First SPECIAL order appears → tip A. First time the player holds two S-tiles → tip B.</div>
+      <div class="k">Copy</div><div class="v copy">A special order drops an S-tile… merge two S-tiles to trigger a minigame!</div>
+    </div>
+  </div>
+
+  <h2>Implementation notes (for wiring later)</h2>
+  <ol class="impl">
+    <li><b>Build the Limit Energy Chest first.</b> The whole opening hinges on it (steps 6–7). New order <code>reward</code> type + the <code>FULFILL_ORDER</code> branch + rail icon + a config <code>limitChestFrac</code>. See the spec box above.</li>
+    <li><b>Deterministic FTUE seed.</b> On a fresh save, seed the board + author the first order as a <b>limit-energy chest</b> whose request = exactly the tile the two forges + one merge produce. The tutorial can never roll an unfulfillable / wrong-reward first order.</li>
+    <li><b>One schedule, persisted flags.</b> Each beat has a <code>trigger</code> + a one-shot <code>seen</code> flag (persisted). Steps 1–12 = the run-once guided opening; 13–20 fire when their condition first occurs.</li>
+    <li><b>GATE = input mask.</b> During a gate, dim + block everything except the coached target (spotlight + hand icon); NUDGE only highlights.</li>
+    <li><b>Limit break is now core, not deferred.</b> It's the payoff of the very first lesson (step 7), so its own coachmark lives there — there is no separate "later" limit-break beat.</li>
+    <li><b>Teach on demand.</b> Energy (10), Heroes/gear (14), Summon (15), cobwebs (17) each fire the moment the player hits the problem they solve — never as upfront rules. GEAR (the normal order reward) is taught at step 14, when it first matters.</li>
+    <li><b>Reuse existing systems.</b> Coachmarks ride the existing overlay/FX layer and the existing popups (AFK, area-complete, limit-charge motes) — no parallel tutorial renderer, no parallel reward path (the limit-energy chest is a new branch of the SAME order-reward system).</li>
+  </ol>
+</div>
+</body>
+</html>

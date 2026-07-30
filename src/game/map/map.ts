@@ -30,9 +30,9 @@ export const afkRatesForLevel = (level: number) => {
     gearXpPerHr: C.AFK.gearXpPerHr + C.AFK.gearXpPerZone * z,
   };
 };
-export const afkEarnings = (furthestLevel: number, elapsedMs: number) => {
+export const afkEarnings = (clearedLevel: number, elapsedMs: number) => {
   const ms = Math.max(0, Math.min(elapsedMs || 0, C.AFK.maxOfflineMs));
   const hrs = ms / 3600000;
-  const r = afkRatesForLevel(furthestLevel);
+  const r = afkRatesForLevel(clearedLevel);
   return { ms, coins: Math.floor(r.coinsPerHr * hrs), heroXp: Math.floor(r.heroXpPerHr * hrs), gearXp: Math.floor(r.gearXpPerHr * hrs) };
 };

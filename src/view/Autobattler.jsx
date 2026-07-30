@@ -18,6 +18,8 @@ import { GENERATORS } from '../data/generators.js'; // generator display name fo
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
 import { fmtK as fmt } from './fmt.js';
+import { displayFrac } from './fx/limit-fill.js';
+import { limitReadyPop } from './fx/limit-energy.js';
 
 const AB = ANIM.autobattler;
 const AC = ANIM.areaComplete;
@@ -69,6 +71,46 @@ function LevelTrack({ level }) {
   );
 }
 
+// The limit bar fills IN SYNC with the arriving energy mote (limit-fill store), not on the reducer
+// grant — so it fills as the mote lands, then ready-pops when it visually caps. Mirrors HpBar's
+// persistent-rAF read. Tappability stays on the TRUE ready state (canFire); only the fill lags.
+function LimitBar({ h, canFire, onLimit }) {
+  const ref = useRef(null);
+  const trueRef = useRef(0);
+  trueRef.current = limitChargeFrac(h);
+  useEffect(() => {
+    const btn = ref.current;
+    if (!btn) return undefined;
+    const span = btn.querySelector('.lb-fill');
+    let raf;
+    let wasFull = null; // null = establish baseline on the first frame (no spurious pop on mount)
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const d = displayFrac(h.id, trueRef.current);
+      if (span) span.style.width = `${Math.round(100 * d)}%`;
+      const full = d >= 0.999;
+      if (wasFull === null) { wasFull = full; return; }
+      if (full && !wasFull) limitReadyPop(btn);
+      wasFull = full;
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [h.id]);
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={`bar limit lb-btn ${canFire ? 'ready' : ''}`}
+      disabled={!canFire}
+      onClick={() => onLimit(h.id)}
+      title="Limit Break"
+    >
+      <span className="lb-fill" style={{ width: `${Math.round(100 * limitChargeFrac(h))}%` }} />
+      {canFire && <em className="lb-flash">💥</em>}
+    </button>
+  );
+}
+
 function HeroChip({ h, onLimit, fighting }) {
   const dead = h.hp <= 0;
   const lbReady = isLimitReady(h); // charged (from board orders) — drives the golden glow
@@ -91,16 +133,7 @@ function HeroChip({ h, onLimit, fighting }) {
       <div className="bar normal">
         <span style={{ width: `${Math.round(100 * normalChargeFrac(h))}%` }} />
       </div>
-      <button
-        type="button"
-        className={`bar limit lb-btn ${canFire ? 'ready' : ''}`}
-        disabled={!canFire}
-        onClick={() => onLimit(h.id)}
-        title="Limit Break"
-      >
-        <span style={{ width: `${Math.round(100 * limitChargeFrac(h))}%` }} />
-        {canFire && <em className="lb-flash">💥</em>}
-      </button>
+      <LimitBar h={h} canFire={canFire} onLimit={onLimit} />
     </div>
   );
 }

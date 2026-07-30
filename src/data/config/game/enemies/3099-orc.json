@@ -4,7 +4,6 @@
 	"hpMul": 1,
 	"atkMul": 1,
 	"tags": {
-		"origin": "char-art-export",
-		"tuning": "placeholder"
+		"origin": "char-art-export"
 	}
 }

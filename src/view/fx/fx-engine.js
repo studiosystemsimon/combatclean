@@ -6,12 +6,27 @@
 // lists, never touches game state.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { rand, lerpHex, easeOutExpo, easeOutCubic, bakeGlow } from './fx-math.js';
+import { rand, clamp, lerp, lerpHex, easeInQuad, easeInCubic, easeOutQuad, easeOutExpo, easeOutCubic, bezier2, hexToRgb, bakeGlow } from './fx-math.js';
 import { VFX_CONFIG } from '../../data/config.js';
 
 // All fx-engine tuning is config (_vfx.json → engine). Destructure once.
 const VE = VFX_CONFIG.engine;
 const { spineN: SPINE_N, minSpacingPx: MIN_SPACING_PX, maxAgeBase: MAX_AGE_BASE, lengthRef: TRAIL_LENGTH_REF, lutN: TRAIL_LUT_N, maxParticles: MAX_PARTICLES } = VE.trail;
+
+// ── energy-mote primitive (limit-charge) — richer than the shared spawnTrail: pop-out → curl
+//    (quadratic bezier) → accelerate-in, a pulsing/growing glowing head, and a curve-following
+//    tapered gradient ribbon that terminates on a horizontal edge and lingers/collapses on landing.
+//    Kept on its OWN list so the generic spawnTrail (used by every other effect) is unaffected.
+const MOTE_SPINE_N = 120, MOTE_MIN_SPACING = 2.0, MOTE_MAX_AGE = 0.85, MOTE_LEN_REF = 26;
+const MOTE_EASINGS = { linear: (t) => t, easeInQuad, easeInCubic, easeInQuart: (t) => t * t * t * t, easeOutQuad, easeOutCubic };
+// sample a positioned-stop ramp ([{p,c}] sorted by p) at t∈[0,1] → {r,g,b}
+const rampAt = (stops, t) => {
+  t = clamp(t, 0, 1); const n = stops.length;
+  if (t <= stops[0].p) return hexToRgb(stops[0].c);
+  if (t >= stops[n - 1].p) return hexToRgb(stops[n - 1].c);
+  for (let i = 0; i < n - 1; i++) { const a = stops[i], b = stops[i + 1]; if (t >= a.p && t <= b.p) { const k = (t - a.p) / ((b.p - a.p) || 1); const A = hexToRgb(a.c), B = hexToRgb(b.c); return { r: Math.round(lerp(A.r, B.r, k)), g: Math.round(lerp(A.g, B.g, k)), b: Math.round(lerp(A.b, B.b, k)) }; } }
+  return hexToRgb(stops[n - 1].c);
+};
 const IMPACT_CFG = VE.impact;
 
 class FxEngine {
@@ -24,6 +39,7 @@ class FxEngine {
     this.projectiles = [];
     this.particles = [];
     this.impacts = [];
+    this.motes = []; // limit-charge energy motes (own list — keeps spawnTrail untouched)
     this.raf = null;
     this.last = 0;
     this._glow = {};
@@ -52,6 +68,7 @@ class FxEngine {
     this.projectiles.length = 0;
     this.particles.length = 0;
     this.impacts.length = 0;
+    this.motes.length = 0;
     if (this.canvas) this.canvas.style.transform = '';
     this.canvas = null;
     this.ctx = null;
@@ -105,7 +122,7 @@ class FxEngine {
   // longer burns a full DPR-scaled clear + 6 step passes 60×/s on every screen forever.
   _active() {
     return (
-      this.projectiles.length || this.particles.length || this.impacts.length ||
+      this.projectiles.length || this.particles.length || this.impacts.length || this.motes.length ||
       this.flashPeak > 0 || this.shakeAmt > 0
     );
   }
@@ -125,6 +142,7 @@ class FxEngine {
     if (!this.ctx) { this.raf = null; return; }
     this.ctx.clearRect(0, 0, this.W, this.H);
     this._stepProjectiles(dt);
+    this._stepEnergyMotes(dt);
     this._stepImpacts(dt);
     this._stepParticles(dt);
     this._drawFlash(dt);
@@ -284,6 +302,84 @@ class FxEngine {
     }
   }
 
+  // ── Energy mote (limit charge) ───────────────────────────────────────────────
+  // opts: { color (head glow hex), ramp ([{p,c}]), width, length, speed, r, popOut, accel,
+  //         head (rMul/pulseAmp/pulseFreq/growTo), headWidthMul, tailWidthMul, fadePow, fadePeak, onHit }
+  spawnEnergyMote(from, to, opts = {}) {
+    if (!from || !to) return;
+    const dx = to.x - from.x, dy = to.y - from.y, dist = Math.hypot(dx, dy) || 1;
+    const speed = opts.speed || 600, dur = dist / speed;
+    const po = opts.popOut || { dist: 80, angleMin: 55, angleMax: 125 };
+    const baseAng = Math.atan2(dy, dx);
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const off = (po.angleMin + Math.random() * (po.angleMax - po.angleMin)) * Math.PI / 180 * sign;
+    const cpAng = baseAng + off, cpDist = po.dist * rand(0.8, 1.2);
+    const cp = { x: from.x + Math.cos(cpAng) * cpDist, y: from.y + Math.sin(cpAng) * cpDist };
+    this.motes.push({
+      x: from.x, y: from.y, from, cp, to, t: 0, dur, u: 0, s: 0, fired: false, fadeT: 0,
+      r: opts.r || 3.5, head: opts.color || '#fff', ramp: opts.ramp || [{ p: 0, c: '#ffffff' }, { p: 1, c: '#8c00ff' }],
+      halfW: opts.width || 3.5, headMul: opts.headWidthMul ?? 2, tailMul: opts.tailWidthMul ?? 0.5,
+      fadePow: opts.fadePow ?? 0.5, fadePeak: opts.fadePeak ?? 0.92,
+      accel: MOTE_EASINGS[opts.accel] || MOTE_EASINGS.easeInCubic,
+      headCfg: opts.head || { rMul: 2.6, pulseAmp: 0.4, pulseFreq: 7, growTo: 1.8 },
+      spine: [], lastX: null, lastY: null, maxAge: MOTE_MAX_AGE * ((opts.length || 26) / MOTE_LEN_REF),
+      onHit: opts.onHit,
+    });
+    this._wake();
+  }
+
+  _stepEnergyMotes(dt) {
+    const ctx = this.ctx;
+    for (let i = this.motes.length - 1; i >= 0; i--) {
+      const p = this.motes[i];
+      if (!p.fired) {
+        p.t += dt; p.u = Math.min(1, p.t / p.dur); p.s = p.accel(p.u);
+        p.x = bezier2(p.s, p.from.x, p.cp.x, p.to.x); p.y = bezier2(p.s, p.from.y, p.cp.y, p.to.y);
+      }
+      for (const sp of p.spine) sp.age += dt;
+      while (p.spine.length && p.spine[0].age > p.maxAge) p.spine.shift();
+      if (!p.fired) {
+        // push on spacing, and ALWAYS capture the exact endpoint on arrival (u>=1) → flat end sits on the dock point
+        if (p.lastX === null || p.u >= 1 || (p.x - p.lastX) ** 2 + (p.y - p.lastY) ** 2 > MOTE_MIN_SPACING ** 2) {
+          p.spine.push({ x: p.x, y: p.y, age: 0 }); if (p.spine.length > MOTE_SPINE_N) p.spine.shift(); p.lastX = p.x; p.lastY = p.y;
+        }
+      }
+      if (p.fired) p.fadeT += dt;
+      const pts = p.spine, n = pts.length;
+      if (n >= 2) {
+        const nrm = []; // per-vertex normal (smooth taper, shared edges)
+        for (let k = 0; k < n; k++) { const pr = pts[Math.max(0, k - 1)], nx = pts[Math.min(n - 1, k + 1)]; const ddx = nx.x - pr.x, ddy = nx.y - pr.y; const dl = Math.hypot(ddx, ddy) || 1; nrm.push({ x: -ddy / dl, y: ddx / dl }); }
+        const gF = p.fired ? Math.max(0, 1 - p.fadeT / p.maxAge) : 1; // time fade-out + width-collapse during the linger
+        const tpos = (k) => (n - 1 - k) / (n - 1); // 0 at HEAD → 1 at TAIL (position ALONG the ribbon)
+        const oX = (k) => (k === n - 1 ? 1 : nrm[k].x), oY = (k) => (k === n - 1 ? 0 : nrm[k].y); // head end = exactly horizontal edge
+        const hwAt = (k) => p.halfW * gF * lerp(p.headMul, p.tailMul, tpos(k));
+        const colAt = (t) => { const c = rampAt(p.ramp, t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak * Math.pow(1 - t, p.fadePow) * gF).toFixed(3)})`; };
+        // colour FOLLOWS THE CURVE: each segment is a trapezoid with a mini gradient between its two vertices' ramp colours
+        for (let k = 1; k < n; k++) {
+          const a = pts[k - 1], b = pts[k], ta = tpos(k - 1), tb = tpos(k), hwa = hwAt(k - 1), hwb = hwAt(k);
+          const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y); g.addColorStop(0, colAt(ta)); g.addColorStop(1, colAt(tb));
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(a.x + oX(k - 1) * hwa, a.y + oY(k - 1) * hwa);
+          ctx.lineTo(b.x + oX(k) * hwb, b.y + oY(k) * hwb);
+          ctx.lineTo(b.x - oX(k) * hwb, b.y - oY(k) * hwb);
+          ctx.lineTo(a.x - oX(k - 1) * hwa, a.y - oY(k - 1) * hwa);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      if (!p.fired) {
+        const hc = p.headCfg; const grow = 1 + (hc.growTo - 1) * p.s; const pulse = 1 + hc.pulseAmp * Math.sin(p.u * hc.pulseFreq * Math.PI * 2);
+        const headR = p.r * hc.rMul * grow * pulse;
+        this._stampGlow(p.x, p.y, headR * 2.4, p.head, 0.9);
+        this._stampGlow(p.x, p.y, headR * 1.1, '#ffffff', 0.55);
+        ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, headR * 0.42), 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        if (p.u >= 1) { p.fired = true; if (p.onHit) p.onHit(p.to.x, p.to.y); } // head landed → linger + fade out
+      } else if (n === 0) { this.motes.splice(i, 1); }
+    }
+  }
+
   // ── System 2: impact ───────────────────────────────────────────────────────
   impact(x, y, opts = {}) {
     const tier = opts.tier || 'normal';
@@ -296,7 +392,7 @@ class FxEngine {
     this.impacts.push({ kind: 'ring', x, y, t: 0, dur: ring.dur * tm.life, r0: r, r1: r * (tier === 'crit' ? ring.r1MulCrit : ring.r1Mul), w0: ring.w0, color });
     this.impacts.push({ kind: 'ring', x, y, t: -ring2.delay, dur: ring2.dur, r0: r, r1: r * ring2.r1Mul, w0: ring2.w0, color: ring2.color });
 
-    const n = Math.round(IMPACT_CFG.count * tm.count);
+    const n = opts.debris != null ? opts.debris : Math.round(IMPACT_CFG.count * tm.count);
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * IMPACT_CFG.spread;
       const sp = IMPACT_CFG.speed * IMPACT_CFG.speedMul * tm.speed * IMPACT_CFG.debrisSpeedMul * (IMPACT_CFG.speedJitter[0] + Math.random() * IMPACT_CFG.speedJitter[1]);

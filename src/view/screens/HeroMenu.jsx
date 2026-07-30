@@ -16,13 +16,13 @@ import { HEROES } from '../../data/heroes.js';
 import { uiHero } from '../../data/_ui.js';
 import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
-import { GEAR_SLOTS, GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
+import { GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
 import {
   heroStats, heroPower, heroMaxLevel, heroRarity, ascensionsDone, ascendSelection, canAscendChar,
 } from '../../model/heroes.js';
 import { canLevelHero, heroLevelCost, levelUpHeroMax, heroAtMax } from '../../model/progression.js';
 import {
-  heroGearPower, equippedInSlot, slotCandidates, otherHeroSlotItems, gearPower,
+  heroGearPower, equippedInSlot, slotCandidates, otherHeroSlotItems, gearPower, heroClassOf,
   gearLevelCost, canLevelGear, canEquipBetter, canUpgradeHeroGear,
 } from '../../model/gear.js';
 import { resolve, heroAsset } from '../assets.js';
@@ -30,7 +30,7 @@ import { fmtK as fmt } from '../fmt.js';
 import { fxMenuHeroLevelUp, fxMenuGearBurst, fxMenuPow, fxMenuEquip, fxMaxed } from '../fx/hero-fx.js';
 
 const HERO_BG = resolve('ui.hero-bg').img;
-const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
+const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji || GEAR_SLOT_META[slot].emoji;
 const gColor = (r) => (GEAR_RARITY[r] || GEAR_RARITY.common).color;
 const cap1 = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const abilDesc = (a) => (!a ? '' : a.type === 'heal'
@@ -105,7 +105,8 @@ export default function HeroMenu() {
   const abilLv = (char.abilityLevel || 1);
   const ascDone = ascensionsDone(char);
   const art = heroAsset(char.hero);
-  const equippedSlots = GEAR_SLOTS.filter((s) => equippedInSlot(state.gear, cid, s));
+  const cls = heroClassOf(char.hero); const slots = cls.slots; // this class's equip loadout (+ classKey for class-bound slots)
+  const equippedSlots = slots.filter((s) => equippedInSlot(state.gear, cid, s));
   // Ascend (merge a duplicate copy → +1 rank). Reuses the reducer-shared selection so the confirm names
   // the exact copy consumed; ALWAYS keeps the strongest copy and sacrifices the weakest.
   const ascSel = ascendSelection(state.heroes, char.hero, (c) => heroPower(state.heroes[c].hero, state.heroes[c], state.ordersCompleted, heroGearPower(state.gear, c)));
@@ -115,7 +116,7 @@ export default function HeroMenu() {
   const doLevelUp = () => { if (atMax) { fxMaxed(heroImgRef.current); return; } if (!canLevelHero(char, state.heroXp)) return; pending.current = { kind: 'hero', before: snap() }; actions.levelUpHero(cid); };
   const doLevelUpMax = () => { if (atMax) { fxMaxed(heroImgRef.current); return; } if (levelUpHeroMax(char, state.heroXp).gained <= 0) return; pending.current = { kind: 'hero', before: snap() }; actions.levelUpHeroMax(cid); };
   const doLevelGear = (max) => { if (!canUpgradeHeroGear(state.gear, cid, state.gearXp)) return; pending.current = { kind: 'gearall', before: snap(), slots: equippedSlots }; if (max) actions.levelAllMax(cid); else actions.levelAllOne(cid); };
-  const doEquipBest = () => { if (!canEquipBetter(state.gear, cid)) return; pending.current = { kind: 'equipbest', before: snap(), slots: GEAR_SLOTS }; actions.equipBest(cid); };
+  const doEquipBest = () => { if (!canEquipBetter(state.gear, cid, cls)) return; pending.current = { kind: 'equipbest', before: snap(), slots }; actions.equipBest(cid); };
   const doLevelGearOne = () => { const g = equippedInSlot(state.gear, cid, equipSlot); if (!g || !canLevelGear(g, state.gearXp)) return; pending.current = { kind: 'gearone', before: snap(), slot: equipSlot }; actions.levelGear(g.id); };
   const doEquip = (slot, item) => { pending.current = { kind: 'equip', before: snap(), slot }; actions.equipItem(cid, item.id); setConfirmEq(null); };
   // Ascend: count up the SURVIVING (kept) copy's stats old→new; if the menu was open on the sacrificed
@@ -128,7 +129,7 @@ export default function HeroMenu() {
 
   // ── equip dialog data ──
   const cur = equipSlot ? equippedInSlot(state.gear, cid, equipSlot) : null;
-  const items = equipSlot ? [...slotCandidates(state.gear, cid, equipSlot), ...otherHeroSlotItems(state.gear, cid, equipSlot)] : [];
+  const items = equipSlot ? [...slotCandidates(state.gear, cid, equipSlot, cls), ...otherHeroSlotItems(state.gear, cid, equipSlot, cls)] : [];
 
   const rootStyle = { '--rar': meta.color };
   const tier = (meta.name || rar).toUpperCase();
@@ -160,7 +161,7 @@ export default function HeroMenu() {
 
       <div className="hm-body">
         <div className="side-col left">
-          {GEAR_SLOTS.map((slot) => {
+          {slots.map((slot) => {
             const g = equippedInSlot(state.gear, cid, slot);
             return (
               <div key={slot} ref={(el) => { gearSlotRefs.current[slot] = el; }}
@@ -210,7 +211,7 @@ export default function HeroMenu() {
             <div className="lvl-stack">
               <button className="btn b" disabled={!canUpgradeHeroGear(state.gear, cid, state.gearXp)} onClick={() => doLevelGear(false)}>LEVEL GEAR</button>
               <button className="btn b" disabled={!canUpgradeHeroGear(state.gear, cid, state.gearXp)} onClick={() => doLevelGear(true)}>LEVEL GEAR MAX</button>
-              <button className="btn side" disabled={!canEquipBetter(state.gear, cid)} onClick={doEquipBest}>⚡ EQUIP BEST</button>
+              <button className="btn side" disabled={!canEquipBetter(state.gear, cid, cls)} onClick={doEquipBest}>⚡ EQUIP BEST</button>
             </div>
           </div>
         </div>
@@ -291,7 +292,7 @@ export default function HeroMenu() {
               <button className="btn primary" disabled={!cur || !canLevelGear(cur, state.gearXp)} onClick={doLevelGearOne}>
                 {cur ? <>LEVEL UP<small>🔧 {fmt(gearLevelCost(cur.level))}</small></> : 'LEVEL UP'}
               </button>
-              <button className="btn b" disabled={!canEquipBetter(state.gear, cid)} onClick={doEquipBest}>⚡ EQUIP BEST</button>
+              <button className="btn b" disabled={!canEquipBetter(state.gear, cid, cls)} onClick={doEquipBest}>⚡ EQUIP BEST</button>
             </div>
           </div>
         </div>

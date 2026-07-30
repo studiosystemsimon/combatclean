@@ -19,5 +19,6 @@
 			"type": "aoe",
 			"mult": 5.5
 		}
-	}
+	},
+	"classKey": "demon"
 }

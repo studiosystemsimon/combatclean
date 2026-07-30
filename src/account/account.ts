@@ -4,7 +4,7 @@
 //   resources (WALLET, id-keyed) — coins, heroXp, gearXp, energy, + 6 ascension crystals.
 //   items (INSTANCES)            — owned hero characters + gear pieces (one instance each; v5 model).
 //   unlocks (id set)             — reserved for one-time permanent grants.
-//   profile                      — furthestLevel, ordersCompleted, pity, squad (hero iids), lastSeen, haptics.
+//   profile                      — clearedLevel, ordersCompleted, pity, squad (hero iids), lastSeen, haptics.
 //   features                     — the continuous meta-state: merge.board, orders.rail, battle.level.
 // Every change is a TRANSACTION emitting an AccountPatch, applied by the ONE pure applyPatch. `inc`
 // for wallets. Well-known resource ids come from _global.json#refs via getRef — never a literal.
@@ -37,7 +37,7 @@ export function freshAccount(now = 0): ClientAccountView {
     unlocks: [],
     items: [starter],
     profile: {
-      furthestLevel: battle.startLevel,
+      clearedLevel: battle.startLevel - 1, // highest level BEATEN (AFK/progression stream); 0 for a fresh account
       ordersCompleted: 0,
       pity: {},
       squad: [starter.iid],
@@ -103,7 +103,7 @@ export function grantUnlock(view: ClientAccountView, configId: number): AccountP
   return view.unlocks.includes(configId) ? [] : [{ op: 'append', path: 'unlocks', entry: configId }];
 }
 
-/** Set a profile field (furthestLevel, ordersCompleted, squad, pity, …). */
+/** Set a profile field (clearedLevel, ordersCompleted, squad, pity, …). */
 export function setProfile(field: string, value: unknown): AccountPatch {
   return [{ op: 'set', path: `profile/${field}`, value }];
 }

@@ -46,6 +46,9 @@ export const STRINGS = {
     collect: 'Collect',
     lootTitle: 'Loot',
     gotIt: 'Got it',
+    startBody: 'Restart this zone from its first room?', // zone-start confirm dialog
+    startGo: 'Start Zone',
+    startCancel: 'Cancel',
   },
 
   board: {

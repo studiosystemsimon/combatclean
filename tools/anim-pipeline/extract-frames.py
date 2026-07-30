@@ -3,7 +3,7 @@
 # resample to N looping frames, and emit: frames/, a horizontal strip, and a looping GIF + APNG.
 import sys, os
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 RAW = sys.argv[1] if len(sys.argv) > 1 else "raw-sheet.png"
 N   = int(sys.argv[2]) if len(sys.argv) > 2 else 12
@@ -63,7 +63,13 @@ strip.save(os.path.join(outdir, "crystal-vortex-strip.png"))
 
 # looping GIF + APNG (on black so the transparent frames read)
 def on_black(f):
-    bg = Image.new("RGBA", f.size, (0, 0, 0, 255)); bg.alpha_composite(f); return bg.convert("RGB")
+    bg = Image.new("RGBA", f.size, (0, 0, 0, 255))
+    glow = f.filter(ImageFilter.GaussianBlur(16))          # soft outer glow like the reference soul-flame
+    gr, gg, gb, ga = glow.split()                          # tame chroma-green residue bleeding into the glow
+    gg = gg.point(lambda v: int(v * 0.45))
+    glow = Image.merge("RGBA", (gr, gg, gb, ga))
+    bg.alpha_composite(glow); bg.alpha_composite(glow); bg.alpha_composite(f)
+    return bg.convert("RGB")
 gif = [on_black(f) for f in frames]
 gif[0].save(os.path.join(outdir, "crystal-vortex.gif"), save_all=True, append_images=gif[1:],
             duration=90, loop=0, disposal=2)

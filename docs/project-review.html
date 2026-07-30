@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Combat Clean — Project Review</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#30363d;
+    --ink:#e6edf3; --mute:#9198a1; --dim:#6e7681;
+    --hi:#2f81f7; --code:#0b1020;
+    --hiR:#f85149; --hiO:#e3833c; --hiY:#d4a72c; --hiI:#6e7681; --hiG:#3fb950;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);
+       -webkit-font-smoothing:antialiased;padding:0 0 80px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:40px 0 28px;margin-bottom:8px;
+         background:linear-gradient(180deg,#11161f,transparent)}
+  h1{font-size:28px;margin:0 0 6px;letter-spacing:-.4px}
+  .sub{color:var(--mute);font-size:14px}
+  .meta{color:var(--dim);font-size:12.5px;margin-top:14px;font-family:var(--mono)}
+  h2{font-size:19px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line);letter-spacing:-.2px}
+  h2 .n{color:var(--dim);font-family:var(--mono);font-size:15px;margin-right:8px}
+  p{margin:0 0 12px}
+  .lead{color:var(--mute)}
+  code{font-family:var(--mono);font-size:.86em;background:#1b2130;border:1px solid var(--line);
+       border-radius:5px;padding:1px 6px;color:#cdd9e5}
+  /* scoreboard */
+  .board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:22px 0 6px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .v{font-size:26px;font-weight:700;font-family:var(--mono)}
+  .stat .k{color:var(--mute);font-size:12px;margin-top:2px}
+  .stat.ok .v{color:var(--hiG)} .stat.med .v{color:var(--hiO)}
+  .stat.low .v{color:var(--hiY)} .stat.info .v{color:var(--mute)}
+  /* verdict banner */
+  .verdict{display:flex;gap:14px;align-items:flex-start;background:linear-gradient(90deg,#0f2417,transparent);
+           border:1px solid #1c3a26;border-left:3px solid var(--hiG);border-radius:10px;padding:16px 18px;margin:18px 0}
+  .verdict .ic{font-size:20px;line-height:1.2}
+  .verdict b{color:var(--hiG)}
+  /* finding cards */
+  .f{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden}
+  .f .top{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .f .id{font-family:var(--mono);font-size:12px;color:var(--dim);min-width:30px}
+  .f .ttl{font-weight:650;flex:1;font-size:15px}
+  .sev{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+       text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .sev.R{background:#3d1518;color:#ff9a94;border:1px solid #5c1f24}
+  .sev.O{background:#3a2513;color:#f0ad61;border:1px solid #5c3a1c}
+  .sev.Y{background:#332b10;color:#e5c65a;border:1px solid #524417}
+  .sev.I{background:#21262d;color:#adb6c0;border:1px solid #333b45}
+  .sev.G{background:#0f2e1c;color:#5cd67e;border:1px solid #1c4a2e}
+  .f .body{padding:14px 16px}
+  .f .body p{margin:0 0 10px}
+  .f .body p:last-child{margin-bottom:0}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--mute);
+       background:#1b2130;border:1px solid var(--line);border-radius:5px;padding:1px 7px;margin-right:6px}
+  .loc{font-family:var(--mono);font-size:12.5px;color:#9fb4d0;display:block;margin:8px 0;
+       background:var(--code);border:1px solid var(--line);border-left:2px solid var(--hi);
+       border-radius:0 6px 6px 0;padding:7px 11px;white-space:pre-wrap;word-break:break-word}
+  .fix{border-left:2px solid var(--hiG);padding:2px 0 2px 12px;margin-top:10px;color:#c7d3df}
+  .fix b{color:var(--hiG);font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+  .verified b{color:var(--hi)}
+  ul{margin:6px 0 12px;padding-left:22px} li{margin:4px 0}
+  .foot{color:var(--dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 0;color:var(--mute);font-size:12.5px}
+  .legend span b{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Combat Clean — Project Review</h1>
+  <div class="sub">Deviations from original intent &amp; schema · stubbed content · hacky code — post hero-loadout-system implementation</div>
+  <div class="meta">generated 2026-07-30 · gate: <b style="color:var(--hiG)">npm run build ✓</b> · <b style="color:var(--hiG)">game-config:validate ✓</b> · scope: src/ · config/ · docs/</div>
+</div></header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <div class="ic">✅</div>
+    <div>
+      <p style="margin:0 0 6px"><b>The build is healthy and the hero-loadout system landed clean.</b> No high-severity defects — no correctness bugs, no broken refs, no failing gate. The items below are content gaps (expected in a blank starter), naming residue from the <code>trinket→accessory</code> rename, and a small amount of intentional migration scaffolding. Everything is safe to ship as-is; each item is a <em>known</em> follow-up, not a surprise.</p>
+      <p style="margin:0;color:var(--mute);font-size:13.5px">The two flagged schema deviations (B1, B2) and the migration shim (C1) have now been fixed — see their cards below. Two self-introduced loadout hacks were also removed (see §Fixed). Remaining open items are the two content gaps (A1, A2) and three by-design info notes.</p>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="stat ok"><div class="v">0</div><div class="k">🔴 High</div></div>
+    <div class="stat med"><div class="v">2</div><div class="k">🟠 Medium</div></div>
+    <div class="stat low"><div class="v">1</div><div class="k">🟡 Low</div></div>
+    <div class="stat info"><div class="v">3</div><div class="k">⚪ Info</div></div>
+    <div class="stat ok"><div class="v">6</div><div class="k">✔ Fixed now</div></div>
+  </div>
+  <div class="legend">
+    <span><b>🟠 Medium</b> — affects playability/completeness of a shipped feature</span>
+    <span><b>🟡 Low</b> — off-pattern / residue / intentional shim; works today</span>
+    <span><b>⚪ Info</b> — by-design or observation, no action required</span>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <h2><span class="n">A</span>Stubbed / placeholder content</h2>
+  <p class="lead">Content that is intentionally thin for a blank starter, surfaced for completeness. None of these are broken — they're empty seats waiting for data.</p>
+
+  <div class="f">
+    <div class="top"><span class="id">A1</span><span class="ttl">Class-bound accessory slot is unfillable for 42 of 43 classes</span><span class="sev O">Medium</span></div>
+    <div class="body">
+      <p><span class="tag">content-gap</span><span class="tag">loadout</span> Every hero now carries a <code>classAccessory</code> slot (a <code>classBound:true</code> slot that only accepts pieces whose <code>classKey</code> matches the hero's class). But exactly <b>one</b> class-bound piece exists in the whole registry — the knight's crest — so 42 classes render a slot they can never fill.</p>
+      <span class="loc">src/data/config/game/gearPieces/4029-c-knight-crest.json   ← the only classKey-bound piece
+src/data/config/game/heroClasses/*.json                    ← 43 classes, 1:1 with heroes</span>
+      <p>This is the expected state right after wiring the system — the <em>mechanism</em> is complete and correct; the <em>content</em> (one class piece per class) hasn't been authored yet.</p>
+      <div class="fix"><b>Follow-up</b> — author one class-bound accessory per class (42 more pieces, each with <code>classKey</code> = its class), or defer intentionally and note that the slot is deliberately empty until class pieces are designed. The equip UI already gates correctly (empty slot, no wrong-class leakage).</div>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">A2</span><span class="ttl">11 enemies ship with placeholder (flat 1×) tuning</span><span class="sev O">Medium</span></div>
+    <div class="body">
+      <p><span class="tag">content-stub</span><span class="tag">enemies</span> The char-art-export enemy batch (<code>3093</code>–<code>3103</code>) all carry <code>hpMul:1, atkMul:1</code> and a <code>tags.tuning:"placeholder"</code> marker — identical, untuned stat multipliers. The rest of the roster is properly spread (e.g. <code>0.85 / 0.75</code> bands).</p>
+      <span class="loc">src/data/config/game/enemies/3093..3103-*.json   ("origin":"char-art-export", "tuning":"placeholder")</span>
+      <div class="fix"><b>Follow-up</b> — pass these 11 through the same tuning bands as the rest of the roster and drop the <code>tuning</code> marker (see B1). Purely a data edit — no code.</div>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">A3</span><span class="ttl">Minigame system holds a single test component</span><span class="sev Y">Low</span></div>
+    <div class="body">
+      <p><span class="tag">scaffold</span><span class="tag">by-design</span> The modular minigame harness is fully wired end-to-end (server-authoritative reward endpoint → registry → reward popup), but the registry has one entry: <code>test-button → TestButtonGame</code>. This is the intended starter state — the slot is proven, the content is a placeholder.</p>
+      <span class="loc">src/view/minigame/registry.js:8   'test-button': TestButtonGame
+src/view/minigame/TestButtonGame.jsx</span>
+      <div class="fix"><b>Follow-up</b> — none required until a real minigame is designed; the plumbing is ready to accept it with a one-line registry add.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <h2><span class="n">B</span>Deviations from schema / intent</h2>
+  <p class="lead">Places where the data or naming drifts from the framework's own rules. Neither gates game logic, so both are safe — but both are off-pattern.</p>
+
+  <div class="f">
+    <div class="top"><span class="id">B1</span><span class="ttl">Tuning status stored inside <code>tags</code></span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">schema-deviation</span><span class="tag">tags-rule</span> The 11 placeholder enemies encoded their status as <code>tags.tuning:"placeholder"</code> — against the rule <em>“tags is UI/design grouping only; model logical intent as a typed field or ref, never a tag.”</em> <b>Resolved:</b> the <code>tuning</code> key was stripped from all 11 (the actual stat values are the source of truth). The <code>origin:"char-art-export"</code> tag is retained — that's legitimate provenance grouping, read by no logic.</p>
+      <span class="loc">src/data/config/game/enemies/3093..3103-*.json   "tags": { "origin": "char-art-export" }   ← tuning key removed</span>
+      <p style="color:var(--mute);font-size:13px;margin:0">Content-tuning of these 11 (A2) remains a separate open follow-up — this fix only removed the off-pattern tag.</p>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">B2</span><span class="ttl"><code>gear.trinket</code> asset identity survives the trinket→accessory rename</span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">naming-residue</span><span class="tag">one-identity</span> The <code>trinket</code> slot was renamed to <code>accessory</code>, but its <em>presentation identity</em> still said trinket. <b>Resolved in one pass:</b> the asset key <code>gear.trinket → gear.accessory</code> across the asset registry, the physical art file (<code>gear/trinket.png → gear/accessory.png</code>), the three re-slotted pieces' <code>iconAssetId</code>, and the <code>assets.js</code> resolver (label now <code>"Accessory"</code>). Zero <code>trinket</code> references remain anywhere in <code>src/</code> or <code>assets/</code>.</p>
+      <span class="loc">assets/combatclean/assets.json          "gear.accessory" → "gear/accessory.png"
+assets/combatclean/gear/accessory.png   (renamed, 30745b)
+src/data/assets.js                      'gear.accessory': { emoji:'💍', label:'Accessory', art:'gear/accessory' }
+src/data/config/ui/gearPieces/4006,4007,4008.json   "iconAssetId": "gear.accessory"</span>
+      <p style="color:var(--mute);font-size:13px;margin:0">Gate confirms the new ref resolves: <code>game-config:validate ✓</code>.</p>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">B3</span><span class="ttl">Visual (VSM) registry declared but unpopulated</span><span class="sev I">Info</span></div>
+    <div class="body">
+      <p><span class="tag">by-design</span> ARCHITECTURE.md / CLAUDE.md describe a three-lane model (logical / visual / UI). The visual lane (<code>src/data/visual-config</code>) currently has <b>0 files</b> — the docs already flag it as “thin, opt-in,” so this is a documented gap rather than a defect, but the “three registries” framing reads as fully-populated when only two lanes carry data.</p>
+      <span class="loc">src/data/visual-config/   (0 entries) — VSM schema/repo live at src/view/combat/vsm</span>
+      <div class="fix"><b>Follow-up</b> — none required; opt-in by design. Populate only when a per-entity visual override is actually needed.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <h2><span class="n">C</span>Hacky / migration code</h2>
+
+  <div class="f">
+    <div class="top"><span class="id">C1</span><span class="ttl">Runtime <code>trinket→accessory</code> save-migration shim</span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">migration</span> Hydration inline-remapped <code>slot:"trinket" → "accessory"</code> so pre-rename saves would load. But Combat Clean is a pre-release blank starter with <b>no shipped saves</b> — the only <code>trinket</code>-era blob that could exist is a stale dev artifact, so the shim was defensiveness against a state that can't reach production. <b>Resolved:</b> removed the ternary; hydration now reads <code>slot</code> straight through. (A stale dev save is handled by <code>clearSaved</code>.)</p>
+      <span class="loc">src/game/store/persistence.ts:70   slot: (it as any).slot   ← shim removed</span>
+      <p style="color:var(--mute);font-size:13px;margin:0">The surrounding <code>(it as any)</code> casts are the pre-existing account-item-union style, untouched.</p>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">C2</span><span class="ttl"><code>GEAR_SLOTS</code> barrel export is now effectively dead</span><span class="sev I">Info</span></div>
+    <div class="body">
+      <p><span class="tag">dead-export</span> After the per-class loadout migration, no view/model consumes the flat <code>GEAR_SLOTS</code> list any more — screens iterate the class's resolved <code>slots</code> instead. The definition list is still needed internally (<code>content.ts</code> builds it; <code>GEAR_SLOT_META</code> maps over <code>C.GEAR_SLOTS</code>), but the public barrel re-export has no remaining reader.</p>
+      <span class="loc">src/data/gear.js:5   export const GEAR_SLOTS = C.GEAR_SLOTS;   ← no external consumer</span>
+      <div class="fix"><b>Follow-up</b> — optional: drop the barrel re-export (keep the internal <code>C.GEAR_SLOTS</code> that <code>GEAR_SLOT_META</code> needs). Harmless if left.</div>
+    </div>
+  </div>
+
+  <div class="f">
+    <div class="top"><span class="id">C3</span><span class="ttl">Per-class <code>slots</code> override capability is unexercised by data</span><span class="sev I">Info</span></div>
+    <div class="body">
+      <p><span class="tag">observation</span> All 43 heroes resolve to <code>gearLoadout.defaultSlots</code> (the 6-slot loadout); <b>0</b> declare an explicit per-class <code>slots</code> override. This is the intended DRY outcome — the override path exists and is tested by the resolver logic, just not by any current data row. Noting so the capability isn't assumed “in use.”</p>
+      <span class="loc">src/data/config/game/_gearLoadout.json   defaultSlots: [weapon, hat, armor, boots, accessory, classAccessory]
+src/game/gear/gear.ts   heroClassOf() → (h.slots || defaultSlots)</span>
+      <div class="fix"><b>Follow-up</b> — none; the first hero that needs a different loadout just adds a <code>slots</code> array to its logical JSON.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <h2><span class="n">D</span>Fixed during this pass</h2>
+  <div class="f">
+    <div class="top"><span class="id">D1</span><span class="ttl">Removed unnecessary <code>as any</code> casts on <code>pieceDef().classKey</code></span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">self-introduced</span> The loadout code cast <code>(pieceDef(g) as any)?.classKey</code> in three spots. Because <code>content.ts</code> types rows as <code>Record&lt;string,any&gt;</code>, <code>classKey</code> already flows through — the casts were redundant. Removed; <code>tsc</code> stays clean.</p>
+      <span class="loc">src/game/gear/gear.ts:34, 121, 122   (pieceDef(g) as any)?.classKey  →  pieceDef(g)?.classKey</span>
+    </div>
+  </div>
+  <div class="f">
+    <div class="top"><span class="id">D2</span><span class="ttl">Docs synced to the new loadout model (docs-track-code)</span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">docs</span> Updated <code>src/game/gear/README.md</code> + <code>src/game/heroes/README.md</code> (per-class loadout, <code>canEquip</code>, <code>classBound</code>, Template=hero-class / Instance=Character) and CLAUDE.md's config-registry section (added <code>heroClasses</code> key-kind, <code>gearLoadout</code> singleton, <code>heroes.slots/classKey</code>, <code>gearSlots.classBound</code>).</p>
+    </div>
+  </div>
+  <div class="f">
+    <div class="top"><span class="id">D3</span><span class="ttl">Design-doc open questions Q1–Q6 all resolved (no deferral)</span><span class="sev G">Fixed</span></div>
+    <div class="body">
+      <p class="verified"><span class="tag">design</span> Every open question in <code>docs/hero-loadout-architecture.html</code> was implemented to its recommended answer: HeroClass read-model over 3-registry authoring (Q6), explicit per-class <code>slots</code> via <code>defaultSlots</code>+override (Q1), <code>heroClasses</code> 1:1 with heroes (Q2), <code>accessory</code>=generic / <code>classAccessory</code>=class-matched (Q3), shared progression curve (Q4, the recommended/current choice — not a deferral), single swappable asset ref (Q5). The doc still lists them under “Open questions” as the pre-implementation plan.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <h2><span class="n">✓</span>Verified healthy (the loadout deliverable)</h2>
+  <p class="lead">What was checked and confirmed sound during the integrity pass:</p>
+  <ul>
+    <li><b>Generic modular slot system</b> — <code>weapon · hat · armor · boots · accessory · classAccessory</code>, resolved per-class from <code>gearLoadout.defaultSlots</code> with an optional per-hero <code>slots</code> override. Data-driven, no magic literals.</li>
+    <li><b>Template vs Instance</b> — hero-class = stateless logical template (<code>C.HEROES[slug]</code>: stats + abilities + <code>classKey</code> + <code>slots</code>); Character = stateful account instance (level/ascension/rarity/equipped). Instances store no class data.</li>
+    <li><b>Single cohesive HeroClass read-model</b> — the <code>src/data/heroes.js</code> barrel resolves the three registries into one structure the view references (one lookup, not three).</li>
+    <li><b>Equip gating</b> — <code>canEquip</code> enforces right-slot-family + class-has-slot + <code>classBound</code>→classKey-match. All callers (reducer AUTO_EQUIP / EQUIP_BEST / EQUIP_ITEM, both hero screens) updated to pass the resolved class.</li>
+    <li><b>Gate green</b> — <code>npm run build ✓</code> (tsc + vite), <code>game-config:validate ✓</code> (all <code>*AssetId</code> refs + cross-entity refs resolve).</li>
+    <li><b>Swappable asset</b> — hero portrait + chip resolve through a single UI <code>iconAssetId</code> ref; swapping art is a registry edit, no code change.</li>
+  </ul>
+
+  <div class="foot">Combat Clean · project-review.html · 0 High / 2 Medium / 1 Low / 3 Info · 6 fixed this pass (incl. B1, B2, C1) · build &amp; config gates green.<br>
+  Read-and-verified against src/ · config/ · docs/ — every finding carries a file[:line] anchor. No multiagent dispatch used.</div>
+
+</div>
+</body>
+</html>

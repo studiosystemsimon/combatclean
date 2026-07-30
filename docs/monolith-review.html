@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Combat Clean — Monolith Review</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#30363d;
+    --ink:#e6edf3; --mute:#9198a1; --dim:#6e7681; --hi:#2f81f7; --code:#0b1020;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;padding:0 0 80px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:40px 0 26px;background:linear-gradient(180deg,#11161f,transparent)}
+  h1{font-size:28px;margin:0 0 6px;letter-spacing:-.4px}
+  .sub{color:var(--mute);font-size:14px}
+  .meta{color:var(--dim);font-size:12.5px;margin-top:14px;font-family:var(--mono)}
+  h2{font-size:19px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line);letter-spacing:-.2px}
+  h2 .n{color:var(--dim);font-family:var(--mono);font-size:15px;margin-right:8px}
+  p{margin:0 0 12px} .lead{color:var(--mute)}
+  code{font-family:var(--mono);font-size:.86em;background:#1b2130;border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:#cdd9e5}
+  /* scoreboard */
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 6px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .v{font-size:26px;font-weight:700;font-family:var(--mono)}
+  .stat .k{color:var(--mute);font-size:12px;margin-top:2px}
+  .stat.crit .v{color:#ff7b72}.stat.high .v{color:#e3833c}.stat.med .v{color:#d4a72c}.stat.low .v{color:#3fb950}
+  /* rank table */
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.loc{font-family:var(--mono);color:#9fb4d0;white-space:nowrap}
+  td.file code{background:none;border:none;padding:0;color:#cdd9e5}
+  tr:hover td{background:#12171f}
+  .sev{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;display:inline-block}
+  .sev.C{background:#3d1518;color:#ff9a94;border:1px solid #5c1f24}
+  .sev.H{background:#3a2513;color:#f0ad61;border:1px solid #5c3a1c}
+  .sev.M{background:#332b10;color:#e5c65a;border:1px solid #524417}
+  .sev.L{background:#0f2e1c;color:#5cd67e;border:1px solid #1c4a2e}
+  .sev.T{background:#21262d;color:#adb6c0;border:1px solid #333b45}
+  /* offender card */
+  .f{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:16px 0;overflow:hidden}
+  .f .top{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .f .rk{font-family:var(--mono);font-size:15px;color:var(--dim);min-width:24px;font-weight:700}
+  .f .ttl{font-weight:650;flex:1;font-size:15px;font-family:var(--mono)}
+  .f .loc{font-family:var(--mono);font-size:12px;color:var(--mute)}
+  .f .body{padding:15px 17px}
+  .f h4{margin:2px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);font-family:var(--mono)}
+  .tags{margin:0 0 12px}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;color:#c9b6e0;background:#221a30;border:1px solid #3a2d4d;border-radius:5px;padding:2px 8px;margin:0 6px 6px 0}
+  .plan{list-style:none;padding:0;margin:0;counter-reset:s}
+  .plan li{position:relative;padding:8px 0 8px 34px;border-top:1px solid #222a35}
+  .plan li:first-child{border-top:none}
+  .plan li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:6px;background:#1b2740;color:#7fb0ff;font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid #24406b}
+  .arrow{color:var(--hi);font-family:var(--mono)}
+  .gate{margin-top:12px;border-left:2px solid #3fb950;padding:4px 0 4px 12px;color:#c7d3df;font-size:13px}
+  .gate b{color:#5cd67e;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .bonus{margin-top:10px;border-left:2px solid #d4a72c;padding:4px 0 4px 12px;color:#d8ceb0;font-size:13px}
+  .bonus b{color:#e5c65a;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  ul.plain{margin:6px 0 0;padding-left:20px}ul.plain li{margin:4px 0}
+  .foot{color:var(--dim);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono)}
+  .note{background:#12171f;border:1px solid var(--line);border-radius:8px;padding:12px 15px;color:var(--mute);font-size:13.5px;margin:14px 0}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Combat Clean — Monolith Review</h1>
+  <div class="sub">Which units are monolithic · ranked by severity · disband plans for the worst offenders</div>
+  <div class="meta">generated 2026-07-30 · unit = file/module/component ("class" in a mostly-functional codebase) · read-only analysis, no code changed</div>
+</div></header>
+
+<div class="wrap">
+
+  <div class="note">
+    <b style="color:var(--ink)">Method.</b> Ranked by <b>architectural severity</b>, not raw size — severity = responsibilities conflated × centrality to the sim × cost to test/replace × core-vs-dev-tool. A 1,500-line isolated dev overlay scores lower than a 640-line reducer every module depends on. Sizes are current <code>wc -l</code>; responsibility counts are the actual cases / handlers / hooks found in each file.
+  </div>
+
+  <div class="board">
+    <div class="stat crit"><div class="v">1</div><div class="k">🔴 Critical</div></div>
+    <div class="stat high"><div class="v">3</div><div class="k">🟠 High</div></div>
+    <div class="stat med"><div class="v">2</div><div class="k">🟡 Medium</div></div>
+    <div class="stat low"><div class="v">4</div><div class="k">⚪ Low / acceptable</div></div>
+  </div>
+
+  <h2><span class="n">§</span>Severity ranking</h2>
+  <table>
+    <thead><tr><th>#</th><th>Unit</th><th>LOC</th><th>What it conflates</th><th>Severity</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="file"><code>src/game/store/reducer.ts</code></td><td class="loc">643</td><td>45 action cases across ~9 systems (nav · AFK · board · orders · battle · progression · gacha · heroes · gear)</td><td><span class="sev C">Critical</span></td></tr>
+      <tr><td>2</td><td class="file"><code>src/view/fx/reveal-engine.js</code></td><td class="loc">901</td><td>one <code>GachaRevealEngine</code> class ≈670 LOC: prism · particles · card-stage · timeline · math</td><td><span class="sev H">High</span></td></tr>
+      <tr><td>3</td><td class="file"><code>src/view/screens/HeroesScreen.jsx</code></td><td class="loc">592</td><td>~10 state atoms: drag/fuse gesture SM · popup positioning · level/ascend/equip actions · VFX capture · 2 inline components</td><td><span class="sev H">High</span></td></tr>
+      <tr><td>4</td><td class="file"><code>src/view/FxLayer.jsx</code></td><td class="loc">656</td><td>~15 signal handlers + ~9 DOM-FX primitives in one component</td><td><span class="sev H">High</span></td></tr>
+      <tr><td>5</td><td class="file"><code>src/view/Board.jsx</code></td><td class="loc">462</td><td>geometry · tile factory · reconcile · best-merge detection (logic) · pointer SM (drag/merge/move/swap/gen-tap)</td><td><span class="sev M">Medium</span></td></tr>
+      <tr><td>6</td><td class="file"><code>src/marksman/Marksman.tsx</code></td><td class="loc">1497</td><td>everything — but isolated dev-only tooling, exempt from the arch rules & meant to be edited directly</td><td><span class="sev M">Medium*</span></td></tr>
+      <tr><td>7</td><td class="file"><code>src/data/config/schemas/singletons.ts</code></td><td class="loc">335</td><td>20 unrelated singleton schemas in one "junk-drawer" file</td><td><span class="sev L">Low</span></td></tr>
+      <tr><td>8</td><td class="file"><code>Autobattler.jsx</code> · <code>battle.ts</code> · <code>fx-engine.js</code> · <code>gacha-reveal.js</code></td><td class="loc">336–412</td><td>large but cohesive / already componentized — single-domain</td><td><span class="sev T">Acceptable</span></td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="font-size:13px">* Marksman leads on size but its severity is capped: it's vendored dev tooling outside the sim dependency chain (<code>src/marksman/README.md</code> — exempt from DI/signals/data-values), so it harms nothing downstream. Split it only if you actively work in it (natural seams: overlay canvas · mark-resolve · emit/transport · voice · toolbar UI).</p>
+
+  <h2><span class="n">▸</span>Disband plans — the worst offenders</h2>
+
+  <!-- ── 1 reducer ─────────────────────────────── -->
+  <div class="f">
+    <div class="top"><span class="rk">1</span><span class="ttl">reducer.ts</span><span class="sev C">Critical</span><span class="loc">643 LOC · 45 cases</span></div>
+    <div class="body">
+      <h4>Why it's the worst</h4>
+      <p>One <code>switch (action.type)</code> owns state transitions for <b>every system in the game</b>. It's the single most-depended-on sim file, it directly violates <b>module-per-folder</b> (board/orders/combat/gacha/heroes/gear logic all live here, not in their folders), and no system's transitions can be unit-tested without loading the whole tree.</p>
+      <div class="tags"><span class="tag">god-reducer</span><span class="tag">9 domains</span><span class="tag">module-per-folder violation</span><span class="tag">untestable in isolation</span></div>
+      <h4>Disband → per-system reducer slices (colocated with each module)</h4>
+      <ol class="plan">
+        <li><span class="arrow">→</span> <code>src/game/board/board-reducer.ts</code> — <code>TAP_GENERATOR · MOVE_OR_MERGE</code></li>
+        <li><span class="arrow">→</span> <code>src/game/orders/orders-reducer.ts</code> — <code>FULFILL_ORDER · FILL_ORDER_GAP · EMPTY_ORDER · REROLL_ORDER</code></li>
+        <li><span class="arrow">→</span> <code>src/game/combat/battle-reducer.ts</code> — <code>BATTLE_TICK · TAP_LIMIT · SHOW_COMPLETE · RESOLVE_WIN · RESOLVE_LOSS · PAUSE/RESOLVE_CHEST · START_COMBAT · CHALLENGE_NEXT · ACCEPT_AREA_COMPLETE · SET_BATTLE_LEVEL</code></li>
+        <li><span class="arrow">→</span> <code>src/game/gacha/gacha-reducer.ts</code> — <code>SUMMON</code></li>
+        <li><span class="arrow">→</span> <code>src/game/heroes/heroes-reducer.ts</code> — <code>ASCEND_HERO · LEVEL_UP_HERO(_MAX) · SWAP_HEROES · UPGRADE_HERO · AUTO_HERO · AUTO_LEVEL · LEVEL_ALL_ONE/MAX</code></li>
+        <li><span class="arrow">→</span> <code>src/game/gear/gear-reducer.ts</code> — <code>AUTO_EQUIP · LEVEL_GEAR · EQUIP_ITEM · FUSE_GEAR · EQUIP_BEST</code></li>
+        <li><span class="arrow">→</span> <code>src/game/store/ui-reducer.ts</code> — the shell/plumbing cases: <code>SET_SCREEN · SET_HERO_MENU · SET_AFK_OPEN · SET_HEADLESS · SET_MINIGAME · FINISH_MINIGAME · CLOSE_REWARD · COLLECT_AFK · RESUME_AFK · SET_FOCUS_TARGET · REGEN_TICK · RESET_GAME · CLEAR_FX</code></li>
+        <li><span class="arrow">→</span> <code>reducer.ts</code> shrinks to a ~30-line <b>combinator</b>: a dispatch map <code>{action-family → slice}</code>; <code>initState</code>/<code>buildBattle</code> move to <code>state-init.ts</code>.</li>
+      </ol>
+      <div class="gate"><b>Discipline</b> — each case body moves verbatim (pure <code>(state,action)→state</code>), so it's behaviour-preserving. Each slice gets its own headless unit test. <b>Gate:</b> <code>npm run build</code> + the determinism / auto-play harness (identical action sequence → identical state).</div>
+      <div class="bonus"><b>Bonus win</b> — this is the change that makes the codebase actually obey module-per-folder for game logic; every system README then documents its own reducer.</div>
+    </div>
+  </div>
+
+  <!-- ── 2 reveal-engine ─────────────────────────────── -->
+  <div class="f">
+    <div class="top"><span class="rk">2</span><span class="ttl">reveal-engine.js → GachaRevealEngine</span><span class="sev H">High</span><span class="loc">901 LOC · ~670 in one class</span></div>
+    <div class="body">
+      <h4>Why</h4>
+      <p>The only genuine <b>god class</b> in the codebase — a single class spanning lines 68–739 that runs the whole chest/gacha cinematic: prism colour work, particle systems, the card-reveal stage, and the phase timeline, plus re-declared math helpers (<code>clamp/lerp/rand/hexRGB</code>) that already exist in <code>fx/fx-math.js</code>.</p>
+      <div class="tags"><span class="tag">god-class</span><span class="tag">timeline + particles + cards</span><span class="tag">duplicated math</span></div>
+      <h4>Disband → phase modules the engine composes</h4>
+      <ol class="plan">
+        <li><span class="arrow">→</span> <code>fx/reveal/prism.js</code> — <code>prismCol</code> + prism visuals</li>
+        <li><span class="arrow">→</span> <code>fx/reveal/particles.js</code> — the particle emitters/update</li>
+        <li><span class="arrow">→</span> <code>fx/reveal/card-stage.js</code> — card flip / rarity reveal</li>
+        <li><span class="arrow">→</span> <code>fx/reveal/timeline.js</code> — phase sequencing + clock</li>
+        <li><span class="arrow">→</span> delete the local <code>clamp/lerp/rand/hexRGB</code>; import from the existing <code>fx/fx-math.js</code></li>
+        <li><span class="arrow">→</span> <code>GachaRevealEngine</code> becomes a thin orchestrator that instantiates + steps the phases; <code>playChestReveal</code> stays as the entry wrapper</li>
+      </ol>
+      <div class="gate"><b>Gate:</b> <code>npm run build</code> + eyeball one chest reveal + one gacha reveal (the cinematic still plays start-to-finish).</div>
+    </div>
+  </div>
+
+  <!-- ── 3 HeroesScreen ─────────────────────────────── -->
+  <div class="f">
+    <div class="top"><span class="rk">3</span><span class="ttl">HeroesScreen.jsx</span><span class="sev H">High</span><span class="loc">592 LOC · ~10 state atoms</span></div>
+    <div class="body">
+      <h4>Why</h4>
+      <p>A screen that is really four features welded together: a pointer/touch <b>drag-to-fuse gesture state machine</b> (long-press vs scroll discrimination, over-target tracking), <b>anchored popup positioning</b> (flip-left math), <b>action orchestration</b> (level/level-max/level-all/equip/equip-best/ascend), and <b>VFX before/after capture</b> — plus two sub-components (<code>Popup</code>, <code>ReequipBody</code>) declared inline.</p>
+      <div class="tags"><span class="tag">god-component</span><span class="tag">gesture SM</span><span class="tag">popup positioning</span><span class="tag">action orchestration</span><span class="tag">inline components</span></div>
+      <h4>Disband → hooks + component files</h4>
+      <ol class="plan">
+        <li><span class="arrow">→</span> <code>screens/hooks/useHeroDragSwap.js</code> — the pointer/touch pickup-vs-scroll SM + over-target state</li>
+        <li><span class="arrow">→</span> <code>screens/hooks/useAnchoredPopup.js</code> — beside-tile placement + flip-left (reusable by HeroMenu too)</li>
+        <li><span class="arrow">→</span> <code>screens/hooks/useHeroActionVfx.js</code> — capture before-values → dispatch → drive VFX on commit</li>
+        <li><span class="arrow">→</span> <code>screens/hero-popup/Popup.jsx</code> + <code>ReequipBody.jsx</code> — the two inline components as files</li>
+        <li><span class="arrow">→</span> <code>HeroesScreen.jsx</code> becomes lean composition: roster grid + sort tile + wiring the hooks. Target &lt; 200 LOC.</li>
+      </ol>
+      <div class="gate"><b>Gate:</b> <code>npm run build</code> + smoke: drag-to-fuse, equip / equip-best, level, ascend-with-confirm all still work; the post-action VFX still fires.</div>
+      <div class="bonus"><b>MVC note</b> — the before/after VFX capture is the view reaching into commit ordering; extracting it to a hook keeps the "view is a pure reader" boundary honest and makes the pattern reusable for HeroMenu.</div>
+    </div>
+  </div>
+
+  <!-- ── 4 FxLayer ─────────────────────────────── -->
+  <div class="f">
+    <div class="top"><span class="rk">4</span><span class="ttl">FxLayer.jsx</span><span class="sev H">High</span><span class="loc">656 LOC · ~15 handlers</span></div>
+    <div class="body">
+      <h4>Why</h4>
+      <p>One component that both <b>subscribes to every combat signal</b> and <b>implements every VFX handler</b> inline: <code>handleHeroAttacks · handleLimitCharge · handleOrderChest · handleWaveClear · handleLevelComplete · handleLimitBreak · handleGachaReveal · handleEnemyAttacks</code> plus the DOM primitives <code>flashChip · deathDust · shakeArena · telegraphChip · flashCard · pulseLimitBar · spawnNumber · combo · battleCenter</code>. Adding a VFX means growing this file; the handlers never need React.</p>
+      <div class="tags"><span class="tag">VFX god-hub</span><span class="tag">15 handlers</span><span class="tag">DOM primitives inline</span></div>
+      <h4>Disband → handler registry + DOM-FX toolkit</h4>
+      <ol class="plan">
+        <li><span class="arrow">→</span> <code>fx/handlers/&lt;event&gt;.js</code> — one file per handler, pure <code>(event, ctx)</code> where <code>ctx</code> = the DOM refs/layers it needs</li>
+        <li><span class="arrow">→</span> <code>fx/dom-fx.js</code> — the shared primitives (<code>flashChip/deathDust/shakeArena/telegraphChip/spawnNumber/combo/…</code>)</li>
+        <li><span class="arrow">→</span> <code>fx/handlers/index.js</code> — a <code>{signal → handler}</code> registry map</li>
+        <li><span class="arrow">→</span> <code>FxLayer.jsx</code> becomes a thin subscriber: on mount, wire each signal to its handler from the registry; unsubscribe on unmount. Target &lt; 120 LOC.</li>
+      </ol>
+      <div class="gate"><b>Gate:</b> <code>npm run build</code> + visual smoke that each effect still fires (hero attack telegraph, limit break, wave/level clear, order chest, gacha reveal).</div>
+    </div>
+  </div>
+
+  <!-- ── 5 Board (lighter) ─────────────────────────────── -->
+  <div class="f">
+    <div class="top"><span class="rk">5</span><span class="ttl">Board.jsx</span><span class="sev M">Medium</span><span class="loc">462 LOC · 18 hooks</span></div>
+    <div class="body">
+      <h4>Why</h4>
+      <p>The merge board mixes rendering (geometry, tile factory, reconcile), a pointer state machine (down/move/up/cancel → drag / merge / move / swap / gen-tap), <em>and</em> <b>best-merge detection</b> — which is game <em>logic</em> living in the view.</p>
+      <div class="tags"><span class="tag">interaction SM</span><span class="tag">logic-in-view</span><span class="tag">geometry + reconcile</span></div>
+      <h4>Disband → hook + geometry helper, push logic down</h4>
+      <ul class="plain">
+        <li><span class="arrow">→</span> <code>view/board/useMergeBoardPointer.js</code> — the drag/merge/move/swap/gen-tap SM</li>
+        <li><span class="arrow">→</span> <code>view/board/board-geometry.js</code> — geometry + tile-element factory</li>
+        <li><span class="arrow">→</span> move <b>best-merge detection</b> into <code>src/game/merge</code> (it's a selector, not presentation) — restores the pure-reader boundary</li>
+        <li><span class="arrow">→</span> <code>Board.jsx</code> = render + reconcile + wire the hook. Target &lt; 220 LOC.</li>
+      </ul>
+      <div class="gate"><b>Gate:</b> <code>npm run build</code> + smoke: drag-merge, move-to-empty, swap, generator tap all behave identically.</div>
+    </div>
+  </div>
+
+  <h2><span class="n">✓</span>Left alone (large but cohesive)</h2>
+  <ul class="plain">
+    <li><code>src/game/combat/battle.ts</code> (253) — one domain (wave build, tick, limit break, energy grants); a proper module, not a monolith.</li>
+    <li><code>src/view/Autobattler.jsx</code> (336) — already decomposed into <code>CountUp / LevelTrack / HeroChip / EnemyChip</code> + a thin parent.</li>
+    <li><code>fx-engine.js</code> (397) / <code>gacha-reveal.js</code> (412) — cohesive FX units; revisit only if they keep growing.</li>
+    <li><code>singletons.ts</code> (335, 20 schemas) — a junk-drawer, but low-harm; split into <code>schemas/singletons/&lt;name&gt;.ts</code> opportunistically, not urgently.</li>
+  </ul>
+
+  <div class="foot">Combat Clean · monolith-review.html · 1 Critical / 3 High / 2 Medium / 4 acceptable · read-only, no code changed.<br>
+  Suggested order: <b>reducer.ts first</b> (unlocks module-per-folder + per-system tests), then FxLayer &amp; reveal-engine (mechanical, low-risk), then HeroesScreen &amp; Board (gesture extraction). Each is behaviour-preserving and gated by build + smoke.</div>
+
+</div>
+</body>
+</html>

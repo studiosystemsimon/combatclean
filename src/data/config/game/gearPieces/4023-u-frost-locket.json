@@ -1,7 +1,7 @@
 {
 	"id": 4023,
 	"displayName": "u-frost-locket",
-	"slot": "trinket",
+	"slot": "accessory",
 	"maxRarityKey": "epic",
 	"unique": true
 }

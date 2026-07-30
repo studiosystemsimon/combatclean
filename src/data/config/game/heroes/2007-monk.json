@@ -19,5 +19,6 @@
 			"type": "heal",
 			"frac": 0.35
 		}
-	}
+	},
+	"classKey": "monk"
 }

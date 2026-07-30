@@ -19,5 +19,6 @@
 			"type": "aoe",
 			"mult": 4
 		}
-	}
+	},
+	"classKey": "witch"
 }

@@ -10,7 +10,7 @@ export const GEAR_RARITY = Object.fromEntries(C.GEAR_RARITY_ORDER.map((k) => {
 }));
 export const GEAR_SLOT_META = Object.fromEntries(C.GEAR_SLOTS.map((s) => {
   const u = uiKey('gearSlots', s);
-  return [s, { name: u.name ?? s, asset: u.iconAssetId ?? `gear.${s}` }];
+  return [s, { name: u.name ?? s, asset: u.iconAssetId ?? `gear.${s}`, emoji: u.emoji, classBound: !!(C.GEAR_SLOT_DEFS[s] && C.GEAR_SLOT_DEFS[s].classBound) }];
 }));
 export const GEAR_PIECES = Object.fromEntries(Object.entries(C.GEAR_PIECES).map(([slug, p]) => {
   const u = uiPiece(slug);

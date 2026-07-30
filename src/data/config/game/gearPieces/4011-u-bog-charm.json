@@ -1,7 +1,7 @@
 {
 	"id": 4011,
 	"displayName": "u-bog-charm",
-	"slot": "trinket",
+	"slot": "accessory",
 	"maxRarityKey": "rare",
 	"unique": true
 }

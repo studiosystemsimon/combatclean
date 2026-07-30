@@ -161,6 +161,12 @@ export const zRuntimeConfig = z.object({
   tenPullCount: int.describe('Pulls in a multi-pull ("ten-pull"); selects banner.ten pricing.'),
 }).strict();
 
+// gearLoadout — the DEFAULT equip-slot loadout a hero-class inherits when it declares no own `slots`.
+// One place to change the common set (weapon/hat/armor/boots/accessory/classAccessory).
+export const zGearLoadoutConfig = z.object({
+  defaultSlots: z.array(stringConfigRef('gearSlots', 'key')).describe('Ordered slot keys every hero-class has unless it overrides `slots` (→ gearSlots.key).'),
+}).strict();
+
 // minigame — reward RULES the (server-authoritative) meta endpoint applies to a submitted minigame
 // result. Reward = base + perScore × result.score. Amounts are exposed data (never hardcoded server-side).
 export const zMinigameConfig = z.object({
@@ -313,7 +319,21 @@ export const zVfxConfig = z.object({
     heroAttack: z.object({ stagger: num, trailDelay: num, trailSpeed: num, trailR: num, impactCrit: num, impactNormal: num, splashDelay: num, deathDustDelay: num, critShake: num }).strict(),
     deathDust: z.object({ r: num }).strict(),
     limitPulse: z.object({ brightness: num, scale: num, offset: num, ms: num }).strict(),
-    limitCharge: z.object({ stagger: num, trail: zTrail, impactR: num, sparkleCount: int, sparklePower: num }).strict(),
+    limitCharge: z.object({
+      launchDelay: num, gatherFlashR: num, stagger: num,
+      trail: z.object({
+        width: num, length: num, speed: num, r: num, tailWidthMul: num, headWidthMul: num, fadePow: num, fadePeak: num,
+        ramp: z.array(z.object({ p: num, c: z.string() }).strict()).min(2).describe('Ribbon gradient: positioned stops {p:0..1 (0=head),c:hex}, head→tail.'),
+      }).strict(),
+      popOut: z.object({ dist: num, angleMin: num, angleMax: num }).strict().describe('Odd-direction pop-out control point: offset px + off-axis angle range (deg).'),
+      accel: z.string().describe('Progression easing name (ease-IN = accelerates into the bar).'),
+      head: z.object({ rMul: num, pulseAmp: num, pulseFreq: num, growTo: num }).strict().describe('Glowing pulsing head: size ×, pulse depth/Hz, grow-on-approach ×.'),
+      tier: z.object({ widthMul: z.array(num).length(3), rMul: z.array(num).length(3), impactR: z.array(num).length(3), sparkle: z.array(num).length(3) }).strict().describe('Per-bucket (tier 3/4/5+) intensity; orders use bucket 1 (mid).'),
+      sparklePower: num,
+      explode: z.object({ rMul: num, debris: int, flash: num }).strict().describe('The BOF arrival explosion: impact radius ×, debris count, white flash (0/1).'),
+      fill: z.object({ fillCatchupMs: num, easing: z.string(), fallbackMs: num }).strict().describe('Synced bar-fill: ease displayed→true on mote arrival; fallback-snap so a bar never strands.'),
+      ready: z.object({ impactR: num, sparkleCount: int, popScale: num, popBrightness: num, popMs: num }).strict().describe('READY pop when a bar visually caps.'),
+    }).strict(),
     orderChest: z.object({ fallbackY: num, trailSpeed: num, impactR: num, tileStagger: num, baseDelay: num }).strict(),
     waveClear: z.object({ impactR: num, shake: num }).strict(),
     levelComplete: z.object({ originY: num, confettiX: num, confettiY: num, confettiCount: int, flashOpacity: num, flashMs: num }).strict(),

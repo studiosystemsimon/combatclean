@@ -29,12 +29,12 @@ const squadOf = (order: string[]) => order.slice(0, C.BOARD.selectedSlots);
 const orderChainsFor = (unlocked: string[]): string[] =>
   C.ORDER_CHAINS.filter((chain: string) => unlocked.some((g) => C.GENERATORS[g] && C.GENERATORS[g].chain === chain));
 
-// Backfill the unlocked-generator set from furthestLevel (for saves without an explicit set): start
-// with STARTING_GENERATORS + every generator whose unlocking area has already been fully cleared.
-const deriveUnlockedGenerators = (furthestLevel: number): string[] => {
+// Backfill the unlocked-generator set from clearedLevel (for saves without an explicit set): start
+// with STARTING_GENERATORS + every generator whose unlocking area's boss has already been BEATEN.
+const deriveUnlockedGenerators = (clearedLevel: number): string[] => {
   const set = new Set<string>(C.STARTING_GENERATORS);
   C.ZONES.forEach((z: any, i: number) => {
-    if (furthestLevel > (i + 1) * C.ZONE_LEN) (z.unlocksGenerators || []).forEach((g: string) => set.add(g));
+    if (clearedLevel >= (i + 1) * C.ZONE_LEN) (z.unlocksGenerators || []).forEach((g: string) => set.add(g));
   });
   return [...set];
 };
@@ -110,7 +110,7 @@ export const initState = (now: number, saved: any = null): S => {
     coins: 0, heroXp: 0, gearXp: 0,
     heroes, gear, order, ordersCompleted, orders, battle: built.battle, pity,
     nextId: id, nextCid: cid, fx: [], lastPull: null,
-    furthestLevel: C.BATTLE.startLevel, pendingAfk: null,
+    clearedLevel: C.BATTLE.startLevel - 1, pendingAfk: null, // progression/AFK stream = highest level BEATEN (persisted)
     crystals: { ...C.EMPTY_CRYSTALS },
     menuHeroId: null, // UI-only: cid whose full-screen hero menu is open (unpersisted)
     afkOpen: false, // UI-only: the AFK collection popup is open (unpersisted; auto-set on load when idle ≥ alertMs)
@@ -119,6 +119,7 @@ export const initState = (now: number, saved: any = null): S => {
     rewardPopup: null, // UI-only: { reward, source } shown after a minigame/server reward, null when none (unpersisted)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
+    replayReturn: null, // level to warp back to after finishing a REPLAYED earlier zone (null = normal progression)
   };
   if (!saved) return fresh;
 
@@ -126,14 +127,16 @@ export const initState = (now: number, saved: any = null): S => {
   const merged = { ...fresh, ...savedRest, now, fx: [], lastPull: null };
   const level = (saved.battle && saved.battle.level) || fresh.battle.level;
   const rebuilt = buildBattle(merged.heroes, merged.gear, merged.order, merged.ordersCompleted, level, merged.nextId);
-  const furthestLevel = Math.max(saved.furthestLevel || 1, level);
-  const add = Map.afkEarnings(furthestLevel, now - lastSeen);
+  // Progression stream: highest level BEATEN (persistence migrates old furthestLevel→clearedLevel). Never
+  // below the current fight − 1, so it survives a replay where battle.level is lower than the frontier.
+  const clearedLevel = Math.max(saved.clearedLevel ?? 0, level - 1);
+  const add = Map.afkEarnings(clearedLevel, now - lastSeen);
   const prior = saved.pendingAfk && (saved.pendingAfk.coins || saved.pendingAfk.heroXp || saved.pendingAfk.gearXp) ? saved.pendingAfk : null;
   const showAdd = add.ms >= C.AFK.minReportMs && (add.coins || add.heroXp || add.gearXp);
   const pendingAfk = prior ? (showAdd ? sumAfk(prior, add) : prior) : (showAdd ? add : null);
   const crystals = { ...C.EMPTY_CRYSTALS, ...(saved.crystals || {}) };
-  // Restore the unlocked-generator set; backfill from furthestLevel for saves predating this field.
-  const loadedUnlocked = (saved.unlockedGenerators && saved.unlockedGenerators.length) ? saved.unlockedGenerators : deriveUnlockedGenerators(furthestLevel);
+  // Restore the unlocked-generator set; backfill from clearedLevel for saves predating this field.
+  const loadedUnlocked = (saved.unlockedGenerators && saved.unlockedGenerators.length) ? saved.unlockedGenerators : deriveUnlockedGenerators(clearedLevel);
   // Auto-open the AFK collection popup on login when idle rewards reached the alert threshold (≥ alertMs) —
   // the player sees the welcome-back popup BEFORE gameplay.
   const afkOpen = !!(pendingAfk && pendingAfk.ms >= C.AFK.alertMs);
@@ -152,7 +155,7 @@ export const initState = (now: number, saved: any = null): S => {
     if (Array.isArray(o.items) && o.items.length) return o;
     return { id: o.id != null ? o.id : oid++, pending: true, dur: C.ORDER_CONFIG.arrivalMs };
   });
-  return { ...merged, battle: rebuilt.battle, nextId: oid, orders: reconciledOrders, furthestLevel, pendingAfk, afkOpen, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
+  return { ...merged, battle: rebuilt.battle, nextId: oid, orders: reconciledOrders, clearedLevel, pendingAfk, afkOpen, crystals, unlockedGenerators: loadedUnlocked, pendingArea: null };
 };
 
 export const reducer = (state: S, action: Act): S => {
@@ -182,12 +185,19 @@ export const reducer = (state: S, action: Act): S => {
       return { ...state, coins: state.coins + (r.coins || 0), heroXp: state.heroXp + (r.heroXp || 0), gearXp: state.gearXp + (r.gearXp || 0), rewardPopup: null };
     }
     case A.SET_BATTLE_LEVEL: {
-      const target = Math.max(1, Math.min(Math.floor(action.level) || 1, state.furthestLevel));
-      if (target === state.battle.level) return state;
+      const frontier = state.clearedLevel + 1; // highest REACHED = the next level after your last cleared
+      const target = Math.max(1, Math.min(Math.floor(action.level) || 1, frontier));
+      // `intro` (start a zone from its first room) always (re)spawns — even if we're already on that level —
+      // and opens on the ZONE-INTRO cinematic. A plain level-select is a no-op when already there.
+      if (!action.intro && target === state.battle.level) return state;
       const { wave, heroes, id } = respawn(state, target, state.nextId);
+      // Starting a zone BELOW the progression frontier is a REPLAY — remember the frontier so finishing
+      // that zone warps back to it (RESOLVE_WIN). Starting the frontier zone itself is normal progression.
+      const isReplay = !!action.intro && Map.zoneIndexForLevel(target) < Map.zoneIndexForLevel(frontier);
+      const replayReturn = action.intro ? (isReplay ? frontier : null) : (state.replayReturn ?? null);
       // Map level-select is a NORMAL (losable) level — recovering (the can't-die shield)
       // is set ONLY by a loss (RESOLVE_LOSS), never by picking a level from the map.
-      return { ...state, battle: { ...state.battle, level: target, wave, heroes, status: 'fighting', recovering: false, focusUid: null }, nextId: id };
+      return { ...state, battle: { ...state.battle, level: target, wave, heroes, status: action.intro ? 'intro' : 'fighting', recovering: false, focusUid: null }, nextId: id, replayReturn };
     }
     case A.COLLECT_AFK: {
       const a = state.pendingAfk; if (!a) return state;
@@ -197,7 +207,7 @@ export const reducer = (state: S, action: Act): S => {
     case A.RESUME_AFK: {
       const elapsed = action.now - state.now;
       if (elapsed < C.AFK.minReportMs) return { ...state, now: action.now };
-      const add = Map.afkEarnings(state.furthestLevel, elapsed);
+      const add = Map.afkEarnings(state.clearedLevel, elapsed);
       if (!(add.coins || add.heroXp || add.gearXp)) return { ...state, now: action.now };
       const pendingAfk = state.pendingAfk ? sumAfk(state.pendingAfk, add) : add;
       return { ...state, pendingAfk, now: action.now };
@@ -266,7 +276,7 @@ export const reducer = (state: S, action: Act): S => {
         const heroes = Battle.grantMergeEnergy(state.battle.heroes, tier);
         const chargedIds = heroes.filter((h: any, i: number) => (h.limitEnergy || 0) !== (state.battle.heroes[i].limitEnergy || 0)).map((h: any) => h.id);
         const fx = [...state.fx, { id: id++, type: 'merge', tier },
-          ...(chargedIds.length ? [{ id: id++, type: 'limitCharge', heroIds: chargedIds, cell: to }] : [])];
+          ...(chargedIds.length ? [{ id: id++, type: 'limitCharge', heroIds: chargedIds, cell: to, tier }] : [])];
         return { ...state, board, nextId: id, fx, battle: { ...state.battle, heroes } };
       }
       // Cobwebbed (locked) tiles can't be displaced by a swap either — dropping a non-matching tile
@@ -389,7 +399,14 @@ export const reducer = (state: S, action: Act): S => {
       // player to accept the popup (A.ACCEPT_AREA_COMPLETE) before the next area is entered.
       const fromZone = Map.zoneIndexForLevel(state.battle.level);
       const toZone = Map.zoneIndexForLevel(nextLevel);
-      if (toZone > fromZone && nextLevel > state.furthestLevel) {
+      // REPLAY return: when replaying an EARLIER zone (replayReturn set) and you cross its boundary
+      // (that area is finished), warp back to the saved progression frontier instead of advancing linearly.
+      if (state.replayReturn != null && toZone > fromZone) {
+        const back = Math.max(1, Math.min(state.replayReturn, state.clearedLevel + 1));
+        const { wave, heroes, id: idR } = respawn(state, back, state.nextId);
+        return { ...state, battle: { ...state.battle, level: back, wave, heroes, status: 'fighting', recovering: false, focusUid: null }, nextId: idR, replayReturn: null };
+      }
+      if (toZone > fromZone && state.battle.level > state.clearedLevel) {
         const zone = C.ZONES[fromZone];
         const newlyUnlocked = ((zone && zone.unlocksGenerators) || []).filter((g: string) => !state.unlockedGenerators.includes(g));
         const unlockedGenerators = newlyUnlocked.length ? [...state.unlockedGenerators, ...newlyUnlocked] : state.unlockedGenerators;
@@ -410,17 +427,17 @@ export const reducer = (state: S, action: Act): S => {
         }
         return {
           ...state, unlockedGenerators, fx, nextId: id,
-          furthestLevel: Math.max(state.furthestLevel, nextLevel),
+          clearedLevel: Math.max(state.clearedLevel, state.battle.level),
           battle: { ...state.battle, status: 'areaComplete', recovering: false },
           pendingArea: { zoneIdx: fromZone, nextLevel, unlocked: newlyUnlocked, placements, reward: winReward(state.battle.level) },
         };
       }
       if (Map.isBossLevel(nextLevel)) {
         const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
-        return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'gate', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, nextLevel) };
+        return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'gate', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
       }
       const { wave, heroes, id: id2 } = respawn(state, nextLevel, state.nextId);
-      return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, nextLevel) };
+      return { ...state, battle: { ...state.battle, level: nextLevel, wave, heroes, status: 'intro', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
     }
     case A.ACCEPT_AREA_COMPLETE: {
       if (state.battle.status !== 'areaComplete' || !state.pendingArea) return state;
@@ -459,7 +476,7 @@ export const reducer = (state: S, action: Act): S => {
       if (state.battle.status === 'fighting' && state.battle.recovering) {
         const level = state.battle.level + 1;
         const { wave, heroes, id: id2 } = respawn(state, level, state.nextId);
-        return { ...state, battle: { ...state.battle, level, wave, heroes, status: 'intro', recovering: false }, nextId: id2, furthestLevel: Math.max(state.furthestLevel, level) };
+        return { ...state, battle: { ...state.battle, level, wave, heroes, status: 'intro', recovering: false }, nextId: id2, clearedLevel: Math.max(state.clearedLevel, state.battle.level) };
       }
       return state;
     }
@@ -552,7 +569,7 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.AUTO_EQUIP: {
       const ranked = [...state.order].sort((x: string, y: string) => heroPower(state.heroes[y].hero, state.heroes[y], state.ordersCompleted, 0) - heroPower(state.heroes[x].hero, state.heroes[x], state.ordersCompleted, 0));
-      const gear = Gear.autoEquipAll(state.gear, ranked);
+      const gear = Gear.autoEquipAll(state.gear, ranked.map((cid: string) => ({ id: cid, cls: Gear.heroClassOf(state.heroes[cid].hero) })));
       const statsFn = battleStatsFor(state.heroes, gear, state.ordersCompleted);
       return { ...state, gear, battle: { ...state.battle, heroes: rescaleBattle(state.battle, statsFn) } };
     }
@@ -563,7 +580,7 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.AUTO_HERO: {
       const hid = action.id; if (!state.heroes[hid]) return state;
-      let gear = Gear.autoEquipHero(state.gear, hid);
+      let gear = Gear.autoEquipHero(state.gear, hid, Gear.heroClassOf(state.heroes[hid].hero));
       const res = Gear.autoLevelHero(gear, hid, state.gearXp); gear = res.gear;
       const statsFn = battleStatsFor(state.heroes, gear, state.ordersCompleted);
       return { ...state, gear, gearXp: res.xp, battle: { ...state.battle, heroes: rescaleBattle(state.battle, statsFn) } };
@@ -575,6 +592,8 @@ export const reducer = (state: S, action: Act): S => {
       return { ...state, gear, gearXp: xp, battle: { ...state.battle, heroes: rescaleBattle(state.battle, statsFn) } };
     }
     case A.EQUIP_ITEM: {
+      const g0 = state.gear[action.gearId]; const hc = state.heroes[action.heroId];
+      if (!g0 || !hc || !Gear.canEquip(g0, Gear.heroClassOf(hc.hero))) return state; // piece must fit this class's slot (+ class match)
       const gear = Gear.equipItem(state.gear, action.gearId, action.heroId);
       if (gear === state.gear) return state;
       const statsFn = battleStatsFor(state.heroes, gear, state.ordersCompleted);
@@ -604,7 +623,7 @@ export const reducer = (state: S, action: Act): S => {
     }
     case A.EQUIP_BEST: {
       const hid = action.id; if (!state.heroes[hid]) return state;
-      const gear = Gear.autoEquipHero(state.gear, hid);
+      const gear = Gear.autoEquipHero(state.gear, hid, Gear.heroClassOf(state.heroes[hid].hero));
       const statsFn = battleStatsFor(state.heroes, gear, state.ordersCompleted);
       return { ...state, gear, battle: { ...state.battle, heroes: rescaleBattle(state.battle, statsFn) } };
     }

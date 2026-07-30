@@ -28,6 +28,7 @@ to mobile via **Capacitor**.
   scripts/                 <- dev/device launch + tooling scripts
   android/  ios/           <- Capacitor native projects (generated, gitignored)
   dist/                    <- production build output (gitignored)
+  docs/                    <- design docs + all UI mockups/prototypes (docs/mockups/)
   .claude/                 <- architecture-enforcement agents + workflows + skills
   changesets/              <- pending change batches (see the changeset skills)
   index.html               <- game entry
@@ -70,9 +71,11 @@ the stable architectural spec, imported here as context: @ARCHITECTURE.md
 3. **Module-per-folder.** Each system lives in its own folder with its files + a `README.md`
    (signals + invariants only — see template below), e.g. `game/<system>/<thing>.ts` — not
    `game/systems/...` MVC buckets. Modules are independently addable/removable.
-4. **Dependency injection.** Modules never construct each other. Everything is wired once in the
-   composition root (`src/core/bootstrap/composition.ts`) and resolved by token
-   (`src/app/tokens.ts`). Adding/removing a module is a one-line change there.
+4. **Dependency injection.** Modules never construct each other. In the framework skeleton this is a
+   composition root (`src/core/bootstrap/composition.ts`) resolved by token (`src/app/tokens.ts`).
+   **This port omits that scaffolding** — it wires through the React controller
+   (`src/controller/GameContext.tsx`), which owns construction of the reducer / timers / actions the
+   view reads. Keep cross-module construction to that single seam; never `new` a module from another.
 5. **Events over references.** Cross-module communication goes through `GameSignals`
    (`src/game/signals.ts`) on `world.bus`, not direct imports of other modules' classes.
 6. **Composition over inheritance.** An entity is a flat data record; behaviour lives in stateless
@@ -98,9 +101,13 @@ CLI, and the edit hook all read.
   ONLY by a numeric `id` (id-kind) or string `key` (key-kind).
 - **id-kind vs key-kind.** Can a new entry be added with DATA ALONE → **id-kind** (`zConfig`). Does
   each entry require CODE (a coded mechanic/enum the runtime switches on) → **key-kind**
-  (`zKeyConfig`). Here: `chains`/`generators`/`rarities`/`gearSlots` are key-kind;
+  (`zKeyConfig`). Here: `chains`/`generators`/`rarities`/`gearSlots`/`heroClasses` are key-kind;
   `heroes`/`enemies`/`gearPieces`/`zones`/`banners`/`resources` are id-kind; `battle`/`energy`/
-  `progression` are singletons.
+  `progression`/`gearLoadout` (+ `minigame`) are singletons. **Hero-class = the logical `heroes` entry
+  (the stateless template: base stats/abilities + `classKey` + optional `slots` loadout); the stateful
+  instance is `Character` on the account. Equip slots are per-class** (`heroes.slots` else
+  `gearLoadout.defaultSlots`); a `classBound` slot (the class accessory) only accepts pieces whose
+  `classKey` matches — see `src/game/gear/README.md`.
 - **Model logical intent as a TYPED FIELD or a ref, NEVER a tag.** References are declared in the
   schema — `configRef('enemies')` (numeric → id-kind, field named `*ConfigId`/`*ConfigIds`, enforced
   by `config lint`) / `stringConfigRef('rarities','key')` (string → key-kind). **Do NOT use `tags`
@@ -133,8 +140,6 @@ CLI, and the edit hook all read.
 |---|---|---|
 | DI container | `src/core/di` | Token-keyed IoC container (register/resolve/create). |
 | Events | `src/core/events` | `Signal<T>` observer primitive. |
-| Math | `src/core/math` | `Vec2` / numeric helpers for the sim. |
-| Bootstrap | `src/core/bootstrap` | Composition root — wires every module. |
 | Data | `src/data` | Sim/view live-HMR globals: tuning JSON + typed `store.ts` (+ `types.ts`). |
 | Config (logical) | `src/data/config` | `manifest.ts` (CATEGORIES contract) + `game/**` per-entity JSON + `repository.ts` + `ui/**` + `ui-config-repository.ts`. The three-registry data layer. |
 | Visual (VSM) | `src/view/combat/vsm` | Per-entity visual config schema + repository (thin, opt-in). |
@@ -147,15 +152,18 @@ CLI, and the edit hook all read.
 | Minigame | `src/game/minigame` + `src/view/minigame` | Modular minigame harness. `game/minigame/meta.ts` = the server-authoritative reward endpoint (`submitMinigame`, simulated in-process, swappable for `@bishop/meta-client`). `view/minigame/registry.js` maps id→component; each minigame implements `{ input, onComplete(result) }`. Result → server → reward popup (grant on claim). |
 | Controller | `src/controller` | React `GameProvider` (`GameContext.tsx`) — reducer + owned timers (REGEN 1s / BATTLE `tickMs`) + status resolvers + throttled persistence + AFK + the actions map. The seam the view reads via `useGame`/`useActions`. |
 | Model (view barrels) | `src/model` | Thin re-export barrels of `src/game` selectors for the view — single source is `src/game` (no logic). |
-| App | `src/app` | Top-level contracts, DI tokens, run loop, `GameApp` facade. |
-| Input | `src/input` | Input aggregator (touch / keyboard / gamepad); a null input for headless. |
 | View | `src/view` | The ported MergeCombat React + Canvas-FX view (read-only). Reads content/presentation via `src/data/*` barrels + the `assets.js` resolver (art from `virtual:asset-registry`); state/actions via the controller. |
 | Platform | `src/platform` | Host abstraction (browser / Capacitor): `haptics.ts` (browser Vibration now; Capacitor on device), audio, device tier. |
 | Preview | `src/preview` | Dev-only device-frame preview (phone bezel + device picker + safe-area overlay). Not gated by DI/signals — customize freely. |
 | Marksman | `src/marksman` | Dev-only markup/feedback overlay + capture endpoint (writes captures to `.cache/markdown/` for the changeset pipeline). Not gated by DI/signals — customize freely. |
-| Preferences | `src/preferences` | User preference persistence via `localStorage`. |
-| Testing | `src/testing` | Auto-play harness that drives the real input path (headless). |
+| Config editor | `src/config-editor` | Dev-only Vite endpoint backing `config-editor.html` — reads the registries + writes edits back through the real validator. |
 | _<your module>_ | `src/game/<module>` | _<purpose>_ |
+
+**Skeleton modules this port does NOT use** (present in the framework skeleton; restore if you add
+them): `src/core/math`, `src/core/bootstrap` (composition root), `src/app` (DI tokens / run loop /
+`GameApp` facade), `src/input`, `src/preferences`, `src/testing`. This port wires through the **React
+controller** (`src/controller/GameContext.tsx`) as its composition seam and takes input via React
+events — so the DI/composition-root/app-facade/run-loop scaffolding is absent by design.
 
 **Governance:** `.claude/` holds the advisory `arch-*` architecture-enforcement agents + the
 `arch-review` / `arch-fix` orchestrator workflows (see `.claude/README.md`). Run them on feature
@@ -169,8 +177,9 @@ changeset runner (the `run-changeset.mjs` workflow): it fans out one worktree ag
 consolidated **`qa`** pass (`tsc`/build/`src/testing` harness — functional), and a completeness check
 before the human-confirmed `main` ff-merge. There is no team mode / cross-worktree ordering.
 
-**System execution order** (assembled in `src/core/bootstrap/composition.ts`):
-`<list your systems in tick order>`.
+**System execution order** — this port has no composition-root tick list. The sim advances through
+`src/game/store/reducer.ts` (action-driven) plus the controller's owned timers
+(`src/controller/GameContext.tsx`: REGEN 1s / BATTLE `tickMs`).
 
 ## Core mechanic (the core game rule)
 
@@ -209,6 +218,10 @@ ordering) and reference the owning module's `README.md`.
 ## Conventions
 
 - Files: kebab-case (`movement-system.ts`); types/classes PascalCase; UTF-8 (no BOM).
+- **Mockups & docs location (HARD RULE):** all UI mockups / prototypes — self-contained iteration HTML —
+  live in `docs/mockups/`. Any other doc (design / planning / review) lives in `docs/`. Every future
+  mockup goes in `docs/mockups/`, every doc in `docs/`; NEVER create a root `mockups/` folder, and never
+  place a mockup or doc anywhere else.
 - Every gameplay number → JSON in `src/data`, typed in `src/data/types.ts`.
 - **Number display (HARD RULE):** every player-facing **quantity** number (currencies, power,
   HP/ATK/DEF, damage, counts, costs) is formatted through the single shared `fmtK` in

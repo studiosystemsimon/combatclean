@@ -21,7 +21,7 @@ export function pickPersistable(state: any) {
     heroes: state.heroes, gear: state.gear, order: state.order,
     ordersCompleted: state.ordersCompleted, orders: state.orders, pity: state.pity,
     nextId: state.nextId, nextCid: state.nextCid, battle: { level: state.battle.level },
-    furthestLevel: state.furthestLevel, crystals: state.crystals, pendingAfk: state.pendingAfk,
+    clearedLevel: state.clearedLevel, replayReturn: state.replayReturn, crystals: state.crystals, pendingAfk: state.pendingAfk,
     unlockedGenerators: state.unlockedGenerators,
     lastSeen: state.now,
   };
@@ -51,7 +51,7 @@ export function toBlob(slice: any): ClientAccountView {
     profile: {
       order: slice.order, ordersCompleted: slice.ordersCompleted, pity: slice.pity,
       unlockedGenerators: slice.unlockedGenerators,
-      furthestLevel: slice.furthestLevel, pendingAfk: slice.pendingAfk, screen: slice.screen,
+      clearedLevel: slice.clearedLevel, replayReturn: slice.replayReturn, pendingAfk: slice.pendingAfk, screen: slice.screen,
       nextId: slice.nextId, nextCid: slice.nextCid, lastSeen: slice.lastSeen,
       energyLastRegenAt: slice.energy.lastRegenAt,
     },
@@ -67,7 +67,7 @@ export function fromBlob(blob: ClientAccountView): any {
   const heroes: any = {}; const gear: any = {};
   for (const it of blob.items || []) {
     if ((it as any).kind === 'hero') heroes[it.iid] = { cid: it.iid, hero: C.heroIdToSlug[it.configId], level: (it as any).level, abilityLevel: (it as any).abilityLevel, rarity: (it as any).rarity };
-    else if ((it as any).kind === 'gear') gear[it.iid] = { id: it.iid, pieceId: C.pieceIdToSlug[it.configId], slot: (it as any).slot, rarity: (it as any).rarity, level: (it as any).level, base: (it as any).base, equippedTo: (it as any).equippedTo, unique: (it as any).unique };
+    else if ((it as any).kind === 'gear') { gear[it.iid] = { id: it.iid, pieceId: C.pieceIdToSlug[it.configId], slot: (it as any).slot, rarity: (it as any).rarity, level: (it as any).level, base: (it as any).base, equippedTo: (it as any).equippedTo, unique: (it as any).unique }; }
   }
   const crystals: Record<string, number> = {};
   for (const k of C.HERO_RARITY_ORDER) crystals[k] = res[String(RES.crystal(k))] || 0;
@@ -76,8 +76,11 @@ export function fromBlob(blob: ClientAccountView): any {
     coins: res[String(RES.coins())] || 0, heroXp: res[String(RES.heroXp())] || 0, gearXp: res[String(RES.gearXp())] || 0,
     heroes, gear, order: p.order || [], ordersCompleted: p.ordersCompleted || 0, orders: f.merge?.orders || [],
     pity: p.pity || {}, nextId: p.nextId || 1, nextCid: p.nextCid || 1, battle: { level: f.battle?.level || 1 },
-    furthestLevel: p.furthestLevel || 1, crystals, pendingAfk: p.pendingAfk || null, lastSeen: p.lastSeen,
-    unlockedGenerators: p.unlockedGenerators, // may be undefined for old saves → initState backfills from furthestLevel
+    // Progression stream: highest level BEATEN. Migrate pre-rename saves whose profile.furthestLevel was
+    // "reached" (= cleared + 1). Persist the replay warp-back so it survives a refresh mid-replay.
+    clearedLevel: p.clearedLevel != null ? p.clearedLevel : Math.max(0, (p.furthestLevel || 1) - 1),
+    replayReturn: p.replayReturn ?? null, crystals, pendingAfk: p.pendingAfk || null, lastSeen: p.lastSeen,
+    unlockedGenerators: p.unlockedGenerators, // may be undefined for old saves → initState backfills from clearedLevel
   };
 }
 

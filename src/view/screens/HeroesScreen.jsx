@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import { useGame } from '../../controller/GameContext';
 import { HEROES } from '../../data/heroes.js';
 import { SELECTED_SLOTS, ANIM } from '../../data/config.js';
-import { GEAR_SLOTS, GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
+import { GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
 import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
 import Art from '../Art.jsx';
@@ -21,7 +21,7 @@ import PeekScroll from '../PeekScroll.jsx';
 import { heroAsset, resolve, portraitStyle } from '../assets.js';
 import { heroPower, heroRarity, heroMaxLevel, canAscendChar, ascensionsDone, copiesOfHero, ownedHeroSet, ascendSelection } from '../../model/heroes.js';
 import {
-  heroGearPower, gearPower, equippedInSlot, slotCandidates, canEquipBetter, canUpgradeHeroGear,
+  heroGearPower, gearPower, equippedInSlot, slotCandidates, canEquipBetter, canUpgradeHeroGear, heroClassOf, slotsForClass,
 } from '../../model/gear.js';
 import { canLevelHero, heroLevelCost, heroAtMax, levelUpHeroMax } from '../../model/progression.js';
 import { fxHeroLevelUp, fxMaxed, fxLevelAll, fxEquip, fxEquipBest, fxHeroFuse } from '../fx/hero-fx.js';
@@ -34,7 +34,7 @@ const HERO_DRAG_HOLD_MS = HS.dragHoldMs;    // touch: hold this long (without sc
 const HERO_DRAG_SCROLL_TOL = HS.dragScrollTol;  // touch: moving this far before the hold fires = a scroll, not a pickup
 const HERO_DRAG_MOVE_TOL = HS.dragMoveTol;     // mouse: move this far to actually start dragging
 
-const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji;
+const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji || GEAR_SLOT_META[slot].emoji;
 const gearColor = (rarity) => (GEAR_RARITY[rarity] || GEAR_RARITY.common).color;
 const slotEl = (id, slot) => document.querySelector(`.hs-gslot[data-hero-id="${id}"][data-slot="${slot}"]`);
 const tileEl = (id) => document.querySelector(`.hs-tile[data-hero-id="${id}"]`);
@@ -87,7 +87,7 @@ export default function HeroesScreen() {
       fxEquip(slotEl(p.id, p.slot), t, p.fromPow, toPow);
     } else if (p.kind === 'levelall') {
       const entries = [];
-      for (const slot of GEAR_SLOTS) {
+      for (const slot of slotsForClass(st.hero)) {
         const b = p.before[slot];
         if (!b) continue;
         const g = state.gear[b.gid];
@@ -155,7 +155,7 @@ export default function HeroesScreen() {
   const doLevelAll = (id, max) => {
     if (!canUpgradeHeroGear(state.gear, id, state.gearXp)) return;
     const before = {}; // per-slot power + level, so the effect can show each gain
-    GEAR_SLOTS.forEach((slot) => {
+    slotsForClass(state.heroes[id].hero).forEach((slot) => {
       const g = equippedInSlot(state.gear, id, slot);
       if (g) before[slot] = { gid: g.id, pow: gearPower(g), level: g.level };
     });
@@ -167,7 +167,7 @@ export default function HeroesScreen() {
     actions.equipItem(id, gearId);
   };
   const doEquipBest = (id) => {
-    if (!canEquipBetter(state.gear, id)) return;
+    if (!canEquipBetter(state.gear, id, heroClassOf(state.heroes[id].hero))) return;
     pending.current = { id, kind: 'equipbest', fromPow: powOf(id) };
     actions.equipBest(id);
   };
@@ -366,7 +366,7 @@ export default function HeroesScreen() {
           <span className={`hs-lvl ${atMax ? 'max' : ''}`}><s>LV</s>{st.level}</span>
         </button>
         <div className="hs-gearrow">
-          {GEAR_SLOTS.map((slot) => {
+          {def.slots.map((slot) => {
             const g = equippedInSlot(state.gear, id, slot);
             return g ? (
               <div key={slot} className="hs-gslot" data-hero-id={id} data-slot={slot} style={{ '--gr': gearColor(g.rarity) }}>
@@ -486,7 +486,7 @@ function Popup({ id, state, popState, selSlot, pos, popRef, setPopState, setSelS
   const canLvl = canLevelHero(st, state.heroXp);
   const canLvlMax = !atMax && levelUpHeroMax(st, state.heroXp).gained > 0;
   const canUpg = canUpgradeHeroGear(state.gear, id, state.gearXp);
-  const canBetter = canEquipBetter(state.gear, id);
+  const canBetter = canEquipBetter(state.gear, id, heroClassOf(state.heroes[id].hero));
   const copies = copiesOfHero(state.heroes, st.hero); // total Characters of this hero (incl. this one)
   const asc = ascensionsDone(st);
   // Ascension just needs a DUPLICATE Character to sacrifice (copies ≥ 2) + not maxed.
@@ -539,13 +539,14 @@ function Popup({ id, state, popState, selSlot, pos, popRef, setPopState, setSelS
 }
 
 function ReequipBody({ id, state, selSlot, setSelSlot, onEquipItem, onEquipBest, canBetter, onBack }) {
+  const cls = heroClassOf(state.heroes[id].hero);
   const cur = selSlot ? equippedInSlot(state.gear, id, selSlot) : null;
-  const cands = selSlot ? slotCandidates(state.gear, id, selSlot) : [];
+  const cands = selSlot ? slotCandidates(state.gear, id, selSlot, cls) : [];
   return (
     <>
       <div className="hs-reeq-lbl">Tap a slot to swap</div>
       <div className="hs-reeq-slots">
-        {GEAR_SLOTS.map((slot) => {
+        {cls.slots.map((slot) => {
           const g = equippedInSlot(state.gear, id, slot);
           return (
             <button

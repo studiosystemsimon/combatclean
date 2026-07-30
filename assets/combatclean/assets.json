@@ -9,9 +9,9 @@
 			"type": "image",
 			"file": "gear/armor.png"
 		},
-		"gear.trinket": {
+		"gear.accessory": {
 			"type": "image",
-			"file": "gear/trinket.png"
+			"file": "gear/accessory.png"
 		},
 		"hero.knight": {
 			"type": "image",
@@ -25,8 +25,8 @@
 			"type": "image",
 			"file": "heroes/paladin.png",
 			"anchor": {
-				"x": 0.5351,
-				"y": 0.924
+				"x": 0.5381,
+				"y": 0.9562
 			}
 		},
 		"hero.templar": {
@@ -995,7 +995,11 @@
 		},
 		"hero.obsidia": {
 			"type": "image",
-			"file": "heroes/obsidia.png"
+			"file": "heroes/obsidia.png",
+			"anchor": {
+				"x": 0.5096,
+				"y": 0.9391
+			}
 		},
 		"enemy.bone-colossus": {
 			"type": "image",
@@ -1459,6 +1463,14 @@
 				"y": 0.4857
 			},
 			"scale": 1.2
+		},
+		"hero.bishop": {
+			"type": "image",
+			"file": "heroes/bishop.png",
+			"anchor": {
+				"x": 0.5267,
+				"y": 0.9377
+			}
 		}
 	}
 }

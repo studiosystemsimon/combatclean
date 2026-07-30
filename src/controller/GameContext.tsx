@@ -109,6 +109,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     },
     closeReward: () => dispatch({ type: A.CLOSE_REWARD }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
+    // Start a zone from its first room: (re)spawn that level on the zone-intro cinematic, then show the
+    // merge screen (combat panel on top plays the intro; board below).
+    startZone: (level: number) => { dispatch({ type: A.SET_BATTLE_LEVEL, level, intro: true }); dispatch({ type: A.SET_SCREEN, screen: 'merge' }); },
     collectAfk: () => dispatch({ type: A.COLLECT_AFK }),
     tapGenerator: (index: number) => dispatch({ type: A.TAP_GENERATOR, index, now: Date.now() }),
     moveOrMerge: (from: number, to: number) => dispatch({ type: A.MOVE_OR_MERGE, from, to }),

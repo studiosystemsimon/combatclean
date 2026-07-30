@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hero-Class &amp; Loadout Architecture — Combat Clean</title>
+<style>
+  :root{
+    --bg:#0b0f1a; --panel:#111726; --panel2:#0d1320; --line:#22304d; --text:#e7ecf7; --muted:#93a1c0;
+    --gold:#ffd45e; --green:#5ad17a; --red:#ff6b7a; --blue:#5a8cff; --purple:#b46bff; --amber:#ffb020;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(120% 90% at 50% -10%,#131c30,#0b0f1a 60%);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;padding:0 0 80px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  header{padding:40px 0 8px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.3px}
+  h2{font-size:21px;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--line);letter-spacing:.3px}
+  h3{font-size:16px;margin:22px 0 8px;color:#cdd8f0}
+  .sub{color:var(--muted);font-size:15px;max-width:82ch}
+  p{max-width:84ch}
+  code{font-family:var(--mono);font-size:12.5px;background:#0a1120;border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#d7e2ff}
+  pre{font-family:var(--mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;line-height:1.5}
+  pre .c{color:#6d7c9c} pre .k{color:#79b8ff} pre .s{color:#9ece6a} pre .n{color:#e0af68}
+  pre .del{color:#ff8b98} pre .add{color:#8fe388} pre .h{color:#ffd45e}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:880px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card.now{border-color:#3a2a3a} .card.new{border-color:#264a35} .card h3{margin-top:0}
+  .tag{display:inline-block;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;padding:3px 9px;border-radius:99px;vertical-align:middle}
+  .tag.now{background:rgba(255,107,122,.14);color:#ff9aa6;border:1px solid rgba(255,107,122,.3)}
+  .tag.new{background:rgba(90,209,122,.14);color:#8fe3a4;border:1px solid rgba(90,209,122,.3)}
+  .tag.ok{background:rgba(90,209,122,.14);color:#8fe3a4;border:1px solid rgba(90,209,122,.3)}
+  .tag.part{background:rgba(255,176,32,.14);color:#ffce7a;border:1px solid rgba(255,176,32,.3)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:#0e1626;color:#bcc9e6;font-weight:600}
+  td code{font-size:12px}
+  .muted{color:var(--muted)} .ok{color:var(--green)} .no{color:var(--red)} .warn{color:var(--amber)}
+  .pill{font-family:var(--mono);font-size:11.5px;background:#0a1120;border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:#cdd8f0;white-space:nowrap}
+  ul{max-width:84ch} li{margin:3px 0}
+  .check li{list-style:none;position:relative;padding-left:26px;margin:6px 0}
+  .check li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+  .check li.q::before{content:"?";color:var(--amber)}
+  .flow{font-family:var(--mono);font-size:12.5px;color:#cdd8f0;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px 18px;white-space:pre;overflow:auto}
+  .q-open{background:linear-gradient(180deg,rgba(255,176,32,.07),transparent);border:1px solid rgba(255,176,32,.3);border-radius:12px;padding:14px 18px;margin:10px 0}
+  .q-open b{color:var(--amber)}
+  .lede{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:14px 18px;margin:14px 0}
+  .conflict{background:linear-gradient(180deg,rgba(255,107,122,.08),transparent);border:1px solid rgba(255,107,122,.35);border-radius:12px;padding:14px 18px;margin:14px 0}
+  .conflict b{color:#ff9aa6}
+  .answer{background:linear-gradient(180deg,rgba(90,140,255,.08),transparent);border:1px solid rgba(90,140,255,.3);border-radius:10px;padding:12px 16px;margin:12px 0}
+  .answer b{color:#9fb8ff}
+  .foot{color:var(--muted);font-size:13px;margin-top:14px}
+  .legend{font-size:12px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Hero-Class &amp; Loadout Architecture</h1>
+  <div class="sub">One cohesive <b>HeroClass template</b> — stats, progression, abilities, <b>loadout</b>, and look — that code
+  references as a single structure; and a <b>HeroInstance</b> saved on the player's account holding each owned hero's actual
+  state. Plus the generic modular <b>slot system</b> the class declares as “things equipped on / acting on me”. Existing →
+  proposed → sense check → open questions. Nothing implemented — for review + iteration.</div>
+  <div class="lede">
+    <b>The model in one line.</b> <span class="pill">HeroClass</span> = the <b>stateless template</b> (the definition —
+    read-only, shared by every copy). <span class="pill">HeroInstance</span> = the <b>stateful account item</b> (this player's
+    owned copy: level, ascension, rolled rarity, equipped loadout), pointing at its class. The class owns a <b>loadout</b> of
+    typed <b>slots</b>; each slot holds a <b>modifier</b> that acts on the hero — <b>gear is the first modifier type</b>.
+  </div>
+</header>
+
+<!-- ═══════════════════ CONFLICT / RECONCILE ═══════════════════ -->
+<h2>0 · “Single data structure” vs the three-registry rule — how we reconcile</h2>
+<p>You want the hero's disparate info (the logical JSON, the UI JSON, the asset entry) <b>connected under one data
+structure</b>. The game has a <b>hard rule</b> the opposite way: content is <b>authored</b> in three registries — logical
+(gameplay), UI (presentation), asset (art) — linked by one id. That split exists on purpose (server-authoritative economy,
+reskinnable UI, the config tool).</p>
+<div class="conflict">
+  <b>The tension, stated plainly.</b> Physically merging the three files into one would <b>violate</b> the three-registry rule
+  (and break reskinning / server-authority). But scattering the same hero's variables across three lookups in code is exactly
+  the “disparate information” you want gone.
+</div>
+<div class="answer">
+  <b>The reconciliation (recommended).</b> Keep <b>authoring</b> split across the three registries (rule obeyed), but resolve
+  them <b>once</b> into a single cohesive <span class="pill">HeroClass</span> object — the one structure every consumer
+  references. The three JSONs become <b>authoring facets</b> of one runtime structure, not three things code juggles. This is
+  already half-done (<code>content.ts</code> builds <code>C.HEROES</code>; the <code>data/heroes.js</code> barrel merges in
+  name/asset/portrait) — we <b>formalize</b> it into one named <code>HeroClass</code>. <span class="muted">If you'd rather
+  actually collapse to one file per hero, that's a real option too — but it's a deliberate break from the rule; see Q6.</span>
+</div>
+
+<!-- ═══════════════════ 1 · TEMPLATE vs INSTANCE ═══════════════════ -->
+<h2>1 · Template vs Instance</h2>
+<div class="grid2">
+  <div class="card new">
+    <h3><span class="tag new">template</span> HeroClass — stateless definition</h3>
+    <p>One cohesive, <b>stateless / read-only</b> structure per playable hero — shared by every copy. Resolved from the three
+    registries at load. This is what “dictates the loadout &amp; holds all the info”:</p>
+    <pre><span class="h">HeroClass</span> {                <span class="c">// id 2000 · key "knight"</span>
+  <span class="c">// ── identity + gameplay (logical) ──</span>
+  id, key, rarityKey, weaponChainKey,
+  baseAtk, baseHp, baseDef,
+  progression,                <span class="c">// curve (see Q4)</span>
+  normal:{chargeMs,effect}, limit:{orders,effect},
+  <span class="add">loadout: [slotKey…],</span>        <span class="c">// NEW — the slots this class has</span>
+  <span class="add">classKey,</span>                   <span class="c">// NEW — class axis (class accessories)</span>
+  <span class="c">// ── presentation (UI) ──</span>
+  name, emoji, abilityNames,
+  <span class="c">// ── look (UI + asset) ──</span>
+  asset:{ chip, portrait,     <span class="c">// image ref(s)</span>
+          anchor, portraitFraming, combatScale }
+}</pre>
+    <p class="legend">Storage stays 3-registry; this resolved object is the <b>single structure</b> code uses.</p>
+  </div>
+  <div class="card new">
+    <h3><span class="tag new">instance</span> HeroInstance — stateful account item</h3>
+    <p>The player's owned copy — a <b>stateful</b> item saved in the account <code>items</code> section (this already exists as
+    <code>Character</code> — v5 model: “owned hero characters + gear pieces, one instance each”). It holds “all its stuff”
+    and points at its class:</p>
+    <pre><span class="h">HeroInstance</span> {           <span class="c">// account.items</span>
+  cid,                     <span class="c">// this copy's id</span>
+  <span class="add">classId,</span>                <span class="c">// → HeroClass (was `hero`)</span>
+  level, abilityLevel,     <span class="c">// progression state</span>
+  ascension,               <span class="c">// upgrade state</span>
+  rarity,                  <span class="c">// rolled/ascended rarity</span>
+  <span class="c">// loadout STATE = gear instances</span>
+  <span class="c">// with equippedTo === cid (relational)</span>
+}</pre>
+    <p class="legend">Dupes from gacha = multiple instances of the same class, each with its own state + equipped gear.</p>
+  </div>
+</div>
+
+<div class="flow"><b>The connection</b>
+ HeroClass  (template, read-only, resolved from 3 registries)
+     ▲ classId
+ HeroInstance  (account.items — level / ascension / rarity / abilityLevel)
+     ▲ equippedTo === cid
+ GearItem instances  (account.items — the equipped loadout, one per slot)</div>
+
+<h3>What the class references — field → home (today)</h3>
+<table>
+  <tr><th>Field</th><th>Status</th><th>Authored in / notes</th></tr>
+  <tr><td>Base stats</td><td><span class="tag ok">have</span></td><td>logical <code>baseAtk/baseHp/baseDef</code></td></tr>
+  <tr><td>Progression</td><td><span class="tag part">shared</span></td><td>global curve <code>progression.heroLevel</code> + <code>heroUpgrade</code>, applied to base — not per-class yet (Q4)</td></tr>
+  <tr><td>Abilities</td><td><span class="tag ok">have</span></td><td>logical <code>normal</code>/<code>limit</code>; names in UI</td></tr>
+  <tr><td>Rarity / weapon</td><td><span class="tag ok">have</span></td><td>logical <code>rarityKey</code>/<code>weaponChainKey</code></td></tr>
+  <tr><td>Loadout (equipment)</td><td><span class="tag new">add</span></td><td>NEW <code>slots</code> + <code>classKey</code> on the class (§4)</td></tr>
+  <tr><td>Asset / look</td><td><span class="tag ok">have</span></td><td>UI <code>iconAssetId</code> + framings; assets.json image + anchor (§2)</td></tr>
+</table>
+
+<!-- ═══════════════════ 2 · ASSETS ═══════════════════ -->
+<h2>2 · Assets — one swappable reference on the class</h2>
+<div class="answer"><b>How it works today.</b> The class has <b>one</b> art reference (<code>iconAssetId</code> → e.g.
+<code>hero.knight</code> → one PNG). That single image feeds <b>both</b> surfaces, framed two ways: the <b>combat chip</b> via
+the asset's <code>anchor</code> × <code>combat.scale</code>, and the <b>portrait</b> via the UI <code>portrait</code>
+crop/zoom. So one field swaps the whole look — it's <b>one image, framed twice</b>, not two separate images.</div>
+<p>Folded into <code>HeroClass.asset</code>, this is exactly “a simple reference for portrait + chip.” Two shapes to pick:</p>
+<div class="grid2">
+  <div class="card new">
+    <h3>A · One ref, framed twice <span class="tag ok">recommended</span></h3>
+    <pre>asset:{ <span class="k">ref</span>:<span class="s">"hero.knight"</span>,     <span class="c">// swap here → chip + portrait</span>
+        anchor, portraitFraming, combatScale }</pre>
+    <p class="legend">One swap; matches the trim-tool one-art workflow; zero duplication.</p>
+  </div>
+  <div class="card new">
+    <h3>B · Split portrait + chip refs</h3>
+    <pre>asset:{ <span class="add">chipRef</span>:<span class="s">"heroChip.knight"</span>,
+        <span class="add">portraitRef</span>:<span class="s">"heroPortrait.knight"</span>,
+        anchor, portraitFraming, combatScale }</pre>
+    <p class="legend">Independent portrait vs chip art; doubles art + framing. (Q5)</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ 3 · SLOTS TODAY ═══════════════════ -->
+<h2>3 · The equipment slots — <span class="tag now">today</span></h2>
+<p>The real gap. Slots are a <b>single global set</b> (<code>weapon · armor · trinket</code>) iterated everywhere; the class
+does not reference its equipment, and there's no class axis.</p>
+<div class="grid2">
+  <div class="card now">
+    <h3>Config</h3>
+    <table>
+      <tr><th>Category</th><th>Kind</th><th>Shape</th></tr>
+      <tr><td><code>gearSlots</code></td><td>key</td><td><code>{ key }</code> — global <code>weapon·armor·trinket</code></td></tr>
+      <tr><td><code>gearPieces</code></td><td>id</td><td><code>{ slot→gearSlots.key, maxRarityKey }</code></td></tr>
+      <tr><td><code>heroes</code></td><td>id</td><td><b>no slots, no class</b></td></tr>
+    </table>
+  </div>
+  <div class="card now">
+    <h3>Runtime — the global loop</h3>
+    <pre>for (const slot of <span class="del">C.GEAR_SLOTS</span>)   <span class="c">// GLOBAL, every hero identical</span>
+  { autoEquip · equippedInSlot · canEquipBetter · fuseFodder }</pre>
+    <p>Loadout is <b>derived</b> (<code>equippedTo === cid</code>, one item/slot); account holds flat instances.
+    <span class="muted">Blast radius ≈ 40 refs: content.ts · gear.ts · HeroMenu · HeroesScreen · gear.js.</span></p>
+  </div>
+</div>
+
+<!-- ═══════════════════ 4 · PROPOSED ═══════════════════ -->
+<h2>4 · Proposed — the class declares its loadout <span class="tag new">proposed</span></h2>
+<p>Same primitives (key-kind slots, id-kind pieces, derived loadout, flat account). Two data moves + one runtime swap.</p>
+
+<h3>4.1 · Slot set (gearSlots, expanded)</h3>
+<table>
+  <tr><th>key</th><th>role</th><th><code>classBound</code></th><th>a piece fits iff…</th></tr>
+  <tr><td><code>weapon</code></td><td>standard</td><td>false</td><td><code>piece.slot==="weapon"</code></td></tr>
+  <tr><td><code>hat</code> <span class="tag new">new</span></td><td>standard</td><td>false</td><td><code>piece.slot==="hat"</code></td></tr>
+  <tr><td><code>armor</code></td><td>standard</td><td>false</td><td><code>piece.slot==="armor"</code></td></tr>
+  <tr><td><code>boots</code> <span class="tag new">new</span></td><td>standard</td><td>false</td><td><code>piece.slot==="boots"</code></td></tr>
+  <tr><td><code>accessory</code> <span class="tag new">new</span></td><td>generic accessory</td><td>false</td><td><code>piece.slot==="accessory"</code></td></tr>
+  <tr><td><code>classAccessory</code> <span class="tag new">new</span></td><td>class-specific</td><td><b>true</b></td><td><code>piece.slot==="classAccessory" &amp;&amp; piece.classKey===class.classKey</code></td></tr>
+</table>
+<p class="legend"><code>trinket</code> → <code>accessory</code> (Migration). Only <code>classBound</code> is special-cased; every other
+slot is a pure container — a future class-bound slot is data, not code.</p>
+
+<div class="grid3">
+  <div class="card new"><h3>gearSlots +1</h3><pre>zGearSlotConfig =
+ zKeyConfig.extend({
+  <span class="add">classBound: z.boolean()</span>
+    <span class="add">.optional()</span>
+ }).strict();</pre></div>
+  <div class="card new"><h3>gearPieces +1</h3><pre>.extend({
+  slot: ref('gearSlots'),
+  maxRarityKey: ref(...),
+  <span class="add">classKey: ref('heroClasses')</span>
+    <span class="add">.optional()</span>
+})</pre></div>
+  <div class="card new"><h3>heroes +2 (the class)</h3><pre>.extend({
+  ...stats, abilities...,
+  <span class="add">slots: array(ref('gearSlots'))</span>
+  <span class="add">classKey: ref('heroClasses')</span>
+})</pre></div>
+</div>
+
+<h3>4.2 · The class declares its loadout + class</h3>
+<pre><span class="c">// game/heroes/2000.json (logical) — the class template's gameplay facet</span>
+{ ..., <span class="add">"slots"</span>:[<span class="s">"weapon","hat","armor","boots","accessory","classAccessory"</span>], <span class="add">"classKey"</span>:<span class="s">"knight"</span> }</pre>
+<p>Literally “the class defines the list of things equipped on / acting on it.” Fully data-driven — any class can have any
+subset/superset of slots, in any order (drives render order). <span class="muted">DRY alt (Q1): a
+<code>gearLoadout.baseSlots</code> singleton + per-class extras.</span></p>
+
+<h3>4.3 · The class axis — new key-kind <code>heroClasses</code></h3>
+<p>“Class-specific” needs a class axis (absent today). Add key-kind <code>heroClasses</code> (<code>{ key }</code> + UI
+name/icon). The <code>HeroClass</code> references one (<code>classKey</code>); class-bound pieces reference one. A class may be
+<b>1 hero</b> or a <b>family</b> several heroes share (Q2).</p>
+
+<h3>4.4 · Runtime — one selector + one gate</h3>
+<pre><span class="add">slotsForClass(heroClass) → heroClass.slots</span>          <span class="c">// replaces the global loop</span>
+<span class="add">canEquip(pieceDef, heroClass, slotKey) →</span>
+     pieceDef.slot===slotKey &amp;&amp; heroClass.slots.includes(slotKey)
+  &amp;&amp; (!slotDef(slotKey).classBound || pieceDef.classKey===heroClass.classKey)
+
+<span class="del">for (const slot of C.GEAR_SLOTS)</span> → <span class="add">for (const slot of slotsForClass(heroClass))</span></pre>
+<div class="flow"><b>Equip flow (same pipeline, new gate, derived loadout)</b>
+view → actions.equipItem(cid, gearId)
+     → reducer: canEquip(pieceDef, class, item.slot) ? clear-that-slot-on-instance → set equippedTo=cid
+     → persistence: flat GearItem patch → account.items</div>
+
+<h3>4.5 · Account — <span class="ok">unchanged shape</span></h3>
+<ul>
+  <li>HeroInstance = <code>Character</code> in <code>account.items</code> (rename <code>hero</code>→<code>classId</code> for clarity, optional). Loadout <b>state</b> = gear instances with <code>equippedTo === cid</code> — relational, not a per-slot map.</li>
+  <li>Slots live on the <b>class template</b>, never on the instance — every dupe shares the class's slot set, keeps its own equipped items.</li>
+  <li>No 7th section, no new instance field for slots; <code>classKey</code> read from the piece def.</li>
+</ul>
+
+<!-- ═══════════════════ 5 · SENSE CHECK ═══════════════════ -->
+<h2>5 · Architectural sense check</h2>
+<ul class="check">
+  <li><b>Single structure ✕ three-registry — reconciled.</b> Authoring stays split (rule obeyed); one resolved <code>HeroClass</code> is the structure code references. No physical merge.</li>
+  <li><b>Template vs instance is the game's own model.</b> Class = definition (config); instance = <code>Character</code> in the six-section account. We're formalizing, not inventing.</li>
+  <li><b>Typed field/ref, never a tag.</b> <code>slots</code>, <code>classKey</code>, <code>piece.classKey</code>, <code>slot.classBound</code> are declared refs/fields — <code>config lint</code>-checked.</li>
+  <li><b>id-kind vs key-kind.</b> <code>gearSlots</code>/<code>heroClasses</code> key-kind (coded); <code>heroes</code>/<code>gearPieces</code> id-kind.</li>
+  <li><b>No logic in data.</b> Data = which slots / class-bound / which class; the rule (<code>canEquip</code>) is code.</li>
+  <li><b>All tuning is data.</b> Slot sets, class bindings, loadouts, asset refs = JSON.</li>
+  <li><b>View pure reader · account server-ready.</b> View reads the resolved class; equips via controller→reducer; loadout derived; transaction vocabulary unchanged.</li>
+  <li><b>Surgical.</b> One selector + one gate; swap ~40 global-loop refs; formalize the existing read-model; no parallel data path.</li>
+  <li class="q"><b>New:</b> <code>slots</code>, <code>classKey</code>, the <code>heroClasses</code> category, and the formalized <code>HeroClass</code> read-model — the only genuinely new pieces.</li>
+</ul>
+
+<!-- ═══════════════════ 6 · MIGRATION ═══════════════════ -->
+<h2>6 · Migration</h2>
+<table>
+  <tr><th>Item</th><th>Action</th></tr>
+  <tr><td>Read-model</td><td>formalize <code>HeroClass</code> (resolve logical+UI+asset+loadout once); point <code>content.ts</code>/barrel/view at it.</td></tr>
+  <tr><td>Slots</td><td><code>trinket</code>→<code>accessory</code>; add <code>hat</code>/<code>boots</code>/<code>classAccessory</code> (logical + UI).</td></tr>
+  <tr><td>gearPieces</td><td>re-slot <code>trinket</code>→<code>accessory</code>; author <code>hat</code>/<code>boots</code> + per-class <code>classAccessory</code> pieces.</td></tr>
+  <tr><td>heroes (classes)</td><td>add <code>slots</code> + <code>classKey</code> each; new <code>heroClasses</code> entries.</td></tr>
+  <tr><td>Saved instances</td><td>gear: remap <code>slot:"trinket"</code>→<code>"accessory"</code> on load. (Optional) <code>Character.hero</code>→<code>classId</code>.</td></tr>
+  <tr><td>Gates</td><td><code>game-config:validate</code> + <code>npm run build</code> green; ids never reuse.</td></tr>
+</table>
+
+<!-- ═══════════════════ 7 · OPEN QUESTIONS ═══════════════════ -->
+<h2>7 · Open questions</h2>
+<div class="q-open"><b>Q6 · Single-structure delivery.</b> Resolved <code>HeroClass</code> read-model over 3-registry authoring (recommended — obeys the rule) <b>vs</b> physically one file per hero (breaks the three-registry rule + reskinning/server-authority). Your call.</div>
+<div class="q-open"><b>Q1 · Loadout declaration.</b> Explicit per-class <code>slots</code> list (recommended) vs shared <code>baseSlots</code> + per-class extras.</div>
+<div class="q-open"><b>Q2 · Class axis.</b> New <code>heroClasses</code> (families) vs hero-specific binding (1:1). What are the classes, and which hero → which class?</div>
+<div class="q-open"><b>Q3 · Accessory duality.</b> Confirm <code>accessory</code> = any generic; <code>classAccessory</code> = class-matched only.</div>
+<div class="q-open"><b>Q4 · Progression.</b> Shared curve applied to per-class bases (recommended, current) vs per-class progression profile referenced by the class.</div>
+<div class="q-open"><b>Q5 · Asset reference.</b> One <code>asset.ref</code> framed as chip + portrait (recommended) vs split <code>chipRef</code> + <code>portraitRef</code>.</div>
+
+<div class="foot">Draft v3 · HeroClass template + HeroInstance state + single-structure reconciliation baked in · nothing implemented. Answer Q1–Q6 (or edit the doc) and I'll fold them in, then implement surgically.</div>
+
+</div>
+</body>
+</html>

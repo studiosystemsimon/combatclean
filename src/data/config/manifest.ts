@@ -11,6 +11,7 @@ import { zGeneratorConfig } from './schemas/generators.ts';
 import { zRarityConfig } from './schemas/rarities.ts';
 import { zGearRarityConfig } from './schemas/gearRarities.ts';
 import { zGearSlotConfig } from './schemas/gearSlots.ts';
+import { zHeroClassConfig } from './schemas/heroClasses.ts';
 import { zResourceConfig } from './schemas/resources.ts';
 import { zHeroConfig } from './schemas/heroes.ts';
 import { zEnemyConfig } from './schemas/enemies.ts';
@@ -21,7 +22,7 @@ import {
   zBoardConfig, zEnergyConfig, zBattleConfig, zHeroCombatConfig, zLevelScalingConfig, zNodeConfig,
   zAfkConfig, zCrystalDropConfig, zUniqueDropConfig, zProgressionConfig, zOrdersConfig,
   zGearTuningConfig, zHapticsConfig, zTierPresentationConfig, zVfxConfig, zRuntimeConfig,
-  zRevealConfig, zAnimConfig, zMinigameConfig,
+  zRevealConfig, zAnimConfig, zMinigameConfig, zGearLoadoutConfig,
 } from './schemas/singletons.ts';
 
 export const CATEGORIES: ConfigCategory[] = [
@@ -31,6 +32,7 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'key', name: 'rarities', folder: 'rarities', schema: zRarityConfig, keyField: 'key' },
   { kind: 'key', name: 'gearRarities', folder: 'gearRarities', schema: zGearRarityConfig, keyField: 'key' },
   { kind: 'key', name: 'gearSlots', folder: 'gearSlots', schema: zGearSlotConfig, keyField: 'key' },
+  { kind: 'key', name: 'heroClasses', folder: 'heroClasses', schema: zHeroClassConfig, keyField: 'key' },
 
   // ── id-kind (data-only extensible; numeric id = identity; account-referenceable) ──
   { kind: 'id', name: 'resources', folder: 'resources', schema: zResourceConfig, idRange: [1000, 1999] },
@@ -60,4 +62,5 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'singleton', name: 'reveal', schema: zRevealConfig },
   { kind: 'singleton', name: 'anim', schema: zAnimConfig },
   { kind: 'singleton', name: 'minigame', schema: zMinigameConfig },
+  { kind: 'singleton', name: 'gearLoadout', schema: zGearLoadoutConfig },
 ];

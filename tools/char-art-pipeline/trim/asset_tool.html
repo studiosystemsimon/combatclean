@@ -413,10 +413,13 @@ const MERGE_CATS = new Set(['magic','blade','range','blade-gen','range-gen','mag
 const MERGE_ORDER = ['blade','blade-gen','magic','magic-gen','range','range-gen'];   // chain followed by its generator
 const GEAR_CATS = new Set(['armor','weapons','accessories']);
 const GEAR_ORDER = ['armor','weapons','accessories'];
-const RARITY_ORDER = ['common','uncommon','rare','epic','legendary'];   // low→high; gear list is grouped by this
+const LOOT_CATS = new Set(['chests','sacks']);
+const LOOT_ORDER = ['chests','sacks'];
+const RARITY_ORDER = ['common','uncommon','rare','epic','legendary'];   // low→high; gear/loot lists grouped by this
 function rarityOf(slug){ const t=String(slug||'').replace(/\.png$/i,'').split('-').pop().toLowerCase(); return RARITY_ORDER.includes(t)?t:null; }
-function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c) || GEAR_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
-function assetType(c){ return c==='heroes' ? 'hero' : ((MERGE_CATS.has(c)||GEAR_CATS.has(c)) ? 'merge' : 'enemy'); }
+function hasRarity(c){ return GEAR_CATS.has(c) || LOOT_CATS.has(c); }   // categories whose list is split by rarity
+function isRosterCat(c){ return ENEMY_AREAS.has(c) || MERGE_CATS.has(c) || GEAR_CATS.has(c) || LOOT_CATS.has(c); }   // roster-driven pipelines (⟳ + Regen)
+function assetType(c){ return c==='heroes' ? 'hero' : ((MERGE_CATS.has(c)||GEAR_CATS.has(c)||LOOT_CATS.has(c)) ? 'merge' : 'enemy'); }
 const BIOME = { mossbog:['#173a2a','#0a1a12'], gloomwood:['#223318','#0e150a'], boneyard:['#1c2436','#0b0f18'],
   emberfall:['#3a1710','#1a0806'], frostvault:['#16283a','#08131f'], 'dragons-ascent':['#2a1a36','#110a1a'] };
 const COMBAT_BG = 'linear-gradient(rgb(255, 36, 255), rgb(11, 15, 255))';   // combat mockup backdrop
@@ -426,16 +429,17 @@ function isBoss(cat, name){ const s=state.bosses[cat]; return !!(s && s.has(Stri
 /* ---------- two-level grouping: top = Hero/Enemy/…, second = subcategories ---------- */
 const AREA_ORDER = ['mossbog','gloomwood','boneyard','emberfall','frostvault','dragons-ascent','enemies'];
 function groupOf(cat){ if(cat==='heroes') return 'Hero'; if(ENEMY_AREAS.has(cat)||cat==='enemies') return 'Enemy';
-  if(MERGE_CATS.has(cat)) return 'Merge Icons'; if(GEAR_CATS.has(cat)) return 'Gear'; return labelFor(cat); }
+  if(MERGE_CATS.has(cat)) return 'Merge Icons'; if(GEAR_CATS.has(cat)) return 'Gear'; if(LOOT_CATS.has(cat)) return 'Loot'; return labelFor(cat); }
 function countOf(cat){ const c=state.cats.find(x=>x.name===cat); return c?c.images.length:0; }
 function orderBy(list, order){ return list.slice().sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); }); }
 function groupsMap(){ const m={}; for(const c of state.cats){ const g=groupOf(c.name); (m[g] ||= []).push(c.name); }
   if(m['Enemy']) m['Enemy'] = orderBy(m['Enemy'], AREA_ORDER);
   if(m['Merge Icons']) m['Merge Icons'] = orderBy(m['Merge Icons'], MERGE_ORDER);
   if(m['Gear']) m['Gear'] = orderBy(m['Gear'], GEAR_ORDER);
+  if(m['Loot']) m['Loot'] = orderBy(m['Loot'], LOOT_ORDER);
   return m; }
 function catsInGroup(g){ return groupsMap()[g] || []; }
-function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy','Merge Icons','Gear'];
+function groupOrder(){ const names=Object.keys(groupsMap()), pref=['Hero','Enemy','Merge Icons','Gear','Loot'];
   return [...pref.filter(n=>names.includes(n)), ...names.filter(n=>!pref.includes(n)).sort()]; }
 
 /* ---------- shared list building ---------- */
@@ -540,13 +544,13 @@ function renderList() {
       h2.appendChild(rb);
     }
   }
-  const isGear = GEAR_CATS.has(c.name);
+  const isRar = hasRarity(c.name);
   let imgs = c.images.slice();
-  if (isGear) imgs.sort((a,b)=>{ const ra=RARITY_ORDER.indexOf(rarityOf(a)), rb=RARITY_ORDER.indexOf(rarityOf(b));
-    return (ra<0?99:ra)-(rb<0?99:rb) || a.localeCompare(b); });   // gear list ordered by rarity, then name
+  if (isRar) imgs.sort((a,b)=>{ const ra=RARITY_ORDER.indexOf(rarityOf(a)), rb=RARITY_ORDER.indexOf(rarityOf(b));
+    return (ra<0?99:ra)-(rb<0?99:rb) || a.localeCompare(b); });   // gear/loot list ordered by rarity, then name
   let lastRar;
   for (const n of imgs) {
-    if (isGear){ const r=rarityOf(n)||'other';                    // insert a rarity separator when it changes
+    if (isRar){ const r=rarityOf(n)||'other';                     // insert a rarity separator when it changes
       if (r!==lastRar){ lastRar=r; const hd=document.createElement('div'); hd.className='rarityhdr r-'+r; hd.textContent=r.toUpperCase(); el.appendChild(hd); } }
     const key = `${c.name}/${n}`, idx = state.items.findIndex(it => it.key === key);
     const base = n.replace(/\.png$/i,''), boss = isBoss(c.name, n);

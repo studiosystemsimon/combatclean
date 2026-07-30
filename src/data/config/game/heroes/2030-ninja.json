@@ -19,5 +19,6 @@
 			"type": "burst",
 			"mult": 7
 		}
-	}
+	},
+	"classKey": "ninja"
 }

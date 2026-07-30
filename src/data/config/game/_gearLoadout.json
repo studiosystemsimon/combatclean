@@ -1,0 +1,10 @@
+{
+	"defaultSlots": [
+		"weapon",
+		"hat",
+		"armor",
+		"boots",
+		"accessory",
+		"classAccessory"
+	]
+}
