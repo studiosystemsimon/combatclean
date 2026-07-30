@@ -14,17 +14,18 @@ import { VFX_CONFIG } from '../../data/config.js';
 
 const CC = VFX_CONFIG.combatColors;
 const CB = VFX_CONFIG.combat;
-const MID_BUCKET = 1; // orders charge at the mid tier
 
-// The in-game bar flash — EXACTLY combat.limitPulse (whole-bar brightness+scale peak, ease-out).
+// The in-game bar flash — combat.limitPulse: whole-bar brightness+scale peak AND a background-colour
+// pulse (the bar bed flashes) at the peak, ease-out. Fires on every mote landing (merge AND order).
 export function pulseLimitBar(bar) {
   if (!bar || !bar.animate) return;
   const lp = CB.limitPulse;
+  const rest = getComputedStyle(bar).backgroundColor; // flash back to the bar's own resting bg (no duplicated value)
   bar.animate(
     [
-      { filter: 'brightness(1)', transform: 'scale(1)' },
-      { filter: `brightness(${lp.brightness})`, transform: `scale(${lp.scale})`, offset: lp.offset },
-      { filter: 'brightness(1)', transform: 'scale(1)' },
+      { filter: 'brightness(1)', transform: 'scale(1)', backgroundColor: rest },
+      { filter: `brightness(${lp.brightness})`, transform: `scale(${lp.scale})`, backgroundColor: lp.bg, offset: lp.offset },
+      { filter: 'brightness(1)', transform: 'scale(1)', backgroundColor: rest },
     ],
     { duration: lp.ms, easing: 'ease-out' },
   );
@@ -57,8 +58,8 @@ function bof(x, y, bar, off) {
 // Drain the controller's limitCharge fx event → one energy mote per charged hero.
 export function runLimitEnergy(ev) {
   const lc = CB.limitCharge;
-  // Intensity bucket: orders → MID; merges → by result tier (3/4/5+ → 0/1/2).
-  const off = ev.orderId != null ? MID_BUCKET : Math.max(0, Math.min(2, (ev.tier || 3) - 3));
+  // Intensity bucket: orders → lc.orderBucket (data); merges → by result tier (3/4/5+ → 0/1/2).
+  const off = ev.orderId != null ? lc.orderBucket : Math.max(0, Math.min(2, (ev.tier || 3) - 3));
 
   // Source anchor: fulfilled order card, or the merged board cell; fallback to the combat panel centre.
   let from = null;

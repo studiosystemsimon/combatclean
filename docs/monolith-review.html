@@ -101,13 +101,30 @@
   </table>
   <p class="lead" style="font-size:13px">* Marksman leads on size but its severity is capped: it's vendored dev tooling outside the sim dependency chain (<code>src/marksman/README.md</code> — exempt from DI/signals/data-values), so it harms nothing downstream. Split it only if you actively work in it (natural seams: overlay canvas · mark-resolve · emit/transport · voice · toolbar UI).</p>
 
+  <div class="note" style="border-left:3px solid #3fb950">
+    <b style="color:#5cd67e">STATUS — #1 shipped.</b> <code>reducer.ts</code> (the only Critical, and the only one that violates a
+    <em>core</em> hard rule) has been disbanded — see its card. <b>Approach correction:</b> the plan below first said
+    "one reducer file per system folder"; on inspection many cases are <em>cross-cutting orchestration</em>
+    (<code>MOVE_OR_MERGE</code> touches board+merge+battle, <code>FULFILL_ORDER</code> touches orders+board+battle+gear+map),
+    so scattering them into pure system folders would force system→system imports and break the dependency direction. The
+    dogmatically-correct split keeps them as cohesive <b>slices inside the Store module</b> (<code>src/game/store/</code>),
+    which the architecture already designates as the orchestration home. Parity was guaranteed by moving each case body
+    <b>verbatim</b> into a handler keyed by its exact <code>action.type</code>, verified: all 45 actions handled once (no
+    missing / extra / dupes), <code>tsc</code> + <code>vite build</code> + <code>game-config:validate</code> green.
+    <br><br><b>#2–#4 deliberately NOT done.</b> They are view/FX-layer <em>organizational</em> splits — no core-rule
+    violation, and their functional parity can only be confirmed by live visual / touch-gesture testing. Refactoring a
+    subtle gesture SM or a visual VFX hub on faith would risk silent regressions for tidiness, which the "completely
+    maintain functional parity" mandate forbids. They remain available to do with live verification if wanted.
+  </div>
+
   <h2><span class="n">▸</span>Disband plans — the worst offenders</h2>
 
   <!-- ── 1 reducer ─────────────────────────────── -->
   <div class="f">
-    <div class="top"><span class="rk">1</span><span class="ttl">reducer.ts</span><span class="sev C">Critical</span><span class="loc">643 LOC · 45 cases</span></div>
+    <div class="top"><span class="rk">1</span><span class="ttl">reducer.ts</span><span class="sev L">✓ Done</span><span class="loc">643 → ~30 LOC combinator</span></div>
     <div class="body">
-      <h4>Why it's the worst</h4>
+      <div class="gate" style="margin:0 0 12px"><b>Shipped</b> — split into 7 store-local slices (<code>reducer-shell/board/orders/combat/gacha/heroes/gear.ts</code>) + <code>reducer-helpers.ts</code>; <code>reducer.ts</code> is now a ~30-line combinator merging the handler maps and routing by <code>action.type</code>. Public surface (<code>reducer</code>/<code>initState</code>/<code>buildBattle</code>) unchanged. All 45 actions verified handled once; build + config gates green.</div>
+      <h4>Why it was the worst</h4>
       <p>One <code>switch (action.type)</code> owns state transitions for <b>every system in the game</b>. It's the single most-depended-on sim file, it directly violates <b>module-per-folder</b> (board/orders/combat/gacha/heroes/gear logic all live here, not in their folders), and no system's transitions can be unit-tested without loading the whole tree.</p>
       <div class="tags"><span class="tag">god-reducer</span><span class="tag">9 domains</span><span class="tag">module-per-folder violation</span><span class="tag">untestable in isolation</span></div>
       <h4>Disband → per-system reducer slices (colocated with each module)</h4>

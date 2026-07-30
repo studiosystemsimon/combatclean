@@ -77,6 +77,7 @@ export const zBattleConfig = z.object({
     mergePerTier: num.describe('Extra limit energy per targeted hero for each tier above mergeMinTier (proportional to tier).'),
     mergeTargets: z.array(int).describe('Heroes energised per tier; index 0 = mergeMinTier (e.g. [1,3,99] → tier4:1, tier5:3, tier6+:all). Clamped to squad size.'),
     orderBonus: num.describe('A completed order grants EVERY living hero mergeBase + this small bonus (equivalent-merge + bonus).'),
+    potionFrac: num.describe('A limit POTION order fills this fraction of every living hero’s limit charge (1.0 = full).'),
   }).strict().describe('Limit-break energy sources — tier-N+ merges + orders — as granular float energy (capacity = hero limit.orders).'),
   attackJitterSteps: int, attackJitterMs: num,
   critChance: num, critMult: num, comboMin: int,
@@ -132,6 +133,7 @@ export const zOrdersConfig = z.object({
   active: int, arrivalMs: num, itemCount: z.object({ one: num, two: num, max: int.describe('Item count above the `two` roll threshold (order size ceiling).') }).strict(),
   fillerMaxLevel: int, costPerTierBase: num.describe('Tile build-cost base: a tier-t item costs base^t tier-0 drops.'),
   specialChance: num.describe('Chance [0..1] a rolled order is a SPECIAL order (drops an S-tile instead of a gear chest).'),
+  potionChance: num.describe('Chance [0..1] a rolled order is a limit POTION order (fills limit energy instead of a gear chest).'),
   orderChains: z.array(stringConfigRef('chains', 'key')),
   dominantTier: configRecord('gearRarities', 'key', z.tuple([int, int])).describe('Dominant-item tier [min,max] per reward rarity band (keys → gearRarities).'),
 }).strict();
@@ -318,7 +320,7 @@ export const zVfxConfig = z.object({
     telegraph: z.object({ scale: num, brightness: num, hostileBrightness: num, hostileSaturate: num, offset: num, ms: num }).strict(),
     heroAttack: z.object({ stagger: num, trailDelay: num, trailSpeed: num, trailR: num, impactCrit: num, impactNormal: num, splashDelay: num, deathDustDelay: num, critShake: num }).strict(),
     deathDust: z.object({ r: num }).strict(),
-    limitPulse: z.object({ brightness: num, scale: num, offset: num, ms: num }).strict(),
+    limitPulse: z.object({ brightness: num, scale: num, offset: num, ms: num, bg: z.string().describe('Bar-background flash colour pulsed at the peak (whole bar bed flashes when a limit mote lands).') }).strict(),
     limitCharge: z.object({
       launchDelay: num, gatherFlashR: num, stagger: num,
       trail: z.object({
@@ -327,9 +329,10 @@ export const zVfxConfig = z.object({
       }).strict(),
       popOut: z.object({ dist: num, angleMin: num, angleMax: num }).strict().describe('Odd-direction pop-out control point: offset px + off-axis angle range (deg).'),
       accel: z.string().describe('Progression easing name (ease-IN = accelerates into the bar).'),
-      head: z.object({ rMul: num, pulseAmp: num, pulseFreq: num, growTo: num }).strict().describe('Glowing pulsing head: size ×, pulse depth/Hz, grow-on-approach ×.'),
-      tier: z.object({ widthMul: z.array(num).length(3), rMul: z.array(num).length(3), impactR: z.array(num).length(3), sparkle: z.array(num).length(3) }).strict().describe('Per-bucket (tier 3/4/5+) intensity; orders use bucket 1 (mid).'),
+      head: z.object({ rMul: num, pulseAmp: num, pulseFreq: num, growTo: num, birthFrac: num }).strict().describe('Glowing pulsing head: size ×, pulse depth/Hz, grow-on-approach ×, birthFrac (head grows 0→full over this fraction of the flight so the source tile is visible before the glow covers it).'),
+      tier: z.object({ widthMul: z.array(num).length(3), rMul: z.array(num).length(3), impactR: z.array(num).length(3), sparkle: z.array(num).length(3) }).strict().describe('Per-bucket (tier 3/4/5+) intensity for merges.'),
       sparklePower: num,
+      orderBucket: int.describe('Which intensity bucket (0 small / 1 mid / 2 large) order completions use.'),
       explode: z.object({ rMul: num, debris: int, flash: num }).strict().describe('The BOF arrival explosion: impact radius ×, debris count, white flash (0/1).'),
       fill: z.object({ fillCatchupMs: num, easing: z.string(), fallbackMs: num }).strict().describe('Synced bar-fill: ease displayed→true on mote arrival; fallback-snap so a bar never strands.'),
       ready: z.object({ impactR: num, sparkleCount: int, popScale: num, popBrightness: num, popMs: num }).strict().describe('READY pop when a bar visually caps.'),

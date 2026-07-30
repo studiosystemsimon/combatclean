@@ -12,7 +12,7 @@ import { useLayoutEffect, useEffect, useRef } from 'react';
 import { useGame } from '../controller/GameContext';
 import { itemAsset, resolve, mergeStylePx } from './assets.js';
 import Art from './Art.jsx';
-import { canFulfill, displayOrders } from '../model/orders.js';
+import { canFulfill, displayOrders, orderReward } from '../model/orders.js';
 import { GEAR_RARITY } from '../data/gear.js';
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
@@ -158,21 +158,24 @@ export default function Orders() {
           }
           const rar = GEAR_RARITY[o.rarity];
           const ready = !o.fulfilling && canFulfill(state.board, o);
-          const special = !!o.special; // rewards an S-tile (not a gear chest) — distinct gold↔violet look
+          const reward = orderReward(o);
+          const special = reward === 'special'; // rewards an S-tile — gold↔violet look
+          const potion = reward === 'potion'; // rewards a big slug of LIMIT ENERGY — potion look
           return (
             <div
               key={o.id}
               role="button"
               aria-disabled={!ready}
               data-order-id={o.id}
-              className={`order${ready ? ' ready' : ''}${o.fulfilling ? ' fulfilling' : ''}${special ? ' special' : ''}`}
+              className={`order${ready ? ' ready' : ''}${o.fulfilling ? ' fulfilling' : ''}${special ? ' special' : ''}${potion ? ' potion' : ''}`}
               style={rar ? { '--rar': rar.color } : undefined}
               ref={(el) => { cardRefs.current[o.id] = el; }}
               onClick={() => ready && actions.fulfillOrder(o.id)}
             >
               <span className="wipe" />
               {special && <span className="oribbon">{STRINGS.orders.special}</span>}
-              <span className="otab">{special ? <span className="otab-s">S</span> : <Art a={resolve(`ui.chest.${o.rarity}`)} className="otab-art" />}</span>
+              {potion && <span className="oribbon">{STRINGS.orders.potion}</span>}
+              <span className="otab">{special ? <span className="otab-s">S</span> : potion ? <span className="otab-potion">🧪</span> : <Art a={resolve(`ui.chest.${o.rarity}`)} className="otab-art" />}</span>
               <div className="reqs">
                 {o.items.map((it, i) => { const ia = itemAsset(it.chain, it.level); return (
                   <span key={i} className="req"><Art a={ia} className="req-art" style={mergeStylePx(ia, REQ_ICON_PX)} /></span>

@@ -369,7 +369,8 @@ class FxEngine {
       }
       if (!p.fired) {
         const hc = p.headCfg; const grow = 1 + (hc.growTo - 1) * p.s; const pulse = 1 + hc.pulseAmp * Math.sin(p.u * hc.pulseFreq * Math.PI * 2);
-        const headR = p.r * hc.rMul * grow * pulse;
+        const birth = hc.birthFrac > 0 ? Math.min(1, p.u / hc.birthFrac) : 1; // head grows 0→full so the source tile shows before the glow covers it
+        const headR = p.r * hc.rMul * grow * pulse * birth;
         this._stampGlow(p.x, p.y, headR * 2.4, p.head, 0.9);
         this._stampGlow(p.x, p.y, headR * 1.1, '#ffffff', 0.55);
         ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9;

@@ -62,6 +62,7 @@ export const STRINGS = {
     nextOrder: 'NEXT ORDER', // label under the pending arrival timer
     rerollHint: 'Reroll (usually worse)', // reroll-die tooltip
     special: 'SPECIAL', // ribbon on a special order (drops an S-tile)
+    potion: 'LIMIT', // ribbon on a limit-potion order (fills limit energy)
   },
 
   // Merge-tier LABELS (the "+<name>" float on a merge). Rarity COLOURS for the same

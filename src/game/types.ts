@@ -11,7 +11,9 @@ export type BoardCell = BoardItem | BoardGenerator | null;
 
 // ── orders ──
 export interface OrderItem { chain: string; level: number }
-export interface Order { id: number; items: OrderItem[]; difficulty: number; rarity: string; pending?: boolean; dur?: number; fulfilling?: boolean; special?: boolean; rerolled?: boolean }
+// An order's REWARD TYPE: the default gear chest, a SPECIAL S-tile, or a limit POTION (fills limit energy).
+export type OrderReward = 'gear' | 'special' | 'potion';
+export interface Order { id: number; items: OrderItem[]; difficulty: number; rarity: string; pending?: boolean; dur?: number; fulfilling?: boolean; reward?: OrderReward; special?: boolean; rerolled?: boolean }
 
 // ── autobattler ──
 export interface Enemy {

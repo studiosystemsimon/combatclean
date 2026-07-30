@@ -13,7 +13,8 @@
 		"mergeBase": 0.34,
 		"mergePerTier": 0.22,
 		"mergeTargets": [1, 3, 99, 99, 99],
-		"orderBonus": 0.14
+		"orderBonus": 0.14,
+		"potionFrac": 1
 	},
 	"attackJitterSteps": 4,
 	"attackJitterMs": 70,

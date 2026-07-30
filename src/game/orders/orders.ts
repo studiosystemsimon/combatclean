@@ -4,7 +4,7 @@
 // the order's rarity + special-ness, and is allowed once per order. rng injected.
 import { C } from '../content.ts';
 import type { Rng } from '../rng.ts';
-import type { BoardCell, Order, OrderItem } from '../types.ts';
+import type { BoardCell, Order, OrderItem, OrderReward } from '../types.ts';
 
 const randInt = (min: number, max: number, rng: Rng) => min + Math.floor(rng() * (max - min + 1));
 const pick = <T>(arr: T[], rng: Rng): T => arr[Math.floor(rng() * arr.length)];
@@ -23,7 +23,11 @@ const rollWeighted = (weights: Record<string, number>, rng: Rng): string => {
 // `eligibleChains` restricts which chains an order may request — the caller passes the chains whose
 // generator is currently UNLOCKED, so no order asks for an item the player can't yet produce (e.g. no
 // magic orders until the magic generator is unlocked). Defaults to the full order-chain list.
-export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null, forcedSpecial: boolean | null = null): Order => {
+// The order's reward type, with backward-compat for the legacy `special` boolean (old saves / in-flight
+// orders predating the reward enum). Absent → the default gear chest.
+export const orderReward = (o: Order): OrderReward => o.reward || (o.special ? 'special' : 'gear');
+
+export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null, forcedReward: OrderReward | null = null): Order => {
   const chains = eligibleChains.length ? eligibleChains : C.ORDER_CHAINS;
   const rarity = forcedRarity || rollWeighted(weights, rng);
   const r = rng();
@@ -36,10 +40,13 @@ export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>,
     const c = pick(chains, rng);
     items.push({ chain: c, level: randInt(0, Math.min(C.ORDER_CONFIG.fillerMaxLevel, C.CHAINS[c].tiers - 1), rng) });
   }
-  // Special order (rolled by chance) rewards an S-tile instead of a gear chest. A REROLL forces the
-  // source order's special-ness (forcedSpecial) so a special reroll stays special, standard stays standard.
-  const special = forcedSpecial != null ? forcedSpecial : rng() < (C.ORDER_CONFIG.specialChance || 0);
-  return { id, items, difficulty: tileTotal(items), rarity, special };
+  // REWARD TYPE (rolled by chance): a limit POTION (fills limit energy), a SPECIAL S-tile, or the default
+  // gear chest. A REROLL forces the source order's type (forcedReward) so it survives the reroll.
+  const reward: OrderReward = forcedReward != null ? forcedReward
+    : rng() < (C.ORDER_CONFIG.potionChance || 0) ? 'potion'
+      : rng() < (C.ORDER_CONFIG.specialChance || 0) ? 'special'
+        : 'gear';
+  return { id, items, difficulty: tileTotal(items), rarity, reward };
 };
 
 export const findMatchCells = (board: BoardCell[], order: Order): number[] | null => {
@@ -66,7 +73,7 @@ export const displayOrders = (orders: Order[], board: BoardCell[]): Order[] => {
   for (const o of orders) {
     if (o.pending) pending.push(o);
     else if (o.fulfilling || canFulfill(board, o)) lead.push(o); // completable (incl. mid-completion + completable specials)
-    else if (o.special) special.push(o);
+    else if (orderReward(o) === 'special') special.push(o);
     else standard.push(o);
   }
   lead.sort((a, b) => rank(b.rarity) - rank(a.rarity));

@@ -227,6 +227,10 @@ export const grantOrderEnergy = (heroes: BattleHero[]): BattleHero[] => {
   const le = C.BATTLE.limitEnergy; const add = le.mergeBase + le.orderBonus;
   return heroes.map((h) => (h.hp > 0 ? { ...h, limitEnergy: capLimit(h, (h.limitEnergy || 0) + add) } : h));
 };
+// Limit POTION reward (from a potion order): fills a fraction (potionFrac; 1.0 = full) of every living
+// hero's limit charge — a big slug of limit energy, unlike the small drip from a normal order/merge.
+export const grantLimitPotion = (heroes: BattleHero[], frac: number): BattleHero[] =>
+  heroes.map((h) => (h.hp > 0 ? { ...h, limitEnergy: capLimit(h, (h.limitEnergy || 0) + frac * limitEnergyToCharge(h.hero)) } : h));
 // A MERGE whose RESULT tier >= mergeMinTier grants proportional energy to the N lowest-charged living heroes;
 // both N (mergeTargets) and the per-hero amount (mergeBase + mergePerTier·tiersAbove) scale with the tier.
 export const grantMergeEnergy = (heroes: BattleHero[], tier: number): BattleHero[] => {

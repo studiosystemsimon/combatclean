@@ -100,7 +100,7 @@ export function createContent(bundle: GameConfigBundle) {
     LEVEL_SCALING,
     BATTLE: b.battle, NODE: b.node, AFK: b.afk, ENERGY: b.energy, BOARD: b.board, HERO_COMBAT: b.heroCombat,
     HERO_LEVEL: b.progression.heroLevel, HERO_UPGRADE: b.progression.heroUpgrade, ABILITY_MUL_PER_LEVEL: b.progression.abilityMulPerLevel,
-    ORDER_CONFIG: { active: b.orders.active, arrivalMs: b.orders.arrivalMs, itemCount: b.orders.itemCount, fillerMaxLevel: b.orders.fillerMaxLevel, costPerTierBase: b.orders.costPerTierBase, specialChance: b.orders.specialChance },
+    ORDER_CONFIG: { active: b.orders.active, arrivalMs: b.orders.arrivalMs, itemCount: b.orders.itemCount, fillerMaxLevel: b.orders.fillerMaxLevel, costPerTierBase: b.orders.costPerTierBase, specialChance: b.orders.specialChance, potionChance: b.orders.potionChance },
     ORDER_CHAINS: b.orders.orderChains as string[], ORDER_DOMINANT_TIER: b.orders.dominantTier as Record<string, [number, number]>,
     CRYSTAL: b.crystalDrop, UNIQUE_DROP: b.uniqueDrop, TIER_PRESENTATION: b.tierPresentation, VFX: b.vfx, HAPTICS: b.haptics, RUNTIME: b.runtime, REVEAL: b.reveal, ANIM: b.anim, MINIGAME: b.minigame,
     // derived: fresh-crystal wallet (all rarities zero) + the starter hero roster + well-known refs

@@ -126,7 +126,7 @@
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="marker">limit-energy mockup · v8 (gradient follows the curve) · iteration harness (not the game)</div>
+<div class="marker">limit-energy mockup · v10 (bar-bed flash on hit) · iteration harness (not the game)</div>
 
 <div class="layout">
   <div class="stage">
@@ -184,7 +184,7 @@ const CFG = {
             ramp:[{p:0,c:'#ffffff'},{p:0.14704754601226994,c:'#ffbb00'},{p:0.4968246740797546,c:'#8bd4f9'},{p:1,c:'#8c00ff'}] },
   popOut: { dist:80, angleMin:55, angleMax:125 },      // odd-direction pop-out: control point offset px + off-axis angle range (deg)
   accel:  'easeInCubic',                                // progression easing — ease-IN = speeds up into the bar
-  head:   { rMul:2.6, pulseAmp:0.3, pulseFreq:2, growTo:2.7 }, // big glowing pulsing head (× base r, pulse depth, pulse Hz, grow on approach)
+  head:   { rMul:2.6, pulseAmp:0.3, pulseFreq:2, growTo:2.7, birthFrac:0.35 }, // glowing head: size ×, pulse depth/Hz, grow-on-approach, birthFrac (grows 0→full over this fraction of flight so the source tile shows first)
 
   // ── per-tier intensity (bucket 0/1/2 = tier 3/4/5+); scales the mote + arrival ──
   tier:  { widthMul:[1,1.5,2], rMul:[1,1.5,2], impactR:[6,9,13], sparkle:[8,10,15] },
@@ -194,7 +194,7 @@ const CFG = {
   explode:{ rMul:2.6, debris:18, flash:1 }, // impact radius ×, debris count, white flash (0/1)
 
   // ── the limit-bar HIT flash — EXACTLY the in-game pulseLimitBar (_vfx.json → combat.limitPulse) ──
-  limitPulse:{ brightness:2.2, scale:1.12, offset:0.35, ms:380 },
+  limitPulse:{ brightness:2.2, scale:1.12, offset:0.35, ms:380, bg:'rgba(255,224,138,0.55)' }, // bg = bar-bed flash colour at the peak
 
   // ── synced fill (the payoff) ──
   fill:  { fillCatchupMs:260, easing:'easeOutCubic', fallbackMs:1200 },
@@ -331,9 +331,10 @@ const fx = (()=>{
         }
       }
       if(!p.fired){
-        // big glowing pulsing head (grows as it approaches)
+        // big glowing pulsing head (grows as it approaches); birth: scales 0→full so the source tile shows first
         const hc=p.headCfg; const grow=1+(hc.growTo-1)*p.s; const pulse=1+hc.pulseAmp*Math.sin(p.u*hc.pulseFreq*Math.PI*2);
-        const headR=p.r*hc.rMul*grow*pulse;
+        const birth=hc.birthFrac>0?Math.min(1,p.u/hc.birthFrac):1;
+        const headR=p.r*hc.rMul*grow*pulse*birth;
         stampGlow(p.x,p.y,headR*2.4,p.head,0.9);
         stampGlow(p.x,p.y,headR*1.1,'#ffffff',0.55);
         ctx.globalCompositeOperation='lighter'; ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.9;
@@ -470,11 +471,12 @@ function runLimitEnergy({cell, heroIds, tier}){
 // Limit-bar HIT flash — EXACTLY the in-game pulseLimitBar (src/view/FxLayer.jsx:189): whole-bar
 // brightness+scale peaking at `offset`, ease-out over `ms`. Fired on each mote arrival, as the bar increases.
 function pulseLimitBar(bar){ if(!bar||!bar.animate)return;
+  const lp=CFG.limitPulse, rest=getComputedStyle(bar).backgroundColor; // flash bg + brightness/scale, back to the bar's own resting bg
   bar.animate([
-    {filter:'brightness(1)',transform:'scale(1)'},
-    {filter:`brightness(${CFG.limitPulse.brightness})`,transform:`scale(${CFG.limitPulse.scale})`,offset:CFG.limitPulse.offset},
-    {filter:'brightness(1)',transform:'scale(1)'},
-  ],{duration:CFG.limitPulse.ms,easing:'ease-out'});
+    {filter:'brightness(1)',transform:'scale(1)',backgroundColor:rest},
+    {filter:`brightness(${lp.brightness})`,transform:`scale(${lp.scale})`,backgroundColor:lp.bg,offset:lp.offset},
+    {filter:'brightness(1)',transform:'scale(1)',backgroundColor:rest},
+  ],{duration:lp.ms,easing:'ease-out'});
 }
 // The BOF — arrival explosion + the in-game bar flash + synced-fill land.
 function bof(x,y,barEl,off,id){
@@ -599,6 +601,7 @@ const CONTROLS=[
     {p:'head.pulseAmp',min:0,max:.9,step:.05,l:'pulse depth'},
     {p:'head.pulseFreq',min:1,max:16,step:1,l:'pulse Hz'},
     {p:'head.growTo',min:1,max:3,step:.1,l:'grow on approach'},
+    {p:'head.birthFrac',min:0,max:1,step:.05,l:'birth (0→full)'},
   ]},
   {t:'Explosion (BOF)', items:[
     {p:'explode.rMul',min:1,max:5,step:.1,l:'blast radius ×'},

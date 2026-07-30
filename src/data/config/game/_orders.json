@@ -9,6 +9,7 @@
 	"fillerMaxLevel": 3,
 	"costPerTierBase": 2,
 	"specialChance": 0.12,
+	"potionChance": 0.1,
 	"orderChains": [
 		"blade",
 		"range",
