@@ -88,13 +88,22 @@ body {
   line-height: 1; cursor: pointer; opacity: 0.6; }
 .minigame-exit:hover { opacity: 1; }
 
-/* Test minigame — a single centered button. */
-.mg-test { height: 100%; display: flex; align-items: center; justify-content: center; }
-.mg-test-btn { padding: 18px 40px; border-radius: 14px; border: 1px solid var(--gold); cursor: pointer;
-  background: color-mix(in srgb, var(--gold) 20%, #141a26); color: var(--gold);
-  font: inherit; font-weight: 700; font-size: 18px; letter-spacing: 1px;
-  box-shadow: 0 0 18px rgba(255, 212, 94, 0.35); }
-.mg-test-btn:active { transform: scale(0.96); }
+/* Template minigame — neutral scaffold authors copy (see src/view/minigame/TemplateGame.jsx). */
+.mg-template { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center; }
+.mg-template .mg-hint { font-size: 12px; color: var(--dim, #9fb0d0); max-width: 260px; line-height: 1.5; }
+.mg-template .mg-input { font: 12px/1.4 ui-monospace, Menlo, monospace; color: var(--dim, #9fb0d0); opacity: 0.8; }
+.mg-template .mg-complete { padding: 14px 32px; border-radius: 12px; border: 1px solid var(--panel-line); cursor: pointer;
+  background: var(--panel); color: var(--text); font: inherit; font-weight: 700; letter-spacing: 0.5px; }
+.mg-template .mg-complete:active { transform: scale(0.96); }
+
+/* Shooter minigame — fills the full minigame area; the canvas owns its own HUD + rAF loop. */
+.mg-shooter { position: relative; width: 100%; height: 100%; }
+.mg-shooter canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* Screen-crumble transition overlay host (chaos-orb special-merge cinematic). Above .reveal-overlay
+   (z 1000) + reward popup; pointer-events:auto LOCKS input for the ~2.7s cinematic. */
+.screen-transition { position: fixed; inset: 0; z-index: 1100; pointer-events: auto; }
+.screen-transition canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* Reward popup — modal reveal of a server-resolved reward (granted on Collect). Mirrors .afk-popup. */
 .reward-pop { position: absolute; inset: 0; z-index: 950; display: grid; place-items: center; }
@@ -178,10 +187,19 @@ body {
 .bar.normal span { background: var(--blue); }
 /* Limit bar: PURPLE while CHARGING — a live energy fill (a bright band flows along it while it
    pulses brighter/darker, to make you want to fill it). YELLOW/gold when FULL (.lb-btn.charged). */
-.bar.limit span { background: linear-gradient(90deg, #6a2cff, #b46bff, #ecd6ff, #b46bff, #6a2cff); background-size: 200% 100%;
-  animation: limitFlow 2.2s linear infinite, limitChargeGlow 1.5s ease-in-out infinite; }
-@keyframes limitFlow { from { background-position: 0% 0; } to { background-position: -200% 0; } }
-@keyframes limitChargeGlow { 0%, 100% { filter: brightness(.92) saturate(1); } 50% { filter: brightness(1.22) saturate(1.15); } }
+/* Charging fill: a STATIC purple gradient + two COMPOSITOR-ONLY overlays (no per-frame repaint) —
+   ::before = a bright sheen band sweeping across (transform), ::after = a soft white breathe (opacity).
+   Replaces the old background-position + filter animations, which forced a full repaint every frame (#6). */
+.bar.limit span { position: relative; overflow: hidden; background: linear-gradient(90deg, #6a2cff, #b46bff 50%, #6a2cff); }
+.bar.limit span::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(236, 214, 255, 0.65), transparent);
+  transform: translateX(-120%); animation: limitSweep 2.2s linear infinite; will-change: transform; }
+.bar.limit span::after { content: ''; position: absolute; inset: 0; background: #fff; opacity: 0;
+  animation: limitBreathe 1.5s ease-in-out infinite; will-change: opacity; }
+@keyframes limitSweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
+@keyframes limitBreathe { 0%, 100% { opacity: 0; } 50% { opacity: 0.16; } }
+/* FULL (charged) → gold + steady: drop the charging overlays. */
+.lb-btn.charged span::before, .lb-btn.charged span::after { content: none; }
 
 /* Per-hero limit break — the bar becomes a LIMIT tap button when full. display:block + font-size:0
    removes the <button> text baseline; overflow:visible lets the pulse + the emitted blobs poke past
@@ -191,8 +209,9 @@ body {
 /* FULL (charged) → gold fill + a SHARP scale pulse (a quick pop every 2s), in OR out of combat. */
 .lb-btn.charged { transform-origin: center; animation: lbPop 2s ease-in-out infinite; }
 .lb-btn.charged span { background: linear-gradient(180deg, #ffe89a, #ffcf45 55%, #e7a91f); animation: none; }
-/* In-combat + charged (canFire) → tappable. */
+/* In-combat + charged (canFire) → the WHOLE hero (art + bars) is tappable to fire the limit. */
 .lb-btn.ready { cursor: pointer; }
+.hero-chip.can-fire { cursor: pointer; }
 /* SHARP pulse: a quick pop in the first ~18%, then hold for the rest of the 2s. */
 @keyframes lbPop { 0% { transform: scale(1); } 5% { transform: scale(1.15); } 18% { transform: scale(1); } 100% { transform: scale(1); } }
 
@@ -212,7 +231,7 @@ body {
 /* Blob size/margin are set in JS from limitCharge.badge.blobPx (data-driven); this holds only the look. */
 .lb-blob { position: absolute; left: 0; top: 0; border-radius: 50%; background: #0c0c0f; will-change: transform; }
 @media (prefers-reduced-motion: reduce) {
-  .bar.limit span { animation: none; }
+  .bar.limit span::before, .bar.limit span::after { animation: none; opacity: 0; }
   .lb-btn.charged { animation: none; }
   .lb-btn.charged .lb-label { animation: none; }
 }
@@ -1649,7 +1668,7 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-tile.r-primal .hs-prism { display: block; position: absolute; inset: -2px; border-radius: 12px; z-index: 1; pointer-events: none; padding: 2px;
   background: conic-gradient(from 0deg, #78f0ff, #b46bff, #ff2e6e, #ffd45e, #5ad17a, #78f0ff);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-  mask-composite: exclude; animation: hsSpin 5s linear infinite; }
+  mask-composite: exclude; animation: hsSpin 5s linear infinite; will-change: transform; }
 @keyframes hsSpin { to { transform: rotate(360deg); } }
 
 /* 3 gear slots under the tile — rarity = coloured TOP LINE only */
@@ -1743,7 +1762,10 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hs-tile.hs-drag-avatar { box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.35); cursor: grabbing; }
 
 /* ── Fuse (hero merge) — reuses the gear fuse visual language (same keyframes) ── */
-.hs-tile.fuse-ready { animation: gFuseGlow 1.3s ease-in-out infinite; }
+/* fuse-ready cue — a STATIC coloured glow (was an infinite box-shadow keyframe = per-frame paint on
+   every ascendable tile). The ▲ gt-badge already bobs via transform to draw the eye, so the pulse is
+   redundant; a static outer glow keeps the readability with zero continuous paint (D). */
+.hs-tile.fuse-ready { box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5), 0 0 16px 2px color-mix(in srgb, var(--rar) 85%, transparent); }
 .hs-tile.just-fused { animation: gfuseReveal 0.62s cubic-bezier(0.2, 0.9, 0.25, 1); z-index: 4; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1910,6 +1932,12 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .enemy-chip .lv-badge { position: absolute; top: auto; bottom: -3px; left: -2px; z-index: 7; font-family: 'Uniform Condensed Bold', sans-serif; font-size: 11px; font-weight: 900; line-height: 1; color: #fff; -webkit-text-stroke: 2.5px #000; paint-order: stroke fill; text-shadow: 0 1px 2px #000; white-space: nowrap; }
 .enemy-chip .lv-badge s { font-size: 6px; text-decoration: none; opacity: .8; margin-right: 1px; }
 .enemy-chip.boss-chip .lv-badge { font-size: 11px; top: -9px; padding: 2px 7px; }
+/* Hero POWER badge — bottom-left of the combat avatar, just above the HP bar. Anchored on the
+   (non-animated) .chip root so it does NOT bob with the avatar's heroBob idle animation. bottom≈chip-art
+   base = limit(16) + normal(4) + hp(6) + 3×gap(3). Outer-outline glyph matching the enemy LV badge. */
+.hero-chip .hero-pow { position: absolute; left: -2px; bottom: 34px; z-index: 7; font-family: 'Uniform Condensed Bold', sans-serif; font-size: 10px; font-weight: 900; line-height: 1; color: #ffe39a; -webkit-text-stroke: 2.5px #000; paint-order: stroke fill; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
+.hero-chip .hero-pow s { font-size: 7px; text-decoration: none; opacity: .85; margin-right: 1px; }
+.chip.dead .hero-pow { display: none; }
 
 /* LEVEL/AREA intro: normal enemies start hidden, revealed one-by-one by the director */
 .battle.intro:not(.boss-mode) .enemy-row .enemy-chip { visibility: hidden; }

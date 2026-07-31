@@ -76,24 +76,25 @@
   <div class="spec" style="border-color:#5ad17a66">
     <h3 style="color:#8affc4">✓ What shipped (v1) — the 9 live coachmark beats</h3>
     <p>The build wires a lean subset of the roadmap below, driven by <code>src/view/ftue/beats.js</code> + the
-    <code>ftue</code> config singleton (<code>_ftue.json</code>). The coachmarks are <b>advisory click-through cards</b>
-    gated on <b>observable state</b> + persisted <code>ftueSeen_*</code> flags — NOT the input-masking / spotlight
-    gates the step cards below describe (that dim-and-lock model is still planned). The player can always act beneath
-    the card; only GOT IT captures input. Live sequence, in order:</p>
+    <code>ftue</code> config singleton (<code>_ftue.json</code>). Beats gate on <b>observable state</b> + persisted
+    <code>ftueSeen_*</code> flags, and can now (per beat, all declarative): <b>navigate to a screen</b>, <b>spotlight a
+    button</b> (glow ring of any shape/size), <b>grey out everything but a button</b> (dim + input-block, only the target
+    tappable), and <b>pause the engine</b>. A plain card stays click-through; only GOT IT / the spotlit target capture
+    input. Live sequence, in order:</p>
     <ul>
       <li><b>coldOpen</b> — "Your squad fights on its own." (info)</li>
-      <li><b>forge</b> — "Tap a generator to forge weapon tiles." (info)</li>
+      <li><b>forge</b> — <b>spotlights the generator</b> (<code>.mb-gen</code>): "Tap a generator to forge weapon tiles." (info)</li>
       <li><b>merge</b> — "Drag two matching blade tiles together." (done: a tier-up tile OR the potion is deliverable)</li>
-      <li><b>potion</b> — "Deliver the 🧪 LIMIT POTION order." (done: a hero is limit-ready)</li>
-      <li><b>limit</b> — "Tap your glowing hero — unleash the LIMIT BREAK!" (done: <code>ftueLimitFired</code>)</li>
-      <li><b>summon</b> — at <b>level 5</b>: "Things are getting tough — hire another hero!" → free Alchemist pull, <b>auto-returns to combat</b> (done: <code>ftuePulled</code>)</li>
+      <li><b>potion</b> — <b>spotlights the potion order</b> (<code>.order.potion</code>): "Deliver the 🧪 LIMIT POTION order." (done: a hero is limit-ready)</li>
+      <li><b>limit</b> — "Tap your glowing hero — unleash the LIMIT BREAK!" (done: <code>ftueLimitFired</code>) — hero is canvas, so card-only</li>
+      <li><b>summon</b> — at <b>level 5</b>: <b>opens Gacha + greys out all but the SUMMON button</b> (masked); free Alchemist pull, auto-returns to combat (done: <code>ftuePulled</code>)</li>
       <li><b>alchemistExplain</b> — <b>pauses combat</b>: "Meet the ALCHEMIST — its LIMIT BREAK hits EVERY enemy." (info)</li>
       <li><b>alchemistUse</b> — "Charge &amp; unleash the ALCHEMIST's limit — wipe them all!" (done: <code>ftueAlchemistUsed</code>)</li>
-      <li><b>gearUp</b> — <b>pauses combat</b>: "Now GEAR UP and LEVEL UP your squad." (info)</li>
-      <li><b>bossHire</b> — at the boss GATE: "A BOSS looms ahead — hire another hero!" (info)</li>
-      <li><b>firstLoss</b> — reactive interrupt on the FIRST defeat, <b>pauses combat</b>: "Wiped out — EQUIP your best gear + LEVEL to the MAX." (info; <code>ftueFirstLoss</code>)</li>
+      <li><b>gearUp</b> — <b>opens Heroes + pauses combat</b>: "Now GEAR UP and LEVEL UP your squad." (info)</li>
+      <li><b>bossHire</b> — at the boss GATE, <b>spotlights the Gacha nav</b> (non-blocking): "A BOSS looms ahead — hire another hero!" (info)</li>
+      <li><b>firstLoss</b> — reactive interrupt on the FIRST defeat: <b>opens Heroes + pauses combat</b>: "Wiped out — EQUIP your best gear + LEVEL to the MAX." (info; <code>ftueFirstLoss</code>)</li>
     </ul>
-    <p style="color:#9fb0d0;font-size:12px;margin-top:6px">Sim-side overrides — all wired + build-green: zone-1 enemy ramp; forced opening orders (<b>[0]</b> Limit Potion, <b>[1]</b> a good <b>epic armour</b> piece via <code>forceSlot</code> → <code>rollGearInSlot</code>); <b>special orders suppressed until <code>specialsUnlockAtLevel</code></b> (default 8); the level-5 predetermined Alchemist pull (battle-ready, auto-returns to combat); combat pause for the explain / gear-up / first-loss beats. The richer roadmap beats below (input-masking gates, energy/map/AFK/ascend/cobweb/crystal/minigame) are not yet shipped.</p>
+    <p style="color:#9fb0d0;font-size:12px;margin-top:6px">Sim-side overrides — all wired + build-green: zone-1 enemy ramp; forced opening orders (<b>[0]</b> Limit Potion, <b>[1]</b> a good <b>epic armour</b> piece via <code>forceSlot</code> → <code>rollGearInSlot</code>); <b>special orders suppressed until <code>specialsUnlockAtLevel</code></b> (default 8); the level-5 predetermined Alchemist pull (battle-ready, auto-returns to combat); combat pause for the explain / gear-up / first-loss beats; and the guided-tutorial toolkit (screen navigation, button spotlight/ring, grey-out-but-target mask). The remaining roadmap beats below (energy/map/AFK/ascend/cobweb/crystal/minigame) are not yet shipped.</p>
   </div>
 
   <!-- NEW FEATURE SPEC -->

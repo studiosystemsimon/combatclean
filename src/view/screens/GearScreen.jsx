@@ -3,8 +3,8 @@
 // (consume 2 same-slot+rarity items + a coin cost → promote a rarity tier). Fusing
 // plays a timed sequence: the two fodder items fly INTO the target, which then
 // bursts and morphs to its new rarity. Equipped items show the owner in the corner.
-import { useState } from 'react';
-import { useGame } from '../../controller/GameContext';
+import { useMemo, useState } from 'react';
+import { useMetaGame } from '../../controller/GameContext';
 import { HEROES } from '../../data/heroes.js';
 import { GEAR_SLOT_META, GEAR_RARITY, GEAR_FUSE, GEAR_RARITY_ORDER } from '../../data/gear.js';
 import { STRINGS } from '../../data/strings.js';
@@ -27,6 +27,8 @@ import {
   nextRarityFor,
   pieceName,
   pieceMaxRarity,
+  slotClassBound,
+  pieceDef,
 } from '../../model/gear.js';
 
 // Fuse choreography reuses the shared hero-fx fuse primitives (single source — no parallel copy).
@@ -35,9 +37,12 @@ const HF = REVEAL.heroFx;
 // Sort high→low rarity using the canonical ladder (no view-local rarity map).
 const rankOf = (r) => GEAR_RARITY_ORDER.indexOf(r);
 const sortGear = (list) => [...list].sort((a, b) => rankOf(b.rarity) - rankOf(a.rarity) || gearPower(b) - gearPower(a));
+// One-pass fuse-eligibility bucket key: unequipped items sharing this key are fodder for each other
+// (same slot + rarity, and — for class-bound slots — same classKey). Mirrors fuseFodder's predicate.
+const fuseKey = (g) => `${g.slot}|${g.rarity}` + (slotClassBound(g.slot) ? `|${pieceDef(g)?.classKey ?? ''}` : '');
 
 function GearSheet({ g, onClose, onLevel, onFuse }) {
-  const { state } = useGame();
+  const { state } = useMetaGame();
   const rar = GEAR_RARITY[g.rarity];
   const nr = nextRarityFor(g);
   const capRar = GEAR_RARITY[pieceMaxRarity(g)] || GEAR_RARITY.legendary;
@@ -83,10 +88,23 @@ function GearSheet({ g, onClose, onLevel, onFuse }) {
 }
 
 export default function GearScreen() {
-  const { state, actions } = useGame();
+  // Meta view (no battle/fx) — the gear grid at 100 items must not re-render/re-scan on the combat tick.
+  const { state, actions } = useMetaGame();
   const [selId, setSelId] = useState(null);
   const [justFused, setJustFused] = useState(null);
-  const items = sortGear(Object.values(state.gear));
+  // Single O(n) pass: sort once + precompute each tile's fuse-ready flag from a bucketed fodder count,
+  // instead of an O(n) fuseFodder scan per tile (which was O(n²)). Memoized on gear + coins only.
+  const { items, fuseReadyById } = useMemo(() => {
+    const all = Object.values(state.gear);
+    const bucket = new Map(); // fuseKey → count of UNEQUIPPED items (the shared fodder pool)
+    for (const g of all) if (!g.equippedTo) { const k = fuseKey(g); bucket.set(k, (bucket.get(k) || 0) + 1); }
+    const ready = {};
+    for (const g of all) {
+      const pool = (bucket.get(fuseKey(g)) || 0) - (g.equippedTo ? 0 : 1); // exclude g itself when it's in the pool
+      ready[g.id] = !!nextRarityFor(g) && pool >= GEAR_FUSE.fodder && state.coins >= fuseCost(g.rarity);
+    }
+    return { items: sortGear(all), fuseReadyById: ready };
+  }, [state.gear, state.coins]);
   const sel = selId != null ? state.gear[selId] : null;
 
   const onLevel = (id) => {
@@ -172,7 +190,7 @@ export default function GearScreen() {
               <MediumEquipmentTile
                 key={g.id}
                 g={g}
-                fuseReady={canAffordFuse(state.gear, g.id, state.coins)}
+                fuseReady={fuseReadyById[g.id]}
                 justFused={justFused === g.id}
                 onOpen={setSelId}
                 roster={state.heroes}

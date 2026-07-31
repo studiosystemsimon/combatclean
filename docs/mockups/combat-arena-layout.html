@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Combat Arena Layout mockup</title>
+<style>
+  :root{
+    --ink:#eaf0ff; --dim:#9fb0d0; --dim2:#6f7f9e; --gold:#ffcf45;
+    --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.12);
+    --enemy:#ff5a6a; --boss:#ff2a1c; --hero:#4f8cff; --chest:#ffcf45;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1300px 800px at 20% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .app{ display:flex; gap:22px; align-items:flex-start; padding:22px; }
+  h1{ font-size:19px; margin:0 0 2px; }
+  .sub{ color:var(--dim); font-size:12.5px; margin:0 0 14px; max-width:340px; }
+
+  .panel{ width:330px; flex:0 0 330px; background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:14px; padding:14px 15px; position:sticky; top:22px; }
+  .grp{ margin:0 0 14px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .grp:last-child{ border-bottom:none; }
+  .grp h3{ font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--dim2); margin:0 0 8px; }
+  label{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--dim); margin:6px 0; }
+  select,input[type=number]{ background:#0e1220; color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:12.5px; font-family:inherit; }
+  select{ width:100%; } input[type=number]{ width:70px; }
+  input[type=range]{ flex:1; accent-color:var(--gold); } .val{ color:var(--ink); font-weight:800; min-width:24px; text-align:right; }
+  .seg{ display:flex; gap:4px; } .seg.grow button{ flex:1; }
+  .seg button{ background:#0e1220; color:var(--dim); border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:11.5px; font-weight:800; cursor:pointer; }
+  .seg button.on{ background:var(--gold); color:#0b1220; border-color:var(--gold); }
+  .tabs button.on.enemies{ background:var(--enemy); border-color:var(--enemy); color:#fff; }
+  .tabs button.on.heroes{ background:var(--hero); border-color:var(--hero); color:#fff; }
+  .tabs button.on.chests{ background:var(--chest); border-color:var(--chest); color:#0b1220; }
+  .btn{ width:100%; background:#0e1220; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px; font-size:12.5px; font-weight:800; cursor:pointer; }
+  .btn.gold{ background:var(--gold); color:#0b1220; border-color:var(--gold); } .btn+.btn{ margin-top:7px; }
+  .hint{ color:var(--dim2); font-size:11px; line-height:1.4; margin-top:6px; }
+
+  .stage{ flex:1; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .dims{ color:var(--dim); font-size:12px; } .dims b{ color:var(--gold); } code{ background:#ffffff12; color:#cfe0ff; padding:1px 5px; border-radius:4px; font-size:11px; }
+  .phone{ background:#05070e; border:6px solid #05070e; border-radius:34px; box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); position:relative; overflow:hidden; }
+  .col{ display:flex; flex-direction:column; height:100%; }
+  .hdr,.orders,.nav{ flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; letter-spacing:1px; color:var(--dim2); text-transform:uppercase; background:rgba(255,255,255,.03); border-bottom:1px solid rgba(255,255,255,.05); }
+  .nav{ border-bottom:none; border-top:1px solid rgba(255,255,255,.05); }
+  .ctx{ flex:1 1 0; min-height:0; position:relative; background:repeating-linear-gradient(45deg,#0b0f1c,#0b0f1c 10px,#0d1220 10px,#0d1220 20px); }
+  .board-host{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:6px 2px 8px; overflow:hidden; }
+  .mockboard{ display:grid; background:rgba(255,255,255,.03); border-radius:9px; box-shadow:0 0 0 1px rgba(255,255,255,.09) inset; }
+  .mcell{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:6px; }
+  .mockboard.oflow{ box-shadow:0 0 0 2px var(--enemy); } /* board exceeds the context area at this resolution */
+  .combat{ flex:none; position:relative; overflow:hidden; background:linear-gradient(180deg,#2a3566 0%,#1a2142 46%,#141a33 100%); border-bottom:1px solid rgba(255,255,255,.06); }
+  .combat.boss{ background:linear-gradient(180deg,#4a1420 0%,#2a0d18 50%,#180810 100%); }
+  .floor-glow{ position:absolute; left:6%; right:6%; height:40px; border-radius:50%; filter:blur(7px); background:radial-gradient(ellipse at center, rgba(90,180,255,.32), transparent 70%); pointer-events:none; }
+  .guide{ position:absolute; left:0; right:0; pointer-events:none; font-size:8px; color:rgba(255,255,255,.30); }
+  .guide.top{ border-bottom:1px dashed rgba(255,255,255,.16); } .guide.band{ border-top:1px dashed rgba(255,212,94,.30); background:rgba(255,212,94,.05); }
+  .guide span{ position:absolute; left:4px; top:1px; }
+
+  .ent{ position:absolute; cursor:grab; user-select:none; touch-action:none; display:flex; flex-direction:column; align-items:center; filter:drop-shadow(0 3px 4px rgba(0,0,0,.55)); }
+  .ent:active{ cursor:grabbing; }
+  .box{ border-radius:7px 7px 5px 5px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#0b1220; text-align:center; line-height:1.05; box-shadow:inset 0 -6px 10px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.35); }
+  .ent.enemy .box{ background:linear-gradient(180deg,#ff8a95,var(--enemy)); }
+  .ent.accomplice .box{ background:linear-gradient(180deg,#ffb0b8,#ff8a95); }
+  .ent.boss  .box{ background:linear-gradient(180deg,#ff6a5a,var(--boss)); color:#fff; }
+  .ent.hero  .box{ background:linear-gradient(180deg,#8fb6ff,var(--hero)); color:#fff; }
+  .ent.chest .box{ background:linear-gradient(180deg,#ffe89a,var(--chest)); border-radius:8px; }
+  .ent .hpbar{ width:88%; height:4px; border-radius:2px; margin-top:2px; background:#0008; overflow:hidden; } .ent .hpbar i{ display:block; height:100%; width:72%; background:#39d98a; }
+  .ent .pow{ position:absolute; left:-3px; bottom:2px; font-size:9px; font-weight:900; color:var(--gold); -webkit-text-stroke:2px #000; paint-order:stroke fill; }
+  .ent .tag{ position:absolute; top:-12px; font-size:8px; font-weight:800; color:#fff; -webkit-text-stroke:2px #000; paint-order:stroke fill; white-space:nowrap; }
+
+  /* group container + anchor viz */
+  .gbox{ position:absolute; border:1.5px dashed; border-radius:8px; pointer-events:none; z-index:20; }
+  .anchor-dot{ position:absolute; width:11px; height:11px; border-radius:50%; transform:translate(-50%,-50%); z-index:22; box-shadow:0 0 0 2px #0b1220, 0 0 8px currentColor; pointer-events:none; }
+  .anchor-lbl{ position:absolute; transform:translate(-50%,-50%); font-size:8.5px; font-weight:800; white-space:nowrap; padding:1px 5px; border-radius:99px; background:#0b1220cc; z-index:22; pointer-events:none; }
+  .anchor-line{ position:absolute; height:0; border-top:1.5px dotted; transform-origin:0 0; z-index:21; pointer-events:none; opacity:.8; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <h1>Combat Arena — layout</h1>
+    <p class="sub">The game anchors <b>rows (groups)</b>, not single sprites. Pick a group, set which arena <b>edge</b> it pins to + its offset; drag any member to move the whole group. Seeded from the live arena (incl. bosses pinned LOW via <code>justify-content:flex-end</code>).</p>
+
+    <div class="grp">
+      <h3>Resolution</h3>
+      <label>Device <select id="device"></select></label>
+      <label>W × H <span><input type="number" id="cw" min="280" max="1024"> × <input type="number" id="ch" min="480" max="2000"></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Wave</h3>
+      <label>Enemy type <span class="seg grow" id="mode"><button data-m="regular" class="on">Regular</button><button data-m="boss">Boss</button></span></label>
+      <label>Enemies <span><input type="range" id="nEnemies" min="1" max="8" value="4"><b class="val" id="nEnemiesV">4</b></span></label>
+      <label>Heroes <span><input type="range" id="nHeroes" min="1" max="5" value="3"><b class="val" id="nHeroesV">3</b></span></label>
+      <label>Chests <span><input type="range" id="nChests" min="0" max="4" value="1"><b class="val" id="nChestsV">1</b></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Group anchor</h3>
+      <div class="seg grow tabs" id="tabs">
+        <button data-g="enemies" class="on enemies">Enemies</button>
+        <button data-g="heroes" class="heroes">Heroes</button>
+        <button data-g="chests" class="chests">Chests</button>
+      </div>
+      <label style="margin-top:9px">Anchor X <span class="seg grow" id="ax"></span></label>
+      <label>Anchor Y <span class="seg grow" id="ay"></span></label>
+      <label>Offset dx <input type="number" id="gdx"></label>
+      <label>Offset dy <input type="number" id="gdy"></label>
+      <label>Spacing <span><input type="range" id="ggap" min="0" max="60"><b class="val" id="ggapV"></b></span></label>
+      <p class="hint" id="ghint"></p>
+    </div>
+
+    <div class="grp">
+      <h3>Board grid</h3>
+      <label>Columns <span><input type="range" id="bcols" min="3" max="10" value="7"><b class="val" id="bcolsV">7</b></span></label>
+      <label>Rows <span><input type="range" id="brows" min="3" max="9" value="5"><b class="val" id="browsV">5</b></span></label>
+      <label>Gap <span><input type="range" id="bgap" min="0" max="16" value="5"><b class="val" id="bgapV">5</b></span></label>
+      <label>Max width <input type="number" id="bmaxw" value="460"></label>
+      <label>Scale rule <span class="seg grow" id="brule"><button data-r="fitWidth" class="on">Fit width</button><button data-r="fitHeight">Fit height</button></span></label>
+      <p class="hint" id="bhint"></p>
+    </div>
+
+    <div class="grp">
+      <button class="btn gold" id="export">Copy layout JSON</button>
+      <button class="btn" id="reset">Reset everything to defaults</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="dims" id="dims"></div>
+    <div class="phone" id="phone"><div class="col">
+      <div class="hdr" id="hdr">Header 52</div>
+      <div class="combat" id="combat">
+        <div class="floor-glow" id="floorGlow"></div>
+        <div class="guide top" id="gTop"><span>arena top pad 34</span></div>
+        <div class="guide band" id="gBand"><span>reserved hero band 106</span></div>
+      </div>
+      <div class="orders">Orders 84</div>
+      <div class="ctx"><div class="board-host" id="boardHost"></div></div>
+      <div class="nav">Nav 60</div>
+    </div></div>
+    <div class="dims">Combat panel <b id="combatH">–</b> · arena <b id="arenaWH">–</b> · <span id="selNote"></span></div>
+  </div>
+</div>
+
+<script>
+// ── live layout constants (src/index.css :root + combat CSS; Autobattler COMBAT_BASE_H) ──
+const LC={ headerH:52, navH:60, ordersH:84, appWCap:460, board:5/7, padTop:34, padBottom:106, padX:8, padBottomBattle:4 };
+const SIZE={ enemy:54, accomplice:54, boss:108, hero:75.6, chest:58 };
+const WID ={ enemy:46, accomplice:44, boss:92, hero:54, chest:58 };
+const DEVICES=[['iPhone SE (3rd gen)',375,667],['iPhone 14',390,844],['iPhone 14 Plus',428,926],['iPhone 14 Pro',393,852],
+  ['iPhone 14 Pro Max',430,932],['iPhone 16',390,844],['iPhone 16 Pro',402,874],['iPhone 16 Pro Max',440,956],
+  ['Samsung Galaxy S24',360,780],['Samsung Galaxy S24+',384,854],['Samsung Galaxy S24 Ultra',412,917],
+  ['Google Pixel 9',412,892],['Google Pixel 9 Pro',412,917],['OnePlus 12',412,919],['Custom',390,844]];
+
+// The board's height BUDGET is subtracted from the screen to size the combat panel (the game hardcodes
+// app-w × 5/7; here it generalises to the tunable board rules, so combat + board share the screen).
+function boardReserveH(W){ const b=state.board; return Math.min(b.maxW, W) * b.rows / b.cols; }
+const combatH=(W,H)=>Math.max(150, H-LC.headerH-LC.navH-LC.ordersH-boardReserveH(W));
+
+// Group defaults derived from the live arena:
+//  • enemies REGULAR — arena is a flex column with justify-content:center → the enemy row sits centred
+//    in the padded content box; feet land ~arena vertical centre.
+//  • enemies BOSS — .battle.boss-mode .arena { justify-content:flex-end } → row pinned LOW, feet just
+//    above the reserved hero band (padBottom 106).
+//  • heroes — .hero-row is absolute bottom:2 (chip bottom, incl. bars, at arena bottom − 2).
+//  • chests — land in the gap just above the hero band: centre ≈ (bottom − 106) − chestHalf − 6.
+const DEF={
+  enemies:{ regular:{ax:'center',ay:'center',dx:0,dy:-4,gap:8}, boss:{ax:'center',ay:'bottom',dx:0,dy:-LC.padBottom,gap:12} },
+  heroes:{ ax:'center',ay:'bottom',dx:0,dy:-2,gap:8 },
+  chests:{ ax:'center',ay:'bottom',dx:0,dy:-(LC.padBottom+SIZE.chest/2+6),gap:14 },
+};
+const clone=(o)=>JSON.parse(JSON.stringify(o));
+
+// ── session persistence: every change is saved to sessionStorage so it survives a reload within the
+// working session; Reset clears it (a VERSION bump also invalidates old state if the shape changes). ──
+const STORE_KEY='cc.arena-mock', VERSION=2;
+function defaultState(){ return { W:390,H:844, mode:'regular', nEnemies:4,nHeroes:3,nChests:1, sel:'enemies',
+  // enemies keep a SEPARATE persistent layout per mode (regular vs boss) so switching mode never wipes
+  // either — each remembers its own anchor / offset / spacing. Only the Reset button restores defaults.
+  enemiesByMode:{ regular:clone(DEF.enemies.regular), boss:clone(DEF.enemies.boss) },
+  groups:{ heroes:clone(DEF.heroes), chests:clone(DEF.chests) },
+  board:{ cols:7, rows:5, gap:5, maxW:460, rule:'fitWidth' } }; }
+// the active group object for a key (enemies resolves to the CURRENT mode's layout)
+function groupOf(key){ return key==='enemies' ? state.enemiesByMode[state.mode] : state.groups[key]; }
+const expG=(g)=>({ anchor:g.ay+'-'+g.ax, dx:Math.round(g.dx), dy:Math.round(g.dy), gap:g.gap });
+const state=defaultState();
+function persist(){ try{ sessionStorage.setItem(STORE_KEY, JSON.stringify({ __v:VERSION, ...state })); }catch{} }
+function loadPersisted(){ try{ const s=JSON.parse(sessionStorage.getItem(STORE_KEY)||'null'); if(s&&s.__v===VERSION){ delete s.__v; return s; } }catch{} return null; }
+
+function arena(){ const chh=combatH(state.W,state.H); return { w:state.W-LC.padX*2, h:chh-LC.padBottomBattle, panelH:chh }; }
+function anchorPx(g){ const {w,h}=arena();
+  return { x: g.ax==='left'?0:g.ax==='right'?w:w/2, y: g.ay==='top'?0:g.ay==='bottom'?h:h/2 }; }
+
+// entities of a group (type + size), in row order
+function membersOf(key){
+  if(key==='enemies'){
+    if(state.mode==='boss'){ const acc=state.nEnemies-1, before=Math.floor(acc/2), after=acc-before;
+      return [...Array(before).fill('accomplice'),'boss',...Array(after).fill('accomplice')]; }
+    return Array(state.nEnemies).fill('enemy');
+  }
+  if(key==='heroes') return Array(state.nHeroes).fill('hero');
+  return Array(state.nChests).fill('chest');
+}
+// lay a group into positioned entities: each {type, cx, by (baseline), w, h}
+function layoutGroup(key){
+  const g=groupOf(key), types=membersOf(key); if(!types.length) return [];
+  const ws=types.map(t=>WID[t]); const rowW=ws.reduce((s,x)=>s+x,0)+(types.length-1)*g.gap;
+  const ap=anchorPx(g); const refX=ap.x+g.dx, refY=ap.y+g.dy;
+  let startX = g.ax==='center'? refX-rowW/2 : g.ax==='right'? refX-rowW : refX;
+  const out=[]; let x=startX;
+  types.forEach((t,i)=>{ out.push({ type:t, cx:x+ws[i]/2, by:refY, w:ws[i], h:SIZE[t] }); x+=ws[i]+g.gap; });
+  return out;
+}
+
+const $=(id)=>document.getElementById(id); const combatEl=$('combat'), phoneEl=$('phone');
+
+function layout(){
+  const chh=combatH(state.W,state.H);
+  phoneEl.style.width=state.W+'px'; phoneEl.style.height=state.H+'px';
+  $('hdr').style.height=LC.headerH+'px'; combatEl.style.height=chh+'px';
+  document.querySelector('.orders').style.height=LC.ordersH+'px'; document.querySelector('.nav').style.height=LC.navH+'px';
+  combatEl.classList.toggle('boss', state.mode==='boss');
+  const {w,h}=arena();
+  $('gTop').style.top='0'; $('gTop').style.height=LC.padTop+'px';
+  $('gBand').style.bottom='0'; $('gBand').style.height=LC.padBottom+'px';
+  $('floorGlow').style.bottom=(LC.padBottom-6)+'px';
+  $('dims').innerHTML=`<b>${state.W}×${state.H}</b> — arena resizes with the screen (real <code>--combat-h</code>)`;
+  $('combatH').textContent=Math.round(chh)+'px'; $('arenaWH').textContent=Math.round(w)+'×'+Math.round(h)+'px';
+}
+
+function renderEnts(){
+  combatEl.querySelectorAll('.ent,.gbox,.anchor-dot,.anchor-lbl,.anchor-line').forEach(n=>n.remove());
+  for(const key of ['enemies','heroes','chests']){
+    for(const e of layoutGroup(key)){
+      const el=document.createElement('div'); el.className='ent '+e.type; el.dataset.g=key;
+      const isChest=e.type==='chest';
+      el.style.left=(LC.padX+e.cx)+'px'; el.style.top=e.by+'px';
+      el.style.transform=isChest?'translate(-50%,-50%)':'translate(-50%,-100%)';
+      const lab=e.type==='accomplice'?'ACC':e.type.toUpperCase();
+      el.innerHTML=(isChest?'':`<span class="tag">${lab}${/enemy|accomplice|boss/.test(e.type)?' Lv':''}</span>`)+
+        `<div class="box" style="width:${e.w}px;height:${e.h}px">${isChest?'CHEST':(e.type==='hero'?'HERO':lab)}</div>`+
+        (e.type==='hero'?`<div class="hpbar"><i></i></div><span class="pow">✊12</span>`:'');
+      combatEl.appendChild(el); makeDraggable(el,key);
+    }
+  }
+  drawGroupViz(state.sel);
+  persist();
+}
+function drawGroupViz(key){
+  const items=layoutGroup(key); const g=groupOf(key);
+  const color=key==='enemies'?(state.mode==='boss'?'var(--boss)':'var(--enemy)'):key==='heroes'?'var(--hero)':'var(--chest)';
+  if(items.length){
+    // bounding box (in arena coords → screen)
+    let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+    for(const e of items){ const halfH=e.type==='chest'?e.h/2:e.h; const top=e.type==='chest'?e.by-e.h/2:e.by-e.h;
+      minx=Math.min(minx,e.cx-e.w/2); maxx=Math.max(maxx,e.cx+e.w/2); miny=Math.min(miny,top); maxy=Math.max(maxy,e.by-(e.type==='chest'?-e.h/2:0)); void halfH; }
+    const pad=6; const box=document.createElement('div'); box.className='gbox';
+    box.style.cssText=`left:${LC.padX+minx-pad}px; top:${miny-pad}px; width:${(maxx-minx)+pad*2}px; height:${(maxy-miny)+pad*2}px; border-color:${color}; box-shadow:0 0 0 9999px rgba(0,0,0,.28);`;
+    combatEl.appendChild(box);
+  }
+  // anchor dot on the arena edge + offset line to the group ref
+  const ap=anchorPx(g); const refX=ap.x+g.dx, refY=ap.y+g.dy;
+  const dot=document.createElement('div'); dot.className='anchor-dot';
+  dot.style.cssText=`left:${LC.padX+ap.x}px; top:${ap.y}px; color:${color}; background:${color}`; combatEl.appendChild(dot);
+  const lbl=document.createElement('div'); lbl.className='anchor-lbl'; lbl.textContent='⚓ '+g.ay+'-'+g.ax;
+  lbl.style.cssText=`left:${LC.padX+ap.x}px; top:${ap.y+(g.ay==='bottom'?-12:14)}px; color:${color}`; combatEl.appendChild(lbl);
+  const dx=refX-ap.x, dy=refY-ap.y, len=Math.hypot(dx,dy), ang=Math.atan2(dy,dx)*180/Math.PI;
+  if(len>2){ const line=document.createElement('div'); line.className='anchor-line';
+    line.style.cssText=`left:${LC.padX+ap.x}px; top:${ap.y}px; width:${len}px; transform:rotate(${ang}deg); border-color:${color}`; combatEl.appendChild(line); }
+}
+
+function makeDraggable(el,key){
+  el.addEventListener('pointerdown',(ev)=>{
+    ev.preventDefault(); state.sel=key; el.setPointerCapture(ev.pointerId);
+    const g=groupOf(key); const sx=ev.clientX, sy=ev.clientY, odx=g.dx, ody=g.dy;
+    syncTabs(); renderEnts(); renderCtrls();
+    const mv=(m)=>{ g.dx=odx+(m.clientX-sx); g.dy=ody+(m.clientY-sy); renderEnts(); renderCtrls(); };
+    const up=()=>{ el.releasePointerCapture(ev.pointerId); window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); };
+    window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up);
+  });
+}
+
+// ── controls ──
+function segButtons(host, opts, cur, on){ host.innerHTML=opts.map(o=>`<button data-v="${o}" class="${cur===o?'on':''}">${o}</button>`).join('');
+  host.querySelectorAll('button').forEach(b=>b.onclick=()=>on(b.dataset.v)); }
+function renderCtrls(){
+  const key=state.sel, g=groupOf(key);
+  segButtons($('ax'),['left','center','right'],g.ax,(v)=>reanchor('ax',v));
+  segButtons($('ay'),['top','center','bottom'],g.ay,(v)=>reanchor('ay',v));
+  $('gdx').value=Math.round(g.dx); $('gdy').value=Math.round(g.dy); $('ggap').value=g.gap; $('ggapV').textContent=g.gap;
+  const cap=key[0].toUpperCase()+key.slice(1);
+  $('ghint').innerHTML=`<b>${cap}</b> pinned to <b>${g.ay}-${g.ax}</b>, offset (${Math.round(g.dx)}, ${Math.round(g.dy)}). Re-anchoring keeps the on-screen position &amp; recomputes the offset.`;
+  $('selNote').innerHTML=`editing <b style="color:var(--gold)">${cap}</b>`;
+}
+function reanchor(attr,v){ const g=groupOf(state.sel);
+  // keep the group's visual ref point, recompute the offset against the new anchor edge
+  const ap0=anchorPx(g); const refX=ap0.x+g.dx, refY=ap0.y+g.dy;
+  g[attr]=v; const ap1=anchorPx(g); g.dx=refX-ap1.x; g.dy=refY-ap1.y; renderEnts(); renderCtrls();
+}
+function syncTabs(){ $('tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.g===state.sel)); }
+// push the whole state BACK into the control inputs (after a session restore or a reset)
+function syncInputs(){
+  let di=DEVICES.findIndex(d=>d[1]===state.W&&d[2]===state.H); if(di<0) di=DEVICES.length-1;
+  $('device').value=di; $('cw').value=state.W; $('ch').value=state.H;
+  $('mode').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===state.mode));
+  $('nEnemies').value=state.nEnemies; $('nEnemiesV').textContent=state.nEnemies;
+  $('nHeroes').value=state.nHeroes; $('nHeroesV').textContent=state.nHeroes;
+  $('nChests').value=state.nChests; $('nChestsV').textContent=state.nChests;
+  const b=state.board;
+  $('bcols').value=b.cols; $('bcolsV').textContent=b.cols;
+  $('brows').value=b.rows; $('browsV').textContent=b.rows;
+  $('bgap').value=b.gap; $('bgapV').textContent=b.gap;
+  $('bmaxw').value=b.maxW;
+  $('brule').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.r===b.rule));
+}
+function renderBoard(){
+  const b=state.board, host=$('boardHost'); host.innerHTML='';
+  const ctxH = state.H - LC.headerH - LC.navH - LC.ordersH - combatH(state.W,state.H); // leftover context height
+  let bw,bh;
+  if(b.rule==='fitWidth'){ bw=Math.min(b.maxW,state.W); bh=bw*b.rows/b.cols; }          // width-driven (the reserve model)
+  else { bh=Math.max(40,ctxH-14); bw=Math.min(state.W, bh*b.cols/b.rows); }              // fills the leftover context, width from aspect
+  const cellW=(bw-(b.cols-1)*b.gap)/b.cols, cellH=(bh-(b.rows-1)*b.gap)/b.rows;
+  const grid=document.createElement('div'); grid.className='mockboard'+(bh>ctxH-8?' oflow':'');
+  grid.style.width=bw+'px'; grid.style.height=bh+'px'; grid.style.gap=b.gap+'px';
+  grid.style.gridTemplateColumns=`repeat(${b.cols},1fr)`; grid.style.gridTemplateRows=`repeat(${b.rows},1fr)`;
+  for(let i=0;i<b.cols*b.rows;i++){ const c=document.createElement('div'); c.className='mcell'; grid.appendChild(c); }
+  host.appendChild(grid);
+  $('bhint').innerHTML=`Board <b>${Math.round(bw)}×${Math.round(bh)}</b> · cell <b>${Math.round(cellW)}×${Math.round(cellH)}</b>${Math.abs(cellW-cellH)<=1?' (square)':''} · context leftover <b>${Math.round(ctxH)}px</b>${bh>ctxH-8?' · <b style="color:var(--enemy)">overflows!</b>':''}`;
+}
+function render(){ layout(); renderEnts(); renderBoard(); renderCtrls(); syncTabs(); }
+
+function initDevices(){ const s=$('device'); DEVICES.forEach(([n,w,h],i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${n} — ${w}×${h}`; s.appendChild(o); }); s.value=DEVICES.findIndex(d=>d[0]==='iPhone 14'); }
+function setDevice(i){ const [,w,h]=DEVICES[i]; state.W=w; state.H=h; $('cw').value=w; $('ch').value=h; render(); } // resolution change KEEPS the layout
+// Full reset: clear the session + restore EVERYTHING (resolution, wave, groups, board) to defaults.
+function resetAll(){ try{ sessionStorage.removeItem(STORE_KEY); }catch{} Object.assign(state, defaultState()); syncInputs(); render(); }
+
+$('device').onchange=(e)=>setDevice(+e.target.value);
+$('cw').oninput=(e)=>{ state.W=+e.target.value||state.W; $('device').value=DEVICES.length-1; render(); };
+$('ch').oninput=(e)=>{ state.H=+e.target.value||state.H; $('device').value=DEVICES.length-1; render(); };
+$('mode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.mode=b.dataset.m;
+  $('mode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  // NO reseed — each mode keeps its own persistent enemies layout (groupOf resolves to it). Just show it.
+  state.sel='enemies'; render(); });
+['nEnemies','nHeroes','nChests'].forEach(k=>{ $(k).oninput=(e)=>{ state[k]=+e.target.value; $(k+'V').textContent=e.target.value; render(); }; });
+$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.sel=b.dataset.g; render(); });
+$('gdx').oninput=(e)=>{ groupOf(state.sel).dx=+e.target.value||0; renderEnts(); };
+$('gdy').oninput=(e)=>{ groupOf(state.sel).dy=+e.target.value||0; renderEnts(); };
+$('ggap').oninput=(e)=>{ groupOf(state.sel).gap=+e.target.value; $('ggapV').textContent=e.target.value; renderEnts(); };
+// board grid controls
+{ const map={bcols:'cols',brows:'rows',bgap:'gap'}; ['bcols','brows','bgap'].forEach(k=>{ $(k).oninput=(e)=>{ state.board[map[k]]=+e.target.value; $(k+'V').textContent=e.target.value; render(); }; }); }
+$('bmaxw').oninput=(e)=>{ state.board.maxW=+e.target.value||state.board.maxW; render(); };
+$('brule').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.board.rule=b.dataset.r; $('brule').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); render(); });
+$('reset').onclick=resetAll;
+$('export').onclick=()=>{
+  const out={ device:{w:state.W,h:state.H}, arena:arena(), mode:state.mode,
+    counts:{enemies:state.nEnemies,heroes:state.nHeroes,chests:state.nChests},
+    groups:{
+      enemies:{ regular:expG(state.enemiesByMode.regular), boss:expG(state.enemiesByMode.boss) },
+      heroes:expG(state.groups.heroes), chests:expG(state.groups.chests),
+    },
+    board:{...state.board, reserveH:Math.round(boardReserveH(state.W))} };
+  const t=JSON.stringify(out,null,2);
+  navigator.clipboard.writeText(t).then(()=>{ const b=$('export'),o=b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1200); },()=>alert(t));
+};
+
+initDevices(); const saved=loadPersisted(); if(saved) Object.assign(state, saved); syncInputs(); render();
+</script>
+</body>
+</html>

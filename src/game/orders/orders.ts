@@ -27,7 +27,7 @@ const rollWeighted = (weights: Record<string, number>, rng: Rng): string => {
 // orders predating the reward enum). Absent → the default gear chest.
 export const orderReward = (o: Order): OrderReward => o.reward || (o.special ? 'special' : 'gear');
 
-export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null, forcedReward: OrderReward | null = null, allowSpecial = true): Order => {
+export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>, eligibleChains: string[] = C.ORDER_CHAINS, forcedRarity: string | null = null, forcedReward: OrderReward | null = null, allowSpecial = true, allowPotion = true): Order => {
   const chains = eligibleChains.length ? eligibleChains : C.ORDER_CHAINS;
   const rarity = forcedRarity || rollWeighted(weights, rng);
   const r = rng();
@@ -41,10 +41,11 @@ export const rollOrder = (id: number, rng: Rng, weights: Record<string, number>,
     items.push({ chain: c, level: randInt(0, Math.min(C.ORDER_CONFIG.fillerMaxLevel, C.CHAINS[c].tiers - 1), rng) });
   }
   // REWARD TYPE (rolled by chance): a limit POTION (fills limit energy), a SPECIAL S-tile, or the default
-  // gear chest. SPECIAL is gated by `allowSpecial` (the FTUE unlock flag) — locked → it can never roll.
+  // gear chest. POTION is gated by `allowPotion` (only ever ONE limit order active) and SPECIAL by
+  // `allowSpecial` (the FTUE unlock flag) — locked → that type can never roll.
   // A REROLL forces the source order's type (forcedReward) so it survives the reroll.
   const reward: OrderReward = forcedReward != null ? forcedReward
-    : rng() < (C.ORDER_CONFIG.potionChance || 0) ? 'potion'
+    : (allowPotion && rng() < (C.ORDER_CONFIG.potionChance || 0)) ? 'potion'
       : (allowSpecial && rng() < (C.ORDER_CONFIG.specialChance || 0)) ? 'special'
         : 'gear';
   return { id, items, difficulty: tileTotal(items), rarity, reward };

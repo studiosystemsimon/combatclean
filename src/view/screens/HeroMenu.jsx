@@ -27,7 +27,7 @@ import {
 } from '../../model/gear.js';
 import { resolve, heroAsset } from '../assets.js';
 import { fmtK as fmt } from '../fmt.js';
-import { fxMenuHeroLevelUp, fxMenuGearBurst, fxMenuPow, fxMenuEquip, fxMaxed } from '../fx/hero-fx.js';
+import { fxMenuHeroLevelUp, fxMenuGearBurst, fxMenuPow, fxMenuEquip, fxMenuEquipSlot, fxMaxed } from '../fx/hero-fx.js';
 
 const HERO_BG = resolve('ui.hero-bg').img;
 const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji || GEAR_SLOT_META[slot].emoji;
@@ -71,7 +71,16 @@ export default function HeroMenu() {
     if (p.kind === 'hero') fxMenuHeroLevelUp(nodes, p.before, after, heroMaxLevel(char));
     else if (p.kind === 'equip') fxMenuEquip(eqCurRef.current, powRef.current, p.before.pow, after.pow);
     else if (p.kind === 'gearone') { fxMenuGearBurst(eqCurRef.current); fxMenuPow(powRef.current, p.before.pow, after.pow); }
-    else { // gearall / equipbest — burst every affected side tile + one power count-up
+    else if (p.kind === 'equipbest') { // EQUIP (not level): flash each CHANGED slot + its power delta vs what was there before. No "LEVEL UP".
+      (p.slots || []).forEach((slot) => {
+        const g = equippedInSlot(state.gear, cid, slot);
+        const afterId = g ? g.id : null, afterPow = g ? gearPower(g) : 0;
+        const b = p.beforeSlots ? p.beforeSlots[slot] : null;
+        if (afterId !== (b ? b.id : null)) fxMenuEquipSlot(gearSlotRefs.current[slot], afterPow - (b ? b.pow : 0));
+      });
+      fxMenuPow(powRef.current, p.before.pow, after.pow);
+    }
+    else { // gearall (Level All) — LEVEL UP burst per levelled slot + one power count-up
       (p.slots || []).forEach((slot) => fxMenuGearBurst(gearSlotRefs.current[slot]));
       fxMenuPow(powRef.current, p.before.pow, after.pow);
     }
@@ -116,7 +125,13 @@ export default function HeroMenu() {
   const doLevelUp = () => { if (atMax) { fxMaxed(heroImgRef.current); return; } if (!canLevelHero(char, state.heroXp)) return; pending.current = { kind: 'hero', before: snap() }; actions.levelUpHero(cid); };
   const doLevelUpMax = () => { if (atMax) { fxMaxed(heroImgRef.current); return; } if (levelUpHeroMax(char, state.heroXp).gained <= 0) return; pending.current = { kind: 'hero', before: snap() }; actions.levelUpHeroMax(cid); };
   const doLevelGear = (max) => { if (!canUpgradeHeroGear(state.gear, cid, state.gearXp)) return; pending.current = { kind: 'gearall', before: snap(), slots: equippedSlots }; if (max) actions.levelAllMax(cid); else actions.levelAllOne(cid); };
-  const doEquipBest = () => { if (!canEquipBetter(state.gear, cid, cls)) return; pending.current = { kind: 'equipbest', before: snap(), slots }; actions.equipBest(cid); };
+  const doEquipBest = () => {
+    if (!canEquipBetter(state.gear, cid, cls)) return;
+    const beforeSlots = {}; // per-slot equipped piece BEFORE → power delta after equip-best (0 if the slot was empty)
+    slots.forEach((s) => { const g = equippedInSlot(state.gear, cid, s); beforeSlots[s] = g ? { id: g.id, pow: gearPower(g) } : null; });
+    pending.current = { kind: 'equipbest', before: snap(), slots, beforeSlots };
+    actions.equipBest(cid);
+  };
   const doLevelGearOne = () => { const g = equippedInSlot(state.gear, cid, equipSlot); if (!g || !canLevelGear(g, state.gearXp)) return; pending.current = { kind: 'gearone', before: snap(), slot: equipSlot }; actions.levelGear(g.id); };
   const doEquip = (slot, item) => { pending.current = { kind: 'equip', before: snap(), slot }; actions.equipItem(cid, item.id); setConfirmEq(null); };
   // Ascend: count up the SURVIVING (kept) copy's stats old→new; if the menu was open on the sacrificed

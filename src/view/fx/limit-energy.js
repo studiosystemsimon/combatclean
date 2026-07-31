@@ -15,12 +15,20 @@ import { VFX_CONFIG } from '../../data/config.js';
 const CC = VFX_CONFIG.combatColors;
 const CB = VFX_CONFIG.combat;
 
-// A transient absolute overlay child of the limit bar (bar is position:relative, overflow:visible).
-function overlayChild(bar, css) {
-  const el = document.createElement('i');
+// POOLED transient overlay child of the limit bar (#8): reuse <i> nodes across mote landings instead of
+// creating + GC-ing 3–4 fresh nodes every landing. ovRelease clears the node (incl. any child, e.g. the
+// wipe band) and returns it to the pool. The bar is position:relative, overflow:visible.
+const _ovPool = [];
+function ovAcquire(bar, css) {
+  const el = _ovPool.pop() || document.createElement('i');
   el.style.cssText = 'position:absolute;inset:0;border-radius:inherit;pointer-events:none;' + css;
   bar.appendChild(el);
   return el;
+}
+function ovRelease(el) {
+  el.remove();
+  el.style.cssText = ''; el.textContent = ''; // drop inline styles + any child node before reuse
+  if (_ovPool.length < 24) _ovPool.push(el);
 }
 
 // The in-game bar flash — combat.limitPulse. A dramatic, SHARP multi-layer pop fired as each
@@ -36,18 +44,18 @@ export function pulseLimitBar(bar) {
     { duration: p.ms, easing: 'cubic-bezier(.15,.9,.25,1)' },
   );
   // B — whole-bar WHITE flash: sharp in, quick out.
-  const flash = overlayChild(bar, 'background:#fff;z-index:6;opacity:0;');
-  flash.animate([{ opacity: 0 }, { opacity: p.white, offset: p.whitePeak }, { opacity: 0 }], { duration: p.ms, easing: 'ease-out' }).onfinish = () => flash.remove();
+  const flash = ovAcquire(bar, 'background:#fff;z-index:6;opacity:0;');
+  flash.animate([{ opacity: 0 }, { opacity: p.white, offset: p.whitePeak }, { opacity: 0 }], { duration: p.ms, easing: 'ease-out' }).onfinish = () => ovRelease(flash);
   // A — colour WIPE: a bright band sweeps left→right across the bar (clipped to the bar shape).
-  const clip = overlayChild(bar, 'overflow:hidden;z-index:7;');
+  const clip = ovAcquire(bar, 'overflow:hidden;z-index:7;');
   const band = document.createElement('i');
   band.style.cssText = `position:absolute;top:0;bottom:0;left:0;width:55%;background:linear-gradient(90deg,transparent,${p.wipeColor},transparent);`;
   clip.appendChild(band);
-  band.animate([{ transform: 'translateX(-140%)' }, { transform: 'translateX(240%)' }], { duration: p.wipeMs, easing: 'ease-out' }).onfinish = () => clip.remove();
+  band.animate([{ transform: 'translateX(-140%)' }, { transform: 'translateX(240%)' }], { duration: p.wipeMs, easing: 'ease-out' }).onfinish = () => ovRelease(clip);
   // D — emitted white rectangular shadow: a glowing rect scales OUT while fading to 0.
   const g = p.ghost;
-  const ghost = overlayChild(bar, `background:transparent;box-shadow:0 0 10px 2px ${g.color};z-index:4;`);
-  ghost.animate([{ transform: 'scale(1,1)', opacity: g.opacity }, { transform: `scale(${g.sx},${g.sy})`, opacity: 0 }], { duration: g.ms, easing: 'ease-out' }).onfinish = () => ghost.remove();
+  const ghost = ovAcquire(bar, `background:transparent;box-shadow:0 0 10px 2px ${g.color};z-index:4;`);
+  ghost.animate([{ transform: 'scale(1,1)', opacity: g.opacity }, { transform: `scale(${g.sx},${g.sy})`, opacity: 0 }], { duration: g.ms, easing: 'ease-out' }).onfinish = () => ovRelease(ghost);
 }
 
 // The READY pop — fired by LimitBar when a bar visually caps.

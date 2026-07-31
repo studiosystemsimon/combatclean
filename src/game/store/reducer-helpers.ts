@@ -93,8 +93,15 @@ export const initState = (now: number, saved: any = null): S => {
   const ftueOn = !!(C.FTUE && C.FTUE.enabledByDefault);
   const orders: any[] = [];
   // Special orders roll into the opening set normally — EXCEPT on a fresh FTUE run, where they stay
-  // suppressed until specialsUnlockAtLevel (see the flags below + the RESOLVE_WIN unlock).
-  for (let i = 0; i < C.ORDER_CONFIG.active; i++) orders.push(Orders.rollOrder(id++, rng, startWeights, eligibleChains, null, null, !ftueOn));
+  // suppressed until specialsUnlockAtLevel (see the flags below + the RESOLVE_WIN unlock). At most ONE
+  // limit (potion) order may be active: once one rolls, the rest are gated off — and the FTUE forces
+  // orders[0] to a potion below, so no OTHER opening potion is allowed on a guided run.
+  let potionUsed = ftueOn;
+  for (let i = 0; i < C.ORDER_CONFIG.active; i++) {
+    const o = Orders.rollOrder(id++, rng, startWeights, eligibleChains, null, null, !ftueOn, !potionUsed);
+    if (Orders.orderReward(o) === 'potion') potionUsed = true;
+    orders.push(o);
+  }
 
   // FTUE override layer (fresh save only): activate the guided run + force the OPENING TWO orders —
   // [0] the keystone Limit Potion, [1] a good armour piece — whose requests = tiles the guided
@@ -126,6 +133,7 @@ export const initState = (now: number, saved: any = null): S => {
     headless: false, // UI-only: background mode — view unmounted, engine keeps ticking (unpersisted)
     minigame: null, // UI-only: active minigame { id, input } (full screen; engine runs headless), null when none (unpersisted)
     rewardPopup: null, // UI-only: { reward, source } shown after a minigame/server reward, null when none (unpersisted)
+    transition: null, // UI-only: pending screen-crumble transition { minigame:{id,input} } (special-orb merge → cinematic → minigame), null when none (unpersisted)
     unlockedGenerators, // generator keys currently unlocked (drives board placement + order eligibility)
     flags: ftueOn ? { ftueActive: true } : { specialOrders: true }, // FTUE run: specials locked until specialsUnlockAtLevel; non-FTUE: specials on from the start
     pendingArea: null, // { zoneIdx, nextLevel, unlocked } while the AREA COMPLETE gate is showing
@@ -134,7 +142,7 @@ export const initState = (now: number, saved: any = null): S => {
   if (!saved) return fresh;
 
   const { lastSeen = now, ...savedRest } = saved;
-  const merged = { ...fresh, ...savedRest, now, fx: [], lastPull: null };
+  const merged = { ...fresh, ...savedRest, now, fx: [], lastPull: null, transition: null };
   // Non-FTUE (+ legacy) saves keep special orders on from the start; an FTUE save keeps its own
   // specialOrders progress (unlocked later at specialsUnlockAtLevel) so a reload can't re-enable them early.
   merged.flags = (saved.flags && saved.flags.ftueActive) ? { ...(merged.flags || {}) } : { ...(merged.flags || {}), specialOrders: true };

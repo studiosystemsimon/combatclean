@@ -172,8 +172,24 @@ export const zGearLoadoutConfig = z.object({
 // minigame — reward RULES the (server-authoritative) meta endpoint applies to a submitted minigame
 // result. Reward = base + perScore × result.score. Amounts are exposed data (never hardcoded server-side).
 export const zMinigameConfig = z.object({
+  pool: z.array(z.string()).min(1).describe('Minigame view-registry ids a special-orb merge picks from at random (seeded rng). Real minigames SUPERSEDE the fallback — see fallbackId.'),
+  fallbackId: z.string().describe('The placeholder/template minigame id. Picked ONLY when the pool holds no other (non-fallback) id; any real minigame supersedes it.'),
   reward: z.object({ coins: int, heroXp: int, gearXp: int }).strict().describe('Flat reward for completing any minigame.'),
   perScore: z.object({ coins: int, heroXp: int, gearXp: int }).strict().describe('Extra reward per point of the minigame result score.'),
+}).strict();
+
+// shooter — the crowd/lane shooter minigame's gameplay tuning (see src/view/minigame/ShooterGame.jsx).
+// Lane/scenery colours come from the CURRENT ZONE's biome (UI config), NOT here; projection/formation
+// render-math + particle-effect colours stay as documented in-module structural constants.
+export const zShooterConfig = z.object({
+  ease: num, distRate: num, runSpeed: num, renderCap: int, memberW: num, startDelayMs: num,
+  crowdCap: int.describe('Hard ceiling on the crowd/squad count — also the score→reward ceiling.'),
+  fire: z.object({ ms: num, jit: num, bulletSpd: num, hitLane: num, hitDepth: num }).strict().describe('hitLane/hitDepth = bullet↔foe hit tolerances.'),
+  gates: z.object({ pairMs: num, addVals: z.array(int).min(1), addProb: num, mul2Prob: num, subTrapChance: num, subVals: z.array(int).min(1) }).strict().describe('Gate roll: add if r<addProb, ×2 if r<mul2Prob, else ×3; subTrapChance turns one gate into a −sub trap.'),
+  foes: z.object({ clusterBase: int, clusterRandBase: num, distClusterDiv: num, hpBase: int, hpDistDiv: num, hpRand: int, sizeMin: num, sizeMax: num, contactDmgDiv: num, spawnDelayMs: num, contactLane: num, killDistBonus: num, gemChance: num, coinChance: num }).strict().describe('gemChance/coinChance = per-kill drop rolls (gem if r<gemChance, coin if r<coinChance).'),
+  boss: z.object({ at: int, hp: num, size: num, creep: num, sweepSpeed: num, escortSnipers: int }).strict(),
+  sniper: z.object({ speed: num, cd: num, aimMs: num, beamHalfW: num, fireFlashMs: num, midRunAt: int, spawnDelayMs: num, initialCdMin: num, initialCdMax: num }).strict(),
+  mine: z.object({ chance: num, afterPair: int, radiusMin: num, radiusMax: num, spawnDelayMs: num }).strict(),
 }).strict();
 
 // reveal — reward/reveal-sequence tuning (gacha pull, chest smash, hero level-up FX, currency pickup).
@@ -367,4 +383,14 @@ export const zVfxConfig = z.object({
     bossHeal: z.object({ pulseBrightness: num, pulseOffset: num, pulseMs: num, wisp: zTrail }).strict(),
     bossRaise: z.object({ arenaShake: num, castBrightness: num, castOffset: num, castMs: num, ringSize: num, ringFromScale: num, ringFromOpacity: num, ringToScale: num, ringMs: num, minionR: num, riseBrightness: num, riseFromScale: num, riseMs: num, riseBaseDelay: num, riseStagger: num }).strict(),
   }).strict().describe('Per-effect combat VFX: hit/flash/shake/telegraph, trails, boss beats.'),
+  transition: z.object({
+    rushT: num, growT: num, growEase: z.string(), igniteMs: num, crumbleMs: num, emitWindow: num, gapMin: num, gapMax: num,
+    emitPerTick: int, suckPerTick: int, popBurst: int, popSpeed: num, emitSpeed: num, suckSpeed: num,
+    ringR: num, offBig: num, bigR: num, rattleMax: num, trailW: num, trailLen: num, headR: num, edge3d: num,
+    shardCount: int, crumbleShake: num, crumbleTail: num.describe('Extra fraction of crumbleMs the shards keep falling after full expansion (e.g. 0.2 = +20%).'),
+    orbGlow: z.string(), orbGlow2: z.string(), igniteColor: z.string(), holeColorA: z.string(), holeColorB: z.string(),
+    collideColor: z.string(), shockColor: z.string(), sparkColorA: z.string(), sparkColorB: z.string(),
+    lashRamp: z.array(z.object({ p: num, c: z.string() }).strict()).min(2).describe('Lash/suction ribbon gradient: positioned stops {p:0..1 (0=head),c:hex}, head→tail.'),
+    popRamp: z.array(z.object({ p: num, c: z.string() }).strict()).min(2).describe('POP-burst ribbon gradient: positioned stops {p:0..1 (0=head),c:hex}, head→tail.'),
+  }).strict().describe('Chaos-orb special-merge → screen-crumble → minigame transition cinematic (see docs/mockups/chaos-orb-transition.html).'),
 }).strict();

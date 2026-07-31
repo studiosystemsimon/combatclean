@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Clean — Slowdown Detective Report</title>
+<style>
+  :root{
+    --bg:#0d0a1a; --bg2:#141029; --card:#181233; --card2:#1e1740;
+    --ink:#ece9f7; --ink-dim:#a49dc4; --ink-faint:#736c94;
+    --line:#2b2450; --line2:#3a3168;
+    --accent:#8a6bff; --accent2:#b79bff;
+    --crit:#ff4d5e; --high:#ff8a3d; --mid:#ffcf45; --low:#4bd18a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+  body{background:radial-gradient(1200px 600px at 80% -10%,rgba(138,107,255,.14),transparent 60%),var(--bg)}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 90px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .eyebrow{font:600 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.01em}
+  h1 .proj{color:var(--accent2)}
+  .sub{color:var(--ink-dim);font-size:14px;margin:0}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px 18px;font:500 12.5px/1 var(--mono);color:var(--ink-faint)}
+  .meta b{color:var(--ink-dim);font-weight:600}
+
+  .lensbar{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 8px}
+  .lens-badge{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;font:600 12px/1 var(--sans);color:var(--ink-dim)}
+  .lens-badge .n{font:700 12px/1 var(--mono);color:var(--ink)}
+  .lens-badge.hot{border-color:#5a3d6e;color:var(--ink)}
+  .lens-badge.clean{opacity:.55}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line2)}
+  .dot.crit{background:var(--crit)} .dot.high{background:var(--high)}
+  .dot.mid{background:var(--mid)} .dot.low{background:var(--low)}
+
+  .rollup{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 30px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink-dim)}
+  .pill b{color:var(--ink);font-size:16px;font-weight:800;margin-right:5px}
+
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+    border-radius:14px;padding:20px 20px 18px;margin:0 0 18px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sev,var(--line2))}
+  .card.crit{--sev:var(--crit)} .card.high{--sev:var(--high)} .card.mid{--sev:var(--mid)} .card.low{--sev:var(--low)}
+  .chead{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .rank{font:800 15px/1 var(--mono);color:var(--ink-faint);padding-top:3px;min-width:26px}
+  .ctitle{flex:1 1 340px;min-width:280px}
+  .ctitle h2{font-size:17px;margin:0 0 8px;letter-spacing:-.01em}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px}
+  .tag{font:600 11px/1 var(--mono);letter-spacing:.03em;padding:5px 9px;border-radius:6px;background:var(--card2);
+    border:1px solid var(--line2);color:var(--accent2)}
+  .tag.sec{color:var(--ink-dim)}
+
+  .prob{flex:0 0 168px;text-align:right}
+  .prob .pct{font:800 26px/1 var(--sans)}
+  .prob .lbl{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px}
+  .bar{height:8px;border-radius:6px;background:var(--line);margin-top:9px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:6px}
+  .crit .prob .pct{color:var(--crit)} .crit .bar>i{background:linear-gradient(90deg,#ff8a3d,var(--crit))}
+  .high .prob .pct{color:var(--high)} .high .bar>i{background:linear-gradient(90deg,var(--mid),var(--high))}
+  .mid .prob .pct{color:var(--mid)}  .mid .bar>i{background:linear-gradient(90deg,#9ad46b,var(--mid))}
+  .low .prob .pct{color:var(--low)}  .low .bar>i{background:linear-gradient(90deg,#3aa0c9,var(--low))}
+
+  .cite{font:600 12.5px/1.7 var(--mono);color:var(--accent2);background:var(--bg);border:1px solid var(--line);
+    border-radius:8px;padding:9px 12px;margin:15px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .cite span{white-space:nowrap}
+  .mech{font-size:14px;color:var(--ink);margin:14px 0 0}
+  .mech .k{color:var(--accent2);font-family:var(--mono);font-size:13px}
+  .load{font-size:13.5px;color:var(--ink-dim);background:var(--card2);border-left:3px solid var(--sev,var(--line2));
+    border-radius:0 8px 8px 0;padding:10px 13px;margin:13px 0 0}
+  .load b{color:var(--ink)}
+  .actions{margin-top:15px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  button[data-copy-target]{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;
+    font:700 13px/1 var(--sans);cursor:pointer;transition:background .15s,opacity .15s}
+  button[data-copy-target]:hover{background:#9a7dff}
+  button[data-copy-target]:disabled{opacity:.7;cursor:default}
+  details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  summary{cursor:pointer;font:600 12.5px/1 var(--sans);color:var(--ink-dim);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--accent2)}
+  details[open] summary::before{content:"▾ "}
+  pre.prompt{white-space:pre-wrap;font:400 12.5px/1.55 var(--mono);color:var(--ink);background:var(--bg);
+    border:1px solid var(--line);border-radius:8px;padding:14px;margin:11px 0 0;overflow-x:auto}
+
+  h3.section{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+    margin:38px 0 14px;border-bottom:1px solid var(--line);padding-bottom:8px;font-family:var(--mono)}
+  .clean-note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:13.5px;color:var(--ink-dim)}
+  .clean-note b{color:var(--low)}
+  ol.next{padding-left:0;list-style:none;counter-reset:step}
+  ol.next li{counter-increment:step;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px 14px 52px;margin-bottom:10px;position:relative;font-size:14px}
+  ol.next li::before{content:counter(step);position:absolute;left:14px;top:13px;width:26px;height:26px;border-radius:50%;
+    background:var(--accent);color:#fff;font:800 13px/26px var(--mono);text-align:center}
+  ol.next code{font-family:var(--mono);font-size:12.5px;color:var(--accent2);background:var(--bg);padding:2px 6px;border-radius:5px}
+  footer{margin-top:44px;color:var(--ink-faint);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+  kbd{font-family:var(--mono);background:var(--card2);border:1px solid var(--line2);border-radius:4px;padding:1px 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">◆ Slowdown Detective — frame-budget audit</div>
+  <h1><span class="proj">Combat Clean</span> — performance / frame-drop diagnosis</h1>
+  <p class="sub">Vite 5 · React 18 UI overlay · HTML5 Canvas-2D FX · plain-TS headless sim. Scanned against a mid/late-game inventory: <b style="color:var(--ink)">50 heroes · 100 gear items</b>.</p>
+  <div class="meta">
+    <span><b>Scan date:</b> 2026-07-31</span>
+    <span><b>Sim rate:</b> BATTLE_TICK = 200ms (5 Hz)</span>
+    <span><b>Combat cap:</b> maxWave 5 + squad 5 (bounded)</span>
+    <span><b>Findings:</b> 10</span>
+    <span><b>Do-not-touch:</b> game code &amp; data (read-only audit)</span>
+  </div>
+
+  <div class="lensbar">
+    <span class="lens-badge hot"><span class="dot high"></span>L1 O(N²) / N×M loops <span class="n">3</span></span>
+    <span class="lens-badge hot"><span class="dot mid"></span>L2 Allocation churn <span class="n">1</span></span>
+    <span class="lens-badge hot"><span class="dot high"></span>L3 Particle / VFX <span class="n">2</span></span>
+    <span class="lens-badge hot"><span class="dot mid"></span>L4 Canvas / paint thrash <span class="n">2</span></span>
+    <span class="lens-badge hot"><span class="dot low"></span>L5 Layout / DOM reads <span class="n">1</span></span>
+    <span class="lens-badge clean"><span class="dot"></span>L6 Asset decode <span class="n">0</span></span>
+    <span class="lens-badge clean"><span class="dot"></span>L7 Leaked transforms <span class="n">0</span></span>
+    <span class="lens-badge hot"><span class="dot mid"></span>L8 Timer abuse <span class="n">1</span></span>
+    <span class="lens-badge clean"><span class="dot"></span>L9 Hit-stop stacking <span class="n">0</span></span>
+    <span class="lens-badge hot"><span class="dot crit"></span>L10 Off-screen / re-render fan-out <span class="n">1</span></span>
+  </div>
+
+  <div class="rollup">
+    <span class="pill"><b>3</b>🔴 CRITICAL (≥70%)</span>
+    <span class="pill"><b>3</b>🟡 LIKELY (40–69%)</span>
+    <span class="pill"><b>4</b>🟢 LOW (&lt;40%)</span>
+    <span class="pill">Top suspect: <b style="font-size:13px">Combat-tick re-render fan-out</b> 82%</span>
+  </div>
+</header>
+
+<!-- ══════════════════════ FINDING 1 ══════════════════════ -->
+<section class="card crit">
+  <div class="chead">
+    <div class="rank">#1</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L10 · re-render fan-out</span><span class="tag sec">L8 · timer</span><span class="tag sec">root cause</span></div>
+      <h2>The 5 Hz combat tick re-renders EVERY mounted screen through one monolithic context — with nothing memoized</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">82%</div><div class="lbl">Critical</div>
+      <div class="bar"><i style="width:82%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/controller/GameContext.tsx:43–54</span><span>:161–165 (single StateContext)</span>
+    <span>src/view/Game.jsx:43–48 (persistent combat panel)</span><span>17 useGame() consumers, 0 React.memo</span>
+  </div>
+  <p class="mech">A <span class="k">setInterval(…, tickMs=200)</span> dispatches <span class="k">BATTLE_TICK</span> five times a second. The reducer returns a <b>new top-level <span class="k">state</span> object every tick</b> (it always spreads <span class="k">{ ...state, battle, fx }</span>). All 17 view components read that state through a <b>single <span class="k">StateContext</span></b> via <span class="k">useGame()</span>, and <b>not one component is wrapped in <span class="k">React.memo</span></b> (only HeadlessScreen imports memo). So every 200ms the whole tree under <span class="k">GameProvider</span> re-renders — <span class="k">Game → Header, NavBar, Autobattler, Board, Orders</span>, <b>and whichever heavy screen is mounted</b>. The combat panel is <em>persistent</em> (shown on merge/heroes/gear), so this fan-out fires even while the player is just browsing the Heroes or Gear tab with combat idling in the background.</p>
+  <div class="load">Worst case: browsing the <b>Heroes</b> or <b>Gear</b> tab at 50 heroes / 100 items, the screen re-renders <b>5×/second forever</b> — and each re-render re-runs the O(n) / O(n²) gear scans in findings #2 and #3. This is the amplifier that converts "an expensive render" into "an expensive render, continuously." The combat sim itself is bounded (maxWave 5, squad 5) — the danger is purely the fan-out radius.</div>
+  <div class="actions">
+    <button data-copy-target="p1">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: context split (battle vs meta) · React.memo screen boundaries · selector hooks</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p1">Frame-budget audit follow-up: combat-tick re-render fan-out (Combat Clean).
+
+SYMPTOM: the game "feels slow", worst at mid/late game (50 heroes, 100 gear).
+
+ROOT MECHANISM: src/controller/GameContext.tsx runs setInterval(…, C.BATTLE.tickMs)
+where tickMs=200 (see src/data/config/game/_battle.json), dispatching BATTLE_TICK 5×/s.
+The reducer (src/game/store/reducer-combat.ts, A.BATTLE_TICK ~line 36-61) returns a NEW
+top-level state object every tick. Every view component reads that via a SINGLE
+StateContext (GameContext.tsx:161-165) through useGame(). 17 components call useGame()
+and NONE are wrapped in React.memo. So all mounted screens re-render 5×/s — including
+the persistent combat panel (src/view/Game.jsx:43-48) that stays mounted on the
+merge/heroes/gear tabs. On the Heroes/Gear screens this re-render re-runs O(n)/O(n²)
+gear scans (see HeroesScreen.jsx renderCell + GearScreen.jsx items.map).
+
+PLEASE:
+1. Confirm the fan-out with the React DevTools Profiler: sit on the Heroes tab with
+   combat running and record ~3s. Expect ~15 commits with HeroesScreen + all siblings
+   re-rendering. Also press P in-app to dump the perf-probe snapshot
+   (src/view/fx/perf-probe.js) for long-task / FPS context.
+2. Split the context so combat-only state (state.battle, state.fx) lives in its own
+   provider/context, separate from meta state (heroes, gear, order, coins…). Screens
+   that don't render combat should NOT subscribe to the 5 Hz battle slice. Route
+   through the EXISTING GameContext seam — do NOT create a parallel store or a second
+   dispatch path (that violates the project's no-parallel-workflows rule).
+3. Add React.memo boundaries at the screen level (HeroesScreen, GearScreen, MergeScreen,
+   Board) and/or selector hooks (useContextSelector-style) so a battle-only change
+   cannot re-render a meta screen.
+4. Keep the sim on its owned timer, but verify BATTLE_TICK still no-ops early when
+   status !== 'fighting' (it does) so idle screens allocate nothing.
+
+CONSTRAINTS: view is a pure reader (ARCHITECTURE.md rule 2) — zero game logic added to
+the view. All tunables stay in src/data/*.json (no magic literals). Update the touched
+modules' README + the CLAUDE.md Module index if the context seam changes. Do NOT modify
+data files. Run `npm run build` to validate (npm test/eslint are env-broken here).</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 2 ══════════════════════ -->
+<section class="card crit">
+  <div class="chead">
+    <div class="rank">#2</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L1 · O(N²) per render</span><span class="tag sec">gear @ 100 items</span></div>
+      <h2>GearScreen recomputes fuse-eligibility for every tile against the whole gear map — O(n²) — on every render</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">76%</div><div class="lbl">Critical</div>
+      <div class="bar"><i style="width:76%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/screens/GearScreen.jsx:89 (sortGear each render)</span>
+    <span>:171–180 (items.map → canAffordFuse per tile)</span>
+    <span>src/game/gear/gear.ts:140–149 (fuseFodder / canFuse / canAffordFuse)</span>
+  </div>
+  <p class="mech">The grid maps over <span class="k">items = sortGear(Object.values(state.gear))</span> (recomputed &amp; re-sorted on <em>every</em> render, not memoized) and for each of the 100 tiles passes <span class="k">fuseReady={canAffordFuse(state.gear, g.id, state.coins)}</span>. <span class="k">canAffordFuse → canFuse → fuseFodder</span> runs <span class="k">Object.values(gearMap).filter(...)</span> over all 100 items <b>per tile</b>. That is a full N-scan inside an N-map: <b>O(n²)</b>. Combined with finding #1 (this screen re-renders 5×/s while combat idles behind it), the quadratic pass fires continuously.</p>
+  <div class="load">Worst case: 100 tiles × 100-item <span class="k">fuseFodder</span> filter = <b>10,000 iterations per render</b>; × the 5 Hz combat-tick re-render = <b>~50,000 filter iterations / second</b> while merely sitting on the Gear tab — plus a fresh 100-item sort each render.</div>
+  <div class="actions">
+    <button data-copy-target="p2">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: single-pass bucketed eligibility · useMemo(items, coins) · memo tile</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p2">Frame-budget audit follow-up: GearScreen O(n²) fuse-eligibility (Combat Clean).
+
+SYMPTOM: Gear tab is sluggish at ~100 items; scrolling/opening stutters.
+
+MECHANISM: src/view/screens/GearScreen.jsx line 89 does
+`const items = sortGear(Object.values(state.gear))` on every render (no memo), then
+line 171 `items.map(...)` renders one MediumEquipmentTile per item passing
+`fuseReady={canAffordFuse(state.gear, g.id, state.coins)}`. canAffordFuse →
+canFuse → fuseFodder (src/game/gear/gear.ts:140-149) runs
+`Object.values(gearMap).filter(...)` over ALL items PER tile → O(n²) ≈ 10,000
+iterations per render at 100 items. GearScreen re-renders 5×/s because it reads
+useGame() and the persistent combat panel ticks (see fan-out finding #1) → ~50k
+filter iterations/second while idle on the tab.
+
+PLEASE:
+1. Reproduce: React DevTools Profiler on the Gear tab, note GearScreen commit
+   duration at 100 items; and press P for the perf-probe long-task dump.
+2. Replace the per-tile filter with a SINGLE-PASS eligibility map computed once per
+   render: group unequipped items by (slot + rarity + classKey) in one O(n) pass,
+   then each item's fodder count is a map lookup. fuseFodder itself already keys on
+   slot+rarity+(classKey for classBound) — mirror that grouping key exactly so the
+   count matches.
+3. Wrap `items` (and the eligibility map) in useMemo keyed on [state.gear, state.coins].
+   Consider React.memo on MediumEquipmentTile so unchanged tiles skip re-render.
+4. This finding compounds with the fan-out fix (#1): once GearScreen no longer
+   re-renders on the battle tick, the quadratic pass runs only on real gear changes.
+   Do both if you can; the memo alone still removes the per-tick recompute.
+
+CONSTRAINTS: fuse rules live in src/game/gear/gear.ts (pure logic) — keep the
+eligibility logic there or in a view-local selector, but do NOT change fuse behaviour
+or numbers. No magic literals (all tuning stays in src/data). View stays a pure reader.
+Do NOT modify data files. Validate with `npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 3 ══════════════════════ -->
+<section class="card high">
+  <div class="chead">
+    <div class="rank">#3</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L1 · N×gear per render</span><span class="tag sec">heroes @ 50 × gear @ 100</span></div>
+      <h2>HeroesScreen re-scans the 100-item gear map several times per hero tile — for up to 50 tiles — every render</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">72%</div><div class="lbl">Critical</div>
+      <div class="bar"><i style="width:72%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/screens/HeroesScreen.jsx:69–70 (powOf/gearPowOf)</span>
+    <span>:322–383 (renderCell per hero)</span><span>:181–187 (canAscendCid → ascendSelection)</span>
+    <span>src/game/gear/gear.ts:17–18, 161 (equippedFor / equippedInSlot)</span>
+  </div>
+  <p class="mech"><span class="k">renderCell</span> runs inline in the JSX map for every hero (squad + roster = up to 50). Per cell it calls <span class="k">powOf → heroGearPower → equippedFor</span> (an <span class="k">Object.values(gear).filter</span> over 100), then <span class="k">def.slots.map</span> → three <span class="k">equippedInSlot</span> (<span class="k">Object.values(gear).find</span> over 100 each), then <span class="k">canAscendCid → ascendSelection</span> which loops every copy of that hero calling <span class="k">powerOfCid</span> (another O(gear) scan) up to four times per copy. Only the sorted <span class="k">roster</span> id-list is memoized (<span class="k">useMemo</span> at :392) — the per-cell scans are not.</p>
+  <div class="load">Worst case: ~50 cells × (1 filter + 3 finds + ascend loop) ≈ <b>350–600 gear-array iterations per cell</b> → <b>~20,000–30,000 iterations per render</b>, × the 5 Hz fan-out re-render (finding #1) = <b>~100k+ gear scans / second</b> idling on the Heroes tab, plus reconciliation of ~50 tiles × ~10 nodes.</div>
+  <div class="actions">
+    <button data-copy-target="p3">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: one power/equip map per render · precompute equipped-by-hero index · memo cell</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p3">Frame-budget audit follow-up: HeroesScreen per-cell gear rescans (Combat Clean).
+
+SYMPTOM: Heroes tab feels heavy at 50 heroes / 100 gear.
+
+MECHANISM: src/view/screens/HeroesScreen.jsx renderCell (line 322-383) runs for every
+hero in squad+roster (up to 50). Per cell:
+  - powOf(id) → heroPower + heroGearPower(state.gear, cid) → equippedFor →
+    Object.values(gear).filter over 100 (src/game/gear/gear.ts:17-18).
+  - def.slots.map → equippedInSlot × 3 → Object.values(gear).find over 100 each (gear.ts:161).
+  - canAscendCid(id) → ascendSelFor → ascendSelection (src/game/heroes/heroes.ts:49-59)
+    loops every copy of the hero calling powerOfCid (another O(gear) scan) ~2-4× per copy.
+Only the sorted roster ID list is memoized (useMemo line 392); the per-cell scans run on
+EVERY render. HeroesScreen re-renders 5×/s from the combat tick (fan-out finding #1) →
+~100k+ gear iterations/second while idle on the tab.
+
+PLEASE:
+1. Reproduce with the React DevTools Profiler on the Heroes tab (combat running); note
+   HeroesScreen commit time at 50/100. Press P for the perf-probe dump.
+2. Build ONE index per render (useMemo keyed on [state.gear]) that maps heroId ->
+   { totalGearPower, bySlot: {slot -> item} } in a single O(gear) pass over
+   Object.values(state.gear) grouped by equippedTo. renderCell then does map lookups
+   instead of scanning the whole gear map. Also memoize a heroId -> power map so
+   ascendSelection's powerOf is O(1).
+3. Memoize canAscend per hero the same way (it only depends on heroes + the power map).
+   Consider React.memo on the cell component.
+4. Compounds with fan-out fix #1 — once the screen stops re-rendering on the battle
+   tick, these run only on real hero/gear changes.
+
+CONSTRAINTS: keep power/equip logic pure in src/game (or a view selector); do NOT change
+power/ascend math. No magic literals; view stays read-only. Do NOT modify data files.
+Validate with `npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 4 ══════════════════════ -->
+<section class="card mid">
+  <div class="chead">
+    <div class="rank">#4</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L3 · VFX DOM churn</span><span class="tag sec">L8 · setInterval</span><span class="tag sec">recent change</span></div>
+      <h2>Each charged hero runs its own setInterval spawning 2 transitioned DOM blobs every 180ms</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">56%</div><div class="lbl">Likely</div>
+      <div class="bar"><i style="width:56%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/Autobattler.jsx:31–45 (spawnLimitBlob)</span><span>:122–134 (setInterval per charged LimitBar)</span>
+    <span>_vfx.json: badge.emitMs=180 · flyMs=800 · blobPx=13</span>
+  </div>
+  <p class="mech">When a LimitBar is <span class="k">charged</span>, a <span class="k">setInterval(emitMs=180)</span> fires <span class="k">spawnLimitBlob</span> twice per tick (left + right emitters). Each blob is a freshly-created <span class="k">&lt;i&gt;</span> appended to the bar, forced to commit a layout (<span class="k">void el.offsetWidth</span>), animated via a CSS <span class="k">transition</span>, and removed by a <span class="k">setTimeout(flyMs + 50 = 850ms)</span>. With a live-time of 850ms and a 180ms spawn interval, ~<b>9–10 blob nodes are alive per charged hero</b> at any moment, each running a transform+scale transition.</p>
+  <div class="load">Worst case: up to 5 heroes charged at once (an order that tops everyone off) → <b>5 concurrent setIntervals</b> + <b>~45–50 transitioning DOM nodes</b> continuously created/animated/GC'd — on top of the two infinite CSS animations already painting each bar (finding #6). Sustained DOM churn + layout-commit per blob is a classic mid-frame hitch source on mobile.</div>
+  <div class="actions">
+    <button data-copy-target="p4">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: DOM pool · single rAF emitter · cap concurrent charged emitters · transform-only</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p4">Frame-budget audit follow-up: charged-hero limit-blob emitter churn (Combat Clean).
+
+SYMPTOM: stutter when several heroes are charged (LIMIT bars full) in combat.
+
+MECHANISM: src/view/Autobattler.jsx LimitBar (line 122-134) starts a setInterval at
+LB_BADGE.emitMs (=180ms, _vfx.json → combat.limitCharge.badge) while charged, calling
+spawnLimitBlob (line 31-45) TWICE per tick. Each call document.createElement('i'),
+appends to the bar, forces a layout commit (void el.offsetWidth), starts a CSS transform
+transition, and schedules setTimeout(remove, flyMs+50 = 850ms). Live-time 850ms ÷ 180ms ≈
+~9-10 nodes alive per charged hero. Up to 5 heroes can be charged simultaneously → 5
+intervals + ~45-50 transitioning nodes created/destroyed continuously.
+
+PLEASE:
+1. Reproduce: get all squad limit bars charged (or lower defaultLimitOrders temporarily
+   via the debug flag system, NOT a URL param) and press P to capture the perf-probe
+   "flying VFX DOM nodes" + WAAPI animation count + long tasks.
+2. Pool the blob nodes (reuse a small fixed set of <i> per emitter, restart their
+   transition instead of create/remove), OR drive all emitters from ONE shared rAF/timer
+   that round-robins a shared node pool — a single owner, not one timer per hero.
+3. Cap the number of concurrently-emitting charged bars (data-driven cap in _vfx.json),
+   so 5 charged heroes don't multiply the churn.
+4. Keep the blob motion transform/opacity-only (it already is) so it stays on the
+   compositor; avoid the forced layout commit per spawn if pooling.
+
+CONSTRAINTS: this is view-layer presentation only; keep all timing/size/count in
+_vfx.json (combat.limitCharge.badge) — no hardcoded literals. Respect
+prefers-reduced-motion (already handled). Do NOT modify data VALUES to "fix" perf; the
+fix is structural (pool/one-owner). Validate with `npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 5 ══════════════════════ -->
+<section class="card mid">
+  <div class="chead">
+    <div class="rank">#5</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L4 · gradient in hot loop</span><span class="tag sec">L2 · alloc</span></div>
+      <h2>Energy-mote ribbon allocates a fresh createLinearGradient per segment, per mote, per frame</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">46%</div><div class="lbl">Likely</div>
+      <div class="bar"><i style="width:46%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/fx/fx-engine.js:365–375 (_stepEnergyMotes per-segment loop)</span>
+    <span>:332–388 (mote spine up to MOTE_SPINE_N=120)</span>
+  </div>
+  <p class="mech">Inside <span class="k">_stepEnergyMotes</span>, for every mote the ribbon is drawn segment-by-segment, and <b>each segment creates a new gradient</b>: <span class="k">const g = ctx.createLinearGradient(a.x,a.y,b.x,b.y); g.addColorStop(…); g.addColorStop(…)</span>. Gradient objects are among the most expensive Canvas-2D allocations, and here they are minted inside the innermost loop (one per spine segment) every frame. The spine can grow to 120 points; the colour ramp is also recomputed per stop via <span class="k">rampAt</span>. Unlike the generic <span class="k">spawnTrail</span> (which pre-bakes a colour LUT once), the mote path builds gradients live.</p>
+  <div class="load">Worst case: an order tops off all 5 heroes → 5 simultaneous motes, each with a multi-segment spine, each segment a <span class="k">createLinearGradient</span> + 2 <span class="k">addColorStop</span> + a <span class="k">rampAt</span> lerp, at 60fps for the ~0.85s flight + linger. Bursty, transient — but a real per-frame allocation + GPU gradient-compile spike concurrent with the blob churn (#4) and pulse DOM (#8).</div>
+  <div class="actions">
+    <button data-copy-target="p5">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: pre-baked colour LUT (like spawnTrail) · flat strokes · fewer segments</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p5">Frame-budget audit follow-up: energy-mote per-segment gradient allocation (Combat Clean).
+
+SYMPTOM: micro-stutter during limit-charge bursts (order/merge tops off heroes).
+
+MECHANISM: src/view/fx/fx-engine.js _stepEnergyMotes (line 332-388). The ribbon draw
+loop (line 365-375) does, PER SEGMENT PER FRAME:
+  const g = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+  g.addColorStop(0, colAt(ta)); g.addColorStop(1, colAt(tb)); ctx.fillStyle = g;
+createLinearGradient is a heavy Canvas-2D allocation; the mote spine can reach
+MOTE_SPINE_N=120 points, and colAt calls rampAt (a per-call color lerp). Contrast the
+generic spawnTrail (line 222-247) which pre-bakes a head->tail color LUT ONCE per trail
+and indexes it. Up to 5 motes can be in flight at once.
+
+PLEASE:
+1. Reproduce + measure: trigger a 5-hero limit charge, press P for the perf-probe
+   snapshot; in the browser Performance tab record the burst and look for
+   createLinearGradient self-time and GC sawtooth during the ~0.85s flight+linger.
+2. Pre-bake the ramp into a fixed-N color LUT once per mote (mirror spawnTrail's `lut`)
+   and index it by segment position, so the per-segment path is a solid fillStyle string
+   (or a flat rgba) with NO per-segment gradient object.
+3. If the curve-following gradient is visually load-bearing, cap the LUT resolution and
+   reuse a single scratch gradient where possible; also consider a max segment count for
+   the fill (draw every k-th vertex) to cut inner-loop work.
+
+CONSTRAINTS: fx-engine is view-only presentation; keep all tuning in _vfx.json (engine.*
+/ combat.limitCharge.*). Preserve the mote's look as closely as possible — this is a
+perf refactor of the DRAW, not a redesign. Do NOT modify data files. Validate with
+`npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 6 ══════════════════════ -->
+<section class="card mid">
+  <div class="chead">
+    <div class="rank">#6</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L4 · continuous paint</span><span class="tag sec">recent change</span></div>
+      <h2>Limit bars run infinite background-position + filter CSS animations — non-composited paint every frame</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">42%</div><div class="lbl">Likely</div>
+      <div class="bar"><i style="width:42%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/index.css:181–184 (limitFlow / limitChargeGlow)</span><span>:192,198 (lbPop)</span>
+  </div>
+  <p class="mech"><span class="k">.bar.limit span</span> runs two <b>infinite</b> animations while charging: <span class="k">limitFlow</span> animates <span class="k">background-position</span> (0% → −200%) and <span class="k">limitChargeGlow</span> animates <span class="k">filter: brightness/saturate</span>. Neither <span class="k">background-position</span> nor <span class="k">filter</span> is a compositor-only property — both force a <b>repaint of the element every frame</b>, forever, on every purple (charging) limit bar. (<span class="k">lbPop</span> is transform-based and compositor-friendly — fine.)</p>
+  <div class="load">Worst case: all 5 squad limit bars charging at once = 5 elements repainting continuously at display refresh, independent of the JS frame budget — a steady baseline paint tax that stacks with the blob churn (#4) and pulse DOM (#8) during the exact moments the FX canvas is busiest.</div>
+  <div class="actions">
+    <button data-copy-target="p6">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: transform/opacity gradient sweep · will-change · drop the filter pulse</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p6">Frame-budget audit follow-up: infinite background-position/filter limit-bar paint (Combat Clean).
+
+SYMPTOM: steady paint cost / warmth on mobile whenever limit bars are charging.
+
+MECHANISM: src/index.css line 181-184. `.bar.limit span` runs
+`animation: limitFlow 2.2s linear infinite, limitChargeGlow 1.5s ease-in-out infinite`.
+limitFlow animates background-position (@keyframes line 183) and limitChargeGlow animates
+filter: brightness/saturate (line 184). Both properties trigger PAINT every frame (not
+composited), on every charging limit bar (up to 5). lbPop (line 192/198) is transform-based
+and fine.
+
+PLEASE:
+1. Confirm in Chrome DevTools: Rendering panel → enable "Paint flashing" and
+   "Layer borders" on a combat screen with bars charging; the limit-bar fill should
+   flash green continuously. Optionally use the Performance tab to see paint time.
+2. Reimplement the flowing sheen with a compositor-friendly approach: a pseudo-element
+   /overlay gradient moved via transform: translateX(...) (like the existing
+   bannerShineSweep / hcsweep patterns in this file), instead of animating
+   background-position. Add will-change: transform to that overlay only.
+3. Replace the animated filter glow with an opacity-animated overlay (opacity is
+   composited) or drop it — measure both.
+4. Keep the prefers-reduced-motion guard (line 215-219) intact.
+
+CONSTRAINTS: CSS/presentation only. Match the current look. Do NOT touch game logic or
+data. Validate visually + `npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 7 ══════════════════════ -->
+<section class="card mid">
+  <div class="chead">
+    <div class="rank">#7</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L2 · per-entity rAF</span><span class="tag sec">L4 · style writes</span></div>
+      <h2>Every HpBar and LimitBar runs its own persistent 60fps rAF loop; LimitBar also setStates each frame</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">40%</div><div class="lbl">Likely</div>
+      <div class="bar"><i style="width:40%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/HpBar.jsx:34–103 (per-bar rAF, 5 style writes/frame)</span>
+    <span>src/view/Autobattler.jsx:102–120 (LimitBar rAF + setCharged/frame)</span>
+  </div>
+  <p class="mech">Each <span class="k">HpBar</span> owns a persistent <span class="k">requestAnimationFrame</span> loop that runs at 60fps and writes up to <b>five inline styles per frame</b> (ghost width, fill width, whole-bar filter, ghost filter, white opacity). Each <span class="k">LimitBar</span> owns a second persistent 60fps rAF that writes the fill width <b>and calls <span class="k">setCharged(full)</span> every frame</b> — React bails on the unchanged value, but the dispatch still runs 60×/s per bar. During combat there are ~10 HpBars + 5 LimitBars, i.e. <b>~15 independent 60fps loops</b>, none of which park.</p>
+  <div class="load">Worst case (active combat): ~15 rAF loops × 60fps → up to <b>~60 style-write ops + 300 no-op setState calls per second</b>, plus the drop-shadow filter on HpBars during the 240ms damage-flash window (a per-frame GPU blur). Bounded (never scales past ~15 bars), which is why it's "likely" not "critical" — but it is a constant during every fight.</div>
+  <div class="actions">
+    <button data-copy-target="p7">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: one shared rAF ticks all bars · park when idle · drop per-frame setState</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p7">Frame-budget audit follow-up: per-bar persistent rAF loops (Combat Clean).
+
+SYMPTOM: baseline CPU during every fight even with little happening.
+
+MECHANISM: src/view/HpBar.jsx (line 34-103) — each HP bar starts its OWN
+requestAnimationFrame loop that never parks and writes up to 5 inline styles/frame
+(hp-ghost width, hp-fill width, bar filter incl. drop-shadow during flashes, hp-ghost
+filter, hp-white opacity). src/view/Autobattler.jsx LimitBar (line 102-120) — each limit
+bar runs a SECOND persistent rAF that writes width AND calls setCharged(full) EVERY frame
+(React bails on unchanged, but the dispatch runs 60×/s per bar). Combat has ~10 HP bars +
+5 limit bars = ~15 uncoordinated 60fps loops.
+
+PLEASE:
+1. Measure: press P (perf-probe) during a fight; check the frame-time distribution and
+   WAAPI/animation counts. In the Performance tab, confirm ~15 rAF callbacks/frame.
+2. Consolidate: drive all bars from ONE shared rAF ticker (a small view-layer scheduler)
+   that iterates registered bars, instead of one loop per component. Park the ticker when
+   nothing is animating (mirror the fx-engine's _active()/_wake() park pattern in
+   src/view/fx/fx-engine.js:123-152).
+3. In LimitBar, stop calling setCharged every frame — only setState on the actual
+   full<->not-full transition (track wasFull in a ref and setState only on change).
+4. Keep the drop-shadow flash but ensure it clears promptly (it does after 240ms).
+
+CONSTRAINTS: view-only; keep all durations/thresholds in _vfx.json (VFX_CONFIG.hpbar /
+combat.limitCharge). Do NOT change the visual behaviour of the bars. Do NOT modify data
+files. Validate with `npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 8 ══════════════════════ -->
+<section class="card low">
+  <div class="chead">
+    <div class="rank">#8</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L3 · transient DOM burst</span><span class="tag sec">recent change</span></div>
+      <h2>pulseLimitBar creates 3–4 WAAPI-animated overlay children per mote landing (staggered per hero)</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">34%</div><div class="lbl">Low</div>
+      <div class="bar"><i style="width:34%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/fx/limit-energy.js:30–51 (pulseLimitBar)</span><span>:98–114 (per-hero staggered motes)</span>
+  </div>
+  <p class="mech">On each mote landing, <span class="k">pulseLimitBar</span> creates a white flash <span class="k">&lt;i&gt;</span>, a clip <span class="k">&lt;i&gt;</span> + a wipe-band <span class="k">&lt;i&gt;</span>, and a ghost-rect <span class="k">&lt;i&gt;</span> — <b>3–4 transient DOM nodes</b>, each animated via WAAPI and removed on finish. Motes are staggered per hero (<span class="k">stagger=150ms</span>), so a single order that charges all 5 heroes fires 5 landings, each spawning its cluster.</p>
+  <div class="load">Worst case: a 5-hero order charge → up to <b>~20 WAAPI-animated overlay nodes</b> created/torn down within ~0.8s, concurrent with the mote gradients (#5) and the blob emitters (#4). Short-lived, so lower probability — but it lands in the same window as the other limit-VFX costs, compounding the burst.</div>
+  <div class="actions">
+    <button data-copy-target="p8">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: fewer layers · pooled nodes · reuse one overlay per bar</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p8">Frame-budget audit follow-up: pulseLimitBar transient DOM burst (Combat Clean).
+
+SYMPTOM: brief hitch when a full order charges several heroes' limit bars at once.
+
+MECHANISM: src/view/fx/limit-energy.js pulseLimitBar (line 30-51) creates, per mote
+landing: a white-flash <i>, a clip <i> + a wipe-band <i> inside it, and a ghost-rect <i>
+(3-4 nodes), each WAAPI-animated and removed onfinish. runLimitEnergy (line 98-114)
+staggers one mote per charged hero (lc.stagger=150ms), so a 5-hero order → 5 landings →
+up to ~20 transient nodes within ~0.8s, on top of the mote-ribbon gradients (fx-engine)
+and the charged-bar blob emitters (Autobattler).
+
+PLEASE:
+1. Measure: trigger a 5-hero order charge, press P for the perf-probe WAAPI/DOM-node
+   counts and long-task list around the burst.
+2. Reduce layers or pool them: reuse ONE persistent overlay element per bar and restart
+   its animation instead of create+remove per landing; or collapse the flash+wipe+ghost
+   into fewer composited layers.
+3. Ensure removals can't leak if animations are interrupted (onfinish only fires on
+   natural completion — add a cancel/cleanup path).
+
+CONSTRAINTS: view-only presentation; all timing/opacity/scale stays in _vfx.json
+(combat.limitPulse). Preserve the look. Do NOT modify data files. Validate with
+`npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 9 ══════════════════════ -->
+<section class="card low">
+  <div class="chead">
+    <div class="rank">#9</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L5 · layout reads per event</span></div>
+      <h2>FxLayer drains the fx queue with querySelector + getBoundingClientRect per event, 5×/s</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">30%</div><div class="lbl">Low</div>
+      <div class="bar"><i style="width:30%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/view/FxLayer.jsx:139–185 (handleHeroAttacks)</span><span>:574–597 (drain effect)</span>
+    <span>src/view/fx/fx-engine.js:95–98 (elCenter → getBoundingClientRect)</span>
+  </div>
+  <p class="mech">Every tick emits at least a <span class="k">heroAttacks</span> fx event; the drain effect walks <span class="k">state.fx</span> and each handler resolves DOM via <span class="k">document.querySelector([data-battle-*])</span> and reads <span class="k">getBoundingClientRect</span> (via <span class="k">fx.elCenter</span>) for the attacker, target, and each splash/death. These are layout reads interleaved with the WAAPI writes the same handlers issue.</p>
+  <div class="load">Worst case: bounded by combat size (≤5 heroes, ≤5 enemies) so it never scales with the 50/100 inventory — hence low. But at 5×/s it is a steady stream of querySelector + forced-layout reads; if a future change interleaves a style write before these reads it would thrash. Cache-worthy, not urgent.</div>
+  <div class="actions">
+    <button data-copy-target="p9">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: batch reads before writes · cache rects per tick · map uid→el once</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p9">Frame-budget audit follow-up: FxLayer per-event layout reads (Combat Clean).
+
+SYMPTOM: minor, steady combat overhead; a hedge against future layout thrash.
+
+MECHANISM: src/view/FxLayer.jsx drain effect (line 574-597) iterates state.fx every tick
+(BATTLE_TICK emits >=1 event/tick). Handlers like handleHeroAttacks (line 139-185) call
+document.querySelector(`[data-battle-*]`) and fx.elCenter → getBoundingClientRect
+(fx-engine.js:95-98) for attacker/target/splash/deaths. Bounded by combat size (<=5v5) so
+it's low-severity, but it's read-heavy at 5x/s and interleaves with the WAAPI writes the
+same handlers issue.
+
+PLEASE:
+1. Measure: Performance tab, record a fight, look for "Recalculate Style / Layout"
+   entries triggered from FxLayer handlers (forced synchronous layout).
+2. Build a per-drain lookup of uid -> element once (single querySelectorAll pass) and a
+   cached rect map, so a batch of same-tick events shares reads. Do all reads before any
+   writes within a handler pass.
+3. Verify no handler writes an inline style and then reads a rect afterward in the same
+   frame (that's the thrash trigger).
+
+CONSTRAINTS: view-only; keep behaviour identical. Do NOT modify data files. Validate with
+`npm run build`.</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════ FINDING 10 ══════════════════════ -->
+<section class="card low">
+  <div class="chead">
+    <div class="rank">#10</div>
+    <div class="ctitle">
+      <div class="tags"><span class="tag">L1 · one-shot O(H×G×S)</span><span class="tag sec">button action</span></div>
+      <h2>autoEquipAll shallow-clones the entire 100-item gear map once per hero (up to 50×)</h2>
+    </div>
+    <div class="prob">
+      <div class="pct">28%</div><div class="lbl">Low</div>
+      <div class="bar"><i style="width:28%"></i></div>
+    </div>
+  </div>
+  <div class="cite">
+    <span>src/game/gear/gear.ts:91–107 (autoEquipAll / autoEquipHero)</span>
+    <span>src/game/store/reducer-gear.ts:14–16 (A.AUTO_EQUIP)</span>
+  </div>
+  <p class="mech"><span class="k">autoEquipAll</span> ranks heroes then calls <span class="k">autoEquipHero</span> per hero. <span class="k">autoEquipHero</span> begins by <b>cloning the whole gear map</b> (<span class="k">for (const k in gearMap) next[k] = {...gearMap[k]}</span>) — so the full 100-item clone happens <b>once per hero</b>. Then per slot it does an <span class="k">Object.values(next).filter(...).sort(byBest)</span> plus a full-map clear pass; <span class="k">byBest</span> also calls <span class="k">indexOf</span> inside the comparator.</p>
+  <div class="load">Worst case: 50 heroes × 100-item clone = <b>~5,000 object clones</b> + 50 × 3 slots × (100-filter + 100-clear) ≈ <b>~30,000 iterations</b> for one Auto-Equip tap → a visible hitch (tens of ms) on tap, not a per-frame drain. Low probability of causing the "always feels slow" symptom, but a noticeable one-shot stall worth removing.</div>
+  <div class="actions">
+    <button data-copy-target="p10">Copy investigation prompt</button>
+    <span style="color:var(--ink-faint);font-size:12px">Fix family: one working copy mutated in place · precomputed rarityIdx · slot buckets</span>
+  </div>
+  <details><summary>Show prompt</summary>
+<pre class="prompt" id="p10">Frame-budget audit follow-up: autoEquipAll per-hero full-map clone (Combat Clean).
+
+SYMPTOM: a hitch when tapping Auto-Equip at 50 heroes / 100 gear.
+
+MECHANISM: src/game/gear/gear.ts autoEquipAll (line 91-96) calls autoEquipHero per ranked
+hero. autoEquipHero (line 98-107) clones the ENTIRE gear map on entry
+(`for (const k in gearMap) next[k] = {...gearMap[k]}`) — so 50 heroes = ~5,000 clones —
+then per slot does Object.values(next).filter(...).sort(byBest) + a full-map clear loop;
+byBest (line 24) calls C.GEAR_RARITY_ORDER.indexOf inside the comparator. Wired from
+src/game/store/reducer-gear.ts:14-16 (A.AUTO_EQUIP). This is a one-shot button action, not
+per-frame, but it's a visible stall at scale.
+
+PLEASE:
+1. Measure: Performance tab, record tapping Auto-Equip at 50/100; note the long task
+   duration for the AUTO_EQUIP dispatch.
+2. Refactor to a SINGLE working copy: clone the gear map once in autoEquipAll and have
+   autoEquipHero mutate that working copy in place (returning it), instead of re-cloning
+   the whole map per hero. Precompute a rarity->index map so byBest doesn't call indexOf
+   in the comparator. Consider bucketing free items by slot once so each hero's per-slot
+   candidate list is a lookup, not a full filter.
+3. Keep autoEquipHero pure from the caller's perspective (return the new map); just don't
+   pay the full-map clone N times.
+4. Verify equip RESULTS are byte-identical before/after on a fixed inventory (same items
+   land on the same heroes) — this is a perf refactor, not a behaviour change.
+
+CONSTRAINTS: src/game is pure headless logic — no view/DOM, rng injected, all tuning from
+content C (no magic literals). Do NOT change equip ordering/behaviour or data. Validate
+with `npm run build`.</pre>
+  </details>
+</section>
+
+<h3 class="section">Lenses that came back clean</h3>
+<div class="clean-note">
+  <p style="margin:0 0 8px"><b>L6 — Asset loading / decode:</b> no <span style="font-family:var(--mono)">new Image()</span>, <span style="font-family:var(--mono)">img.src=</span>, <span style="font-family:var(--mono)">toDataURL</span>, or <span style="font-family:var(--mono)">getImageData</span> in any tick/render path. Glow stamps are baked once and cached in <span style="font-family:var(--mono)">fx._glow[hex]</span>; art is resolved from a static registry. Clean.</p>
+  <p style="margin:0 0 8px"><b>L7 — Leaked transforms / renderer state:</b> <span style="font-family:var(--mono)">save()/restore()</span> pairs in <span style="font-family:var(--mono)">_stepProjectiles</span> / <span style="font-family:var(--mono)">_stepImpacts</span> are balanced; <span style="font-family:var(--mono)">_stampGlow</span> and the mote head-draw reset <span style="font-family:var(--mono)">globalCompositeOperation</span> + <span style="font-family:var(--mono)">globalAlpha</span> after each use; the confetti translate/rotate is inverted before any <span style="font-family:var(--mono)">continue</span>. No <span style="font-family:var(--mono)">clip()</span> without restore. Clean.</p>
+  <p style="margin:0"><b>L9 — Hit-stop / freeze-frame stacking:</b> no freeze/hit-stop/bullet-time mechanic exists; <span style="font-family:var(--mono)">fx.shake</span> uses a single decaying amplitude (<span style="font-family:var(--mono)">Math.max</span>, not additive) and the sim has no frame-skip. Nothing to stack. Clean.</p>
+  <p style="margin:12px 0 0;color:var(--ink-faint)">Also worth noting as <b>already-optimised</b>: the FX engine parks its rAF when idle (<span style="font-family:var(--mono)">_active()/_wake()</span>), the enemy-realign FLIP is gated on <span style="font-family:var(--mono)">enemyLayoutSig</span> (not per-tick), <span style="font-family:var(--mono)">appPt</span> caches the canvas rect, hit-flashes are brightness-only (no animated drop-shadow blur), and combat is bounded to 5v5 — it does <em>not</em> scale with the 50-hero roster. The scaling risk is entirely on the <b>Heroes/Gear meta screens</b> and the <b>re-render fan-out</b>, not the battle sim.</p>
+</div>
+
+<h3 class="section">Operator next steps (prioritised)</h3>
+<ol class="next">
+  <li>Open the game, sit on the <b>Heroes tab</b> with combat running, and press <kbd>P</kbd> to dump the built-in perf-probe (<code>src/view/fx/perf-probe.js</code>) — it reports FPS, long tasks (&gt;50ms), FX counts, and flying-VFX node counts. Do the same on the <b>Gear tab</b> and during a <b>5-hero limit charge</b>.</li>
+  <li>Open the browser <b>Performance</b> tab and record ~5s on the Heroes tab; confirm ~15 React commits/second (finding #1) and the gear-scan self-time (findings #2, #3). This is the highest-leverage confirmation.</li>
+  <li>Copy the <b>#1 prompt (re-render fan-out)</b> into a fresh Claude conversation and land the context split + memo boundaries first — it is the amplifier behind #2 and #3, so fixing it shrinks both.</li>
+  <li>Then take <b>#2 (Gear O(n²))</b> and <b>#3 (Heroes N×gear)</b> — single-pass eligibility/power indexes. These give the biggest wins at the stated 50/100 scale.</li>
+  <li>For the "stutter during limit VFX" reports, batch <b>#4 (blob emitter)</b>, <b>#5 (mote gradients)</b>, and <b>#6 (CSS paint)</b> — they all fire in the same burst window and compound.</li>
+</ol>
+
+<footer>
+  Generated by the Slowdown Detective — a read-only, ten-lens frame-budget audit. No game code or data was modified. Probabilities are the detective's estimate that each cause contributes to the reported slowdown at the stated 50-hero / 100-gear scale; verify with the perf-probe (<kbd>P</kbd>) and the browser Performance tab before committing a fix. One report per scan · offline-self-contained.
+</footer>
+
+</div>
+
+<script>
+(function () {
+  async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { await navigator.clipboard.writeText(text); return true; } catch (_e) {}
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0'; ta.style.left = '0';
+      ta.style.width = '2em'; ta.style.height = '2em';
+      ta.style.padding = '0'; ta.style.border = 'none';
+      ta.style.outline = 'none'; ta.style.boxShadow = 'none';
+      ta.style.background = 'transparent'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      const sel = document.getSelection();
+      const prevRange = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (prevRange) { sel.removeAllRanges(); sel.addRange(prevRange); }
+      if (ok) return true;
+    } catch (_e) {}
+    showCopyModal(text);
+    return false;
+  }
+  function showCopyModal(text) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px';
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:#1a1530;color:#e8e6df;padding:24px;border-radius:8px;max-width:720px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px';
+    inner.innerHTML = '<div style="font:bold 14px sans-serif">Auto-copy blocked. Select the text below and press <kbd>⌘C</kbd> / <kbd>Ctrl-C</kbd>:</div>';
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'width:100%;height:280px;font:12px/1.4 monospace;background:#0f0a1f;color:#e8e6df;border:1px solid #4a4060;border-radius:4px;padding:10px;resize:vertical';
+    inner.appendChild(ta);
+    const close = document.createElement('button');
+    close.textContent = 'Close';
+    close.style.cssText = 'align-self:flex-end;padding:6px 18px;background:#5a4080;color:#fff;border:0;border-radius:4px;cursor:pointer';
+    close.onclick = () => m.remove();
+    inner.appendChild(close);
+    m.appendChild(inner);
+    document.body.appendChild(m);
+    ta.focus(); ta.select();
+  }
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-copy-target]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-copy-target');
+    const src = document.getElementById(id);
+    if (!src) return;
+    const text = src.textContent || '';
+    const ok = await copyText(text);
+    const orig = btn.textContent;
+    btn.textContent = ok ? '✓ Copied!' : '⚠ Tap text → ⌘C';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+  });
+})();
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useGame } from '../../controller/GameContext';
+import { useMetaGame } from '../../controller/GameContext';
 import { HEROES } from '../../data/heroes.js';
 import { SELECTED_SLOTS, ANIM } from '../../data/config.js';
 import { GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
@@ -21,7 +21,7 @@ import PeekScroll from '../PeekScroll.jsx';
 import { heroAsset, resolve, portraitStyle } from '../assets.js';
 import { heroPower, heroRarity, heroMaxLevel, canAscendChar, ascensionsDone, copiesOfHero, ownedHeroSet, ascendSelection } from '../../model/heroes.js';
 import {
-  heroGearPower, gearPower, equippedInSlot, slotCandidates, canEquipBetter, canUpgradeHeroGear, heroClassOf, slotsForClass,
+  gearPower, equippedInSlot, slotCandidates, canEquipBetter, canUpgradeHeroGear, heroClassOf, slotsForClass,
 } from '../../model/gear.js';
 import { canLevelHero, heroLevelCost, heroAtMax, levelUpHeroMax } from '../../model/progression.js';
 import { fxHeroLevelUp, fxMaxed, fxLevelAll, fxEquip, fxEquipBest, fxHeroFuse } from '../fx/hero-fx.js';
@@ -40,7 +40,10 @@ const slotEl = (id, slot) => document.querySelector(`.hs-gslot[data-hero-id="${i
 const tileEl = (id) => document.querySelector(`.hs-tile[data-hero-id="${id}"]`);
 
 export default function HeroesScreen() {
-  const { state, actions } = useGame();
+  // Meta view (no battle/fx) — this screen never reads combat state, so it must not re-render on the
+  // 5 Hz combat tick while the player browses the roster at scale (50 heroes × 100 gear).
+  const { state, actions } = useMetaGame();
+  console.log('[dragdbg] HeroesScreen render — order head', state.order.slice(0, 6)); // TEMP
   const [popId, setPopId] = useState(null);
   const [popState, setPopState] = useState('hero'); // 'hero' | 'equip' | 'reequip'
   const [selSlot, setSelSlot] = useState(null);
@@ -64,9 +67,23 @@ export default function HeroesScreen() {
   // is live (see beginDrag), so ordinary scrolling keeps its passive fast-path (no jank).
   const blockScrollRef = useRef((e) => { const d = dragRef.current; if (d && d.started && d.touch) e.preventDefault(); });
 
-  // `id` throughout this screen is a CID (a Character instance). heroPower/heroGearPower
-  // take the archetype (char.hero) + the cid respectively.
-  const gearPowOf = (cid) => heroGearPower(state.gear, cid);
+  // Precompute ONE gear index per render (O(n)) instead of re-scanning the 100-item map per hero tile:
+  //   powByCid → summed equipped-gear power; bySlot → cid → {slot: item}. Memoized on state.gear so it
+  //   only rebuilds when gear changes, not on every render. Turns findings #3's per-cell O(gear) scans O(1).
+  const gearIndex = useMemo(() => {
+    const powByCid = new Map(); const bySlot = new Map();
+    for (const g of Object.values(state.gear)) {
+      if (!g.equippedTo) continue;
+      powByCid.set(g.equippedTo, (powByCid.get(g.equippedTo) || 0) + gearPower(g));
+      let slots = bySlot.get(g.equippedTo); if (!slots) { slots = {}; bySlot.set(g.equippedTo, slots); }
+      slots[g.slot] = g;
+    }
+    return { powByCid, bySlot };
+  }, [state.gear]);
+  const equippedOf = (cid, slot) => gearIndex.bySlot.get(cid)?.[slot] || null;
+  // `id` throughout this screen is a CID (a Character instance). heroPower takes the archetype
+  // (char.hero); gear power comes from the precomputed index (O(1) per hero, not an O(n) scan).
+  const gearPowOf = (cid) => gearIndex.powByCid.get(cid) || 0;
   const powOf = (cid) => heroPower(state.heroes[cid].hero, state.heroes[cid], state.ordersCompleted, gearPowOf(cid));
 
   // ── VFX runs AFTER the reducer commits the new numbers, from before-values
@@ -185,6 +202,20 @@ export default function HeroesScreen() {
     const sel = ascendSelFor(cid);
     return !!sel && canAscendChar(state.heroes[sel.keepCid]);
   };
+  // Ascend eligibility is per-HERO-ARCHETYPE (ascendSelection scans copies of that hero, not the cid),
+  // so compute it ONCE per distinct hero and reuse for every cid — memoized so it doesn't re-run per cell
+  // per render (was ~O(N²): 50 cells × a roster scan each). Deps cover powerOfCid's inputs.
+  const canUpgradeByCid = useMemo(() => {
+    const byHero = new Map(); const res = {};
+    for (const cid in state.heroes) {
+      const hero = state.heroes[cid].hero;
+      let ok = byHero.get(hero);
+      if (ok === undefined) { const sel = ascendSelection(state.heroes, hero, powerOfCid); ok = !!sel && canAscendChar(state.heroes[sel.keepCid]); byHero.set(hero, ok); }
+      res[cid] = ok;
+    }
+    return res;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.heroes, state.gear, state.ordersCompleted]);
   const performAscend = (sel) => {
     const t = tileEl(sel.keepCid); // choreography plays on the SURVIVING (strongest) copy
     closePop();
@@ -210,6 +241,7 @@ export default function HeroesScreen() {
     const src = tileEl(d.id);
     if (!src) { clearTimeout(d.lp); if (dragRef.current === d) dragRef.current = null; return; }
     d.started = true;
+    console.log('[dragdbg] beginDrag started', d.id, 'touch', d.touch); // TEMP
     const r = src.getBoundingClientRect();
     d.originRect = r; d.grabDx = clientX - r.left; d.grabDy = clientY - r.top;
     d.lift = r.height * HS.dragLiftFrac; // raise the tile so it stays visible above the finger
@@ -238,6 +270,7 @@ export default function HeroesScreen() {
     // until then a move is treated as a list scroll (see `move`). lp = the pending long-press timer.
     const d = { id, sx: e.clientX, sy: e.clientY, pid: e.pointerId, started: false, over: null, touch, armed: !touch, lp: null };
     dragRef.current = d;
+    console.log('[dragdbg] pointerdown', { id, touch, button: e.button, pointerType: e.pointerType }); // TEMP
     if (touch) d.lp = setTimeout(() => {
       if (dragRef.current === d && !d.started) beginDrag(d, d.sx, d.sy); // held still → pick up in place; moves position it
     }, HERO_DRAG_HOLD_MS);
@@ -266,6 +299,7 @@ export default function HeroesScreen() {
       const over = tid && tid !== d.id ? tid : null;
       if (over !== d.over) {
         d.over = over;
+        console.log('[dragdbg] over changed →', over, '(self', d.id + ')'); // TEMP
         if (over) {
           // The CELL is never transformed (only the inner tile), so its rect is the
           // target's NATURAL slot — the displacement + landing both key off this.
@@ -282,6 +316,7 @@ export default function HeroesScreen() {
       if (!d || e.pointerId !== d.pid) return;
       clearTimeout(d.lp); // cancel a pending long-press (a tap or scroll that never became a drag)
       dragRef.current = null;
+      console.log('[dragdbg] finish', { started: d.started, over: d.over, id: d.id }); // TEMP
       if (!d.started) return;
       dragEnd.current = performance.now(); // swallow the click that trails this pointerup
       const { avatar: av, over } = d;
@@ -300,7 +335,7 @@ export default function HeroesScreen() {
         // still carries the displacement transform and would send it back to origin.
         const oc = cellRefs.current[over];
         const nr = d.overRect || (oc && oc.getBoundingClientRect()) || d.originRect;
-        glide(nr.left, nr.top, () => { actions.swapHeroes(d.id, over); done(); });
+        glide(nr.left, nr.top, () => { console.log('[dragdbg] swapHeroes()', d.id, '↔', over); actions.swapHeroes(d.id, over); done(); }); // TEMP log
       } else {
         glide(d.originRect.left, d.originRect.top, done);
       }
@@ -317,7 +352,7 @@ export default function HeroesScreen() {
   }, [actions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = Object.keys(HEROES).length;
-  const ownedCount = ownedHeroSet(state.heroes).size; // distinct HEROES owned (collection metric)
+  const ownedCount = useMemo(() => ownedHeroSet(state.heroes).size, [state.heroes]); // distinct HEROES owned (C)
 
   const renderCell = (id) => {
     const st = state.heroes[id]; // id is a cid → this Character
@@ -327,9 +362,9 @@ export default function HeroesScreen() {
     const power = powOf(id);
     const atMax = heroAtMax(st);
     const active = popId === id;
-    // The tile's ▲ upgrade badge tracks REAL availability so it never advertises an
-    // action the popup then hides (ascend needs a duplicate Character + crystals).
-    const canUpgrade = canAscendCid(id);
+    // The tile's ▲ upgrade badge tracks REAL availability so it never advertises an action the popup then
+    // hides. canUpgradeByCid is the per-render memoized ascend-eligibility map (kills the per-cell O(N²)).
+    const canUpgrade = canUpgradeByCid[id];
 
     const tileStyle = { '--rar': meta.color };
     let extra = '';
@@ -357,8 +392,7 @@ export default function HeroesScreen() {
           <div className="fxwrap" />
           <Art a={heroAsset(st.hero)} className="hs-art" style={portraitStyle(def.portrait)} />
           <span className="hs-pow"><span className="hs-ic">⚔</span><b>{fmt(power)}</b></span>
-          {/* Dots = ASCENSION level: one per possible tier (maxAscensions), filled up to
-              ascensionsDone, empty for the rest. Rarity is shown by the tile frame colour. */}
+          {/* Dots = ASCENSION level: one per possible tier (maxAscensions), filled up to ascensionsDone. */}
           <span className="hs-pips">{Array.from({ length: HERO_UPGRADE.maxAscensions }, (_, k) => <i key={k} className={k < ascensionsDone(st) ? 'on' : ''} />)}</span>
           {canUpgrade ? <span className="gt-badge" title="Upgrades available">▲</span> : null}
           <div className="hs-btm" />
@@ -367,7 +401,7 @@ export default function HeroesScreen() {
         </button>
         <div className="hs-gearrow">
           {def.slots.map((slot) => {
-            const g = equippedInSlot(state.gear, id, slot);
+            const g = equippedOf(id, slot);
             return g ? (
               <div key={slot} className="hs-gslot" data-hero-id={id} data-slot={slot} style={{ '--gr': gearColor(g.rarity) }}>
                 <span className="hs-gi">{gearIcon(slot)}</span>
@@ -383,7 +417,8 @@ export default function HeroesScreen() {
   };
 
   const squad = state.order.slice(0, SELECTED_SLOTS);
-  const squadPower = squad.reduce((sum, cid) => sum + powOf(cid), 0); // combined power of the active squad
+  // combined power of the active squad — memoized so it doesn't re-reduce on unrelated re-renders (C)
+  const squadPower = useMemo(() => squad.reduce((sum, cid) => sum + powOf(cid), 0), [state.order, state.heroes, state.gear, state.ordersCompleted]); // eslint-disable-line react-hooks/exhaustive-deps
   // Roster sort (the filter tile). Squad is left in its manual order; only the roster reorders.
   // Drag-swap is cid-identity based (SWAP_HEROES), so sorting the DISPLAY never mis-swaps.
   // cid number rises with acquisition → newest = highest cid → 'new' surfaces fresh pulls at the top.

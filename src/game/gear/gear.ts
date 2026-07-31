@@ -17,6 +17,12 @@ export const gearAtMax = (g: GearItem) => g.level >= C.GEAR_LEVEL.maxLevel;
 export const equippedFor = (gearMap: GearMap, heroId: string) => Object.values(gearMap).filter((g) => g.equippedTo === heroId);
 export const heroGearPower = (gearMap: GearMap, heroId: string) => equippedFor(gearMap, heroId).reduce((s, g) => s + gearPower(g), 0);
 
+// "Best" ordering for auto-equip: RARITY is the first axis (rarest wins), then LEVEL (highest wins),
+// then gearPower only as a final tiebreak when rarity AND level are equal. rarityIdx = position in
+// C.GEAR_RARITY_ORDER (low→high), so a higher index is rarer.
+const rarityIdx = (g: GearItem) => C.GEAR_RARITY_ORDER.indexOf(g.rarity);
+const byBest = (a: GearItem, b: GearItem) => rarityIdx(b) - rarityIdx(a) || b.level - a.level || gearPower(b) - gearPower(a);
+
 // ── per-class loadout + equip gating ─────────────────────────────────────────
 // The generic modular slot system: a hero-class declares its slot loadout (its own `slots`, else the
 // shared gearLoadout.defaultSlots), and a class-bound slot only accepts pieces whose classKey matches.
@@ -80,23 +86,41 @@ export const makeUnique = (id: string, pieceId: string, rng: Rng): GearItem | nu
   return { id, pieceId, slot: def.slot, rarity, level: 1, base, equippedTo: null, unique: true };
 };
 
+// Equip one hero IN PLACE on an already-owned working copy (NO clone). One pass over the map clears this
+// hero's items in its class slots (so they re-compete) and buckets the free candidates by slot; then each
+// slot takes its best (rarity→level→power via byBest). Shared by autoEquipHero + autoEquipAll.
+const equipHeroInPlace = (next: GearMap, heroId: string, cls: Cls): void => {
+  const slotSet = new Set(cls.slots);
+  const bySlot: Record<string, GearItem[]> = {};
+  for (const slot of cls.slots) bySlot[slot] = [];
+  for (const id in next) {
+    const g = next[id];
+    if (!slotSet.has(g.slot)) continue;
+    if (g.equippedTo === heroId) g.equippedTo = null; // unequip current so it re-competes with the free pool
+    if (g.equippedTo === null && fitsSlot(g, cls, g.slot)) bySlot[g.slot].push(g);
+  }
+  for (const slot of cls.slots) {
+    const cand = bySlot[slot];
+    if (!cand.length) continue;
+    let best = cand[0];
+    for (let i = 1; i < cand.length; i++) if (byBest(cand[i], best) < 0) best = cand[i];
+    best.equippedTo = heroId;
+  }
+};
+
 // Rank-ordered heroes each greedily take their best free gear per THEIR class's slots (heroes may have
-// different loadouts + class-bound slots), so the highest-ranked hero fills first.
+// different loadouts + class-bound slots), so the highest-ranked hero fills first. ONE map clone total.
 export const autoEquipAll = (gearMap: GearMap, ranked: { id: string; cls: Cls }[]): GearMap => {
-  let next: GearMap = {};
+  const next: GearMap = {};
   for (const k in gearMap) next[k] = { ...gearMap[k], equippedTo: null };
-  for (const { id, cls } of ranked) next = autoEquipHero(next, id, cls);
+  for (const { id, cls } of ranked) equipHeroInPlace(next, id, cls);
   return next;
 };
 
 export const autoEquipHero = (gearMap: GearMap, heroId: string, cls: Cls): GearMap => {
   const next: GearMap = {};
   for (const k in gearMap) next[k] = { ...gearMap[k] };
-  for (const slot of cls.slots) {
-    const cand = Object.values(next).filter((g) => fitsSlot(g, cls, slot) && (g.equippedTo === null || g.equippedTo === heroId)).sort((a, b) => gearPower(b) - gearPower(a));
-    for (const g of Object.values(next)) if (g.slot === slot && g.equippedTo === heroId) g.equippedTo = null;
-    if (cand[0]) next[cand[0].id].equippedTo = heroId;
-  }
+  equipHeroInPlace(next, heroId, cls);
   return next;
 };
 

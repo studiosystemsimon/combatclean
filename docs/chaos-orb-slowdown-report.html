@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slowdown Detective — chaos-orb-transition.html</title>
+<style>
+  :root{
+    --bg:#0b0e17; --panel:#12172492; --panel-solid:#141a28; --edge:#232c40;
+    --ink:#e7ecf4; --dim:#9aa6bc; --faint:#6b7690;
+    --accent:#7a4fd0; --accent2:#3f6bd0;
+    --crit:#ff4d5e; --likely:#ffb020; --low:#39c07a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:
+      radial-gradient(1200px 600px at 78% -10%,#1a1330 0%,transparent 55%),
+      radial-gradient(900px 500px at 0% 0%,#0d1830 0%,transparent 50%),
+      var(--bg);
+    color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+  header.top{border-bottom:1px solid var(--edge);padding-bottom:22px;margin-bottom:26px}
+  .eyebrow{font:800 11px/1 sans-serif;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);
+    display:flex;align-items:center;gap:9px}
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  h1{font-size:26px;margin:12px 0 4px;letter-spacing:.2px}
+  h1 code{font:600 20px/1 ui-monospace,Menlo,monospace;color:#cdb8ff;background:#1b1330;padding:2px 8px;border-radius:7px;border:1px solid #33244f}
+  .meta{color:var(--dim);font-size:12.5px;margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 18px}
+  .meta b{color:var(--ink);font-weight:600}
+  .tally{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .tally .pill{border:1px solid var(--edge);background:var(--panel);border-radius:999px;padding:7px 14px;font-size:12.5px;
+    display:flex;align-items:center;gap:8px}
+  .tally .pill b{font-weight:800;font-variant-numeric:tabular-nums}
+  .sw{width:9px;height:9px;border-radius:50%}
+  .sw.c{background:var(--crit)}.sw.l{background:var(--likely)}.sw.o{background:var(--low)}
+  .lensbar{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+  .lensbar .lb{font:700 10.5px/1 sans-serif;letter-spacing:.4px;border:1px solid var(--edge);
+    background:#101828;color:var(--dim);border-radius:6px;padding:6px 9px}
+  .lensbar .lb b{color:#9fd0ff;font-weight:800}
+  .lensbar .lb.off{opacity:.42}
+  .section-label{font:800 11px/1 sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--faint);
+    margin:34px 0 14px;display:flex;align-items:center;gap:12px}
+  .section-label::after{content:"";flex:1;height:1px;background:var(--edge)}
+
+  .card{border:1px solid var(--edge);background:linear-gradient(180deg,#141b2b,#10151f);
+    border-radius:14px;padding:0;margin-bottom:16px;overflow:hidden;position:relative}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sev)}
+  .card .body{padding:18px 20px 20px 22px}
+  .cardhead{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
+  .rank{font:800 13px/1 ui-monospace,Menlo,monospace;color:var(--faint);padding-top:3px}
+  .htitle{flex:1}
+  .badges{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+  .badge{font:800 10px/1 sans-serif;letter-spacing:.5px;text-transform:uppercase;border-radius:5px;padding:5px 8px}
+  .badge.lens{background:#12233c;color:#8fc2ff;border:1px solid #1e3c60}
+  .badge.sev{color:#0b0e17}
+  h3.head{font-size:16.5px;margin:2px 0 0;letter-spacing:.1px;line-height:1.35}
+  .prob{min-width:132px;text-align:right}
+  .prob .num{font:800 26px/1 ui-monospace,Menlo,monospace;color:var(--sev)}
+  .prob .lbl{font:700 9.5px/1 sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);margin-top:5px}
+  .track{height:7px;border-radius:5px;background:#0c1220;border:1px solid #1d2536;margin:14px 0 16px;overflow:hidden}
+  .fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--sev),color-mix(in srgb,var(--sev) 55%,#ffffff))}
+  .cites{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 14px}
+  .cite{font:600 11.5px/1 ui-monospace,Menlo,monospace;background:#0d1626;color:#a7d8ff;border:1px solid #1c3350;
+    border-radius:6px;padding:6px 9px}
+  .mech{color:#cdd6e6;margin:0 0 14px}
+  .mech b{color:#fff}
+  .load{border-left:2px solid var(--accent2);background:#0f1626;border-radius:0 8px 8px 0;padding:10px 14px;margin:0 0 16px;
+    font-size:13px;color:#cbd6ea}
+  .load b{color:#ffd98a;font-weight:700}
+  .actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  button.copy{background:linear-gradient(180deg,#3a2a7a,#241452);color:#efe9ff;border:1px solid #7a4fd0;
+    border-radius:9px;padding:10px 16px;font:700 12px/1 sans-serif;letter-spacing:.4px;cursor:pointer}
+  button.copy:hover{filter:brightness(1.12)}
+  button.copy:disabled{opacity:.8;cursor:default}
+  details{margin-top:12px;border-top:1px dashed var(--edge);padding-top:10px}
+  details summary{cursor:pointer;color:var(--dim);font:700 11.5px/1 sans-serif;letter-spacing:.4px;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸ ";color:var(--accent)}
+  details[open] summary::before{content:"▾ "}
+  pre.prompt{white-space:pre-wrap;background:#0a0f1c;border:1px solid #1c2536;border-radius:9px;
+    padding:14px;margin:12px 0 2px;font:12px/1.5 ui-monospace,Menlo,monospace;color:#cdd8ea;overflow:auto}
+  .clearbox{border:1px solid var(--edge);background:var(--panel);border-radius:12px;padding:16px 18px}
+  .clearbox .row{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #1a2233;font-size:13px;align-items:baseline}
+  .clearbox .row:last-child{border-bottom:none}
+  .clearbox .row .ln{font:700 11px/1 sans-serif;color:#8fc2ff;min-width:66px}
+  .clearbox .row .p{color:var(--low);font-weight:800;font:700 12px ui-monospace,Menlo;min-width:42px;text-align:right}
+  .clearbox .row .d{color:var(--dim);flex:1}
+  .next{border:1px solid #2a3a5c;background:linear-gradient(180deg,#101a2e,#0c1322);border-radius:14px;padding:20px 22px}
+  .next h2{margin:0 0 14px;font-size:15px;letter-spacing:.3px}
+  .next ol{margin:0;padding-left:20px}
+  .next li{margin:0 0 10px;color:#d3dcec}
+  .next li b{color:#fff}
+  .next .step{color:var(--accent);font-weight:800}
+  footer{margin-top:40px;color:var(--faint);font-size:11.5px;text-align:center;border-top:1px solid var(--edge);padding-top:18px}
+  kbd{background:#222;border-radius:4px;padding:1px 5px;border:1px solid #444;font:11px ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow"><span class="dot"></span>Slowdown Detective · frame-budget audit</div>
+  <h1>Chaos-orb merge → smash · <code>chaos-orb-transition.html</code></h1>
+  <div class="meta">
+    <span><b>Target:</b> docs/mockups/chaos-orb-transition.html</span>
+    <span><b>Runtime:</b> vanilla Canvas-2D (dual canvas · 390×844)</span>
+    <span><b>Budget:</b> 16.6 ms / frame (60 fps)</span>
+    <span><b>Scan:</b> 2026-07-31</span>
+    <span><b>Mode:</b> read-only (no code modified)</span>
+  </div>
+  <div class="tally">
+    <span class="pill"><span class="sw c"></span><b>3</b>&nbsp;Critical</span>
+    <span class="pill"><span class="sw l"></span><b>4</b>&nbsp;Likely</span>
+    <span class="pill"><span class="sw o"></span><b>2</b>&nbsp;Low</span>
+    <span class="pill">Prime suspect: <b>&nbsp;per-shard clip + full-screen drawImage in <code style="font-size:11px">crumble()</code> — 92%</b></span>
+  </div>
+  <div class="lensbar">
+    <span class="lb">L1 O(N²) loops <b>1</b></span>
+    <span class="lb">L2 Alloc/GC <b>1</b></span>
+    <span class="lb">L3 Particle/VFX <b>1</b></span>
+    <span class="lb">L4 Canvas thrash <b>4</b></span>
+    <span class="lb off">L5 DOM reflow <b>0</b></span>
+    <span class="lb off">L6 Asset decode <b>0</b></span>
+    <span class="lb">L7 State leak <b>1</b></span>
+    <span class="lb">L8 Timers <b>1</b></span>
+    <span class="lb off">L9 Hit-stop <b>0</b></span>
+    <span class="lb off">L10 Off-screen AI <b>0</b></span>
+  </div>
+</header>
+
+<div class="section-label">Findings — ranked by probability of contributing to the reported slowdown</div>
+
+<!-- ============ FINDING 1 ============ -->
+<div class="card" style="--sev:var(--crit)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#1</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 4 · Canvas thrash</span>
+          <span class="badge sev" style="background:var(--crit)">Critical</span>
+        </div>
+        <h3 class="head">Crumble draws 205 full-screen textures through 205 polygon clips — plus ~410 save/restore and ~600 bevel strokes — every frame for 1.4 s</h3>
+      </div>
+      <div class="prob"><div class="num">92%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:92%"></div></div>
+    <div class="cites">
+      <span class="cite">crumble() · lines 430–468</span>
+      <span class="cite">detached loop · lines 442–461</span>
+      <span class="cite">bevel pass · lines 450–460</span>
+      <span class="cite">stepFx layered on top · line 466</span>
+    </div>
+    <p class="mech">Each crumble frame loops over every detached shard (up to <b>MCFG.shardCount = 205</b>) and, per shard, does <b>save → save → build polygon path → clip() → drawImage(tex, −cx, −cy)</b> — drawing the <b>entire 390×844 screenshot</b> masked to the shard — then a dark-overlay fill, an inner restore, a <b>per-edge white-bevel pass</b> (outward-normal compute + rotate-to-screen + dot test + a standalone beginPath/stroke for each lit edge), then the outer restore. Complex-path <code>clip()</code> combined with a full-canvas <code>drawImage</code> is one of the most expensive Canvas-2D operations there is; doing it 205× per frame — while <code>stepFx()</code> layers the still-flying POP burst on the same frame — is the dominant cost of the smash phase and the prime cause of the frame drop.</p>
+    <div class="load"><b>Worst-case load:</b> ~205 clip() + ~205 full-screen drawImage + ~410 save/restore + ~1,200 edge normal/dot tests (~600 strokes) — <b>per frame, ~84 frames</b> across crumbleMs=1400 ms + tail — stacked with 20–40 live ribbons from stepFx. Order 205 × (390×844) ≈ <b>67 M source-pixels of clipped drawImage per frame.</b></div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-1">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-1">Frame-budget audit follow-up: chaos-orb crumble per-shard clip render (PRIME SUSPECT).
+
+File: docs/mockups/chaos-orb-transition.html — function `crumble(R,dtS)`, lines 430-468.
+
+Mechanism: every frame for the full crumbleMs (1400 ms, plus tail to prog 1.2) the
+detached-shard loop (lines 442-461) does, PER shard (up to MCFG.shardCount=205):
+sc.save() then sc.save(), builds a polygon clip path, sc.clip(), then
+sc.drawImage(tex, -s.cx, -s.cy) which draws the FULL 390x844 screenshot masked to the
+shard, fills a dark overlay, inner sc.restore(), then a per-edge white-bevel pass
+(lines 450-460: per edge computes an outward normal, rotates it to screen space, dot-tests,
+and does a separate beginPath/stroke for each lit edge), then outer sc.restore(). That is
+up to 205 clip() + 205 full-screen drawImage + ~410 save/restore + ~600 individual strokes
+PER FRAME, and stepFx() (line 466) layers the still-flying POP burst on the SAME frame.
+Complex-path clip + full-canvas drawImage is among the slowest Canvas-2D operations; 205 of
+them per frame is the dominant cost of the smash phase.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read `crumble` (430-468), plus the
+   crumble physics + detach logic in `loop` (lines 489-492) and `detach` (428-429).
+2. Open the browser Performance tab, throttle CPU 4-6x, record a Merge run, and confirm the
+   crumble frames are dominated by clip + drawImage self-time in the shard loop (look for long
+   Rasterize/Paint plus drawImage self-time). Capture a per-frame ms number to compare against.
+3. Fix pattern to evaluate (you choose; prose reasoning first, then implement):
+   (a) BAKE each shard ONCE at build time into its own small offscreen canvas sized to the
+       shard's bounding box (clipped texture slice + baked bevel). Per frame just
+       drawImage that cached bitmap with translate/rotate/globalAlpha — no per-frame clip,
+       no full-screen drawImage, no per-edge stroke.
+   (b) Cull: only clip+draw shards whose transformed bounding box intersects the 390x844
+       viewport AND whose alpha > 0; skip fully-fallen/faded shards.
+   (c) Collapse the two save/restore per shard into one where possible.
+4. Re-measure the crumble frame time before/after and report the delta.
+
+Constraints: do NOT change the shard COUNT or the visual look — the goal is to make 205
+shards cheap to render, not to reduce them. This is a read-only iteration harness mockup;
+keep all changes inside chaos-orb-transition.html and do not touch any src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 2 ============ -->
+<div class="card" style="--sev:var(--crit)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#2</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 3 · Particle / VFX</span>
+          <span class="badge sev" style="background:var(--crit)">Critical</span>
+        </div>
+        <h3 class="head">Trail ribbons render thousands of solid quad-fills per frame; POP releases 22 fast trails that keep drawing through ignite + crumble</h3>
+      </div>
+      <div class="prob"><div class="num">76%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:76%"></div></div>
+    <div class="cites">
+      <span class="cite">stepFx ribbon fill · lines 199–221</span>
+      <span class="cite">popBurst(22) · lines 326–336</span>
+      <span class="cite">runEmitter cadence · lines 337–347</span>
+      <span class="cite">stepFx re-called in crumble/ignition · lines 466, 476</span>
+    </div>
+    <p class="mech">Each projectile's ribbon is drawn as a chain of <b>solid quads</b>, one <code>beginPath</code>/4×<code>lineTo</code>/<code>fill</code> per spine segment (spine up to <b>SPINE_N = 90</b>). During the emit window ~20–40 trails are live (emitPerTick 2 + suckPerTick 1 on a decelerating gap starting at gapMin 0.10 s), and <code>popBurst</code> adds <b>22 more at once</b> at the POP. Because <code>stepFx</code> is also called from <code>ignition()</code> (476) and <code>crumble()</code> (466), those POP trails keep rendering <b>on top of the 205-shard smash</b> — the worst single frame of the whole sequence.</p>
+    <div class="load"><b>Worst-case load:</b> ~40 trails × ~89 quads ≈ <b>3,500 path-fills per frame</b> for the ribbons alone, each preceded by a <code>rampAt()</code> colour lookup and a <code>toFixed(3)</code> template-string <code>fillStyle</code> — layered over the crumble render. Emission is bounded (window + cadence + offscreenKill) but peak concurrency lands exactly on the smash frames.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-2">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-2">Frame-budget audit follow-up: chaos-orb trail ribbon draw-call volume.
+
+File: docs/mockups/chaos-orb-transition.html — `stepFx(dt)` lines 184-244 (ribbon fill loop
+199-221), `spawnTrail` 168-183, `popBurst` 326-336, `runEmitter` 337-347.
+
+Mechanism: each projectile's ribbon is a chain of SOLID quads — one beginPath + 4 lineTo +
+fill per spine segment, spine up to SPINE_N=90 (line 209-220). During the emit window ~20-40
+trails are live (emitPerTick 2 + suckPerTick 1 per emission on a decelerating gap from
+gapMin 0.10s), and popBurst releases MCFG.popBurst=22 more at once at the POP. stepFx is ALSO
+called from ignition() (line 476) and crumble() (line 466), so those POP trails keep rendering
+on top of the 205-shard smash — the worst frame in the sequence. Worst case is on the order of
+40 trails x ~89 quads = ~3,500 path-fills per frame just for ribbons, each preceded by a
+rampAt() colour lookup and a toFixed(3) template-string fillStyle assignment.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read stepFx (184-244), spawnTrail,
+   popBurst, and runEmitter.
+2. Profile a Merge run in the browser Performance tab (CPU throttled). Instrument a
+   fill-count and a live-projectile-count per frame; confirm the peak lands on the
+   ignite+crumble frames.
+3. Fix patterns to evaluate: (a) draw each ribbon as ONE stroked path with a cached per-trail
+   linear gradient instead of N solid quads, where the tapered look survives; (b) if quads must
+   stay, precompute the per-quad colour STRINGS once per ramp into a small quantised lookup so
+   rampAt + string-build is not run per quad per frame; (c) cap total concurrent projectiles
+   and/or lower SPINE_N; (d) skip quads whose alpha rounds to 0.
+4. Re-measure fills/frame and frame time before/after.
+
+Constraints: preserve the tapered head->tail ribbon look. This is a read-only mockup; keep all
+changes inside chaos-orb-transition.html and do not touch any src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 3 ============ -->
+<div class="card" style="--sev:var(--crit)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#3</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 1 · O(N²) loop</span>
+          <span class="badge sev" style="background:var(--crit)">Critical</span>
+        </div>
+        <h3 class="head">buildShards() is an O(N²) half-plane clip — 205 × 204 ≈ 42k clipHP passes with ~300k transient allocations, run synchronously on the Merge click</h3>
+      </div>
+      <div class="prob"><div class="num">70%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:70%"></div></div>
+    <div class="cites">
+      <span class="cite">buildShards() · lines 405–422</span>
+      <span class="cite">clipHP() alloc · lines 399–404</span>
+      <span class="cite">called from go() · line 494</span>
+    </div>
+    <p class="mech"><code>buildShards()</code> builds the Voronoi cells by clipping the full screen rectangle against every other seed: an outer loop over N=<b>205</b> seeds, an inner loop over the other <b>204</b>, each calling <code>clipHP</code> which <b>allocates a fresh <code>out=[]</code> array and pushes new {x,y} point objects</b>. It runs inside <code>go()</code> at the exact moment the operator clicks Merge (and whenever <code>shardCount</code> changes), so it lands as a single <b>blocking main-thread hitch</b> right as the animation starts. Not sustained — but a visible stutter at merge start, and the ~300k short-lived objects seed a GC pause moments later during the charge.</p>
+    <div class="load"><b>Worst-case load:</b> 205 × 204 = <b>41,820 clipHP calls</b>, each allocating an array + up to ~(poly+1) point objects → on the order of <b>~300k transient allocations</b> in one synchronous call. Expect tens-to-~150 ms of blocking time on a mid-range phone at the click.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-3">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-3">Frame-budget audit follow-up: chaos-orb Voronoi build spike.
+
+File: docs/mockups/chaos-orb-transition.html — `buildShards()` lines 405-422, `clipHP()`
+lines 399-404, call site in `go()` line 494.
+
+Mechanism: buildShards builds shatter cells with a naive O(N^2) half-plane clip — outer loop
+over N=MCFG.shardCount=205 seeds, inner loop over the other 204, each calling clipHP which
+allocates a fresh out=[] array and pushes new {x,y} point objects. That is 205 x 204 ~= 41,820
+clipHP calls and on the order of ~300k transient object allocations in ONE synchronous call.
+buildShards runs inside go() (line 494) at the moment the operator clicks Merge (and again
+whenever shardCount changes), so it lands as a single blocking main-thread hitch of tens-to-
+~150 ms right as the animation starts, and the garbage it produces can trigger a GC pause during
+the charge that follows.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read buildShards + clipHP (399-422) and the
+   call in go() (line 494 — note the builtCount guard that already avoids rebuilds).
+2. Time it: wrap the buildShards() call in performance.now() deltas and log, with DevTools CPU
+   throttling 4-6x, to confirm the merge-start hitch magnitude.
+3. Fix patterns to evaluate: (a) clip each seed only against NEAREST neighbours — build a coarse
+   spatial grid of seeds and clip against seeds in adjacent buckets only (Voronoi cells only
+   border nearby seeds), dropping O(N^2) to ~O(N*k); (b) reuse a scratch array inside clipHP
+   instead of allocating out=[] each call; (c) move the build OFF the click frame — build lazily
+   during idle before the merge (or in requestIdleCallback) so the click is instant.
+4. Re-time before/after and report the delta.
+
+Constraints: keep the cell shapes visually equivalent — the goal is to kill the build-time spike,
+not change the shatter pattern. Read-only mockup; changes stay inside chaos-orb-transition.html,
+do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 4 ============ -->
+<div class="card" style="--sev:var(--likely)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#4</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 2 · Alloc / GC churn</span>
+          <span class="badge sev" style="background:var(--likely)">Likely</span>
+        </div>
+        <h3 class="head">Per-frame allocation storm: normal arrays + point objects per trail, rampAt/hexRgb objects + toFixed strings per quad, and createRadialGradient per crumble/ignite frame</h3>
+      </div>
+      <div class="prob"><div class="num">55%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:55%"></div></div>
+    <div class="cites">
+      <span class="cite">nrm[] per trail · lines 201–202</span>
+      <span class="cite">rampAt/hexRgb objects · lines 160–162</span>
+      <span class="cite">toFixed fillStyle string · line 213</span>
+      <span class="cite">createRadialGradient · lines 462, 471</span>
+    </div>
+    <p class="mech">The FX + smash path allocates heavily inside the tick: <code>stepFx</code> builds a fresh <code>nrm=[]</code> array of up to 90 point objects <b>per trail per frame</b> (201–202); every quad calls <code>rampAt</code> → <code>hexRgb</code> (new rgb objects, 160–162) and builds a <code>`rgba(...${al.toFixed(3)})`</code> template string for <code>fillStyle</code> (213); and <code>crumble</code> (462) + <code>ignition</code> (471) each allocate a <b>new radial gradient every frame</b>. This is transient garbage proportional to trail-count × spine-length — exactly when the crumble render is already saturating the frame — so a GC pause here reads as a stutter spike on top of the sustained slowdown.</p>
+    <div class="load"><b>Worst-case load:</b> ~40 nrm arrays × up to 90 objects + ~3,500 rgb objects + ~3,500 fillStyle strings + 1 gradient — <b>per frame</b>, sustained across ignite+crumble. Minor-GC frequency climbs sharply during the smash.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-4">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-4">Frame-budget audit follow-up: chaos-orb per-frame allocation / GC churn.
+
+File: docs/mockups/chaos-orb-transition.html. Hot allocation sites:
+- stepFx builds a fresh nrm=[] array of up to 90 {x,y} objects per trail per frame (lines 201-202).
+- rampAt/hexRgb return new objects each call, invoked once per quad (lines 160-162), and the quad
+  fillStyle is a template string built with al.toFixed(3) each quad (line 213).
+- crumble() creates a new radial gradient every frame for the event-horizon ring (line 462);
+  ignition() does the same for the flash (line 471).
+
+Mechanism: this is transient garbage proportional to trailCount x spineLength, produced on the
+exact frames the crumble render is already saturating. The resulting minor-GC pauses read as
+stutter spikes on top of the sustained slowdown.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read stepFx (184-244), rampAt/hexRgb (157-162),
+   crumble (430-468), ignition (469-477).
+2. In the browser Performance/Memory tab, record a Merge run (CPU throttled) and watch the
+   minor-GC markers + JS heap sawtooth during charge -> ignite -> crumble.
+3. Fix patterns to evaluate: (a) hoist nrm + a point/scratch pool out of the per-frame loop and
+   reuse; (b) precompute per-ramp colour STRINGS once into a quantised lookup so rampAt + toFixed
+   are not run per quad per frame; (c) cache the event-horizon and ignite gradients (they only
+   depend on R / p) and rebuild only when the driving value crosses a quantised step; (d) avoid
+   hexRgb re-parsing by memoising parsed ramp stops.
+4. Re-measure GC frequency + heap growth before/after.
+
+Constraints: no visual change. Read-only mockup; keep changes inside chaos-orb-transition.html,
+do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 5 ============ -->
+<div class="card" style="--sev:var(--likely)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#5</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 4 · Canvas thrash</span>
+          <span class="badge sev" style="background:var(--likely)">Likely</span>
+        </div>
+        <h3 class="head">stampGlow toggles globalCompositeOperation to 'lighter' and back many times per frame; composite-op churn compounds across glows, rings and shards</h3>
+      </div>
+      <div class="prob"><div class="num">40%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:40%"></div></div>
+    <div class="cites">
+      <span class="cite">stampGlow · line 166</span>
+      <span class="cite">head glows ×2 per trail · lines 226–227</span>
+      <span class="cite">orb halos · lines 292, 357–358</span>
+      <span class="cite">destination-out / screen swaps · lines 439, 465</span>
+    </div>
+    <p class="mech"><code>stampGlow</code> sets <code>globalCompositeOperation='lighter'</code>, sets <code>globalAlpha</code>, <code>drawImage</code>s a baked 64px glow, then resets both back to <code>source-over</code>/1 — <b>on every call</b>. It's called twice per live trail head (226–227), plus orb halos (292, 357–358) and impact discs (236). Each composite-mode flip can force the renderer to break its batch. Add the <code>destination-out</code> punch pass (439), the <code>screen</code> ring (465), and the sparks' <code>lighter</code> toggles (242) and the frame is a churn of composite-state changes.</p>
+    <div class="load"><b>Worst-case load:</b> ~2 glow stamps × ~40 trails = ~80 composite-op flip pairs/frame during charge, plus ring/punch/spark toggles — each a potential batch break, layered on the crumble render.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-5">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-5">Frame-budget audit follow-up: chaos-orb composite-op thrash.
+
+File: docs/mockups/chaos-orb-transition.html — `stampGlow` line 166; callers at lines 226-227
+(2x per trail head), 292 + 357-358 (orb halos), 236 (impact discs); plus destination-out at 439,
+screen at 465, and lighter toggles in the spark loop at 242.
+
+Mechanism: stampGlow flips globalCompositeOperation to 'lighter', sets globalAlpha, drawImages a
+baked 64px glow, then resets both to source-over / 1 on EVERY call — twice per live trail head,
+plus orb halos and impacts. Each composite-mode change can force the renderer to break its draw
+batch. During charge (~40 trails) that is ~80 flip-pairs per frame, on top of the crumble render.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read stampGlow (166) and its callers, plus the
+   destination-out (439) and screen (465) passes.
+2. Profile a Merge run; check whether the additive-glow draws show up as many small paints /
+   batch breaks.
+3. Fix patterns to evaluate: (a) BATCH all 'lighter' work — draw every glow/head/spark for the
+   frame inside a single lighter block (set the mode once, draw all, reset once) rather than
+   toggling per stamp; (b) group draws by composite mode across the frame so the mode is set a
+   handful of times, not per primitive; (c) keep the reset only at the boundary of each mode group.
+4. Re-measure composite-op change count + frame time before/after.
+
+Constraints: preserve the additive glow look. Read-only mockup; keep changes inside
+chaos-orb-transition.html, do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 6 ============ -->
+<div class="card" style="--sev:var(--likely)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#6</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 4 · Canvas thrash</span>
+          <span class="badge sev" style="background:var(--likely)">Likely</span>
+        </div>
+        <h3 class="head">drawBigOrb sets ctx.filter = 'brightness(...)' every frame during the 2 s charge — a full-canvas filter pass around a single drawImage</h3>
+      </div>
+      <div class="prob"><div class="num">36%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:36%"></div></div>
+    <div class="cites">
+      <span class="cite">sc.filter = brightness · line 360</span>
+      <span class="cite">drawImage under filter · line 361</span>
+      <span class="cite">called each merge frame · line 384</span>
+    </div>
+    <p class="mech"><code>drawBigOrb</code> does <code>sc.save(); sc.filter = `brightness(${bright})`</code> then <code>drawImage(orbImg,...)</code> every frame of the growth window (growT = 2.0 s). Canvas <code>filter</code> is a CSS-filter pipeline that typically forces an <b>offscreen buffer + separate compositing pass</b> per use — costlier than a plain draw, and here the brightness only changes with <code>orbBoost</code>. The asset (<code>special-0.png</code>) is present so the <code>orbReady</code> filtered-drawImage branch is the live path. Not the dominant cost, but avoidable overhead on every charge frame.</p>
+    <div class="load"><b>Worst-case load:</b> 1 full-image CSS-filter pass per frame across ~120 charge frames (2 s @ 60 fps). Cheap individually, but it stacks with the ribbon + glow load in the same phase.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-6">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-6">Frame-budget audit follow-up: chaos-orb ctx.filter brightness pass.
+
+File: docs/mockups/chaos-orb-transition.html — `drawBigOrb` lines 348-364; the filter is set at
+line 360 (sc.filter = `brightness(${bright})`) around the drawImage at line 361; called every
+merge frame at line 384.
+
+Mechanism: canvas ctx.filter runs a CSS-filter pipeline that typically forces an offscreen buffer
+plus a separate compositing pass per use. drawBigOrb sets it every frame of the growth window
+(growT=2.0s). The orb asset special-0.png is present, so orbReady is true and the filtered
+drawImage branch is the live path. brightness only varies with orbBoost.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read drawBigOrb (348-364).
+2. Profile a Merge run; check the drawBigOrb frames for a filter/offscreen-composite cost.
+3. Fix patterns to evaluate: (a) drop ctx.filter and get the brighten via an additive 'lighter'
+   overlay of the orb (or a lightened tint) — reuse the stampGlow additive approach; (b) if the
+   brighten must be a filter, pre-bake a few brightness variants of the orb to offscreen canvases
+   and pick the nearest per frame instead of re-filtering; (c) only apply the filter when
+   orbBoost is above a small threshold, else draw plainly.
+4. Re-measure the drawBigOrb frame cost before/after.
+
+Constraints: keep the pulsing-brighten look. Read-only mockup; keep changes inside
+chaos-orb-transition.html, do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 7 ============ -->
+<div class="card" style="--sev:var(--likely)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#7</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 4 · Canvas thrash / overdraw</span>
+          <span class="badge sev" style="background:var(--likely)">Likely</span>
+        </div>
+        <h3 class="head">A second full O(N) pass punches every detached shard's polygon with destination-out before the clip pass re-draws them — duplicate polygon work + overdraw</h3>
+      </div>
+      <div class="prob"><div class="num">33%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:33%"></div></div>
+    <div class="cites">
+      <span class="cite">destination-out punch · lines 439–441</span>
+      <span class="cite">re-drawn in clip pass · lines 442–461</span>
+      <span class="cite">near-shard crack stroke · lines 436–438</span>
+    </div>
+    <p class="mech">Before the expensive clip pass (finding #1), <code>crumble</code> runs a <b>separate full loop over all shards</b> that rebuilds each detached shard's polygon path and fills it under <code>destination-out</code> to punch a hole in the intact screenshot (439–441). Then the clip pass immediately re-draws those same shards on top. That's a second O(N) polygon-path build + a large <code>destination-out</code> fill region per frame — plus a third loop (436–438) that strokes crack outlines on near shards. Three all-shard passes per frame; the punch pass in particular adds overdraw the clip pass largely covers again.</p>
+    <div class="load"><b>Worst-case load:</b> 3 full passes over 205 shards/frame — near-crack strokes + ~205 destination-out polygon fills + the clip render — with polygon paths rebuilt from scratch in each pass.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-7">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-7">Frame-budget audit follow-up: chaos-orb crumble multi-pass overdraw.
+
+File: docs/mockups/chaos-orb-transition.html — `crumble` lines 430-468. Three all-shard passes
+per frame: near-shard crack stroke (436-438), destination-out hole punch (439-441), then the
+clip render (442-461).
+
+Mechanism: before the expensive clip pass, crumble runs a separate full loop over shards that
+rebuilds each detached shard's polygon path and fills it under destination-out to punch a hole in
+the intact screenshot (439-441). The clip pass then re-draws those same shards on top, so the
+punch is largely covered again -> duplicate polygon-path work + overdraw. A third loop strokes
+crack outlines on near shards. Polygon paths are rebuilt from scratch in every pass.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read crumble (430-468) end to end; map exactly
+   which pixels the destination-out punch affects that the clip pass does NOT later cover.
+2. Profile a Merge run; measure the destination-out pass cost in isolation.
+3. Fix patterns to evaluate (coordinate with finding #1's shard-baking fix): (a) if shards become
+   baked bitmaps, the intact-screen draw can simply be clipped/masked ONCE to the union of
+   still-attached shards instead of punching per detached shard; (b) cache each shard's Path2D at
+   build time so no pass rebuilds paths per frame; (c) fold the near-crack stroke into the attached
+   shard's baked bitmap or draw it only for the thin ring of shards actually near the horizon.
+4. Re-measure crumble frame time before/after.
+
+Constraints: identical visual result (holes where shards detached, cracks near the horizon).
+Read-only mockup; keep changes inside chaos-orb-transition.html, do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 8 ============ -->
+<div class="card" style="--sev:var(--low)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#8</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 8 · Timers / rAF</span>
+          <span class="badge sev" style="background:var(--low)">Low</span>
+        </div>
+        <h3 class="head">The minigame loop keeps requesting rAF forever after 'done', re-drawing shadowBlur text every frame with no exit condition</h3>
+      </div>
+      <div class="prob"><div class="num">26%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:26%"></div></div>
+    <div class="cites">
+      <span class="cite">minigame() · lines 478–483</span>
+      <span class="cite">shadowBlur text · lines 481–482</span>
+      <span class="cite">self-perpetuating rAF · line 483</span>
+    </div>
+    <p class="mech">Once the sequence ends (<code>state==='done'</code>), <code>minigame()</code> re-schedules itself via <code>requestAnimationFrame(minigame)</code> indefinitely (483), re-rendering pulsing text with <code>shadowColor</code>/<code>shadowBlur</code> set each frame (481–482). <code>shadowBlur</code> is a per-draw GPU-readback-style effect, and the loop never stops — so the harness burns a steady slice of every frame <b>after</b> the animation completes. Not part of the smash-phase drop, but a persistent post-animation CPU/GPU cost (and it means each replay isn't starting from a truly idle baseline).</p>
+    <div class="load"><b>Worst-case load:</b> 1 scaled shadowBlur text render per frame, forever, at 60 fps once the animation is done — a low but permanent background cost until the tab is closed.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-8">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-8">Frame-budget audit follow-up: chaos-orb minigame endless rAF + shadowBlur.
+
+File: docs/mockups/chaos-orb-transition.html — `minigame()` lines 478-483; shadowBlur text at
+481-482; the self-perpetuating requestAnimationFrame(minigame) at line 483.
+
+Mechanism: once state==='done', minigame() re-schedules itself via rAF forever, re-rendering
+pulsing text with shadowColor/shadowBlur set each frame. shadowBlur is an expensive per-draw
+effect and the loop has no exit, so the harness burns a steady slice of every frame AFTER the
+animation completes. It also means replays do not start from a truly idle baseline (skews
+profiling).
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read minigame() (478-483) and how it is entered
+   from crumble's completion (line 492).
+2. Confirm with the browser Performance tab that rAF keeps firing (and shadowBlur keeps painting)
+   long after the animation ends.
+3. Fix patterns to evaluate: (a) stop the loop once the intro pulse settles, or render the final
+   frame ONCE and let it sit static; (b) if a gentle idle pulse is wanted, cap it to a low cadence
+   and drop shadowBlur (bake the glow into a cached text bitmap and drawImage it); (c) ensure a
+   fresh Merge cleanly cancels any outstanding minigame rAF so runs do not stack.
+4. Confirm CPU returns to idle after the animation, and that back-to-back runs do not accumulate
+   rAF callbacks.
+
+Constraints: keep the final minigame title look. Read-only mockup; keep changes inside
+chaos-orb-transition.html, do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<!-- ============ FINDING 9 ============ -->
+<div class="card" style="--sev:var(--low)">
+  <div class="body">
+    <div class="cardhead">
+      <span class="rank">#9</span>
+      <div class="htitle">
+        <div class="badges">
+          <span class="badge lens">Lens 7 · State hygiene</span>
+          <span class="badge sev" style="background:var(--low)">Low</span>
+        </div>
+        <h3 class="head">The destination-out punch pass resets globalCompositeOperation by hand instead of save/restore — currently balanced, but fragile to any early-out added later</h3>
+      </div>
+      <div class="prob"><div class="num">14%</div><div class="lbl">Probability</div></div>
+    </div>
+    <div class="track"><div class="fill" style="width:14%"></div></div>
+    <div class="cites">
+      <span class="cite">manual composite reset · lines 439–441</span>
+      <span class="cite">screen-mode ring reset · line 465</span>
+    </div>
+    <p class="mech">The <code>destination-out</code> punch (439–441) and the <code>screen</code>-mode horizon ring (465) set a composite mode and reset it manually to <code>source-over</code> rather than bracketing with <code>save()</code>/<code>restore()</code>. Today the calls are balanced so there's no leak — this is a <b>correctness/robustness</b> note, not a measured hot-path cost. The risk is future edits: any <code>continue</code>/early-return added inside those loops would leak a destructive composite mode into the rest of the frame (blank or inverted output), which is exactly the kind of render-corruption bug that later reads as "the smash is broken/slow." Flagging for hygiene, hence the low probability against the current slowdown.</p>
+    <div class="load"><b>Worst-case load:</b> negligible perf cost today; the exposure is a latent state-leak if an early-exit is introduced into the punch or ring passes during a future edit.</div>
+    <div class="actions">
+      <button class="copy" data-copy-target="prompt-9">Copy investigation prompt</button>
+      <span style="color:var(--faint);font-size:12px">→ paste into a fresh Claude conversation</span>
+    </div>
+    <details><summary>Show prompt</summary>
+<pre class="prompt" id="prompt-9">Frame-budget audit follow-up: chaos-orb composite-mode state hygiene.
+
+File: docs/mockups/chaos-orb-transition.html — the destination-out punch pass (lines 439-441) and
+the screen-mode event-horizon ring (line 465) in `crumble`.
+
+Mechanism: both set globalCompositeOperation and reset it to 'source-over' by hand rather than
+bracketing with save()/restore(). Today the calls are balanced, so there is no actual leak and no
+measured perf cost — this is a robustness note. The risk is future edits: any continue/early-return
+added inside those loops would leak a destructive composite mode ('destination-out'/'screen') into
+the rest of the frame, producing blank/inverted output that later reads as a broken or slow smash.
+
+Please:
+1. Open docs/mockups/chaos-orb-transition.html and read the punch + ring passes in crumble (430-468).
+2. Confirm the composite mode is currently always reset on every path.
+3. Fix pattern: wrap each composite-mode section in sc.save()/sc.restore() (or a single
+   try/finally-style guard) so the mode can never leak regardless of future early-exits, without
+   changing the visual result.
+4. Verify the smash still renders identically.
+
+Constraints: purely defensive; no visual change. Read-only mockup; keep changes inside
+chaos-orb-transition.html, do not touch src/ game code.</pre>
+    </details>
+  </div>
+</div>
+
+<div class="section-label">Lenses walked with no material signal</div>
+<div class="clearbox">
+  <div class="row"><span class="ln">Lens 5</span><span class="p">~8%</span><span class="d"><b>DOM / layout reflow.</b> No layout reads in the animation path. <code>syncExport</code>/<code>buildControls</code> touch the DOM only on control input and at setup, never per frame. No <code>innerHTML</code> or style writes inside <code>loop</code>.</span></div>
+  <div class="row"><span class="ln">Lens 6</span><span class="p">~6%</span><span class="d"><b>Asset load / decode.</b> <code>orbImg</code> is loaded once (line 58); <code>tex</code> is an offscreen canvas. No <code>new Image()</code>, <code>getImageData</code>, or <code>toDataURL</code> in the tick. (Overdraw from re-drawing <code>tex</code> 205× is a render cost — covered by finding #1, not a decode cost.)</span></div>
+  <div class="row"><span class="ln">Lens 9</span><span class="p">~2%</span><span class="d"><b>Hit-stop / freeze-frame stacking.</b> No freeze/hit-stop mechanic exists in the harness. Not applicable.</span></div>
+  <div class="row"><span class="ln">Lens 10</span><span class="p">~10%</span><span class="d"><b>Off-screen / distant AI ticks.</b> No AI. The one adjacent pattern — <code>crumble</code> iterating all 205 shards each frame including fully-faded ones — is O(N), not O(N²), and is folded into findings #1/#7 (cull fully-fallen/alpha-0 shards there).</span></div>
+</div>
+
+<div class="section-label">Operator next steps</div>
+<div class="next">
+  <h2>Prioritised — do these in order</h2>
+  <ol>
+    <li><span class="step">1.</span> Open the mockup in Chrome, open the <b>Performance</b> tab, set <b>CPU throttling 4–6×</b>, and record a single <b>Merge → smash</b> run. Confirm the frame-time spike lands on the <b>crumble</b> frames and that <code>drawImage</code>/<code>clip</code> self-time dominates them — this validates finding #1 as the prime suspect before any change.</li>
+    <li><span class="step">2.</span> Copy <b>finding #1's prompt</b> (per-shard clip + full-screen drawImage) into a fresh Claude conversation and land the shard-baking fix. It's the single highest-leverage change; expect the biggest frame-time win.</li>
+    <li><span class="step">3.</span> Then take <b>#2 (trail draw-call volume)</b> and <b>#3 (buildShards O(N²) build spike)</b> — #2 clears the compounding cost on the smash frames, #3 removes the click-time hitch. #4 (GC churn) naturally shrinks as #2 is fixed.</li>
+    <li><span class="step">4.</span> Re-record after each fix and compare frame-time deltas. Note: fix <b>#8</b> (endless minigame rAF) early if you're profiling repeatedly — it keeps the CPU busy after "done" and skews back-to-back captures off a non-idle baseline.</li>
+    <li><span class="step">5.</span> Sweep the smaller Canvas-hygiene items (<b>#5 composite batching</b>, <b>#6 ctx.filter</b>, <b>#7 overdraw passes</b>, <b>#9 state-leak guard</b>) once the two heavy hitters are resolved and re-measure.</li>
+  </ol>
+</div>
+
+<footer>
+  Slowdown Detective · read-only frame-budget audit · no mockup or game source was modified.<br>
+  Buttons copy the prompt to your clipboard; if the browser blocks auto-copy on <code>file://</code>, a fallback panel opens with the text pre-selected — press <kbd>⌘C</kbd> / <kbd>Ctrl-C</kbd>.
+</footer>
+
+</div>
+
+<script>
+(function () {
+  // Try every copy mechanism in order. Returns true on success.
+  async function copyText(text) {
+    // 1. Modern async API — works on HTTPS, http://localhost, and some file://.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_e) { /* fall through */ }
+    }
+    // 2. document.execCommand('copy') with a temporary textarea — works on
+    //    most file:// pages where the async API doesn't. Must focus + select.
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.width = '2em';
+      ta.style.height = '2em';
+      ta.style.padding = '0';
+      ta.style.border = 'none';
+      ta.style.outline = 'none';
+      ta.style.boxShadow = 'none';
+      ta.style.background = 'transparent';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      const sel = document.getSelection();
+      const prevRange = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (prevRange) { sel.removeAllRanges(); sel.addRange(prevRange); }
+      if (ok) return true;
+    } catch (_e) { /* fall through */ }
+    // 3. Last-ditch: open a modal with the text pre-selected so the
+    //    operator can Cmd-C manually. NEVER fail silently.
+    showCopyModal(text);
+    return false;
+  }
+  function showCopyModal(text) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px';
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:#1a1530;color:#e8e6df;padding:24px;border-radius:8px;max-width:720px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px';
+    inner.innerHTML = '<div style="font:bold 14px sans-serif">Auto-copy blocked. Select the text below and press <kbd>&#8984;C</kbd> / <kbd>Ctrl-C</kbd>:</div>';
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'width:100%;height:280px;font:12px/1.4 monospace;background:#0f0a1f;color:#e8e6df;border:1px solid #4a4060;border-radius:4px;padding:10px;resize:vertical';
+    inner.appendChild(ta);
+    const close = document.createElement('button');
+    close.textContent = 'Close';
+    close.style.cssText = 'align-self:flex-end;padding:6px 18px;background:#5a4080;color:#fff;border:0;border-radius:4px;cursor:pointer';
+    close.onclick = () => m.remove();
+    inner.appendChild(close);
+    m.appendChild(inner);
+    document.body.appendChild(m);
+    ta.focus();
+    ta.select();
+  }
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-copy-target]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-copy-target');
+    const src = document.getElementById(id);
+    if (!src) return;
+    const text = src.textContent || '';
+    const ok = await copyText(text);
+    const orig = btn.textContent;
+    btn.textContent = ok ? '✓ Copied!' : '⚠ Tap text → ⌘C';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+  });
+})();
+</script>
+</body>
+</html>

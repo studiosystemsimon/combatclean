@@ -10,8 +10,9 @@
  *         reg → anchor (registration point; merge default = tile CENTRE [0.5,0.5])
  *         combat.scale → scale        combat.rot → rotation
  * GENERATOR LADDERS (`<chain>-gen/<chain>-gen-<L>_256.png`, L = 1..GEN_LEVELS) are transferred the same
- * way into assets.json `gen.<chain>.<L>` (1-based, matching the in-game generator level) → asset dir
- * assets/combatclean/gen/. Non-merge/non-gen assets in assets.json are untouched.
+ * way into assets.json `gen.<chain>.<gameLevel>` (gameLevel = L-1, the 0-indexed game ladder — matching
+ * the 0-indexed merge item ladder + the game code) → asset dir assets/combatclean/gen/. Non-merge/non-gen
+ * assets in assets.json are untouched.
  */
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve as presolve } from 'node:path';
@@ -28,7 +29,7 @@ mkdirSync(GEN_DIR, { recursive: true });
 
 const CHAINS = ['magic', 'blade', 'range']; // game chains (post bow→range migration)
 const TIERS = 8;                            // 8-tier item ladders (game tier = pipeline tier - 1)
-const GEN_LEVELS = 5;                       // generator ladders — 1-based (game gen level == pipeline tier)
+const GEN_LEVELS = 5;                       // generator ladders — 0-indexed game level (game level = pipeline tier - 1)
 
 const assets = JSON.parse(readFileSync(ASSETS_JSON, 'utf8'));
 assets.assets ||= {};
@@ -64,14 +65,15 @@ for (const chain of CHAINS) {
     assets.assets[`${chain}.${gameTier}`] = entry;
     out.copied.push(`${chain}.${gameTier}  (scale ${scale}, rot ${rot}, reg ${reg.join(',')})`);
   }
-  // ── generator ladder (1-based game gen level) ──
+  // ── generator ladder (0-indexed game gen level, mirroring the merge ladder + game code) ──
   for (let L = 1; L <= GEN_LEVELS; L++) {
+    const gameLevel = L - 1;
     const src = join(TRIM, `${chain}-gen`, `${chain}-gen-${L}_256.png`);
     if (!existsSync(src)) { out.missing.push(`${chain}-gen-${L}_256.png`); continue; }
-    copyFileSync(src, join(GEN_DIR, `${chain}-${L}.png`));
-    const { entry, scale, rot, reg } = entryFrom(`${chain}-gen/${chain}-gen-${L}.png`, `gen/${chain}-${L}.png`);
-    assets.assets[`gen.${chain}.${L}`] = entry;
-    out.copied.push(`gen.${chain}.${L}  (scale ${scale}, rot ${rot}, reg ${reg.join(',')})`);
+    copyFileSync(src, join(GEN_DIR, `${chain}-${gameLevel}.png`));
+    const { entry, scale, rot, reg } = entryFrom(`${chain}-gen/${chain}-gen-${L}.png`, `gen/${chain}-${gameLevel}.png`);
+    assets.assets[`gen.${chain}.${gameLevel}`] = entry;
+    out.copied.push(`gen.${chain}.${gameLevel}  (scale ${scale}, rot ${rot}, reg ${reg.join(',')})`);
   }
 }
 

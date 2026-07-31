@@ -1,0 +1,9 @@
+{
+	"ease": 0.22, "distRate": 9, "runSpeed": 0.15, "renderCap": 60, "memberW": 30, "startDelayMs": 900, "crowdCap": 999,
+	"fire": { "ms": 230, "jit": 0.05, "bulletSpd": 1.05, "hitLane": 0.09, "hitDepth": 0.05 },
+	"gates": { "pairMs": 4800, "addVals": [5, 8, 10, 12, 15], "addProb": 0.82, "mul2Prob": 0.94, "subTrapChance": 0.35, "subVals": [4, 6, 8] },
+	"foes": { "clusterBase": 2, "clusterRandBase": 3, "distClusterDiv": 120, "hpBase": 3, "hpDistDiv": 90, "hpRand": 3, "sizeMin": 52, "sizeMax": 64, "contactDmgDiv": 3, "spawnDelayMs": 1100, "contactLane": 0.35, "killDistBonus": 2, "gemChance": 0.12, "coinChance": 0.5 },
+	"boss": { "at": 5, "hp": 460, "size": 200, "creep": 0.02, "sweepSpeed": 0.18, "escortSnipers": 2 },
+	"sniper": { "speed": 0.42, "cd": 2.7, "aimMs": 1.15, "beamHalfW": 0.11, "fireFlashMs": 0.24, "midRunAt": 3, "spawnDelayMs": 700, "initialCdMin": 1.0, "initialCdMax": 2.0 },
+	"mine": { "chance": 0.7, "afterPair": 2, "radiusMin": 0.3, "radiusMax": 0.46, "spawnDelayMs": 1900 }
+}

@@ -128,5 +128,15 @@
 		"bossSpecial": { "impactR": 18, "trail": { "width": 5, "length": 10, "speed": 1200, "r": 4 }, "hitR": 6, "stagger": 100, "numberDelay": 150, "flashOpacity": 0.5, "flashMs": 540, "screenShake": 9, "shockSize": 30, "shockFromScale": 0.2, "shockToScale": 18, "shockMs": 640, "shockCurve": "cubic-bezier(.2,.7,.3,1)" },
 		"bossHeal": { "pulseBrightness": 1.5, "pulseOffset": 0.4, "pulseMs": 480, "wisp": { "width": 2, "length": 7, "speed": 950, "r": 2 } },
 		"bossRaise": { "arenaShake": 2, "castBrightness": 2.1, "castOffset": 0.35, "castMs": 640, "ringSize": 40, "ringFromScale": 0.3, "ringFromOpacity": 0.9, "ringToScale": 4, "ringMs": 620, "minionR": 12, "riseBrightness": 3.4, "riseFromScale": 0.6, "riseMs": 420, "riseBaseDelay": 220, "riseStagger": 90 }
+	},
+	"transition": {
+		"rushT": 0.24, "growT": 2, "growEase": "easeOutCubic", "igniteMs": 140, "crumbleMs": 1400, "emitWindow": 2, "gapMin": 0.1, "gapMax": 0.95,
+		"emitPerTick": 2, "suckPerTick": 1, "popBurst": 22, "popSpeed": 1650, "emitSpeed": 1050, "suckSpeed": 720,
+		"ringR": 260, "offBig": 1000, "bigR": 78, "rattleMax": 7, "trailW": 4, "trailLen": 22, "headR": 6, "edge3d": 0.1,
+		"shardCount": 205, "crumbleShake": 20, "crumbleTail": 0.2,
+		"orbGlow": "#5a4cff", "orbGlow2": "#9b6bff", "igniteColor": "#ffffff", "holeColorA": "#5a50ff", "holeColorB": "#501796",
+		"collideColor": "#dff0ff", "shockColor": "#7fb0ff", "sparkColorA": "#8fd0ff", "sparkColorB": "#b78bff",
+		"lashRamp": [ { "p": 0, "c": "#6600ff" }, { "p": 0.16, "c": "#ffffff" }, { "p": 0.5, "c": "#0091ff" }, { "p": 1, "c": "#3a0f80" } ],
+		"popRamp": [ { "p": 0, "c": "#ffbb00" }, { "p": 0.2, "c": "#9fd6ff" }, { "p": 0.55, "c": "#d400ff" }, { "p": 1, "c": "#480052" } ]
 	}
 }

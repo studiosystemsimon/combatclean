@@ -1,7 +1,7 @@
 // Root shell: top currency bar, a PERSISTENT combat panel (the autobattler,
 // same area on every screen), a swappable CONTEXT panel driven by the navbar,
 // the bottom nav, and the VFX overlay.
-import { useGame, isFullScreen, fxVisible } from '../controller/GameContext';
+import { useMetaGame, isFullScreen, fxVisible } from '../controller/GameContext';
 import Header from './Header.jsx';
 import NavBar from './NavBar.jsx';
 import FxLayer from './FxLayer.jsx';
@@ -18,10 +18,13 @@ import AfkPopup from './screens/AfkPopup.jsx';
 import RewardPopup from './screens/RewardPopup.jsx';
 import AfkAlert from './AfkAlert.jsx';
 import FtueLayer from './ftue/FtueLayer.jsx';
+import ScreenTransition from './ScreenTransition.jsx';
 import { AFK } from '../data/config.js';
 
 export default function Game() {
-  const { state } = useGame();
+  // Meta view — Game reads only screen/headless/menu/afk/minigame (never battle/fx), so it must NOT
+  // re-render on the 5 Hz combat tick (that would re-create the whole screen subtree every 200ms).
+  const { state } = useMetaGame();
   // Background mode: unmount the ENTIRE view (combat panel, board, FxLayer, canvas). The controller's
   // timers keep ticking underneath, so the engine runs with zero rendering.
   if (state.headless) return <HeadlessScreen />;
@@ -63,6 +66,8 @@ export default function Game() {
       {state.rewardPopup && <RewardPopup />}
       {/* FTUE coachmark layer — self-gates on flags.ftueActive; renders nothing when the FTUE is off. */}
       <FtueLayer />
+      {/* Screen-crumble transition — self-gates on state.transition; outlives the minigame mount. */}
+      <ScreenTransition />
     </div>
   );
 }

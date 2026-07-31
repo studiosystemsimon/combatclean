@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Clean — Heroes Screen Slowdown Re-Audit</title>
+<style>
+  :root{
+    --bg:#0d0a1a; --bg2:#141029; --card:#181233; --card2:#1e1740;
+    --ink:#ece9f7; --ink-dim:#a49dc4; --ink-faint:#736c94;
+    --line:#2b2450; --line2:#3a3168;
+    --accent:#8a6bff; --accent2:#b79bff;
+    --crit:#ff4d5e; --high:#ff8a3d; --mid:#ffcf45; --low:#4bd18a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+  body{background:radial-gradient(1200px 600px at 80% -10%,rgba(138,107,255,.14),transparent 60%),var(--bg)}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 90px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .eyebrow{font:600 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:-.01em}
+  h1 .proj{color:var(--accent2)}
+  .sub{color:var(--ink-dim);font-size:14px;margin:0;max-width:70ch}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px 18px;font:500 12.5px/1 var(--mono);color:var(--ink-faint)}
+  .meta b{color:var(--ink-dim);font-weight:600}
+
+  .lensbar{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 8px}
+  .lens-badge{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;font:600 12px/1 var(--sans);color:var(--ink-dim)}
+  .lens-badge .n{font:700 12px/1 var(--mono);color:var(--ink)}
+  .lens-badge.hot{border-color:#5a3d6e;color:var(--ink)}
+  .lens-badge.clean{opacity:.5}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line2)}
+  .dot.crit{background:var(--crit)} .dot.high{background:var(--high)}
+  .dot.mid{background:var(--mid)} .dot.low{background:var(--low)}
+
+  .rollup{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 8px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink-dim)}
+  .pill b{color:var(--ink);font-weight:700}
+  .pill .c{font:700 13px/1 var(--mono)}
+  .pill .crit{color:var(--crit)} .pill .high{color:var(--high)} .pill .low{color:var(--low)}
+
+  .verified{background:linear-gradient(180deg,rgba(75,209,138,.08),transparent);border:1px solid #23503a;border-radius:12px;
+    padding:14px 18px;margin:20px 0 6px}
+  .verified h3{margin:0 0 8px;font-size:13.5px;color:#8ee0b0;letter-spacing:.02em}
+  .verified ul{margin:0;padding-left:18px;color:var(--ink-dim);font-size:13px}
+  .verified code{font:600 12px/1.4 var(--mono);color:var(--accent2)}
+
+  section.findings{margin-top:30px}
+  .sec-h{font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 14px}
+
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;
+    padding:20px 20px 18px;margin-bottom:18px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sevc,var(--line2))}
+  .card.sev-crit{--sevc:var(--crit)} .card.sev-high{--sevc:var(--high)}
+  .card.sev-mid{--sevc:var(--mid)} .card.sev-low{--sevc:var(--low)}
+  .card-top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .prob{flex:0 0 auto;width:150px}
+  .prob .num{font:800 30px/1 var(--sans);letter-spacing:-.02em}
+  .prob .lbl{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+  .bar{height:7px;border-radius:99px;background:#221a45;margin-top:9px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:99px}
+  .sev-crit .num{color:var(--crit)} .sev-crit .bar>i{background:linear-gradient(90deg,#ff8a3d,var(--crit))}
+  .sev-high .num{color:var(--high)} .sev-high .bar>i{background:linear-gradient(90deg,var(--mid),var(--high))}
+  .sev-mid .num{color:var(--mid)} .sev-mid .bar>i{background:linear-gradient(90deg,var(--low),var(--mid))}
+  .sev-low .num{color:var(--low)} .sev-low .bar>i{background:var(--low)}
+  .card-body{flex:1 1 340px;min-width:300px}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px}
+  .tag{font:600 10.5px/1 var(--mono);letter-spacing:.04em;padding:4px 9px;border-radius:6px;background:#241c48;color:var(--accent2);border:1px solid var(--line2)}
+  .tag.lens{background:#1c2c46;color:#8fb7ff;border-color:#2a3f63}
+  .headline{font-size:17px;font-weight:700;margin:2px 0 10px;letter-spacing:-.01em}
+  .cites{font:600 12px/1.7 var(--mono);color:var(--accent2);background:#120e28;border:1px solid var(--line);
+    border-radius:8px;padding:9px 12px;margin:0 0 12px;word-break:break-word}
+  .cites .f{color:#ffb3c1}
+  p.mech{margin:0 0 12px;color:var(--ink-dim);font-size:13.5px}
+  p.mech b{color:var(--ink)}
+  .quant{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+  .quant .q{background:#160f30;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--ink-dim)}
+  .quant .q b{color:#ffd45e;font:700 13px/1 var(--mono)}
+  .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button.copy{appearance:none;border:1px solid #6a4fb0;background:linear-gradient(180deg,#6f4fd0,#5a3fb0);color:#fff;
+    font:700 12.5px/1 var(--sans);padding:9px 16px;border-radius:8px;cursor:pointer;transition:filter .15s}
+  button.copy:hover{filter:brightness(1.12)} button.copy:disabled{opacity:.7;cursor:default}
+  details{margin-top:12px;border-top:1px dashed var(--line2);padding-top:10px}
+  summary{cursor:pointer;color:var(--ink-dim);font:600 12px/1 var(--sans);user-select:none}
+  summary:hover{color:var(--ink)}
+  details pre{white-space:pre-wrap;font:12px/1.5 var(--mono);background:#0c0820;border:1px solid var(--line);
+    border-radius:8px;padding:14px;margin:12px 0 0;color:#d7d2ee;overflow:auto}
+
+  .nextsteps{background:linear-gradient(180deg,var(--card2),var(--bg2));border:1px solid var(--line2);border-radius:14px;
+    padding:22px 24px;margin-top:34px}
+  .nextsteps h2{margin:0 0 14px;font-size:16px}
+  .nextsteps ol{margin:0;padding-left:20px}
+  .nextsteps li{margin:0 0 10px;color:var(--ink-dim);font-size:13.5px}
+  .nextsteps li b{color:var(--ink)}
+  .nextsteps code{font:600 12px/1.4 var(--mono);color:var(--accent2)}
+  footer{margin-top:40px;color:var(--ink-faint);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Slowdown Detective · Targeted Re-Audit</div>
+    <h1><span class="proj">Combat Clean</span> — Heroes Screen, residual slowness</h1>
+    <p class="sub">Scan focused on <code>src/view/screens/HeroesScreen.jsx</code> and everything it renders/reads,
+      at the 50-heroes / 100-gear scale, <b>after</b> the #1 context-split and #3 gearIndex fixes. Goal:
+      find what is STILL causing frame drops — not re-report what is already resolved.</p>
+    <div class="meta">
+      <span><b>Scan:</b> 2026-07-31 11:32 BST</span>
+      <span><b>Runtime:</b> React 18 UI overlay · reducer + owned timers (no game engine)</span>
+      <span><b>Scale:</b> 50 heroes · 100 gear · selectedSlots 5 · maxAscensions 5</span>
+      <span><b>Report:</b> docs/slowdown-heroes.html</span>
+    </div>
+  </header>
+
+  <div class="lensbar">
+    <span class="lens-badge hot"><span class="dot crit"></span>L8 Timers <span class="n">1</span></span>
+    <span class="lens-badge hot"><span class="dot high"></span>L1 O(N²) loops <span class="n">1</span></span>
+    <span class="lens-badge hot"><span class="dot mid"></span>L2 Alloc / GC <span class="n">1</span></span>
+    <span class="lens-badge hot"><span class="dot mid"></span>L5 DOM / paint thrash <span class="n">2</span></span>
+    <span class="lens-badge clean">L3 Particles 0</span>
+    <span class="lens-badge clean">L4 Canvas 0</span>
+    <span class="lens-badge clean">L6 Asset load 0</span>
+    <span class="lens-badge clean">L7 Transform leak 0</span>
+    <span class="lens-badge clean">L9 Hit-stop 0</span>
+    <span class="lens-badge clean">L10 AI ticks 0</span>
+  </div>
+
+  <div class="rollup">
+    <span class="pill"><span class="c crit">🔴 2</span> <b>Critical</b></span>
+    <span class="pill"><span class="c high">🟡 2</span> <b>Likely</b></span>
+    <span class="pill"><span class="c low">🟢 1</span> <b>Low / ruled-out</b></span>
+    <span class="pill">Top suspect: <b>REGEN_TICK re-renders the whole roster every 1&nbsp;s</b> · <span class="c crit">90%</span></span>
+  </div>
+
+  <div class="verified">
+    <h3>✓ Already-fixed causes — verified still resolved (NOT re-flagged)</h3>
+    <ul>
+      <li><b>#1 battle-tick re-render fan-out:</b> <code>MetaStateContext</code> + <code>useMetaGame()</code> exist in
+        <code>GameContext.tsx:18,44–54,199</code>; <code>HeroesScreen.jsx:45</code> consumes it. The 5&nbsp;Hz
+        <code>BATTLE_TICK</code> only replaces <code>battle</code>/<code>fx</code>, which the meta-diff excludes — so the
+        battle tick no longer re-renders Heroes. <b>Confirmed live.</b> (But a THIRD writer leaks through — see Finding&nbsp;A.)</li>
+      <li><b>#3 per-cell gear scans:</b> <code>gearIndex</code> (<code>powByCid</code> + <code>bySlot</code>) is memoized on
+        <code>state.gear</code> at <code>HeroesScreen.jsx:72–81</code>; <code>gearPowOf</code>/<code>equippedOf</code> are O(1).
+        <code>gearIndex</code> does <b>not</b> rebuild on a REGEN_TICK (dep is stable). <b>Confirmed live.</b></li>
+    </ul>
+  </div>
+
+  <section class="findings">
+    <h2 class="sec-h">Residual findings — sorted by probability</h2>
+
+    <!-- ───────────────────────── FINDING A ───────────────────────── -->
+    <div class="card sev-crit">
+      <div class="card-top">
+        <div class="prob">
+          <div class="num">90%</div>
+          <div class="lbl">Critical</div>
+          <div class="bar"><i style="width:90%"></i></div>
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="tag lens">Lens 8 · Timer fan-out</span>
+            <span class="tag">1 Hz REGEN_TICK</span>
+            <span class="tag">metaState identity</span>
+          </div>
+          <div class="headline">The 1 Hz REGEN_TICK bumps <code>metaState</code> identity every second → HeroesScreen re-renders the entire 50-cell roster once per second, displaying nothing new.</div>
+          <div class="cites">
+            <span class="f">src/controller/GameContext.tsx</span>:44–54 &nbsp;(meta-diff excludes only <code>battle</code>/<code>fx</code>)<br>
+            <span class="f">src/controller/GameContext.tsx</span>:57 &nbsp;(REGEN_TICK <code>setInterval</code>, <code>regenTickMs</code>=1000)<br>
+            <span class="f">src/game/store/reducer-shell.ts</span>:57–58 &nbsp;(REGEN_TICK returns new <code>energy</code> + new <code>now</code>)<br>
+            <span class="f">src/game/energy/energy.ts</span>:9–16 &nbsp;(<code>regen</code> returns a NEW object even when energy is full)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:45 &nbsp;(<code>useMetaGame()</code>)
+          </div>
+          <p class="mech">The #1 fix stabilised meta identity <b>across the battle tick</b>, but a third writer slips past it. The
+            meta-diff (<code>GameContext.tsx:48–50</code>) rebuilds <code>metaRef.current</code> whenever <b>any</b> key other than
+            <code>battle</code>/<code>fx</code> changes ref. <code>REGEN_TICK</code> returns
+            <code>{ …state, energy: Energy.regen(...), now: action.now }</code> — and <b>both</b> of those are meta keys:
+            <code>now</code> is a fresh number every tick, and <code>Energy.regen</code> allocates a new object every tick
+            (line 15, and even line 10 when full). So <code>same</code> becomes <code>false</code> every second →
+            <code>metaState</code> gets a new identity → <code>MetaStateContext.Provider value</code> changes → <b>every</b>
+            <code>useMetaGame()</code> consumer (Game shell, Heroes, Gear, ScreenTransition) re-renders at 1 Hz. HeroesScreen
+            reads <b>neither</b> <code>energy</code> nor <code>now</code> — confirmed: the only reader of those is
+            <code>Header.jsx</code>, which uses <code>useGame()</code> (full state), not the meta view. The re-render is pure waste.</p>
+          <div class="quant">
+            <span class="q"><b>60</b> wasted whole-roster re-renders / minute while idle-browsing</span>
+            <span class="q">Each re-render runs <b>renderCell ×50</b> + the O(N²) ascend pass (Finding&nbsp;B)</span>
+            <span class="q">Net: a periodic <b>~1 s stutter cadence</b> with zero visible change</span>
+          </div>
+          <div class="actions">
+            <button class="copy" data-copy-target="prompt-a">Copy investigation prompt</button>
+          </div>
+          <details>
+            <summary>Show prompt</summary>
+            <pre id="prompt-a">Frame-budget fix: the 1 Hz REGEN_TICK re-renders the whole Heroes roster.
+
+Combat Clean, React 18 + useReducer, no game engine. A prior fix added a
+MetaStateContext / useMetaGame() so the 5 Hz BATTLE_TICK stops re-rendering
+non-combat screens. It works — but a THIRD writer leaks through and defeats it.
+
+THE BUG
+In src/controller/GameContext.tsx around lines 44-54, `metaRef` is rebuilt
+whenever ANY state key other than `battle`/`fx` changes reference:
+    for (const k in state) { if (k === 'battle' || k === 'fx') continue;
+      if (state[k] !== prev[k]) { same = false; break; } }
+The 1 Hz REGEN_TICK (setInterval at GameContext.tsx:57, C.RUNTIME.regenTickMs
+= 1000ms) dispatches an action whose reducer (src/game/store/reducer-shell.ts
+:57-58) returns:
+    { ...state, energy: Energy.regen(state.energy, action.now), now: action.now }
+Both slices change ref EVERY tick: `now` is a fresh number, and
+src/game/energy/energy.ts:9-16 `regen` allocates a new object every call (line
+15, and even line 10 `{ ...energy, lastRegenAt: now }` when energy is full).
+So `same` becomes false once per second → metaState gets a new identity →
+MetaStateContext.Provider value changes → every useMetaGame() consumer
+(Game.jsx, HeroesScreen.jsx, GearScreen.jsx, ScreenTransition.jsx) re-renders
+at 1 Hz. At 50 heroes that reconciles the entire roster and re-runs the O(N²)
+ascend pass — for zero visible change (Heroes shows neither energy nor now).
+
+CONFIRM FIRST
+1. Verify no useMetaGame() consumer reads `energy`, `now`, or `pendingAfk`.
+   I found that Header.jsx (the energy bar) and AfkAlert.jsx use useGame()
+   (full state), NOT useMetaGame — so those slices are safe to keep out of the
+   meta view. Re-verify with:  grep -rn "useMetaGame" src/  then check each
+   file reads none of energy/now/pendingAfk.
+2. In a browser: open React DevTools Profiler on the Heroes screen at 50
+   heroes, sit idle, and confirm a commit fires ~every 1000ms with
+   HeroesScreen (and Game/Gear) in the flame graph.
+
+FIX (pick the cleanest; do NOT reintroduce a parallel data path)
+Preferred: extend the meta-diff's skip set so volatile, meta-irrelevant slices
+never bump meta identity. Change the exclusion in GameContext.tsx:48-50 from
+{battle, fx} to also skip {now, energy, pendingAfk} (only after step 1 proves
+no meta consumer reads them). Keep the destructure at line 52 spreading the
+real (non-excluded) slices so meta consumers still see everything they DO read.
+Secondary hardening (optional, do both if quick):
+  - Make Energy.regen return the SAME object ref when nothing changed (already
+    true at line 12 for ticks<=0; also return `energy` unchanged at line 10
+    instead of allocating when already full).
+  - Have REGEN_TICK avoid bumping `now` when regen produced no change.
+
+VERIFY THE FIX
+- React DevTools Profiler: idle on Heroes at 50 heroes → NO commits for
+  HeroesScreen/Game/Gear across several seconds; the energy bar (Header, via
+  useGame) still ticks every second.
+- Confirm energy still regenerates and the AFK/energy UI is unaffected.
+Do NOT touch the battle/fx exclusion (that's the working #1 fix). Update
+src/controller/README (or the module's README) noting REGEN_TICK's slices are
+excluded from the meta view and why.</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── FINDING B ───────────────────────── -->
+    <div class="card sev-crit">
+      <div class="card-top">
+        <div class="prob">
+          <div class="num">80%</div>
+          <div class="lbl">Critical</div>
+          <div class="bar"><i style="width:80%"></i></div>
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="tag lens">Lens 1 · O(N²) per render</span>
+            <span class="tag">no React.memo on cell</span>
+            <span class="tag">canAscendCid ×50</span>
+          </div>
+          <div class="headline">Every re-render reconciles all 50 tiles inline, and each tile runs an <b>unmemoized O(N) ascend scan</b> — so the roster is O(N²) per render (≈2,500 hero-scans at 50 heroes), on top of Finding A's 1 Hz cadence.</div>
+          <div class="cites">
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:338 &nbsp;(<code>renderCell</code> — plain inline fn, NO <code>React.memo</code>)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:348 &nbsp;(<code>const canUpgrade = canAscendCid(id)</code> — per cell)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:197,200–203 &nbsp;(<code>ascendSelFor</code> → <code>canAscendCid</code>)<br>
+            <span class="f">src/game/heroes/heroes.ts</span>:49–59 &nbsp;(<code>ascendSelection</code> — <code>Object.keys(roster).filter(...)</code> O(N))<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:431,441 &nbsp;(<code>squad.map(renderCell)</code> / <code>roster.map(renderCell)</code>)
+          </div>
+          <p class="mech">The cell is a bare function invoked in JSX via <code>.map(renderCell)</code>, with <b>no memoized cell
+            component</b> (grep confirms zero <code>React.memo</code> in the file). So any re-render — including all 60/min from
+            Finding&nbsp;A — re-invokes <code>renderCell</code> for up to 50 heroes and diffs ~10 vdom nodes each (~500 nodes). Inside
+            each cell, <code>canAscendCid(id)</code> calls <code>ascendSelection(state.heroes, hero, powerOfCid)</code>, which does
+            <code>Object.keys(roster).filter(c =&gt; roster[c].hero === hero)</code> — a full <b>O(N) scan of all 50 heroes per
+            cell</b>. That is O(N²) per render, entirely unmemoized. For any hero with ≥2 copies it additionally calls
+            <code>powerOfCid</code> twice per copy inside the min/max loop (heroes.ts:53–56). The identical <code>canAscendCid(popId)</code>
+            also runs once more at line 462 for the popup.</p>
+          <div class="quant">
+            <span class="q">≈<b>2,500</b> hero-scans per render (50 cells × 50-hero filter)</span>
+            <span class="q">×<b>60</b>/min from Finding A = ~<b>150k</b> scans/min while idle</span>
+            <span class="q"><b>0</b> cells skip work — no React.memo, no per-cell ascend memo</span>
+          </div>
+          <div class="actions">
+            <button class="copy" data-copy-target="prompt-b">Copy investigation prompt</button>
+          </div>
+          <details>
+            <summary>Show prompt</summary>
+            <pre id="prompt-b">Frame-budget fix: Heroes roster is O(N²) per render + no cell memoization.
+
+Combat Clean, React 18. src/view/screens/HeroesScreen.jsx renders the roster
+via `squad.map(renderCell)` and `roster.map(renderCell)` (lines 431, 441).
+`renderCell` (line 338) is a PLAIN inline function — there is NO React.memo
+anywhere in the file — so every re-render reconciles all up-to-50 tiles.
+
+THE HOT WORK
+Per cell, line 348 does `const canUpgrade = canAscendCid(id)`. Trace:
+  canAscendCid (line 200) -> ascendSelFor (line 197)
+    -> ascendSelection(state.heroes, st.hero, powerOfCid)   [heroes.ts:49]
+ascendSelection runs `Object.keys(roster).filter(c => roster[c].hero === hero)`
+— an O(N) scan of all 50 heroes — FOR EVERY CELL. That's O(N²) ≈ 2,500 scans
+per render, unmemoized. Heroes with >=2 copies also call powerOfCid twice per
+copy in the min/max loop (heroes.ts:53-56). canAscendCid(popId) is also
+recomputed for the popup at line 462. This compounds Finding A (the 1 Hz
+REGEN_TICK re-render) — fix Finding A first, then this to stop legit edits
+(leveling one hero re-runs the whole O(N²) pass too).
+
+INVESTIGATE
+1. React DevTools Profiler: level up ONE hero at 50 heroes; confirm all 50
+   cells re-render (they should NOT — only the changed one + squad-power).
+2. Add a temporary counter in renderCell to log invocations per commit.
+
+FIX (two parts)
+A) Precompute ascend availability ONCE per render as an O(N) pass, not O(N²):
+   build a memoized Map keyed on state.heroes (+ state.gear, ordersCompleted,
+   since powerOfCid depends on gear power) that groups cids by hero, computes
+   each hero's ascendSelection once, and yields a Set<cid> of "canAscend"
+   keepCids. Then renderCell does an O(1) Set lookup instead of calling
+   canAscendCid. Mirror the existing `gearIndex` useMemo pattern already in
+   this file (lines 72-81) — do NOT invent a parallel data path.
+B) Extract the cell into a React.memo'd component so unchanged tiles skip
+   reconciliation. Pass only primitives/stable refs (id, its Character, its
+   gear slice, canAscend bool, power, active/drag flags). Ensure the props are
+   referentially stable across unrelated re-renders (memoize derived values;
+   keep callbacks stable via useCallback) so memo actually bites.
+
+VERIFY
+- Profiler: leveling one hero re-renders ~1 cell, not 50.
+- The ▲ upgrade badge + fuse-ready ring still appear on exactly the ascendable
+  heroes (compare against canAscendCid before/after on a save with duplicates).
+Keep ascendSelection's tie-break semantics identical (strongest kept, weakest
+sacrificed) — it's shared with the reducer.</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── FINDING C ───────────────────────── -->
+    <div class="card sev-high">
+      <div class="card-top">
+        <div class="prob">
+          <div class="num">45%</div>
+          <div class="lbl">Likely</div>
+          <div class="bar"><i style="width:45%"></i></div>
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="tag lens">Lens 2 · Alloc / GC</span>
+            <span class="tag">ownedHeroSet per render</span>
+            <span class="tag">unmemoized</span>
+          </div>
+          <div class="headline">The render body allocates a fresh <code>Set</code> over all 50 heroes and re-derives squad power on <b>every</b> render — including all 60/min from Finding A.</div>
+          <div class="cites">
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:336 &nbsp;(<code>ownedHeroSet(state.heroes).size</code> — unmemoized)<br>
+            <span class="f">src/game/heroes/heroes.ts</span>:47 &nbsp;(<code>new Set(Object.values(roster).map(...))</code>)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:402 &nbsp;(<code>squad.reduce((s,cid)=&gt;s+powOf(cid),0)</code>)
+          </div>
+          <p class="mech">On each render the body runs <code>ownedHeroSet(state.heroes)</code> — building a brand-new <code>Set</code> and an
+            intermediate array over all 50 Characters purely to read <code>.size</code> for the "owned / total" counter — with no
+            memoization. <code>squadPower</code> re-reduces <code>powOf</code> across the squad slots each render too. Individually
+            small, but they add constant allocation + GC pressure to every one of Finding&nbsp;A's wasted re-renders. The good news:
+            the heavier <code>roster</code> <code>useMemo</code> (lines 408–414) and <code>gearIndex</code> (72–81) are correctly
+            memoized and do <b>not</b> recompute on a REGEN_TICK, so this is the residual unmemoized tail, not the roster sort.</p>
+          <div class="quant">
+            <span class="q">1 <b>Set</b> + 1 array (50 items) allocated per render</span>
+            <span class="q">×<b>60</b>/min idle (rides on Finding A)</span>
+            <span class="q">Collapses to <b>~0</b> once memoized on <code>state.heroes</code></span>
+          </div>
+          <div class="actions">
+            <button class="copy" data-copy-target="prompt-c">Copy investigation prompt</button>
+          </div>
+          <details>
+            <summary>Show prompt</summary>
+            <pre id="prompt-c">Frame-budget cleanup: unmemoized per-render allocations in HeroesScreen.
+
+Combat Clean, React 18, src/view/screens/HeroesScreen.jsx. Two derivations run
+in the render body on every render (which, until Finding A is fixed, is ~60/min
+while idle):
+  - Line 336: `ownedHeroSet(state.heroes).size` — heroes.ts:47 builds a fresh
+    Set from Object.values(roster).map(...) over all 50 heroes just to read
+    .size for the "owned / total" counter. Unmemoized.
+  - Line 402: `squadPower = squad.reduce((s,cid) => s + powOf(cid), 0)` —
+    re-runs heroStats math for each squad slot every render.
+
+These are small but pure waste on every re-render. NOTE the roster useMemo
+(lines 408-414) and gearIndex useMemo (lines 72-81) are ALREADY correctly
+memoized and do not recompute on a REGEN_TICK — do not touch those.
+
+FIX
+- Wrap the owned-count in a useMemo keyed on state.heroes (return the number,
+  not the Set).
+- Wrap squadPower in a useMemo keyed on [state.order, state.heroes,
+  state.gear, state.ordersCompleted] (whatever powOf actually depends on).
+Confirm powOf's dependencies precisely before choosing deps (it reads
+state.heroes[cid], state.ordersCompleted, and gearIndex which is keyed on
+state.gear).
+
+VERIFY
+- The "owned / total" and squad-power numbers are unchanged for a known save.
+- No new stale-value bug when leveling/equipping (the deps must include every
+  slice powOf reads). Prefer fixing Finding A first; this is lower-leverage on
+  its own.</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── FINDING D ───────────────────────── -->
+    <div class="card sev-high">
+      <div class="card-top">
+        <div class="prob">
+          <div class="num">40%</div>
+          <div class="lbl">Likely</div>
+          <div class="bar"><i style="width:40%"></i></div>
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="tag lens">Lens 5 · Paint thrash</span>
+            <span class="tag">infinite CSS animations</span>
+            <span class="tag">box-shadow + conic-gradient</span>
+          </div>
+          <div class="headline">Every ascendable / primal tile runs a <b>continuous</b> 60 fps CSS animation on paint-triggering properties — with many tiles on screen this is a steady compositor/paint drain independent of React.</div>
+          <div class="cites">
+            <span class="f">src/index.css</span>:1761 &nbsp;(<code>.hs-tile.fuse-ready { animation: gFuseGlow 1.3s infinite }</code>)<br>
+            <span class="f">src/index.css</span>:753–756 &nbsp;(<code>gFuseGlow</code> animates <b>box-shadow</b> — repaints)<br>
+            <span class="f">src/index.css</span>:1664–1668 &nbsp;(<code>.r-primal .hs-prism</code> — masked <b>conic-gradient</b> spun by <code>hsSpin</code> 5s infinite)<br>
+            <span class="f">src/index.css</span>:760–761 &nbsp;(<code>.gt-badge { animation: gbadge 1.4s infinite }</code>)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:355,379 &nbsp;(<code>fuse-ready</code> class + <code>gt-badge</code> applied per ascendable cell)
+          </div>
+          <p class="mech">Cells that <code>canAscendCid</code> flags get <code>fuse-ready</code>, whose keyframes animate
+            <code>box-shadow</code> — a <b>paint</b> property, not a compositor-only transform — so each such tile repaints its glow
+            every frame, forever. Primal-rarity tiles additionally render <code>.hs-prism</code>, a mask-composited
+            <code>conic-gradient</code> border spun by <code>hsSpin</code> at 60 fps. At 50 heroes with many duplicates and/or high
+            rarity, that is dozens of tiles continuously repainting — a constant main/compositor cost that shows up as sluggish
+            scrolling and interaction, especially on mobile, and is <b>fully independent</b> of the React re-render findings above.
+            This is the most likely contributor to "feels slow while I'm just scrolling/looking", once A/B are fixed.</p>
+          <div class="quant">
+            <span class="q">Up to <b>~50</b> tiles animating box-shadow at 60 fps</span>
+            <span class="q"><b>+N</b> primal tiles spinning a masked conic-gradient</span>
+            <span class="q">Cost persists the <b>whole time</b> the screen is open</span>
+          </div>
+          <div class="actions">
+            <button class="copy" data-copy-target="prompt-d">Copy investigation prompt</button>
+          </div>
+          <details>
+            <summary>Show prompt</summary>
+            <pre id="prompt-d">Frame-budget fix: continuous CSS paint animations on many Heroes tiles.
+
+Combat Clean. The Heroes roster shows up to 50 tiles; several carry infinite
+CSS animations on PAINT-triggering properties, so the browser repaints them
+every frame the screen is open — independent of React. This is a likely cause
+of sluggish scrolling/interaction at 50 heroes / high rarity, esp. on mobile.
+
+THE OFFENDERS (src/index.css)
+  - :1761  .hs-tile.fuse-ready { animation: gFuseGlow 1.3s ease-in-out infinite }
+    :753   @keyframes gFuseGlow animates BOX-SHADOW (a paint property, not a
+           compositor transform) — every ascendable tile repaints its glow at
+           60fps. Applied per cell at HeroesScreen.jsx:355.
+  - :1664  .hs-tile.r-primal .hs-prism — a mask-composited conic-gradient
+    :1667  spun by `animation: hsSpin 5s linear infinite` — every primal tile
+           continuously repaints its border ring.
+  - :760   .gt-badge { animation: gbadge 1.4s ease-in-out infinite } — the ▲
+           chip on every ascendable tile (HeroesScreen.jsx:379).
+
+INVESTIGATE
+1. Chrome DevTools > Rendering: enable "Paint flashing" and "Frame Rendering
+   Stats" on the Heroes screen at 50 heroes with several ascendable/primal
+   tiles. Confirm continuous green repaint rectangles on the tiles and a
+   raised paint/compositor cost even while idle.
+2. Performance panel: record 3s idle on Heroes; look for recurring "Paint" +
+   "Composite Layers" work with no scripting.
+
+FIX (prefer GPU-composited, tune via data per the project's "all tuning is
+data" rule — colours/durations live in src/data JSON, not new literals)
+  - Replace the box-shadow pulse with an opacity pulse on a pseudo-element/
+    overlay that carries a static glow (animate opacity/transform only — both
+    composite without repaint).
+  - Cap the number of simultaneously-animating tiles, OR pause the fuse-ready/
+    prism animations for off-screen tiles (IntersectionObserver toggling a
+    class), OR gate the prism spin behind `@media (prefers-reduced-motion)` and
+    a device-tier check.
+  - Add `will-change: opacity/transform` sparingly to the animated overlay so
+    it gets its own layer; do NOT will-change box-shadow.
+
+VERIFY
+- Paint flashing shows the tiles no longer repainting every frame while idle.
+- Scrolling the 50-hero roster holds 60fps in the Performance panel.
+Keep the visual intent (ascend-ready shimmer, primal rainbow ring); only change
+WHICH property animates. Confirm the fuse-ready/prism styling still reads as
+before to the eye.</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── FINDING E ───────────────────────── -->
+    <div class="card sev-low">
+      <div class="card-top">
+        <div class="prob">
+          <div class="num">12%</div>
+          <div class="lbl">Low · mostly ruled out</div>
+          <div class="bar"><i style="width:12%"></i></div>
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="tag lens">Lens 5 · Layout reflow</span>
+            <span class="tag">useLayoutEffect</span>
+            <span class="tag">getBoundingClientRect</span>
+          </div>
+          <div class="headline">The layout-effects that read <code>getBoundingClientRect</code> / <code>offsetWidth</code> do <b>not</b> fire on the 1 Hz tick — their deps are stable across REGEN_TICK — so they are not a per-tick reflow cost. Listed for completeness.</div>
+          <div class="cites">
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:92–120 &nbsp;(VFX <code>useLayoutEffect</code>, deps <code>[state.heroes, state.gear]</code>)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:124–138 &nbsp;(popup-position effect, reads <code>getBoundingClientRect</code>/<code>offsetWidth</code>)<br>
+            <span class="f">src/view/screens/HeroesScreen.jsx</span>:261–333 &nbsp;(global <code>pointermove</code> — early-returns when not dragging)
+          </div>
+          <p class="mech">Both <code>useLayoutEffect</code>s key on <code>state.heroes</code>/<code>state.gear</code> (plus <code>popId</code> etc.).
+            Critically, although <code>useMetaGame</code> returns a NEW <code>state</code> wrapper each REGEN_TICK, the
+            <b>inner</b> <code>state.heroes</code> / <code>state.gear</code> refs are the same objects (the meta spread copies the same
+            property refs), so these effect deps do <b>not</b> change on a tick → the forced-reflow reads only run on real
+            hero/gear edits and popup open, as intended. The global <code>pointermove</code> handler also early-returns when
+            <code>dragRef.current</code> is null, so idle pointer movement is cheap. No residual reflow/listener cost found here —
+            fixing Finding A removes the wasteful re-renders entirely regardless.</p>
+          <div class="quant">
+            <span class="q">Reflow reads fire on <b>edit / popup only</b>, not per tick</span>
+            <span class="q">pointermove is <b>O(1) early-return</b> when idle</span>
+          </div>
+          <div class="actions">
+            <button class="copy" data-copy-target="prompt-e">Copy investigation prompt</button>
+          </div>
+          <details>
+            <summary>Show prompt</summary>
+            <pre id="prompt-e">Sanity re-check (low priority): confirm Heroes layout-effects are not a
+per-tick reflow cost.
+
+Combat Clean, src/view/screens/HeroesScreen.jsx. I assessed these as NOT
+contributing to the residual slowness, but verify in-browser to be sure:
+  - Lines 92-120: VFX useLayoutEffect, deps [state.heroes, state.gear].
+  - Lines 124-138: popup-position useLayoutEffect — reads getBoundingClientRect
+    + offsetWidth/offsetHeight (forced synchronous layout).
+  - Lines 261-333: window 'pointermove' listener — should early-return when
+    dragRef.current is null.
+
+The claim to verify: useMetaGame returns a new `state` wrapper each 1 Hz
+REGEN_TICK, but the INNER state.heroes / state.gear refs are unchanged, so
+these effects should NOT fire on a tick — only on real hero/gear edits and
+popup open.
+
+INVESTIGATE
+1. Put a console.count in each useLayoutEffect body; sit idle on Heroes at 50
+   heroes and confirm neither logs on the 1 Hz cadence (they should be silent).
+2. Chrome Performance: record idle; confirm no recurring "Layout"/"Recalculate
+   Style" forced-reflow warnings tied to these effects.
+3. Move the pointer around without dragging; confirm the pointermove handler
+   does no measurable work (it should hit the early return).
+
+If all three are quiet, close this as confirmed-not-a-cause. If any fires on
+the tick, that means an inner slice ref IS changing per tick — trace which one
+back through the reducer and report it (it would be a second instance of
+Finding A).</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="nextsteps">
+    <h2>Operator next steps — prioritised</h2>
+    <ol>
+      <li><b>Confirm the 1 Hz re-render first.</b> Open the game at 50 heroes, go to Heroes, open <b>React DevTools →
+        Profiler</b>, hit record, and sit idle for ~5 s. You should see a commit ~every 1000 ms with
+        <code>HeroesScreen</code> (and <code>Game</code>/<code>GearScreen</code>) in the flame graph. That is Finding&nbsp;A.</li>
+      <li><b>Paste Finding A's prompt into a fresh Claude conversation.</b> It is the single highest-leverage fix — it
+        deletes 60 wasted whole-roster re-renders/min and, with them, most of Findings B and C's cost. (Click
+        "Copy investigation prompt" on the top card.)</li>
+      <li><b>Then Finding B</b> (memoize the ascend pass + <code>React.memo</code> the cell) so even legitimate edits
+        (leveling one hero) stop reconciling all 50 tiles and re-running the O(N²) ascend scan.</li>
+      <li><b>Profile paint separately for Finding D.</b> In Chrome DevTools → Rendering, enable <b>Paint flashing</b> and
+        record 3 s idle on Heroes with several ascendable/primal tiles. Continuous repaint = the CSS-animation drain;
+        paste Finding D's prompt.</li>
+      <li><b>Finding C and E are cleanup / verification only</b> — do them after A/B/D confirm the felt improvement, or
+        skip E once A is fixed.</li>
+    </ol>
+  </div>
+
+  <footer>
+    Slowdown Detective · Heroes-screen residual re-audit · diagnostic only — no game code was modified.<br>
+    Report: /Users/simonhill/combatclean/docs/slowdown-heroes.html
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  // Try every copy mechanism in order. Returns true on success.
+  async function copyText(text) {
+    // 1. Modern async API — works on HTTPS, http://localhost, and some file://.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_e) { /* fall through */ }
+    }
+    // 2. document.execCommand('copy') with a temporary textarea — works on
+    //    most file:// pages where the async API doesn't. Must focus + select.
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.width = '2em';
+      ta.style.height = '2em';
+      ta.style.padding = '0';
+      ta.style.border = 'none';
+      ta.style.outline = 'none';
+      ta.style.boxShadow = 'none';
+      ta.style.background = 'transparent';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      const sel = document.getSelection();
+      const prevRange = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (prevRange) { sel.removeAllRanges(); sel.addRange(prevRange); }
+      if (ok) return true;
+    } catch (_e) { /* fall through */ }
+    // 3. Last-ditch: open a modal with the text pre-selected so the operator
+    //    can Cmd-C manually. NEVER fail silently.
+    showCopyModal(text);
+    return false;
+  }
+  function showCopyModal(text) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px';
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:#1a1530;color:#e8e6df;padding:24px;border-radius:8px;max-width:720px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px';
+    inner.innerHTML = '<div style="font:bold 14px sans-serif">Auto-copy blocked. Select the text below and press <kbd>&#8984;C</kbd> / <kbd>Ctrl-C</kbd>:</div>';
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'width:100%;height:280px;font:12px/1.4 monospace;background:#0f0a1f;color:#e8e6df;border:1px solid #4a4060;border-radius:4px;padding:10px;resize:vertical';
+    inner.appendChild(ta);
+    const close = document.createElement('button');
+    close.textContent = 'Close';
+    close.style.cssText = 'align-self:flex-end;padding:6px 18px;background:#5a4080;color:#fff;border:0;border-radius:4px;cursor:pointer';
+    close.onclick = () => m.remove();
+    inner.appendChild(close);
+    m.appendChild(inner);
+    document.body.appendChild(m);
+    ta.focus();
+    ta.select();
+  }
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-copy-target]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-copy-target');
+    const src = document.getElementById(id);
+    if (!src) return;
+    const text = src.textContent || '';
+    const ok = await copyText(text);
+    const orig = btn.textContent;
+    btn.textContent = ok ? '✓ Copied!' : '⚠ Tap text → ⌘C';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+  });
+})();
+</script>
+</body>
+</html>

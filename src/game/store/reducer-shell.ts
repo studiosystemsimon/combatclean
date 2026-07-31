@@ -4,8 +4,10 @@
 import * as Energy from '../energy/energy.ts';
 import * as Map from '../map/map.ts';
 import { C } from '../content.ts';
+import { rng } from '../sim-random.ts';
 import { A } from './actions.ts';
 import { sumAfk, initState } from './reducer-helpers.ts';
+import { buildMinigameLaunch } from '../minigame/context.ts';
 
 type S = any;
 type Act = any;
@@ -26,6 +28,10 @@ export const shellHandlers: Record<string, (state: S, action: Act) => S> = {
   [A.SET_MINIGAME]: (state, action) =>
     // A minigame is a full screen that replaces the current one; combat runs headless underneath.
     ({ ...state, minigame: action.minigame ?? null, fx: action.minigame ? [] : state.fx }),
+  [A.START_RANDOM_MINIGAME]: (state) =>
+    // Dev/test quick-launch: pick a RANDOM pooled minigame with the standard context and open it
+    // INSTANTLY (no chaos-orb transition). Same full-screen path as SET_MINIGAME (clears fx).
+    ({ ...state, minigame: buildMinigameLaunch(state, rng, 'dev'), fx: [] }),
   [A.FINISH_MINIGAME]: (state, action) =>
     // The (server-resolved) reward comes back → leave the minigame and reveal it in the reward popup.
     // Amounts were computed server-side (meta endpoint); the grant happens on claim (CLOSE_REWARD).
@@ -35,6 +41,9 @@ export const shellHandlers: Record<string, (state: S, action: Act) => S> = {
     const r = (state.rewardPopup && state.rewardPopup.reward) || { coins: 0, heroXp: 0, gearXp: 0 };
     return { ...state, coins: state.coins + (r.coins || 0), heroXp: state.heroXp + (r.heroXp || 0), gearXp: state.gearXp + (r.gearXp || 0), rewardPopup: null };
   },
+  [A.CLEAR_TRANSITION]: (state) =>
+    // The screen-crumble transition overlay finished (the view already launched the minigame at the apex).
+    ({ ...state, transition: null }),
   [A.COLLECT_AFK]: (state) => {
     const a = state.pendingAfk; if (!a) return state;
     // Claiming grants the idle rewards, clears pendingAfk (→ the AFK! tile disappears) and closes the popup.

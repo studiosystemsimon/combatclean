@@ -2,11 +2,12 @@
 // active minigame up in the registry, renders it with its `input`, and on completion routes the result
 // to the server (controller.submitMinigame → meta endpoint) which resolves the reward + opens the reward
 // popup. A corner ✕ leaves without completing. Modular: minigames only implement { input, onComplete }.
-import { useGame } from '../../controller/GameContext';
+import { useMetaGame } from '../../controller/GameContext';
 import { MINIGAMES } from '../minigame/registry.js';
 
 export default function MinigameScreen() {
-  const { state, actions } = useGame();
+  // Meta view: reads only state.minigame (+ actions) — no battle/fx, so it doesn't re-render on the 5 Hz tick.
+  const { state, actions } = useMetaGame();
   const mg = state.minigame || {};
   const Game = MINIGAMES[mg.id];
   return (

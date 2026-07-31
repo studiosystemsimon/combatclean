@@ -84,7 +84,7 @@ function flashChip(el) {
 // sprite centre. The `.enemy-chip.dead` CSS decay carries the white-out + fade;
 // this adds the dust that sells the dissolve.
 function deathDust(uid) {
-  const el = document.querySelector(`[data-battle-enemy="${uid}"]`);
+  const el = q(`[data-battle-enemy="${uid}"]`);
   if (!el) return;
   const art = el.querySelector('.chip-art') || el;
   const c = fx.elCenter(art);
@@ -136,8 +136,19 @@ function telegraphChip(el, hostile) {
   );
 }
 
+// Per-drain DOM cache (#9): within ONE fx-queue drain the same combat chip is resolved by several event
+// handlers — cache data-battle-* lookups so each chip is queried once. Reset each drain (chips change per
+// tick); when null (deferred setTimeout handlers, or a handler run outside a drain) q() falls back to a live query.
+let _drainEls = null;
+const q = (sel) => {
+  if (!_drainEls) return document.querySelector(sel);
+  const hit = _drainEls.get(sel);
+  if (hit !== undefined) return hit;
+  const el = document.querySelector(sel); _drainEls.set(sel, el); return el;
+};
+
 function handleHeroAttacks(ev) {
-  const enemyEl = document.querySelector(`[data-battle-enemy="${ev.targetUid}"]`);
+  const enemyEl = q(`[data-battle-enemy="${ev.targetUid}"]`);
   const artEl = enemyEl && (enemyEl.querySelector('.chip-art') || enemyEl);
   const to = artEl ? fx.elCenter(artEl) : null;
   const basics = ev.basics || [];
@@ -145,7 +156,7 @@ function handleHeroAttacks(ev) {
   // trail → impact → its own damage number on the target. Staggered so multiple
   // same-tick shots each read.
   basics.forEach((h, i) => {
-    const heroEl = document.querySelector(`[data-battle-hero="${h.id}"]`);
+    const heroEl = q(`[data-battle-hero="${h.id}"]`);
     if (!heroEl || !to) return;
     const from = fx.elCenter(heroEl);
     const t = TRAIL_BY_CHAIN[h.weapon] || {};
@@ -172,13 +183,13 @@ function handleHeroAttacks(ev) {
   const basicHitTarget = basics.length > 0;
   (ev.enemyDamage || []).forEach((d) => {
     if (d.uid === ev.targetUid && basicHitTarget) return;
-    const el = document.querySelector(`[data-battle-enemy="${d.uid}"]`);
+    const el = q(`[data-battle-enemy="${d.uid}"]`);
     if (el) setTimeout(() => spawnNumber(el, d.amount, 'enemy'), CB.heroAttack.splashDelay);
   });
   // enemies that died this tick → white death-dust (the CSS decay does the dissolve)
   (ev.enemyDeaths || []).forEach((uid) => setTimeout(() => deathDust(uid), CB.heroAttack.deathDustDelay));
   (ev.heals || []).forEach((h) => {
-    const el = document.querySelector(`[data-battle-hero="${h.heroId}"]`);
+    const el = q(`[data-battle-hero="${h.heroId}"]`);
     if (el) spawnNumber(el, h.amount, 'heal');
   });
   if (ev.crit) { combo(STRINGS.combat.critical); shakeArena(CB.heroAttack.critShake); }
@@ -282,11 +293,11 @@ function handleLimitBreak(ev) {
   fx.flash(CB.limitBreak.flashOpacity, CB.limitBreak.flashMs, CC.limitFlash);
   fx.shake(CB.limitBreak.screenShake);
   (ev?.enemyDamage || []).forEach((d) => {
-    const el = document.querySelector(`[data-battle-enemy="${d.uid}"]`);
+    const el = q(`[data-battle-enemy="${d.uid}"]`);
     if (el) spawnNumber(el, d.amount, 'crit');
   });
   (ev?.heals || []).forEach((h) => {
-    const el = document.querySelector(`[data-battle-hero="${h.heroId}"]`);
+    const el = q(`[data-battle-hero="${h.heroId}"]`);
     if (el) spawnNumber(el, h.amount, 'heal');
   });
 }
@@ -307,8 +318,8 @@ function handleGachaReveal(ev, overlay) {
 
 function handleEnemyAttacks(ev) {
   ev.hits.forEach((hit, i) => {
-    const enemyEl = document.querySelector(`[data-battle-enemy="${hit.enemyUid}"]`);
-    const heroEl = document.querySelector(`[data-battle-hero="${hit.heroId}"]`);
+    const enemyEl = q(`[data-battle-enemy="${hit.enemyUid}"]`);
+    const heroEl = q(`[data-battle-hero="${hit.heroId}"]`);
     if (!enemyEl || !heroEl) return;
     const from = fx.elCenter(enemyEl);
     const to = fx.elCenter(heroEl);
@@ -323,7 +334,7 @@ function handleEnemyAttacks(ev) {
       base + CB.enemyAttack.trailDelay,
     );
     if (hit.dmg) {
-      const el = document.querySelector(`[data-battle-hero="${hit.heroId}"]`);
+      const el = q(`[data-battle-hero="${hit.heroId}"]`);
       if (el) setTimeout(() => spawnNumber(el, hit.dmg, 'hero'), base + CB.enemyAttack.hurtDelay); // hero takes damage → gold
     }
   });
@@ -381,7 +392,7 @@ function combo(text) {
 // Combo — an enemy hit by consecutive special attacks in a row. Escalating
 // "COMBO ×N" tag on that enemy (hotter + bigger as the streak grows).
 function handleCombo(ev) {
-  const el = document.querySelector(`[data-battle-enemy="${ev.uid}"]`);
+  const el = q(`[data-battle-enemy="${ev.uid}"]`);
   const overlay = bossFxLayer();
   if (!el || !overlay) return;
   const c = battleCenter(el);
@@ -407,7 +418,7 @@ function handleCombo(ev) {
 
 // Boss is about to slam: shiver the boss, flash a warning, grow a red ground ring.
 function handleBossTelegraph(ev) {
-  const bossEl = document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`);
+  const bossEl = q(`[data-battle-enemy="${ev.bossUid}"]`);
   if (bossEl) {
     bossEl.classList.add('telegraph');
     setTimeout(() => bossEl.classList.remove('telegraph'), TELEGRAPH_MS);
@@ -439,7 +450,7 @@ function handleBossSpecial(ev) {
   fx.impact(c.x, c.y, { tier: 'crit', color: CC.bossImpact, r: BS.impactR });
   combo(STRINGS.combat.bossSlam);
   ev.heroIds.forEach((hid, i) => {
-    const heroEl = document.querySelector(`[data-battle-hero="${hid}"]`);
+    const heroEl = q(`[data-battle-hero="${hid}"]`);
     if (!heroEl) return;
     const to = fx.elCenter(heroEl);
     setTimeout(
@@ -456,7 +467,7 @@ function handleBossSpecial(ev) {
   // (no parallel shake/flash path); plus an expanding shockwave ring in the fx overlay.
   fx.flash(BS.flashOpacity, BS.flashMs, CC.bossFlash);
   fx.shake(BS.screenShake);
-  const bossEl = ev.bossUid != null ? document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`) : null;
+  const bossEl = ev.bossUid != null ? q(`[data-battle-enemy="${ev.bossUid}"]`) : null;
   const overlay = bossFxLayer();
   if (bossEl && overlay) {
     const bc = battleCenter(bossEl);
@@ -474,7 +485,7 @@ function handleBossSpecial(ev) {
 // green wisps from each living accomplice into it (so the player SEES why the boss
 // is regenerating → kill the adds). Fires ~1×/s while any accomplice stands.
 function handleBossHeal(ev) {
-  const bossEl = document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`);
+  const bossEl = q(`[data-battle-enemy="${ev.bossUid}"]`);
   if (!bossEl) return;
   const art = bossEl.querySelector('.chip-art') || bossEl;
   if (art.animate) {
@@ -504,7 +515,7 @@ function handleBossRaise(ev) {
   const BR = CB.bossRaise;
   combo(STRINGS.combat.raise);
   shakeArena(BR.arenaShake); // more theatrical so the player notices dead minions returning
-  const bossEl = document.querySelector(`[data-battle-enemy="${ev.bossUid}"]`);
+  const bossEl = q(`[data-battle-enemy="${ev.bossUid}"]`);
   if (bossEl) {
     const art = bossEl.querySelector('.chip-art') || bossEl;
     if (art.animate) {
@@ -531,7 +542,7 @@ function handleBossRaise(ev) {
     }
   }
   (ev.raised || []).forEach((uid, i) => {
-    const el = document.querySelector(`[data-battle-enemy="${uid}"]`);
+    const el = q(`[data-battle-enemy="${uid}"]`);
     if (!el) return;
     setTimeout(() => {
       const c = fx.elCenter(el);
@@ -573,6 +584,7 @@ export default function FxLayer() {
 
   useEffect(() => {
     if (!state.fx.length) return;
+    _drainEls = new Map(); // #9: cache data-battle-* lookups for the duration of this synchronous drain
     const ids = state.fx.map((e) => e.id);
     for (const ev of state.fx) {
       // Haptics ride the SAME fx bus as the visuals (one owner, no parallel
@@ -594,6 +606,7 @@ export default function FxLayer() {
       else if (ev.type === 'generatorUnlock') playGeneratorUnlock(overlayRef.current, ev);
     }
     actions.clearFx(ids);
+    _drainEls = null; // deferred (setTimeout) handlers past this point re-query live
   }, [state.fx, actions]);
 
   return (

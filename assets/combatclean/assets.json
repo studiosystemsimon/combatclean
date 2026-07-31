@@ -1097,6 +1097,23 @@
 			"type": "image",
 			"file": "ui/banners/mega.png"
 		},
+		"hero.bishop": {
+			"type": "image",
+			"file": "heroes/bishop.png",
+			"anchor": {
+				"x": 0.5267,
+				"y": 0.9377
+			}
+		},
+		"special.0": {
+			"type": "image",
+			"file": "merge/special-0.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1
+		},
 		"magic.0": {
 			"type": "image",
 			"file": "merge/magic-0.png",
@@ -1403,21 +1420,21 @@
 			"type": "image",
 			"file": "merge/range-6.png",
 			"anchor": {
-				"x": 0.5126,
-				"y": 0.5398
+				"x": 0.5002,
+				"y": 0.5138
 			},
 			"scale": 1.25,
-			"rotation": 16
+			"rotation": -17
 		},
 		"range.7": {
 			"type": "image",
 			"file": "merge/range-7.png",
 			"anchor": {
-				"x": 0.5551,
-				"y": 0.4459
+				"x": 0.5701,
+				"y": 0.4577
 			},
 			"scale": 1.35,
-			"rotation": -23
+			"rotation": -34
 		},
 		"gen.range.0": {
 			"type": "image",
@@ -1463,23 +1480,6 @@
 				"y": 0.4857
 			},
 			"scale": 1.2
-		},
-		"hero.bishop": {
-			"type": "image",
-			"file": "heroes/bishop.png",
-			"anchor": {
-				"x": 0.5267,
-				"y": 0.9377
-			}
-		},
-		"special.0": {
-			"type": "image",
-			"file": "merge/special-0.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.0
 		}
 	}
 }

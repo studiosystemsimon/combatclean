@@ -73,7 +73,8 @@ export const ordersHandlers: Record<string, (state: S, action: Act) => S> = {
     const weights = Map.zoneForLevel(state.battle.level).orderRarity;
     const eligibleChains = orderChainsFor(state.unlockedGenerators);
     const allowSpecial = !!(state.flags && state.flags.specialOrders); // special orders stay locked until the FTUE flag is set
-    const orders = state.orders.map((o: any) => (o.id === action.orderId ? Orders.rollOrder(id++, rng, weights, eligibleChains, null, null, allowSpecial) : o));
+    const hasPotion = state.orders.some((o: any) => !o.pending && Orders.orderReward(o) === 'potion'); // only ever 1 limit order active
+    const orders = state.orders.map((o: any) => (o.id === action.orderId ? Orders.rollOrder(id++, rng, weights, eligibleChains, null, null, allowSpecial, !hasPotion) : o));
     return { ...state, orders, nextId: id };
   },
   [A.EMPTY_ORDER]: (state, action) => {

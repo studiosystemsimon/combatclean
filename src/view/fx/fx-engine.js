@@ -17,7 +17,7 @@ const { spineN: SPINE_N, minSpacingPx: MIN_SPACING_PX, maxAgeBase: MAX_AGE_BASE,
 //    (quadratic bezier) → accelerate-in, a pulsing/growing glowing head, and a curve-following
 //    tapered gradient ribbon that terminates on a horizontal edge and lingers/collapses on landing.
 //    Kept on its OWN list so the generic spawnTrail (used by every other effect) is unaffected.
-const MOTE_SPINE_N = 120, MOTE_MIN_SPACING = 2.0, MOTE_MAX_AGE = 0.85, MOTE_LEN_REF = 26;
+const MOTE_SPINE_N = 120, MOTE_MIN_SPACING = 2.0, MOTE_MAX_AGE = 0.85, MOTE_LEN_REF = 26, MOTE_LUT_N = 24; // MOTE_LUT_N = colour-LUT resolution (structural)
 const MOTE_EASINGS = { linear: (t) => t, easeInQuad, easeInCubic, easeInQuart: (t) => t * t * t * t, easeOutQuad, easeOutCubic };
 // sample a positioned-stop ramp ([{p,c}] sorted by p) at t∈[0,1] → {r,g,b}
 const rampAt = (stops, t) => {
@@ -27,6 +27,9 @@ const rampAt = (stops, t) => {
   for (let i = 0; i < n - 1; i++) { const a = stops[i], b = stops[i + 1]; if (t >= a.p && t <= b.p) { const k = (t - a.p) / ((b.p - a.p) || 1); const A = hexToRgb(a.c), B = hexToRgb(b.c); return { r: Math.round(lerp(A.r, B.r, k)), g: Math.round(lerp(A.g, B.g, k)), b: Math.round(lerp(A.b, B.b, k)) }; } }
   return hexToRgb(stops[n - 1].c);
 };
+// Pre-bake a ramp into an N-entry {r,g,b} LUT so the per-frame ribbon draw does an O(1) array lookup
+// instead of an O(stops) rampAt() search (+ no per-segment createLinearGradient allocation). See #5.
+const buildRampLUT = (stops, n) => { const lut = new Array(n); for (let k = 0; k < n; k++) lut[k] = rampAt(stops, k / (n - 1)); return lut; };
 const IMPACT_CFG = VE.impact;
 
 class FxEngine {
@@ -318,6 +321,7 @@ class FxEngine {
     this.motes.push({
       x: from.x, y: from.y, from, cp, to, t: 0, dur, u: 0, s: 0, fired: false, fadeT: 0,
       r: opts.r || 3.5, head: opts.color || '#fff', ramp: opts.ramp || [{ p: 0, c: '#ffffff' }, { p: 1, c: '#8c00ff' }],
+      colorLUT: buildRampLUT(opts.ramp || [{ p: 0, c: '#ffffff' }, { p: 1, c: '#8c00ff' }], MOTE_LUT_N), // pre-baked ramp (#5)
       halfW: opts.width || 3.5, headMul: opts.headWidthMul ?? 2, tailMul: opts.tailWidthMul ?? 0.5,
       fadePow: opts.fadePow ?? 0.5, fadePeak: opts.fadePeak ?? 0.92,
       accel: MOTE_EASINGS[opts.accel] || MOTE_EASINGS.easeInCubic,
@@ -360,12 +364,13 @@ class FxEngine {
         const tpos = (k) => (n - 1 - k) / (n - 1); // 0 at HEAD → 1 at TAIL (position ALONG the ribbon)
         const oX = (k) => (k === n - 1 ? 1 : nrm[k].x), oY = (k) => (k === n - 1 ? 0 : nrm[k].y); // head end = exactly horizontal edge
         const hwAt = (k) => p.halfW * gF * sizeMul * lerp(p.headMul, p.tailMul, tpos(k));
-        const colAt = (t) => { const c = rampAt(p.ramp, t); return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak * Math.pow(1 - t, p.fadePow) * gF * alphaMul).toFixed(3)})`; };
-        // colour FOLLOWS THE CURVE: each segment is a trapezoid with a mini gradient between its two vertices' ramp colours
+        const LUTN = p.colorLUT.length;
+        const colAt = (t) => { const c = p.colorLUT[Math.min(LUTN - 1, (t * (LUTN - 1) + 0.5) | 0)]; return `rgba(${c.r},${c.g},${c.b},${(p.fadePeak * Math.pow(1 - t, p.fadePow) * gF * alphaMul).toFixed(3)})`; };
+        // colour follows the curve via the PRE-BAKED LUT (no per-segment createLinearGradient/rampAt): each
+        // segment is a flat trapezoid filled with its MIDPOINT colour (segments are short → reads smooth).
         for (let k = 1; k < n; k++) {
-          const a = pts[k - 1], b = pts[k], ta = tpos(k - 1), tb = tpos(k), hwa = hwAt(k - 1), hwb = hwAt(k);
-          const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y); g.addColorStop(0, colAt(ta)); g.addColorStop(1, colAt(tb));
-          ctx.fillStyle = g;
+          const a = pts[k - 1], b = pts[k], hwa = hwAt(k - 1), hwb = hwAt(k);
+          ctx.fillStyle = colAt((tpos(k - 1) + tpos(k)) * 0.5);
           ctx.beginPath();
           ctx.moveTo(a.x + oX(k - 1) * hwa, a.y + oY(k - 1) * hwa);
           ctx.lineTo(b.x + oX(k) * hwb, b.y + oY(k) * hwb);

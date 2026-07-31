@@ -13,6 +13,11 @@ import { submitMinigame as metaSubmitMinigame } from '../game/minigame/meta.ts';
 
 const StateContext = createContext<any>(null);
 const ActionsContext = createContext<any>(null);
+// Meta view of state (everything EXCEPT the high-frequency, combat-only slices below). Consumers that
+// don't render combat read this via useMetaGame so neither the 5 Hz BATTLE_TICK (battle/fx) NOR the 1 Hz
+// REGEN_TICK (energy/now) re-renders them. Header reads energy/now via full-state useGame, not this view.
+const MetaStateContext = createContext<any>(null);
+const META_EXCLUDE = new Set(['battle', 'fx', 'energy', 'now']);
 
 // A "full screen" takes over the play area (combat panel + FxLayer hidden) and runs the engine HEADLESS
 // — the sim keeps ticking, so returning to a combat screen resumes the exact, still-advancing gameplay.
@@ -34,6 +39,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Stable "meta" view = state minus the high-frequency combat-only slices (META_EXCLUDE: battle/fx from
+  // the 200ms tick + energy/now from the 1s regen tick). Its identity changes only when a meta-relevant
+  // slice actually changes, so meta consumers (Game shell, Heroes/Gear screens) don't re-render on either
+  // timer — only on real edits (gear, heroes, coins, screen, pendingAfk, …).
+  const metaRef = useRef<any>(null);
+  {
+    const prev = metaRef.current;
+    let same = !!prev;
+    if (same) {
+      for (const k in state) { if (META_EXCLUDE.has(k)) continue; if (state[k] !== prev[k]) { same = false; break; } }
+      if (same) for (const k in prev) { if (!META_EXCLUDE.has(k) && !(k in state)) { same = false; break; } }
+    }
+    if (!same) { const meta: any = {}; for (const k in state) if (!META_EXCLUDE.has(k)) meta[k] = state[k]; metaRef.current = meta; }
+  }
+  const metaState = metaRef.current;
 
   useEffect(() => {
     const id = setInterval(() => { if (stateRef.current.afkOpen) return; dispatch({ type: A.REGEN_TICK, now: Date.now() }); }, C.RUNTIME.regenTickMs);
@@ -111,6 +132,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setAfkOpen: (open: boolean) => dispatch({ type: A.SET_AFK_OPEN, open }),
     setHeadless: (on: boolean) => dispatch({ type: A.SET_HEADLESS, on }),
     startMinigame: (id: string, input: unknown = null) => dispatch({ type: A.SET_MINIGAME, minigame: { id, input } }),
+    // Dev/test: instantly launch a RANDOM pooled minigame with the standard context (no transition).
+    startRandomMinigame: () => dispatch({ type: A.START_RANDOM_MINIGAME }),
     exitMinigame: () => dispatch({ type: A.SET_MINIGAME, minigame: null }),
     // A finished minigame submits its result to the (simulated) server, which resolves the reward; the
     // controller owns this async round-trip and dispatches the outcome (grant + reward popup).
@@ -119,6 +142,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       dispatch({ type: A.FINISH_MINIGAME, reward: outcome.reward, source: 'minigame' });
     },
     closeReward: () => dispatch({ type: A.CLOSE_REWARD }),
+    // The screen-crumble transition overlay finished (it already launched the minigame at the cinematic apex).
+    clearTransition: () => dispatch({ type: A.CLEAR_TRANSITION }),
     // Set a persisted feature/FTUE flag (e.g. the FTUE calls setFlag('specialOrders', true) to unlock special orders).
     setFlag: (flag: string, value = true) => dispatch({ type: A.SET_FLAG, flag, value }),
     setBattleLevel: (level: number) => dispatch({ type: A.SET_BATTLE_LEVEL, level }),
@@ -160,7 +185,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   return (
     <ActionsContext.Provider value={actions}>
-      <StateContext.Provider value={state}>{children}</StateContext.Provider>
+      <MetaStateContext.Provider value={metaState}>
+        <StateContext.Provider value={state}>{children}</StateContext.Provider>
+      </MetaStateContext.Provider>
     </ActionsContext.Provider>
   );
 }
@@ -169,6 +196,15 @@ export const useGame = () => {
   const state = useContext(StateContext);
   const actions = useContext(ActionsContext);
   if (state == null || actions == null) throw new Error('useGame must be used within <GameProvider>');
+  return { state, actions };
+};
+// Like useGame, but reads the META view (state without battle/fx). Components that don't render combat
+// (Game shell, Heroes/Gear screens) use this so a BATTLE_TICK doesn't re-render them. The returned
+// `state` has NO `battle`/`fx` — never read those through this hook.
+export const useMetaGame = () => {
+  const state = useContext(MetaStateContext);
+  const actions = useContext(ActionsContext);
+  if (state == null || actions == null) throw new Error('useMetaGame must be used within <GameProvider>');
   return { state, actions };
 };
 export const useActions = () => {

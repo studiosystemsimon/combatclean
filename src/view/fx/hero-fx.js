@@ -41,9 +41,9 @@ function particleBurst(cx, cy, big) {
   if (big) { const ring = document.createElement('div'); ring.className = 'pburst-ring'; ring.style.left = cx + 'px'; ring.style.top = cy + 'px'; p.appendChild(ring);
     ring.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(10)', opacity: 0 }], { duration: HX.bigRingMs, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove(); }
 }
-function floatText(x, y, text, cls, delay, dur) {
+function floatText(x, y, text, cls, delay, dur, color) {
   dur = dur || HX.floatMs;
-  setTimeout(() => { const d = document.createElement('div'); d.className = 'hero-float ' + cls; d.textContent = text; d.style.left = x + 'px'; d.style.top = y + 'px'; portal().appendChild(d);
+  setTimeout(() => { const d = document.createElement('div'); d.className = 'hero-float ' + cls; d.textContent = text; d.style.left = x + 'px'; d.style.top = y + 'px'; if (color) d.style.color = color; portal().appendChild(d);
     d.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 0 }, { transform: 'translate(-50%,-130%) scale(1.12)', opacity: 1, offset: 0.28 }, { transform: 'translate(-50%,-315%) scale(1)', opacity: 0 }], { duration: dur, easing: 'ease-out' }).onfinish = () => d.remove(); }, delay);
 }
 function tween(node, from, to, ms, f) {
@@ -244,6 +244,18 @@ export function fxMenuPow(powNode, fromPow, toPow) {
   tween(powNode, fromPow, toPow, 640, fmt);
   const d = toPow - fromPow;
   if (d > 0) { const c = centerOf(powNode); floatText(c.x, c.y, '+' + fmt(d) + ' PWR', 'stat pwr', 120); }
+}
+
+// Equip-best on a slot: swap pop + flash on the slot tile + a POWER-DIFFERENTIAL float (▲+X / ▼−X vs
+// whatever was in that slot before, 0 if empty). NO "LEVEL UP" text — this is equipping, not levelling.
+export function fxMenuEquipSlot(gearEl, delta) {
+  if (!gearEl) return;
+  gearEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(.7) rotate(-8deg)', offset: 0.3 }, { transform: 'scale(1.18) rotate(5deg)', offset: 0.72 }, { transform: 'scale(1)' }], { duration: 460, easing: 'cubic-bezier(.2,1.25,.3,1)' });
+  const flash = document.createElement('div'); flash.className = 'lvfx-flash'; fxHost(gearEl).appendChild(flash);
+  flash.animate([{ opacity: 0 }, { opacity: 0.95, offset: 0.45 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' }).onfinish = () => flash.remove();
+  const c = centerOf(gearEl);
+  const up = delta >= 0;
+  floatText(c.x, c.y - 6, `${up ? '▲ +' : '▼ '}${fmt(Math.abs(delta))} PWR`, 'stat pwr', 60, null, up ? null : '#ff6b6b');
 }
 
 // Equip a specific item: swap pop on the gear tile + power count-up.

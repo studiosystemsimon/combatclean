@@ -3,9 +3,27 @@
 A thin, **detachable guide layer** over gameplay. `FtueLayer.jsx` reads `{state, actions}`, picks the
 first unseen beat from `beats.js` whose `show(state)` holds, and renders its coachmark; action beats
 auto-advance when `done(state)` is met, info beats on GOT IT. Each beat records a persisted
-`ftueSeen_<id>` flag (via `actions.setFlag`) so it fires once. The wrapper is click-through
+`ftueSeen_<id>` flag (via `actions.setFlag`) so it fires once. By default the wrapper is click-through
 (`pointer-events:none`) so the player still forges / merges / delivers / taps beneath — only GOT IT
 captures input. Inline-styled + self-contained (no CSS-file coupling).
+
+**Guided-tutorial affordances (all optional, all declarative on the beat):**
+- `pause: true` — freezes the sim while the beat is shown (via `flags.ftuePaused`, honoured by the
+  controller battle tick).
+- `screen: '<name>'` — navigates to that screen when the beat activates (once per activation; it won't
+  fight the user if they navigate away afterwards).
+- `target: '<css-selector>'` (or `(state) => selector` for a step-dependent target) — spotlights a DOM
+  element. `mask: true` GREYS OUT everything but the target **and blocks input outside it** (only the
+  target is tappable); without `mask` it's a non-blocking glow RING. The hole tracks the element's live
+  `getBoundingClientRect` (relative to the `.app` overlay), so it fits a button of any shape/size.
+  If the selector matches nothing, no spotlight/mask renders (the card still shows) — never a soft-lock.
+
+**Anchoring convention** — targets reference stable hooks: the nav buttons' existing `data-nav="<screen>"`,
+the board generators' `.mb-gen`, the potion order's `.order.potion`, and `data-ftue="pull"` on the gacha
+x1 button (which is force-enabled while `flags.ftueFirstPull` is armed so the free pull can't be blocked
+by a 0-coin balance). Combat heroes/enemies live on the **canvas** (not the DOM) so those beats stay
+card-only. Keep a beat's `target` in sync with the rendered anchor — a dropped anchor silently disables
+its spotlight.
 
 **The FTUE is overrides + flags, not tutorial logic in gameplay.** The sim-side of the layer is a
 config singleton (`src/data/config/schemas/ftue.ts` → `C.FTUE`) read through guarded hooks:

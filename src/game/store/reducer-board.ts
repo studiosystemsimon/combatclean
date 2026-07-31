@@ -8,6 +8,7 @@ import * as Energy from '../energy/energy.ts';
 import * as Gen from '../generator/generator.ts';
 import * as Battle from '../combat/battle.ts';
 import { rng } from '../sim-random.ts';
+import { buildMinigameLaunch } from '../minigame/context.ts';
 import { A } from './actions.ts';
 
 type S = any;
@@ -61,11 +62,14 @@ export const boardHandlers: Record<string, (state: S, action: Act) => S> = {
       return { ...state, board };
     }
     if (Merge.canMergeSpecial(a, b)) {
-      // Two SPECIAL (S) tiles merged → LAUNCH the minigame through the real system (state.minigame;
-      // combat runs headless underneath, per SET_MINIGAME). Both tiles are consumed; fx clears as the
-      // full-screen opens. (Only 'test-button' is registered today — swap the id when real minigames land.)
+      // Two SPECIAL (S) tiles merged → arm the screen-crumble TRANSITION (data only). Both tiles are
+      // consumed now; the always-mounted <ScreenTransition> overlay plays the chaos-orb cinematic over
+      // the live board and, at the POP apex, launches the minigame via the real system (SET_MINIGAME),
+      // then reveals it as the screen shatters. The minigame is picked at RANDOM from the data-driven
+      // pool (C.MINIGAME.pool) with a STANDARD context (current zone enemies/scenery + current squad).
+      // fx is NOT cleared: FxLayer stays mounted during the charge so combat VFX keep flowing underneath.
       let board = Board.withCell(state.board, to, null); board = Board.withCell(board, from, null);
-      return { ...state, board, minigame: { id: 'test-button', input: { source: 'special-merge' } }, fx: [] };
+      return { ...state, board, transition: { minigame: buildMinigameLaunch(state, rng) } };
     }
     if (Merge.canMerge(a, b)) {
       let id = state.nextId;

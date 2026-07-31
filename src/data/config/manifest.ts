@@ -23,7 +23,7 @@ import {
   zBoardConfig, zEnergyConfig, zBattleConfig, zHeroCombatConfig, zLevelScalingConfig, zNodeConfig,
   zAfkConfig, zCrystalDropConfig, zUniqueDropConfig, zProgressionConfig, zOrdersConfig,
   zGearTuningConfig, zHapticsConfig, zTierPresentationConfig, zVfxConfig, zRuntimeConfig,
-  zRevealConfig, zAnimConfig, zMinigameConfig, zGearLoadoutConfig,
+  zRevealConfig, zAnimConfig, zMinigameConfig, zShooterConfig, zGearLoadoutConfig,
 } from './schemas/singletons.ts';
 
 export const CATEGORIES: ConfigCategory[] = [
@@ -63,6 +63,7 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'singleton', name: 'reveal', schema: zRevealConfig },
   { kind: 'singleton', name: 'anim', schema: zAnimConfig },
   { kind: 'singleton', name: 'minigame', schema: zMinigameConfig },
+  { kind: 'singleton', name: 'shooter', schema: zShooterConfig },
   { kind: 'singleton', name: 'gearLoadout', schema: zGearLoadoutConfig },
   { kind: 'singleton', name: 'ftue', schema: zFtueConfig },
 ];

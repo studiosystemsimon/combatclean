@@ -15,6 +15,7 @@ import { fmtK as fmt } from '../fmt.js';
 function BannerCard({ banner, state, actions }) {
   const canX1 = state.coins >= banner.cost;
   const canX10 = state.coins >= banner.ten;
+  const ftueFree = !!(state.flags && state.flags.ftueFirstPull); // the guided FTUE free pull ignores coins → keep x1 live even at 0 coins
   const pityState = state.pity[banner.id] || {};
   const bgImg = banner.bgAsset ? resolve(banner.bgAsset).img : null; // tile-background splash art
 
@@ -54,9 +55,10 @@ function BannerCard({ banner, state, actions }) {
         <div className="bcard-btns">
           <button
             type="button"
-            className={`bcard-btn x1 ${canX1 ? '' : 'broke'}`}
+            data-ftue="pull"
+            className={`bcard-btn x1 ${(canX1 || ftueFree) ? '' : 'broke'}`}
             style={{ background: `linear-gradient(135deg, ${banner.theme}, ${banner.theme2 || banner.theme})`, boxShadow: `0 8px 22px ${banner.theme}55, 0 0 0 1px rgba(255,255,255,.14) inset` }}
-            disabled={!canX1}
+            disabled={!canX1 && !ftueFree}
             onClick={() => actions.summon(banner.id, 1)}
           >
             {STRINGS.gacha.summon}

@@ -10,39 +10,23 @@ import { heroAsset, resolve, anchorStyle, generatorAsset } from './assets.js';
 import Art from './Art.jsx';
 import HpBar from './HpBar.jsx';
 import { normalChargeFrac, limitChargeFrac, isLimitReady } from '../model/battle.js';
+import { heroPower } from '../model/heroes.js';
+import { heroGearPower } from '../model/gear.js';
 import { isBossLevel } from '../model/map.js';
 import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: biome/keyArt/nameKey), not the logical sim selector
 import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
 import { HEROES } from '../data/heroes.js'; // per-hero combatScale (in-combat avatar size) + name/asset
 import { GENERATORS } from '../data/generators.js'; // generator display name for the area-unlock card
 import { STRINGS } from '../data/strings.js';
-import { ANIM, VFX_CONFIG } from '../data/config.js';
+import { ANIM } from '../data/config.js';
 import { fmtK as fmt } from './fmt.js';
 import { displayFrac } from './fx/limit-fill.js';
 import { limitReadyPop } from './fx/limit-energy.js';
+import { subscribeBar } from './fx/bar-ticker.js';
+import { acquireLimitEmitter } from './fx/limit-badge-emitter.js';
 
 const AB = ANIM.autobattler;
 const AC = ANIM.areaComplete;
-const LB_BADGE = VFX_CONFIG.combat.limitCharge.badge; // charged LIMIT-badge blob emitter tuning
-
-// Charged LIMIT badge: fling one black blob from `emitter` in direction `dir` (-1 left / +1 right).
-// Random angle in a ±badge.arcDeg/2 cone centred on horizontal (even up/down), dragging to a stop +
-// scaling to 0 (no fade). Size + distances + timing are data (VFX_CONFIG.combat.limitCharge.badge).
-function spawnLimitBlob(emitter, dir, b) {
-  const el = document.createElement('i');
-  el.className = 'lb-blob';
-  el.style.width = el.style.height = `${b.blobPx}px`;
-  el.style.margin = `${-b.blobPx / 2}px 0 0 ${-b.blobPx / 2}px`;
-  emitter.appendChild(el);
-  const ang = (Math.random() - 0.5) * (b.arcDeg * Math.PI / 180);
-  const dist = b.distMin + Math.random() * (b.distMax - b.distMin);
-  const dx = dir * Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
-  el.style.transform = 'translate(0,0) scale(1)';
-  void el.offsetWidth; // commit the initial frame before transitioning
-  el.style.transition = `transform ${b.flyMs}ms ease-out`;
-  el.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0)`;
-  setTimeout(() => el.remove(), b.flyMs + 50);
-}
 
 // Reward count-up for the AREA CLEARED synopsis — ease-out cubic to the target over AC.countUpMs.
 function CountUp({ to }) {
@@ -94,43 +78,34 @@ function LevelTrack({ level }) {
 // The limit bar fills IN SYNC with the arriving energy mote (limit-fill store), not on the reducer
 // grant — so it fills as the mote lands, then ready-pops when it visually caps. Mirrors HpBar's
 // persistent-rAF read. Tappability stays on the TRUE ready state (canFire); only the fill lags.
-function LimitBar({ h, canFire, onLimit }) {
+function LimitBar({ h, canFire }) {
   const ref = useRef(null);
   const trueRef = useRef(0);
   trueRef.current = limitChargeFrac(h);
+  const chargedRef = useRef(false); // last committed `full` — so we setState only ON THE TRANSITION
   const [charged, setCharged] = useState(false); // fill visually FULL → yellow (independent of canFire, so it stays yellow out of combat)
   useEffect(() => {
     const btn = ref.current;
     if (!btn) return undefined;
     const span = btn.querySelector('.lb-fill');
-    let raf;
     let wasFull = null; // null = establish baseline on the first frame (no spurious pop on mount)
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
+    const step = () => {
       const d = displayFrac(h.id, trueRef.current);
       if (span) span.style.width = `${Math.round(100 * d)}%`;
       const full = d >= 0.999;
-      setCharged(full); // yellow when full, purple otherwise — React bails when unchanged, so it re-renders only on the transition
+      if (full !== chargedRef.current) { chargedRef.current = full; setCharged(full); } // re-render ONLY on the transition, not 60×/s (#7)
       if (wasFull === null) { wasFull = full; return; }
       if (full && !wasFull) limitReadyPop(btn);
       wasFull = full;
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return subscribeBar(step); // one shared rAF drives all bars (#7)
   }, [h.id]);
-  // Charged LIMIT badge: emit black blobs from either side of the LIMIT text while the bar is full.
+  // Charged LIMIT badge: while full, hold a ref on the shared pooled blob emitter (one timer for all
+  // charged bars, pooled nodes) instead of a per-bar setInterval spawning fresh DOM (#4).
   useEffect(() => {
     if (!charged) return undefined;
-    const btn = ref.current;
-    if (!btn) return undefined;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-    const l = btn.querySelector('.lb-emit-l');
-    const r = btn.querySelector('.lb-emit-r');
-    const id = setInterval(() => {
-      if (l) spawnLimitBlob(l, -1, LB_BADGE);
-      if (r) spawnLimitBlob(r, 1, LB_BADGE);
-    }, LB_BADGE.emitMs);
-    return () => clearInterval(id);
+    return acquireLimitEmitter();
   }, [charged]);
   return (
     <button
@@ -138,7 +113,7 @@ function LimitBar({ h, canFire, onLimit }) {
       type="button"
       className={`bar limit lb-btn ${charged ? 'charged' : ''} ${canFire ? 'ready' : ''}`}
       disabled={!canFire}
-      onClick={() => onLimit(h.id)}
+      tabIndex={-1}
       title="Limit Break"
     >
       <span className="lb-fill" style={{ width: `${Math.round(100 * limitChargeFrac(h))}%` }} />
@@ -151,13 +126,19 @@ function LimitBar({ h, canFire, onLimit }) {
   );
 }
 
-function HeroChip({ h, onLimit, fighting }) {
+function HeroChip({ h, pow, onLimit, fighting }) {
   const dead = h.hp <= 0;
   const lbReady = isLimitReady(h); // charged (from board orders) — drives the golden glow
   const canFire = lbReady && fighting; // actually TAPPABLE (fireLimitBreak needs status:fighting)
   const ha = heroAsset(h.hero); // resolved once → art + registration-point placement
+  // Tapping ANYWHERE on the hero — the art or any of its bars — fires the limit when it's ready.
+  // A tap on the (enabled) limit button bubbles here too, so there's a single fire path (no double-fire).
   return (
-    <div className={`chip hero-chip ${dead ? 'dead' : ''} ${lbReady ? 'lb-ready' : ''}`} data-battle-hero={h.id}>
+    <div
+      className={`chip hero-chip ${dead ? 'dead' : ''} ${lbReady ? 'lb-ready' : ''} ${canFire ? 'can-fire' : ''}`}
+      data-battle-hero={h.id}
+      onClick={canFire ? () => onLimit(h.id) : undefined}
+    >
       <div className="hero-charge" aria-hidden="true">
         {Array.from({ length: AB.chargePips }, (_, i) => (
           <span key={i} className="cp" />
@@ -169,11 +150,13 @@ function HeroChip({ h, onLimit, fighting }) {
             is a separate system — portraitStyle — and is untouched here.) */}
         <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `${COMBAT_BASE_H_HERO * (HEROES[h.hero]?.combatScale ?? 1)}px` }} />
       </div>
+      {/* power badge lives on the (non-bobbing) .chip root, not inside the idle-animated .chip-art */}
+      {pow > 0 && <span className="hero-pow"><s>✊</s>{fmt(pow)}</span>}
       <HpBar frac={h.hp / h.maxHp} kind="hero" />
       <div className="bar normal">
         <span style={{ width: `${Math.round(100 * normalChargeFrac(h))}%` }} />
       </div>
-      <LimitBar h={h} canFire={canFire} onLimit={onLimit} />
+      <LimitBar h={h} canFire={canFire} />
     </div>
   );
 }
@@ -345,9 +328,11 @@ export default function Autobattler() {
         {/* landed chests live HERE — in front of the enemy row, behind the hero row */}
         <div className="chest-mid-layer" aria-hidden="true" />
         <div className="row hero-row">
-          {battle.heroes.map((h) => (
-            <HeroChip key={h.id} h={h} onLimit={actions.tapLimit} fighting={fighting} />
-          ))}
+          {battle.heroes.map((h) => {
+            const ch = state.heroes[h.id];
+            const pow = ch ? heroPower(ch.hero, ch, state.ordersCompleted, heroGearPower(state.gear, h.id)) : 0;
+            return <HeroChip key={h.id} h={h} pow={pow} onLimit={actions.tapLimit} fighting={fighting} />;
+          })}
         </div>
       </div>
 

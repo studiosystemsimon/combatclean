@@ -47,7 +47,7 @@ export default function Header() {
       <TweenableStat statKey="coins" iconKey="ui.coin" stateValue={coins} />
       <TweenableStat statKey="heroXp" iconKey="ui.heroXp" stateValue={heroXp} />
       <TweenableStat statKey="gearXp" iconKey="ui.gearXp" stateValue={gearXp} />
-      <button type="button" className="bg-btn" title="Test minigame (harness)" onClick={() => actions.startMinigame('test-button', {})}>🎮</button>
+      {import.meta.env.DEV && <button type="button" className="bg-btn" title="Test minigame (random from pool)" onClick={() => actions.startRandomMinigame()}>🎮</button>}
       <button type="button" className="bg-btn" title="Background mode — hide visuals, keep the engine running" onClick={() => actions.setHeadless(true)}>☾</button>
       <button type="button" className="reset-btn" title="Reset progress" onClick={onReset}>⟲</button>
     </header>

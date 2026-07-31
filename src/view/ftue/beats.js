@@ -21,9 +21,9 @@ const anyReady = (s) => (s.battle.heroes || []).some((h) => isLimitReady(h));
 
 // Ordered. The driver shows the FIRST unseen beat whose `show(state)` holds.
 export const FTUE_BEATS = [
-  { id: 'firstLoss', style: 'nudge', pause: true, // reactive interrupt on the first defeat; freezes the sim (post-loss recovering fight)
+  { id: 'firstLoss', style: 'nudge', pause: true, screen: 'heroes', // reactive interrupt on the first defeat; opens HEROES + freezes the recovering fight
     copy: 'Wiped out — time to power up your squad.',
-    sub: 'Open HEROES → EQUIP your best gear on your heroes and LEVEL them to the MAX, then dive back in.',
+    sub: 'EQUIP your best gear on your heroes and LEVEL them to the MAX, then dive back in.',
     show: (s) => !!(s.flags && s.flags.ftueFirstLoss) && s.battle.status !== 'lost' },
 
   { id: 'coldOpen', style: 'nudge', // info (GOT IT)
@@ -31,7 +31,7 @@ export const FTUE_BEATS = [
     sub: 'Autos alone won’t break through — charge a LIMIT to wipe the wave.',
     show: (s) => s.battle.level === 1 },
 
-  { id: 'forge', style: 'gate', // info (GOT IT) — the board already seeds tiles, so this teaches, not gates
+  { id: 'forge', style: 'gate', target: '.mb-gen', // highlight the generator; the board already seeds tiles, so this teaches, not gates
     copy: 'Tap a generator to forge weapon tiles.',
     sub: 'Each tap drops a tile onto the board.',
     show: (s) => seen(s, 'coldOpen') },
@@ -42,7 +42,7 @@ export const FTUE_BEATS = [
     show: (s) => seen(s, 'forge'),
     done: (s) => potionDeliverable(s) || unlockedTierUp(s) },
 
-  { id: 'potion', style: 'gate',
+  { id: 'potion', style: 'gate', target: '.order.potion', // highlight the potion order tile in the rail
     copy: 'Deliver the 🧪 LIMIT POTION order.',
     sub: 'It fills your hero’s limit bar to full.',
     show: (s) => seen(s, 'merge') && !!potionOrder(s),
@@ -54,9 +54,9 @@ export const FTUE_BEATS = [
     show: (s) => anyReady(s),
     done: (s) => !!(s.flags && s.flags.ftueLimitFired) },
 
-  { id: 'summon', style: 'gate',
+  { id: 'summon', style: 'gate', screen: 'gacha', target: '[data-ftue="pull"]', mask: true, // open SUMMON + grey out all but the pull button
     copy: 'Things are getting tough — hire another hero!',
-    sub: 'Head to SUMMON and recruit — your first pull is on us.',
+    sub: 'Your first pull is on us — tap SUMMON to recruit.',
     show: (s) => !!(s.flags && s.flags.ftueFirstPull),
     done: (s) => !!(s.flags && s.flags.ftuePulled) },
 
@@ -71,12 +71,12 @@ export const FTUE_BEATS = [
     show: (s) => seen(s, 'alchemistExplain'),
     done: (s) => !!(s.flags && s.flags.ftueAlchemistUsed) },
 
-  { id: 'gearUp', style: 'nudge', pause: true, // info (GOT IT); freezes the sim while it explains
+  { id: 'gearUp', style: 'nudge', pause: true, screen: 'heroes', // opens HEROES + freezes the sim while it explains
     copy: 'Now GEAR UP and LEVEL UP your squad.',
-    sub: 'Open HEROES to spend the XP + gear your orders drop — grow stronger for the boss.',
+    sub: 'Tap a hero to EQUIP best gear + LEVEL them up — spend the XP + gear your orders drop.',
     show: (s) => seen(s, 'alchemistUse') },
 
-  { id: 'bossHire', style: 'gate', // info (GOT IT); the boss GATE already holds combat, so no pause needed
+  { id: 'bossHire', style: 'gate', target: '[data-nav="gacha"]', // highlight the SUMMON nav (non-blocking — they can still challenge)
     copy: 'A BOSS looms ahead — hire another hero!',
     sub: 'Head to SUMMON and recruit reinforcements before you challenge it.',
     show: (s) => s.battle.status === 'gate' },

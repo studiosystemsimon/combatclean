@@ -15,6 +15,7 @@
 
 import { useRef, useEffect } from 'react';
 import { VFX_CONFIG } from '../data/config.js';
+import { subscribeBar } from './fx/bar-ticker.js';
 
 const HP = VFX_CONFIG.hpbar;
 const TAIL_LERP_DURATION = HP.ghostLerpSec; // ghost catch-up (cubic ease-in), seconds
@@ -24,7 +25,6 @@ const WHITE_BLIP_DUR = HP.whiteBlipSec; // pure-white overlay blip
 
 export default function HpBar({ frac, kind }) {
   const barRef = useRef(null);
-  const rafRef = useRef(null);
   const fracRef = useRef(frac);
   const st = useRef({ prevFrac: frac, ghostFrac: frac, ghostStart: frac, hitT: -1 });
 
@@ -38,8 +38,7 @@ export default function HpBar({ frac, kind }) {
     const fillSpan = bar.querySelector('.hp-fill');
     const whiteSpan = bar.querySelector('.hp-white');
 
-    const loop = () => {
-      rafRef.current = requestAnimationFrame(loop);
+    const step = () => {
       const now = performance.now() / 1000;
       const s = st.current;
       const cur = fracRef.current;
@@ -96,10 +95,7 @@ export default function HpBar({ frac, kind }) {
       }
     };
 
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return subscribeBar(step); // one shared rAF drives all bars; parks when none are mounted (#7)
   }, []);
 
   const ghostColor = kind === 'enemy' ? HP.ghostColor.enemy : HP.ghostColor.hero;
