@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Merge shadow parity — full roster</title>
+<style>
+  :root { --bg:#0f1626; --panel:#141d31; --line:#26324e; --txt:#e7ecf7; --muted:#8ea0c4; --gold:#ffd45e; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--txt);
+    font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  header { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; position:sticky; top:0; background:var(--bg); z-index:5; }
+  header h1 { font-size:15px; margin:0; letter-spacing:.3px; }
+  header .tag { color:var(--muted); font-size:11px; }
+  header .ver { margin-left:auto; color:var(--gold); font-size:11px; font-weight:700; }
+  main { display:flex; gap:16px; align-items:flex-start; padding:16px; }
+  .panels { display:flex; gap:16px; align-items:flex-start; flex:1; flex-wrap:wrap; }
+
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+  .panel > h2 { font-size:12px; margin:0 0 2px; letter-spacing:.4px; text-transform:uppercase; }
+  .panel > .sub { color:var(--muted); font-size:10.5px; margin-bottom:12px; min-height:13px; }
+  .group { margin-bottom:12px; }
+  .group h3 { font-size:10px; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); margin:0 0 5px; }
+  .row { display:flex; gap:3px; flex-wrap:wrap; }
+  .cell { position:relative; border-radius:4px; }
+  .cell.a { background:rgba(255,255,255,.075); }
+  .cell.b { background:rgba(255,255,255,.025); }
+  .inner { position:absolute; inset:0; }
+  .art, .shadow { position:absolute; left:50%; top:50%; display:block; }
+
+  .tuner { width:250px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; position:sticky; top:60px; }
+  .tuner h2 { font-size:12px; margin:0 0 10px; letter-spacing:.4px; text-transform:uppercase; }
+  .grp { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px; }
+  .grp legend { padding:0 6px; color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; }
+  .r { display:flex; align-items:center; gap:8px; margin:7px 0; }
+  .r label { flex:0 0 70px; color:var(--muted); font-size:11px; }
+  .r input[type=range] { flex:1; accent-color:var(--gold); }
+  .r output { flex:0 0 34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+  .r.chk label { flex:1; }
+  pre { background:#0b1120; border:1px solid var(--line); border-radius:8px; padding:9px; margin:0;
+    font:11px/1.4 ui-monospace,Menlo,monospace; color:#bfe3c9; white-space:pre-wrap; }
+  .hint { color:var(--muted); font-size:10.5px; margin:8px 0 0; }
+  b.ok { color:#7fdca0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Merge shadow parity — full roster</h1>
+  <span class="tag">A = current CSS <code>filter:drop-shadow</code> &nbsp;·&nbsp; B = Photoshop-baked shadow layer (no runtime blur)</span>
+  <span class="ver" id="ver">v4</span>
+</header>
+
+<main>
+  <div class="panels">
+    <section class="panel">
+      <h2>A — CURRENT · CSS filter:drop-shadow</h2>
+      <div class="sub" id="subA"></div>
+      <div id="rosterA"></div>
+    </section>
+    <section class="panel">
+      <h2>B — NEW · baked shadow PNG</h2>
+      <div class="sub" id="subB"></div>
+      <div id="rosterB"></div>
+    </section>
+  </div>
+
+  <aside class="tuner">
+    <h2>Tuner</h2>
+    <fieldset class="grp">
+      <legend>Board A — target (game CSS)</legend>
+      <div class="r"><label>offset y</label><input id="aDy" type="range" min="-10" max="20" step="1" value="4"><output id="aDyo"></output></div>
+      <div class="r"><label>blur</label><input id="aBlur" type="range" min="0" max="24" step="1" value="5"><output id="aBluro"></output></div>
+      <div class="r"><label>opacity</label><input id="aOp" type="range" min="0" max="100" step="1" value="45"><output id="aOpo"></output></div>
+    </fieldset>
+    <fieldset class="grp">
+      <legend>View</legend>
+      <div class="r"><label>tile px</label><input id="tile" type="range" min="36" max="110" step="2" value="54"><output id="tileo"></output></div>
+      <div class="r chk"><label for="chkGrid">checkerboard cells</label><input id="chkGrid" type="checkbox" checked></div>
+    </fieldset>
+    <fieldset class="grp">
+      <legend>Board B — baked (Photoshop)</legend>
+      <pre id="baked"></pre>
+      <p class="hint">Grid B = <b class="ok">real Photoshop-baked</b> shadows for every tile + generator. No blur in code. Retune → tell me new blur/dy/opacity and I re-bake all via the trim server.</p>
+    </fieldset>
+  </aside>
+</main>
+
+<script src="shadow-parity-data.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function mergeTransform(t){
+  const dx=((0.5-t.ax)*100).toFixed(2), dy=((0.5-t.ay)*100).toFixed(2);
+  return `translate(-50%,-50%) translate(${dx}%, ${dy}%) rotate(${t.rot}deg)`;
+}
+function sizeStyle(el,t){ el.style.height=`${(t.scale*100).toFixed(2)}%`; el.style.width='auto'; el.style.maxWidth='none'; el.style.transform=mergeTransform(t); }
+function hexA(hex,op){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${(op/100).toFixed(3)})`; }
+
+let cellSeq=0;
+function buildRoster(hostId, kind, cssFilter, tile, grid){
+  const host=$(hostId); host.innerHTML='';
+  for (const g of ROSTER){
+    const gd=document.createElement('div'); gd.className='group';
+    const h=document.createElement('h3'); h.textContent=`${g.label} · ${g.items.length}`; gd.appendChild(h);
+    const row=document.createElement('div'); row.className='row';
+    for (const t of g.items){
+      const cell=document.createElement('div');
+      cell.className='cell'+(grid?((cellSeq++%2)?' b':' a'):'');
+      cell.style.width=tile+'px'; cell.style.height=tile+'px';
+      const inner=document.createElement('div'); inner.className='inner';
+      if (kind==='B'){ const sh=document.createElement('img'); sh.className='shadow'; sh.src=t.shadow; sh.loading='lazy'; sizeStyle(sh,t); inner.appendChild(sh); }
+      const sp=document.createElement('img'); sp.className='art'; sp.src=t.sprite; sp.loading='lazy'; sizeStyle(sp,t);
+      if (kind==='A') sp.style.filter=cssFilter;
+      inner.appendChild(sp); cell.appendChild(inner); row.appendChild(cell);
+    }
+    gd.appendChild(row); host.appendChild(gd);
+  }
+}
+function render(){
+  const aDy=+$('aDy').value, aBlur=+$('aBlur').value, aOp=+$('aOp').value, tile=+$('tile').value, grid=$('chkGrid').checked;
+  $('aDyo').textContent=aDy; $('aBluro').textContent=aBlur; $('aOpo').textContent=aOp; $('tileo').textContent=tile;
+  const cssFilter=`drop-shadow(0 ${aDy}px ${aBlur}px ${hexA('#000000',aOp)})`;
+  $('subA').textContent=`.mb-art { filter: ${cssFilter} }`;
+  $('subB').textContent=`baked ${BAKED_PARAMS.blur}px blur · dy${BAKED_PARAMS.dy} · op${BAKED_PARAMS.opacity}% (256-src) · zero runtime cost`;
+  $('baked').textContent=JSON.stringify({shadow:BAKED_PARAMS},null,1);
+  $('ver').textContent=`v4 · baked blur${BAKED_PARAMS.blur} dy${BAKED_PARAMS.dy} op${BAKED_PARAMS.opacity} · ${ROSTER.reduce((s,g)=>s+g.items.length,0)} items`;
+  cellSeq=0; buildRoster('rosterA','A',cssFilter,tile,grid);
+  cellSeq=0; buildRoster('rosterB','B',cssFilter,tile,grid);
+}
+['aDy','aBlur','aOp','tile','chkGrid'].forEach(id=>$(id).addEventListener('input',render));
+render();
+</script>
+</body>
+</html>

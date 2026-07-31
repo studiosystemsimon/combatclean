@@ -1,0 +1,7 @@
+{
+	"key": "spdDown",
+	"name": "Speed Down",
+	"description": "Attacks slower.",
+	"color": "#7fb0ff",
+	"iconAssetId": "status.spdDown"
+}

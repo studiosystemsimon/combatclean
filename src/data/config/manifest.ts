@@ -12,6 +12,7 @@ import { zRarityConfig } from './schemas/rarities.ts';
 import { zGearRarityConfig } from './schemas/gearRarities.ts';
 import { zGearSlotConfig } from './schemas/gearSlots.ts';
 import { zHeroClassConfig } from './schemas/heroClasses.ts';
+import { zStatusConfig } from './schemas/statuses.ts';
 import { zResourceConfig } from './schemas/resources.ts';
 import { zHeroConfig } from './schemas/heroes.ts';
 import { zEnemyConfig } from './schemas/enemies.ts';
@@ -34,6 +35,7 @@ export const CATEGORIES: ConfigCategory[] = [
   { kind: 'key', name: 'gearRarities', folder: 'gearRarities', schema: zGearRarityConfig, keyField: 'key' },
   { kind: 'key', name: 'gearSlots', folder: 'gearSlots', schema: zGearSlotConfig, keyField: 'key' },
   { kind: 'key', name: 'heroClasses', folder: 'heroClasses', schema: zHeroClassConfig, keyField: 'key' },
+  { kind: 'key', name: 'statuses', folder: 'statuses', schema: zStatusConfig, keyField: 'key' },
 
   // ── id-kind (data-only extensible; numeric id = identity; account-referenceable) ──
   { kind: 'id', name: 'resources', folder: 'resources', schema: zResourceConfig, idRange: [1000, 1999] },

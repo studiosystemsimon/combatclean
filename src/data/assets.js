@@ -79,6 +79,15 @@ export const ASSETS = {
   // Zone bosses (per-zone gate; boss-1/boss-2 reuse the shipped generic stickers).
   // Boss megaboss stickers — shown on boss levels (cosmetic; cycle by level).
 
+  // ── status effects (art/status/<key>.png) ── emoji fallbacks when the icon isn't baked
+  'status.atkUp': { emoji: '⚔️', label: 'Attack Up', art: 'status/atkUp' },
+  'status.atkDown': { emoji: '⚔️', label: 'Attack Down', art: 'status/atkDown' },
+  'status.defUp': { emoji: '🛡️', label: 'Defense Up', art: 'status/defUp' },
+  'status.defDown': { emoji: '🛡️', label: 'Defense Down', art: 'status/defDown' },
+  'status.spdUp': { emoji: '⚡', label: 'Speed Up', art: 'status/spdUp' },
+  'status.spdDown': { emoji: '🐌', label: 'Speed Down', art: 'status/spdDown' },
+  'status.regen': { emoji: '➕', label: 'Regen', art: 'status/regen' },
+  'status.stealth': { emoji: '🌫️', label: 'Stealth', art: 'status/stealth' },
   // ── UI / currencies / rewards (art/ui/<name>.png) ──────────────────────────
   'ui.energy': { emoji: '⚡', label: 'Energy', art: 'ui/energy' },
   'ui.coin': { emoji: '🪙', label: 'Coins', art: 'ui/coin' },

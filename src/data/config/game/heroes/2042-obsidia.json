@@ -17,7 +17,15 @@
 		"orders": 4,
 		"effect": {
 			"type": "aoe",
-			"mult": 6.5
+			"mult": 6.5,
+			"statusKeys": [
+				"atkDown"
+			],
+			"target": "enemies",
+			"statusMag": {
+				"atkDown": 0.4
+			},
+			"durationMs": 12000
 		}
 	},
 	"classKey": "obsidia"

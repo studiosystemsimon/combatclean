@@ -1,0 +1,8 @@
+{
+	"key": "atkDown",
+	"op": "atkMul",
+	"magnitude": 0.5,
+	"durationMs": 8000,
+	"kind": "debuff",
+	"opposite": "atkUp"
+}

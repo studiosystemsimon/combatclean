@@ -7,11 +7,22 @@
 import { z } from 'zod';
 import { zConfig, stringConfigRef } from '@bishop/config-registry';
 
-// An ability effect: a coded type + its magnitude. `mult` for burst/aoe, `frac` for heal.
+// An ability effect: a coded primary `type` (burst/aoe/heal) + its magnitude, PLUS an optional status
+// RIDER that applies alongside the primary. `mult` for burst/aoe, `frac` for heal. The rider is
+// `statusKeys` applied to a `target` set — present on a burst/aoe/heal effect it fires IN ADDITION to
+// the primary (e.g. a heal that also grants REGEN); type:'status' is a pure rider (no primary). Amounts:
+// `statusMag` is a per-status-key magnitude OVERRIDE (exposed, else the status' own default), so the same
+// status can be applied at different strengths by different heroes/rarities; `durationMs` overrides the
+// applied statuses' default lifetime. Fields optional per the existing pattern (resolver-validated, no
+// refine — keeps zEffect a plain object so nested statusKeys refs stay lintable).
 const zEffect = z.object({
-  type: z.enum(['burst', 'aoe', 'heal']).describe('Coded effect kind the combat step switches on.'),
+  type: z.enum(['burst', 'aoe', 'heal', 'status']).describe('Coded primary kind the combat step switches on (status = rider only).'),
   mult: z.number().optional().describe('Damage multiplier (burst/aoe).'),
   frac: z.number().optional().describe('Heal fraction of max HP (heal).'),
+  statusKeys: z.array(stringConfigRef('statuses', 'key')).optional().describe('Status RIDER: statuses this effect applies (→ statuses.key), alongside any primary.'),
+  target: z.enum(['self', 'allies', 'enemies', 'all']).optional().describe('Target set of the status rider.'),
+  statusMag: z.record(z.string(), z.number().positive()).optional().describe('Per-status-key magnitude override for the rider ({ statusKey: amount }); omit a key to use its status default.'),
+  durationMs: z.number().int().positive().optional().describe('Per-effect override of the applied statuses\' default duration (ms).'),
 }).strict();
 
 export const zHeroConfig = zConfig

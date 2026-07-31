@@ -40,6 +40,9 @@ export function createContent(bundle: GameConfigBundle) {
   const CHAINS = Object.fromEntries((b.chains ?? []).map((c: Row) => [c.key, { id: c.key, tiers: c.tiers }]));
   const GENERATORS = Object.fromEntries((b.generators ?? []).map((g: Row) => [g.key, { id: g.key, chain: g.chainKey, weapon: g.weapon, energyCost: g.energyCost, dropsByLevel: g.dropsByLevel }]));
 
+  // ── statuses (combat status-effect vocabulary; key-kind) ──
+  const STATUSES = Object.fromEntries((b.statuses ?? []).map((s: Row) => [s.key, { id: s.key, op: s.op, magnitude: s.magnitude, durationMs: s.durationMs, kind: s.kind, opposite: s.opposite }]));
+
   // ── rarities (hero) ──
   const rar: Row[] = (b.rarities ?? []).slice().sort((a: Row, z: Row) => a.order - z.order);
   const HERO_RARITIES: Record<string, any> = Object.fromEntries(rar.map((r: Row) => [r.key, { id: r.key, tier: r.tier, pips: r.pips, prismatic: !!r.prismatic }]));
@@ -112,7 +115,7 @@ export function createContent(bundle: GameConfigBundle) {
   } : null;
 
   return {
-    CHAINS, GENERATORS, HERO_RARITIES, HERO_RARITY_ORDER, RARITY_STAT_MUL, LEVEL_CAP,
+    CHAINS, GENERATORS, STATUSES, HERO_RARITIES, HERO_RARITY_ORDER, RARITY_STAT_MUL, LEVEL_CAP,
     GEAR_RARITY, GEAR_RARITY_ORDER, GEAR_SLOTS, GEAR_SLOT_DEFS, HERO_CLASSES, GEAR_LOADOUT: b.gearLoadout, GEAR_PIECES, GEAR_FUSE, GEAR_GEN, GEAR_LEVEL, GEAR_CHEST_TIERS,
     HEROES, ENEMY_BY_ID, ENEMY_ARCHETYPES, ZONES, ZONE_LEN: b.levelScaling.bossEvery, BANNERS, BANNER_ORDER, EXCLUSIVE_POOL,
     LEVEL_SCALING,

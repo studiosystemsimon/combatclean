@@ -9,11 +9,11 @@
 		"limit": "Divine Grace"
 	},
 	"portrait": {
-		"scale": 1.5,
-		"x": 0,
-		"y": -0.32
+		"scale": 1.7,
+		"x": 0.022,
+		"y": -0.479
 	},
 	"combat": {
-		"scale": 1
+		"scale": 1.05
 	}
 }

@@ -1,0 +1,262 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Combat Clean — Status Effects (design sandbox)</title>
+<style>
+  :root{ --ink:#eaf0fb; --dim:#9aa7bd; --line:#232b3d; --panel:#121420; --panel2:#171a28; --gold:#ffd45e;
+    --buff:#5ad17a; --debuff:#ff5d6c; --special:#b48bff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#0a0c12;color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 12px 48px}
+  h2{margin:0;font-size:18px;font-weight:800}.sub{color:var(--dim);font-size:12px;max-width:560px;text-align:center}
+  .arena{width:min(760px,96vw);background:linear-gradient(180deg,#141a2c,#0d1018);border:1px solid var(--line);border-radius:16px;
+    padding:16px 14px;display:flex;flex-direction:column;gap:22px;position:relative;overflow:hidden}
+  .zone-lbl{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#6b7891;text-transform:uppercase;margin-bottom:2px}
+  .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  /* unit card */
+  .u{width:132px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 8px 9px;position:relative;cursor:pointer;
+    transition:transform .1s,box-shadow .15s,opacity .2s}
+  .u:hover{transform:translateY(-2px)}
+  .u.sel{outline:2px solid var(--gold);outline-offset:1px}
+  .u.buffed{box-shadow:0 0 0 1px rgba(90,209,122,.5),0 0 16px rgba(90,209,122,.25)}
+  .u.debuffed{box-shadow:0 0 0 1px rgba(255,93,108,.5),0 0 16px rgba(255,93,108,.25)}
+  .u.stealth{opacity:.42;border-style:dashed}
+  .u.dead{opacity:.25;filter:grayscale(1)}
+  .u .badges{display:flex;flex-wrap:wrap;gap:3px;min-height:20px;margin-bottom:4px}
+  .badge{display:flex;align-items:center;gap:2px;font-size:9px;font-weight:800;padding:1px 4px 3px;border-radius:6px;position:relative;overflow:hidden;
+    border:1px solid currentColor;line-height:1}
+  .badge .cd{position:absolute;left:0;bottom:0;height:2px;background:currentColor;opacity:.9}
+  .badge span{color:#fff}
+  .u .top{display:flex;align-items:center;gap:7px}
+  .av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;
+    background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(0,0,0,.3)),var(--ac,#39415e);border:1px solid rgba(255,255,255,.18)}
+  .enemy .av{--ac:#5a2634}
+  .nm{font-size:12px;font-weight:800;line-height:1.1}
+  .stats{font-size:9.5px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:1px}
+  .stats b{font-weight:800}
+  .up{color:var(--buff)}.down{color:var(--debuff)}
+  .hp{height:7px;border-radius:4px;background:rgba(0,0,0,.5);overflow:hidden;margin-top:6px;position:relative}
+  .hp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#3ec46b,#8be27a);transition:width .12s}
+  .enemy .hp i{background:linear-gradient(90deg,#c43e5a,#ff7a8f)}
+  .hp .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
+  .float{position:absolute;font-weight:800;pointer-events:none;font-size:13px;text-shadow:0 1px 3px #000;z-index:5}
+  /* controls */
+  .panel{width:min(760px,96vw);display:flex;gap:12px;flex-wrap:wrap}
+  .card{flex:1 1 240px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px}
+  .card h3{margin:0 0 8px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+  .btns{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:inherit;font-size:11px;font-weight:700;color:var(--ink);background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;cursor:pointer;display:flex;align-items:center;gap:4px}
+  button:hover{border-color:#3a4560}
+  button:active{transform:translateY(1px)}
+  button.buff{border-color:rgba(90,209,122,.5)} button.debuff{border-color:rgba(255,93,108,.5)} button.special{border-color:rgba(180,139,255,.5)}
+  button.role{background:linear-gradient(180deg,#243056,#18203c);border-color:#3f6bd0}
+  button.util{background:#1a1d2b}
+  .hint{font-size:10.5px;color:var(--dim);margin-top:8px}
+  .legend{width:min(760px,96vw);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px}
+  .legend h3{margin:0 0 8px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+  .legrow{display:flex;flex-wrap:wrap;gap:8px}
+  .leg{display:flex;align-items:center;gap:6px;font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+  .leg .ic{font-size:13px}
+  .marker{color:#4a5678;font-size:10px;font-weight:800;letter-spacing:.5px}
+</style></head>
+<body>
+  <h2>Status Effects — combat design sandbox</h2>
+  <div class="sub">Click a unit to select it, then apply a status. Watch the badge, the aura, the floating tag, and the live ATK/DEF/SPD readout + HP. Role presets preview <b>nomad</b> (team buff), <b>imp</b> (debilitate), <b>dragon</b> (single-target nuke).</div>
+
+  <div class="arena" id="arena">
+    <div><div class="zone-lbl">— enemies —</div><div class="row" id="enemies"></div></div>
+    <div><div class="zone-lbl">— heroes —</div><div class="row" id="heroes"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="card"><h3>Apply to selected</h3>
+      <div class="btns" id="statusBtns"></div>
+      <div class="hint" id="selHint">No unit selected — tap a card above.</div>
+    </div>
+    <div class="card"><h3>Role previews (built from statuses)</h3>
+      <div class="btns">
+        <button class="role" id="roleNomad">🎐 Nomad ▸ team buff</button>
+        <button class="role" id="roleImp">😈 Imp ▸ debilitate enemies</button>
+        <button class="role" id="roleDragon">🐲 Dragon ▸ nuke selected</button>
+      </div>
+      <h3 style="margin-top:12px">Utility</h3>
+      <div class="btns">
+        <button class="util" id="clearSel">✕ Clear statuses</button>
+        <button class="util" id="healAll">➕ Heal all</button>
+        <button class="util" id="pause">⏸ Pause</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend"><h3>The 8 statuses</h3><div class="legrow" id="legend"></div></div>
+  <div class="marker">combat-status-effects mockup · v1 · design sandbox (not the game)</div>
+
+<script>
+/* ── tunables (would become _vfx.json / a combat singleton when baked) ── */
+const CFG = {
+  durationSec: 8,          // default status duration
+  atkMul:  { up:1.5, down:0.5 },
+  defMul:  { up:1.5, down:0.5 },
+  spdMul:  { up:1.6, down:0.6 },  // >1 = faster attacks (cadence divided by this)
+  regenPerSec: 0.05,       // fraction of maxHp healed / sec
+  dmg: { defScale:0.6, min:1 },   // dmg = max(min, effAtk - effDef*defScale)
+  dragonMult: 3.2,         // dragon nuke = effAtk × this (direct, no status)
+};
+
+/* ── status registry: the design being prototyped (icon · colour · kind · mechanic) ── */
+const STATUS = {
+  atkUp:   { label:'ATK', arrow:'↑', icon:'⚔️', kind:'buff',    color:'#ff9e2e', stat:'atk', dir:'up',   opposite:'atkDown' },
+  atkDown: { label:'ATK', arrow:'↓', icon:'⚔️', kind:'debuff',  color:'#ff5d6c', stat:'atk', dir:'down', opposite:'atkUp' },
+  defUp:   { label:'DEF', arrow:'↑', icon:'🛡️', kind:'buff',    color:'#5aa0ff', stat:'def', dir:'up',   opposite:'defDown' },
+  defDown: { label:'DEF', arrow:'↓', icon:'🛡️', kind:'debuff',  color:'#ff5d6c', stat:'def', dir:'down', opposite:'defUp' },
+  spdUp:   { label:'SPD', arrow:'↑', icon:'⚡', kind:'buff',    color:'#ffd45e', stat:'spd', dir:'up',   opposite:'spdDown' },
+  spdDown: { label:'SPD', arrow:'↓', icon:'🐌', kind:'debuff',  color:'#7fb0ff', stat:'spd', dir:'down', opposite:'spdUp' },
+  regen:   { label:'REGEN', arrow:'', icon:'➕', kind:'buff',    color:'#5ad17a', regen:true },
+  stealth: { label:'STEALTH', arrow:'', icon:'🌫️', kind:'special', color:'#b48bff', stealth:true },
+};
+const ORDER = ['atkUp','defUp','spdUp','regen','atkDown','defDown','spdDown','stealth'];
+
+/* ── units ── */
+const DEFS = [
+  { side:'enemy', name:'Goblin', emoji:'👺', atk:14, def:8,  maxHp:160, cad:1200 },
+  { side:'enemy', name:'Ogre',   emoji:'👹', atk:22, def:14, maxHp:240, cad:1700 },
+  { side:'enemy', name:'Imp',    emoji:'😈', atk:16, def:9,  maxHp:150, cad:1100 },
+  { side:'hero',  name:'Knight', emoji:'⚔️', atk:18, def:14, maxHp:200, cad:1300 },
+  { side:'hero',  name:'Cleric', emoji:'✨', atk:12, def:10, maxHp:180, cad:1500 },
+  { side:'hero',  name:'Mage',   emoji:'🔮', atk:24, def:8,  maxHp:150, cad:1400 },
+];
+let units = [], selected = null, paused = false;
+const now = () => performance.now();
+
+function makeUnits() {
+  units = DEFS.map((d, i) => ({ ...d, id:i, hp:d.maxHp, atkT:0, statuses:{}, el:null }));
+}
+const alive = (u) => u.hp > 0;
+const opp = (u) => units.filter((x) => x.side !== u.side && alive(x));
+const hasStealth = (u) => !!u.statuses.stealth;
+
+// effective stats fold all active statuses
+function eff(u, stat) {
+  let m = 1;
+  for (const k in u.statuses) { const s = STATUS[k]; if (s.stat === stat) m *= (stat==='spd'?CFG.spdMul:stat==='atk'?CFG.atkMul:CFG.defMul)[s.dir]; }
+  return m;
+}
+const effAtk = (u) => u.atk * eff(u,'atk');
+const effDef = (u) => u.def * eff(u,'def');
+const effSpd = (u) => eff(u,'spd');                 // >1 faster
+const effCad = (u) => u.cad / effSpd(u);
+
+/* ── apply / clear ── */
+function applyStatus(u, key) {
+  if (!u || !alive(u)) return;
+  const s = STATUS[key];
+  // Opposing stat changers are mutually exclusive — the newest application cancels its opposite (chronology wins).
+  if (s.opposite && u.statuses[s.opposite]) { delete u.statuses[s.opposite]; floatText(u, STATUS[s.opposite].icon + STATUS[s.opposite].arrow + '✕', '#9aa7bd'); }
+  u.statuses[key] = { t0: now(), tExpire: now() + CFG.durationSec*1000 };
+  floatText(u, s.icon + (s.arrow || ''), s.color);
+}
+function clearStatuses(u) { if (u) u.statuses = {}; }
+
+/* ── sim ── */
+let last = 0;
+function step(dt) {
+  for (const u of units) {
+    if (!alive(u)) continue;
+    // expire statuses
+    for (const k in u.statuses) if (now() >= u.statuses[k].tExpire) { delete u.statuses[k]; }
+    // regen
+    if (u.statuses.regen && u.hp < u.maxHp) { u.hp = Math.min(u.maxHp, u.hp + u.maxHp*CFG.regenPerSec*dt); floatMaybeRegen(u, dt); }
+    // attack cadence
+    u.atkT += dt*1000;
+    if (u.atkT >= effCad(u)) {
+      u.atkT = 0;
+      const targets = opp(u).filter((t) => !hasStealth(t));   // STEALTH = untargetable
+      if (!targets.length) { if (opp(u).length) floatText(u, 'no target', '#7fb0ff'); continue; }
+      const t = targets[(Math.random()*targets.length)|0];
+      const dmg = Math.max(CFG.dmg.min, Math.round(effAtk(u) - effDef(t)*CFG.dmg.defScale));
+      t.hp = Math.max(0, t.hp - dmg);
+      floatText(t, '-'+dmg, '#ffffff');
+    }
+  }
+}
+let regenAcc = 0;
+function floatMaybeRegen(u, dt) { regenAcc += dt; if (regenAcc > 0.5) { /* throttled below per-unit */ } }
+
+/* ── render ── */
+function buildCards() {
+  const eRow = document.getElementById('enemies'), hRow = document.getElementById('heroes');
+  eRow.innerHTML = ''; hRow.innerHTML = '';
+  for (const u of units) {
+    const el = document.createElement('div');
+    el.className = 'u ' + u.side;
+    el.innerHTML = `<div class="badges"></div>
+      <div class="top"><div class="av">${u.emoji}</div><div><div class="nm">${u.name}</div><div class="stats"></div></div></div>
+      <div class="hp"><i></i><div class="txt"></div></div>`;
+    el.onclick = () => { selected = u; render(); document.getElementById('selHint').textContent = 'Selected: ' + u.name + ' (' + u.side + ')'; };
+    u.el = el; (u.side === 'enemy' ? eRow : hRow).appendChild(el);
+  }
+}
+function render() {
+  for (const u of units) {
+    const el = u.el; if (!el) continue;
+    const dead = !alive(u);
+    const buffs = Object.keys(u.statuses).some((k)=>STATUS[k].kind==='buff');
+    const debuffs = Object.keys(u.statuses).some((k)=>STATUS[k].kind==='debuff');
+    el.classList.toggle('sel', selected===u);
+    el.classList.toggle('dead', dead);
+    el.classList.toggle('stealth', hasStealth(u) && !dead);
+    el.classList.toggle('buffed', buffs && !debuffs && !dead);
+    el.classList.toggle('debuffed', debuffs && !dead);
+    // badges
+    const bwrap = el.querySelector('.badges');
+    bwrap.innerHTML = ORDER.filter((k)=>u.statuses[k]).map((k)=>{
+      const s = STATUS[k], st = u.statuses[k], cd = Math.max(0,(st.tExpire-now())/(CFG.durationSec*1000));
+      return `<div class="badge" style="color:${s.color};background:${hex(s.color,0.16)}"><span>${s.icon}${s.arrow}</span><i class="cd" style="width:${(cd*100).toFixed(0)}%"></i></div>`;
+    }).join('');
+    // stats readout (colour arrows on modified)
+    const a = eff(u,'atk'), d = eff(u,'def'), sp = eff(u,'spd');
+    el.querySelector('.stats').innerHTML =
+      `ATK <b class="${a>1?'up':a<1?'down':''}">${Math.round(effAtk(u))}</b> · `+
+      `DEF <b class="${d>1?'up':d<1?'down':''}">${Math.round(effDef(u))}</b> · `+
+      `SPD <b class="${sp>1?'up':sp<1?'down':''}">${sp.toFixed(2)}×</b>`;
+    // hp
+    el.querySelector('.hp i').style.width = (100*u.hp/u.maxHp)+'%';
+    el.querySelector('.hp .txt').textContent = Math.ceil(u.hp)+' / '+u.maxHp;
+  }
+}
+function hex(c,a){const h=c.replace('#','');const n=parseInt(h.length===3?h.split('').map(x=>x+x).join(''):h,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+
+/* ── floating combat text ── */
+const arena = document.getElementById('arena');
+function floatText(u, txt, color) {
+  if (!u.el) return;
+  const ar = arena.getBoundingClientRect(), r = u.el.getBoundingClientRect();
+  const f = document.createElement('div'); f.className = 'float'; f.textContent = txt; f.style.color = color;
+  f.style.left = (r.left - ar.left + r.width/2) + 'px'; f.style.top = (r.top - ar.top + 6) + 'px';
+  arena.appendChild(f); const t0 = now();
+  (function up(){ const p=(now()-t0)/850; if(p>=1){f.remove();return;} f.style.transform=`translate(-50%,${-28*p}px)`; f.style.opacity=String(1-p); requestAnimationFrame(up); })();
+}
+
+/* ── loop ── */
+function loop(ts){ const dt = Math.min(0.05,(ts-last)/1000||0); last = ts; if(!paused) step(dt); render(); requestAnimationFrame(loop); }
+
+/* ── controls ── */
+function buildStatusButtons() {
+  const wrap = document.getElementById('statusBtns');
+  wrap.innerHTML = ORDER.map((k)=>{ const s=STATUS[k]; return `<button class="${s.kind}" data-k="${k}" style="color:${s.color}"><span style="color:#fff">${s.icon}${s.arrow} ${s.label}</span></button>`; }).join('');
+  wrap.querySelectorAll('button').forEach((b)=> b.onclick=()=>{ const u=selected||units.find(x=>x.side==='hero'&&alive(x)); if(u){selected=u;applyStatus(u,b.dataset.k);} });
+}
+function buildLegend() {
+  document.getElementById('legend').innerHTML = ORDER.map((k)=>{ const s=STATUS[k];
+    const desc = {atkUp:'+50% attack',atkDown:'−50% attack',defUp:'+50% defense',defDown:'−50% defense',spdUp:'attacks faster',spdDown:'attacks slower',regen:'heals over time',stealth:'untargetable'}[k];
+    return `<div class="leg" style="border-color:${hex(s.color,.5)}"><span class="ic">${s.icon}${s.arrow}</span><b style="color:${s.color}">${s.label}${s.arrow}</b><span style="color:var(--dim)">${desc}</span></div>`; }).join('');
+}
+document.getElementById('roleNomad').onclick = () => units.filter(u=>u.side==='hero'&&alive(u)).forEach(u=>{applyStatus(u,'atkUp');applyStatus(u,'spdUp');});
+document.getElementById('roleImp').onclick   = () => units.filter(u=>u.side==='enemy'&&alive(u)).forEach(u=>{applyStatus(u,'defDown');applyStatus(u,'atkDown');applyStatus(u,'spdDown');});
+document.getElementById('roleDragon').onclick = () => { const src=units.find(u=>u.name==='Mage')||units[0]; const t=selected&&selected.side==='enemy'?selected:opp(src).find(x=>!hasStealth(x)); if(!t)return; const dmg=Math.round(effAtk(src)*CFG.dragonMult); t.hp=Math.max(0,t.hp-dmg); floatText(t,'-'+dmg,'#ff9e2e'); floatText(t,'🐲',' #ff9e2e'); };
+document.getElementById('clearSel').onclick = () => { if(selected) clearStatuses(selected); };
+document.getElementById('healAll').onclick = () => units.forEach(u=>{u.hp=u.maxHp;});
+document.getElementById('pause').onclick = (e) => { paused=!paused; e.target.textContent = paused?'▶ Resume':'⏸ Pause'; };
+
+makeUnits(); buildCards(); buildStatusButtons(); buildLegend(); requestAnimationFrame(loop);
+</script>
+</body></html>

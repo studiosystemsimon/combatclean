@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "burst",
-			"mult": 5.5
+			"mult": 5.5,
+			"statusKeys": [
+				"atkUp"
+			],
+			"target": "self",
+			"statusMag": {
+				"atkUp": 1.4
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "samurai",

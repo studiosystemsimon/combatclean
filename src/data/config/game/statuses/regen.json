@@ -1,0 +1,7 @@
+{
+	"key": "regen",
+	"op": "regen",
+	"magnitude": 0.05,
+	"durationMs": 8000,
+	"kind": "buff"
+}

@@ -1,0 +1,6 @@
+{
+	"key": "stealth",
+	"op": "untargetable",
+	"durationMs": 6000,
+	"kind": "buff"
+}

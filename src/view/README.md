@@ -22,3 +22,7 @@ dispatches game signals.
 - Every player-facing **quantity** number goes through `fmtK` (`src/view/fmt.js`) — never hand-roll
   k/m abbreviation.
 - Lists never show scrollbars — use `PeekScroll` (peek + fade gradient).
+- Merge-tile shadows are **baked**, never runtime. `Board` renders a companion `<sprite-key>.shadow`
+  image (`.mb-shadow`) behind `.mb-art` with the same `mergeStyle` transform; the drop-shadow is
+  pre-blurred in the trim tool. Do NOT re-add a `filter: drop-shadow` / glow to `.mb-art` /
+  `.mb-lifted` — per-tile runtime blur was removed for performance.

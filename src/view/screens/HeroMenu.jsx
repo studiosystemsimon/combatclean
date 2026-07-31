@@ -18,8 +18,10 @@ import { HERO_RARITIES } from '../../data/rarities.js';
 import { HERO_UPGRADE } from '../../data/progression.js';
 import { GEAR_SLOT_META, GEAR_RARITY } from '../../data/gear.js';
 import {
-  heroStats, heroPower, heroMaxLevel, heroRarity, ascensionsDone, ascendSelection, canAscendChar,
+  heroStats, heroPower, heroMaxLevel, heroRarity, ascensionsDone, ascendSelection, canAscendChar, statusesApplied,
 } from '../../model/heroes.js';
+import { STATUSES } from '../../data/statuses.js';
+import Art from '../Art.jsx';
 import { canLevelHero, heroLevelCost, levelUpHeroMax, heroAtMax } from '../../model/progression.js';
 import {
   heroGearPower, equippedInSlot, slotCandidates, otherHeroSlotItems, gearPower, heroClassOf,
@@ -33,9 +35,19 @@ const HERO_BG = resolve('ui.hero-bg').img;
 const gearIcon = (slot) => resolve(GEAR_SLOT_META[slot].asset).emoji || GEAR_SLOT_META[slot].emoji;
 const gColor = (r) => (GEAR_RARITY[r] || GEAR_RARITY.common).color;
 const cap1 = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const abilDesc = (a) => (!a ? '' : a.type === 'heal'
-  ? `Heals the party for ${Math.round((a.frac || 0) * 100)}% of max HP.`
-  : a.type === 'aoe' ? `Deals ${a.mult}× ATK to all enemies.` : `Deals ${a.mult}× ATK to the focus target.`);
+const STATUS_TARGET_WORD = { self: 'itself', allies: 'the party', enemies: 'all enemies', all: 'everyone' };
+// The status-rider clause, appended to any ability that carries statusKeys (buff/debuff on top of the primary).
+const statusClause = (a) => (Array.isArray(a.statusKeys) && a.statusKeys.length && a.target)
+  ? `Applies ${a.statusKeys.map((k) => STATUSES[k]?.name || k).join(', ')} to ${STATUS_TARGET_WORD[a.target] || a.target}.` : '';
+const abilDesc = (a) => {
+  if (!a) return '';
+  const rider = statusClause(a);
+  const primary = a.type === 'heal' ? `Heals the party for ${Math.round((a.frac || 0) * 100)}% of max HP.`
+    : a.type === 'aoe' ? `Deals ${a.mult}× ATK to all enemies.`
+    : a.type === 'burst' ? `Deals ${a.mult}× ATK to the focus target.`
+    : ''; // type:'status' — the rider IS the effect
+  return [primary, rider].filter(Boolean).join(' ');
+};
 
 export default function HeroMenu() {
   const { state, actions } = useGame();
@@ -52,6 +64,7 @@ export default function HeroMenu() {
   const [confirmEq, setConfirmEq] = useState(null);   // { slot, item } awaiting confirm
   const [confirmAsc, setConfirmAsc] = useState(null); // { keepCid, sacrificeCid } awaiting ascend confirm
   const [skillIdx, setSkillIdx] = useState(null);     // open ability detail
+  const [statusKey, setStatusKey] = useState(null);   // open status detail (from the "Applies" row)
 
   const char = cid ? state.heroes[cid] : null;
 
@@ -115,6 +128,7 @@ export default function HeroMenu() {
   const ascDone = ascensionsDone(char);
   const art = heroAsset(char.hero);
   const cls = heroClassOf(char.hero); const slots = cls.slots; // this class's equip loadout (+ classKey for class-bound slots)
+  const applied = statusesApplied(char.hero); // statuses this hero applies via its abilities (out-of-combat view)
   const equippedSlots = slots.filter((s) => equippedInSlot(state.gear, cid, s));
   // Ascend (merge a duplicate copy → +1 rank). Reuses the reducer-shared selection so the confirm names
   // the exact copy consumed; ALWAYS keeps the strongest copy and sacrifices the weakest.
@@ -215,6 +229,21 @@ export default function HeroMenu() {
             <div className="stat"><span className="ico">🛡️</span><div className="sv"><b className="hm-ol" ref={defRef}>{fmt(stats.def)}</b><small>Defense</small></div></div>
           </div>
         </div>
+        {applied.length > 0 && (
+          <div className="hm-applies">
+            <span className="hm-applies-lbl">Applies</span>
+            <div className="hm-applies-row">
+              {applied.map((k) => {
+                const s = STATUSES[k]; if (!s) return null;
+                return (
+                  <button key={k} className="status-chip" style={{ '--sc': s.color || '#fff' }} onClick={() => setStatusKey(k)} title={s.name}>
+                    <Art a={resolve(s.asset)} className="status-chip-ic" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="hm-actions">
           <div className="lvl-stacks">
             <div className="lvl-stack">
@@ -263,6 +292,21 @@ export default function HeroMenu() {
               <div className="skhead"><div className="sc">{A[0]}</div><div><div className="styp">{A[1]} · Lv {abilLv}</div><div className="snm">{A[2]}</div></div></div>
               <div className="skdesc">{A[3]}</div>
               <button className="hm-close" onClick={() => setSkillIdx(null)}>Close</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* status detail (from the "Applies" row) — same sheet/card as the ability detail */}
+      {statusKey != null && (() => {
+        const s = STATUSES[statusKey]; if (!s) return null;
+        return (
+          <div className="hm-sheet open" onClick={() => setStatusKey(null)}>
+            <div className="hm-sheet-bd" />
+            <div className="hm-card" onClick={(e) => e.stopPropagation()}>
+              <div className="skhead"><div className="sc status-sc" style={{ '--sc': s.color || '#fff' }}><Art a={resolve(s.asset)} className="status-chip-ic" /></div><div><div className="styp">{s.kind === 'buff' ? 'Buff' : 'Debuff'}</div><div className="snm">{s.name}</div></div></div>
+              <div className="skdesc">{s.description}</div>
+              <button className="hm-close" onClick={() => setStatusKey(null)}>Close</button>
             </div>
           </div>
         );

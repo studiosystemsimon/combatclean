@@ -1,0 +1,19 @@
+{
+	"id": 2046,
+	"name": "Imp",
+	"iconAssetId": "hero.imp",
+	"emoji": "😈",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Hex",
+		"limit": "Curse"
+	},
+	"portrait": {
+		"scale": 1.95,
+		"x": 0,
+		"y": -0.534
+	},
+	"combat": {
+		"scale": 1.15
+	}
+}

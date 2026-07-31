@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "burst",
-			"mult": 5.5
+			"mult": 5.5,
+			"statusKeys": [
+				"defUp"
+			],
+			"target": "allies",
+			"statusMag": {
+				"defUp": 0.6
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "paladin",

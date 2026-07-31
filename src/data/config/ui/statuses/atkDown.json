@@ -1,0 +1,7 @@
+{
+	"key": "atkDown",
+	"name": "Attack Down",
+	"description": "−50% attack.",
+	"color": "#ff5d6c",
+	"iconAssetId": "status.atkDown"
+}

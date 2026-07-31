@@ -1,0 +1,27 @@
+{
+	"id": 2045,
+	"displayName": "nomad",
+	"rarityKey": "epic",
+	"weaponChainKey": "magic",
+	"baseAtk": 15,
+	"baseHp": 240,
+	"baseDef": 12,
+	"normal": {
+		"chargeMs": 6500,
+		"effect": {
+			"type": "status",
+			"statusKeys": ["atkUp", "spdUp"],
+			"target": "allies"
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "status",
+			"statusKeys": ["atkUp", "spdUp", "defUp"],
+			"target": "allies",
+			"durationMs": 12000
+		}
+	},
+	"classKey": "nomad"
+}

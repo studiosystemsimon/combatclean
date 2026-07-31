@@ -1,0 +1,7 @@
+{
+	"key": "regen",
+	"name": "Regen",
+	"description": "Heals over time.",
+	"color": "#5ad17a",
+	"iconAssetId": "status.regen"
+}

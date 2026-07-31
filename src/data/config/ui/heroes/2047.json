@@ -1,0 +1,19 @@
+{
+	"id": 2047,
+	"name": "Dragon",
+	"iconAssetId": "hero.dragon",
+	"emoji": "🐉",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Flame Slash",
+		"limit": "Inferno"
+	},
+	"portrait": {
+		"scale": 1.85,
+		"x": 0.063,
+		"y": -0.503
+	},
+	"combat": {
+		"scale": 1.05
+	}
+}

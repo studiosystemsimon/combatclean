@@ -17,7 +17,12 @@
 		"orders": 5,
 		"effect": {
 			"type": "burst",
-			"mult": 7
+			"mult": 7,
+			"statusKeys": [
+				"stealth"
+			],
+			"target": "self",
+			"durationMs": 5000
 		}
 	},
 	"classKey": "ninja"

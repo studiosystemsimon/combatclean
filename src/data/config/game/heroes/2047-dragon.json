@@ -1,0 +1,24 @@
+{
+	"id": 2047,
+	"displayName": "dragon",
+	"rarityKey": "epic",
+	"weaponChainKey": "blade",
+	"baseAtk": 20,
+	"baseHp": 160,
+	"baseDef": 9,
+	"normal": {
+		"chargeMs": 5000,
+		"effect": {
+			"type": "burst",
+			"mult": 2.8
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "burst",
+			"mult": 7
+		}
+	},
+	"classKey": "dragon"
+}

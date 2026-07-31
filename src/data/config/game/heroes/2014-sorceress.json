@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "aoe",
-			"mult": 4
+			"mult": 4,
+			"statusKeys": [
+				"defDown"
+			],
+			"target": "enemies",
+			"statusMag": {
+				"defDown": 1.4
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "sorceress",

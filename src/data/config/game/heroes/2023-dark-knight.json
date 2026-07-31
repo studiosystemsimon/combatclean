@@ -17,7 +17,17 @@
 		"orders": 4,
 		"effect": {
 			"type": "burst",
-			"mult": 5.5
+			"mult": 5.5,
+			"statusKeys": [
+				"defDown",
+				"atkDown"
+			],
+			"target": "enemies",
+			"statusMag": {
+				"defDown": 1.6,
+				"atkDown": 0.55
+			},
+			"durationMs": 10000
 		}
 	},
 	"classKey": "dark-knight",

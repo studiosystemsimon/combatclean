@@ -31,6 +31,11 @@ trim/
 Outputs are written **alongside each source** in its category folder:
 - `<name>_trim.png` — transparent die-cut with the halo border
 - `<name>_256.png` — square export (categories in `EXPORT_SIZES`; heroes → 256)
+- `<name>_<sz>_shadow.png` — **separate baked drop-shadow layer** (merge chains only), on the SAME
+  `sz×sz` canvas as the sprite so the game's `mergeStyle` reg/scale/rotation transform lands it
+  exactly behind the icon. A static replacement for the per-tile CSS `filter: drop-shadow`. Params
+  (blur / dx / dy / opacity / colour, in 256-src px) live in `trim_meta.json`'s `shadow` block —
+  tuned to parity in `docs/mockups/merge-shadow-parity.html`. Set `shadow.enabled:false` to skip.
 
 ## Using it
 1. Pick an asset in the left list (grouped by category).

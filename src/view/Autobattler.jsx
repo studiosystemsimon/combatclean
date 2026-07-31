@@ -16,6 +16,7 @@ import { isBossLevel } from '../model/map.js';
 import { zoneForLevel } from '../data/zones.js'; // MERGED zone (presentation: biome/keyArt/nameKey), not the logical sim selector
 import { ENEMY_BY_ID } from '../data/enemies.js'; // per-enemy combatScale (in-combat chip size) + name/asset
 import { HEROES } from '../data/heroes.js'; // per-hero combatScale (in-combat avatar size) + name/asset
+import { STATUSES } from '../data/statuses.js'; // status table (name/colour/icon) for in-combat badges
 import { GENERATORS } from '../data/generators.js'; // generator display name for the area-unlock card
 import { STRINGS } from '../data/strings.js';
 import { ANIM } from '../data/config.js';
@@ -126,6 +127,28 @@ function LimitBar({ h, canFire }) {
   );
 }
 
+// Read-only: renders a unit's active statuses as icon badges with a per-second countdown. Pure view —
+// the sim (battle.ts) owns the statuses map + expiry; this just paints h.statuses / e.statuses.
+function StatusBadges({ statuses, kind }) {
+  const keys = statuses ? Object.keys(statuses) : [];
+  if (!keys.length) return null;
+  return (
+    <div className={`status-badges status-badges-${kind}`} aria-hidden="true">
+      {keys.map((k) => {
+        const s = STATUSES[k];
+        if (!s) return null;
+        const secs = Math.max(0, Math.ceil((statuses[k].remainingMs || 0) / 1000));
+        return (
+          <span key={k} className="status-badge" style={{ '--sc': s.color || '#fff' }} title={s.name}>
+            <Art a={resolve(s.asset)} className="status-ic" />
+            <s className="status-cd">{secs}</s>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function HeroChip({ h, pow, onLimit, fighting }) {
   const dead = h.hp <= 0;
   const lbReady = isLimitReady(h); // charged (from board orders) — drives the golden glow
@@ -153,6 +176,7 @@ function HeroChip({ h, pow, onLimit, fighting }) {
       {/* power badge lives on the (non-bobbing) .chip root, not inside the idle-animated .chip-art */}
       {pow > 0 && <span className="hero-pow"><s>✊</s>{fmt(pow)}</span>}
       <HpBar frac={h.hp / h.maxHp} kind="hero" />
+      <StatusBadges statuses={h.statuses} kind="hero" />
       <div className="bar normal">
         <span style={{ width: `${Math.round(100 * normalChargeFrac(h))}%` }} />
       </div>
@@ -180,6 +204,7 @@ function EnemyChip({ e, focused, onFocus, art, scale = 1, gone, conceal, lv, onD
         <Art a={art} className="chip-emoji" style={{ ...(anchorStyle(art) || {}), height: `calc(var(--cbh-${boss ? 'boss' : 'enemy'}, ${boss ? COMBAT_BASE_H_BOSS : COMBAT_BASE_H}px) * ${scale})` }} />
       </div>
       <HpBar frac={e.hp / e.maxHp} kind="enemy" />
+      <StatusBadges statuses={e.statuses} kind="enemy" />
       {conceal && <span className="conceal-q" aria-hidden="true">?</span>}
       {focused && <span className="focus-reticle" aria-hidden="true">🎯</span>}
     </div>

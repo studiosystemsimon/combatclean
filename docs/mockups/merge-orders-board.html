@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Orders + board (exact in-game sizes)</title>
+<style>
+  :root{ --ink:#eaf0ff; --dim:#9fb0d0; --dim2:#6f7f9e; --gold:#ffcf45; --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.12); }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 800px at 20% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .app{ display:flex; gap:22px; align-items:flex-start; padding:22px; }
+  h1{ font-size:18px; margin:0 0 2px; } .sub{ color:var(--dim); font-size:12px; margin:0 0 12px; max-width:290px; }
+  .panel{ width:290px; flex:0 0 290px; background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:14px; padding:14px 15px; position:sticky; top:22px; }
+  .grp{ margin:0 0 12px; padding-bottom:12px; border-bottom:1px solid var(--line); } .grp:last-child{ border-bottom:none; }
+  h3{ font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--dim2); margin:0 0 8px; }
+  label{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--dim); margin:8px 0; }
+  input[type=range]{ flex:1; accent-color:var(--gold); } .val{ color:var(--ink); font-weight:800; min-width:44px; text-align:right; }
+  input[type=color]{ width:44px; height:26px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer; }
+  .seg{ display:flex; gap:4px; } .seg button{ flex:1; background:#0e1220; color:var(--dim); border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:11.5px; font-weight:800; cursor:pointer; } .seg button.on{ background:var(--gold); color:#0b1220; border-color:var(--gold); }
+  .btn{ width:100%; background:#0e1220; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px; font-size:12.5px; font-weight:800; cursor:pointer; } .btn.gold{ background:var(--gold); color:#0b1220; border-color:var(--gold); } .btn+.btn{ margin-top:7px; }
+  .hint{ color:var(--dim2); font-size:11px; line-height:1.4; margin-top:6px; } code{ background:#ffffff12; color:#cfe0ff; padding:1px 5px; border-radius:4px; font-size:11px; }
+  .stage{ flex:1; display:flex; flex-direction:column; align-items:center; gap:10px; } .dims{ color:var(--dim); font-size:12px; } .dims b{ color:var(--gold); }
+
+  /* phone column (iPhone 14, 390×844) — real vertical layout so the board cell is the true in-game size */
+  .phone{ background:#05070e; border:6px solid #05070e; border-radius:30px; overflow:hidden; }
+  .col{ display:flex; flex-direction:column; height:100%; }
+  .hdr,.nav{ flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; letter-spacing:1px; color:var(--dim2); text-transform:uppercase; background:#0e1220; }
+  .combat{ flex:none; display:flex; align-items:center; justify-content:center; color:#6f7f9e; font-size:11px; font-weight:800; letter-spacing:1px;
+    background:linear-gradient(180deg,#2a3566,#141a33); } /* the combat/orders divider is the movable CONTOUR below, not a fixed border */
+
+  /* ── ORDERS — exact in-game CSS (src/index.css) ── */
+  .orders{ position:relative; flex:none; box-sizing:border-box; padding:0 10px; background:#0b0e18; overflow:visible; }
+  /* the combat/orders DIVIDER line — fixed at the top of the order box (= the combat bottom edge). */
+  .orders::before{ content:''; position:absolute; left:0; right:0; top:0; border-top:1px solid #2b3346; z-index:1; pointer-events:none; }
+  /* tiles TOP-aligned with no top padding, so the folder tabs (top:-tab) poke UP above the order box
+     and overlap into the combat area. The order box is overflow:visible so nothing clips them. */
+  .rail{ display:flex; align-items:flex-start; gap:8px; margin-top:var(--railtop,0px); padding:0 0 2px; overflow:visible; scrollbar-width:none; }
+  .rail::-webkit-scrollbar{ display:none; }
+  .order{ position:relative; flex:0 0 auto; isolation:isolate; } /* own stacking context: tab-bg(z1) < body(z2) < tab-icon(z3) */
+  .order-body{ position:relative; z-index:2; display:flex; align-items:center; gap:4px; padding:5px; border-radius:12px; } /* NO outline; background set inline per type + completable state (completable = brighter gradient, NO glow) */
+  /* folder tab (bg + icon) IN FRONT of the order body */
+  .otab{ position:absolute; z-index:3; top:calc(-1 * var(--tab)); left:6px; min-width:34px; display:flex; align-items:center; justify-content:center;
+    padding:2px 2px 4px; overflow:visible; border-radius:8px 8px 0 0; background:color-mix(in srgb, var(--rar,#9aa7bd) 40%, #141a26); }
+  .order.potion .otab{ background:linear-gradient(180deg,#124a44,#0e1c22); } .order.special .otab{ background:linear-gradient(180deg,#3a2a5a,#141a26); }
+  .otab .glyph{ display:flex; align-items:center; justify-content:center; font-size:var(--tabicon,18px); margin:0 var(--tabmargin,2px); }
+  .otab-s{ min-width:22px; padding:0 5px; margin:0 var(--tabmargin,2px); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:var(--tabicon,18px); color:#2a1a00;
+    background:linear-gradient(135deg,var(--gold),#ff9e2e); border-radius:6px; }
+  .oribbon{ position:absolute; z-index:5; top:-9px; right:6px; font-family:'Uniform','Uniform Bold','Inter',sans-serif; font-weight:700; font-size:var(--ribbon,8px); letter-spacing:1px; padding:2px 7px; border-radius:6px; }
+  .order.potion .oribbon{ color:#04231f; background:linear-gradient(90deg,#5ad17a,#38d6c0); } .order.special .oribbon{ color:#2a1a00; background:linear-gradient(90deg,#ff9e2e,var(--gold)); }
+  .reqs{ flex:0 0 auto; min-width:0; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .req{ flex:0 0 auto; width:48px; height:48px; position:relative; border-radius:8px; background:#131a28; display:grid; place-items:center; overflow:hidden; font-size:40px; line-height:1; }
+  .reroll{ position:absolute; right:3px; bottom:3px; width:22px; height:22px; z-index:4; border-radius:7px; background:#0a0e16; border:1px solid #3a4257; display:grid; place-items:center; font-size:12px; }
+
+  /* ── BOARD ── */
+  .board-area{ flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; background:#0c1020; }
+  .mb-shaker{ position:relative; border-radius:4px; overflow:hidden; }
+  .mb-board{ position:absolute; inset:0; display:grid; gap:0; }
+  .mb-cell{ position:relative; } /* so .mb-inner (inset%) anchors to the CELL, not the whole board */
+  .mb-inner{ position:absolute; inset:9%; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .mb-inner.blade{ background:linear-gradient(180deg,#cfe0ff,#7fa8ff); } .mb-inner.range{ background:linear-gradient(180deg,#bfe8c8,#5ecb84); } .mb-inner.magic{ background:linear-gradient(180deg,#e6c6ff,#b46bff); } .mb-inner.gen{ background:linear-gradient(180deg,#9fb8ff,#4f7bd8); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <h1>Orders + board</h1>
+    <p class="sub">Rendered at the <b>exact in-game sizes</b> (iPhone 14, 390×844; real layout math). Defaults = the game right now — tune from there.</p>
+
+    <div class="grp">
+      <h3>Board colours</h3>
+      <label>Gradient <span class="seg" id="grad"><button data-v="on">On</button><button data-v="off" class="on">Off</button></span></label>
+      <label>Top-left <input type="color" id="cTL"></label>
+      <label>Bottom-right <input type="color" id="cBR"></label>
+      <label>Cell tint (base) <input type="color" id="cCell"></label>
+      <label>Checkerboard <span><input type="range" id="checker" min="0" max="0.06" step="0.0025"><b class="val" id="checkerV"></b></span></label>
+      <label>Highlight lines <span class="seg" id="hl"><button data-v="on" class="on">On</button><button data-v="off">Off</button></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Board fit</h3>
+      <label>Margin (all sides) <span><input type="range" id="margin" min="0" max="14" step="1"><b class="val" id="marginV"></b></span></label>
+      <p class="hint">Game today: 6px top / 2px sides / 8px bottom. This control sets a uniform margin.</p>
+    </div>
+
+    <div class="grp">
+      <h3>Orders</h3>
+      <label>Tab overhang <span><input type="range" id="tab" min="0" max="30" step="1"><b class="val" id="tabV"></b></span></label>
+      <label>Combat ↔ order gap <span><input type="range" id="combatGap" min="-48" max="40" step="1"><b class="val" id="combatGapV"></b></span></label>
+      <label>Order ↔ board gap <span><input type="range" id="orderGap" min="0" max="40" step="1"><b class="val" id="orderGapV"></b></span></label>
+      <label>Divider → tiles <span><input type="range" id="contour" min="-30" max="40" step="1"><b class="val" id="contourV"></b></span></label>
+      <p class="hint">Tab overhang = how far the folder tabs poke up past the order box (game: 18). Gaps = space above/below the order box.</p>
+    </div>
+
+    <div class="grp">
+      <h3>Folder tab</h3>
+      <label>Icon size <span><input type="range" id="tabIcon" min="10" max="34" step="1"><b class="val" id="tabIconV"></b></span></label>
+      <label>Icon margin <span><input type="range" id="tabMargin" min="0" max="12" step="1"><b class="val" id="tabMarginV"></b></span></label>
+      <label>Ribbon text size <span><input type="range" id="ribbonSize" min="5" max="16" step="1"><b class="val" id="ribbonSizeV"></b></span></label>
+      <p class="hint">Tab now sits BEHIND the order panel (bottom tucks in). Ribbon (LIMIT/SPECIAL) shows only on 2+ unit orders, font = Uniform Bold.</p>
+    </div>
+
+    <div class="grp">
+      <h3>Order colours (top → bottom)</h3>
+      <div id="ocControls"></div>
+    </div>
+
+    <div class="grp">
+      <button class="btn gold" id="export">Copy values</button>
+      <button class="btn" id="reset">Reset to current game</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="dims" id="dims"></div>
+    <div class="phone" id="phone"><div class="col">
+      <div class="hdr" id="hdr">Header 52</div>
+      <div class="combat" id="combat">COMBAT</div>
+      <div class="orders" id="orders"><div class="rail" id="rail"></div></div>
+      <div class="board-area" id="boardArea"><div class="mb-shaker" id="shaker"><div class="mb-board" id="board"></div></div></div>
+      <div class="nav" id="nav">Nav 60</div>
+    </div></div>
+    <div class="dims" id="dims2"></div>
+  </div>
+</div>
+
+<script>
+// ── exact in-game layout constants (src/index.css :root + combat CSS) ──
+const W=390, H=844, HEADER=52, NAV=60, ORDERS=84, APPW=Math.min(460,W), COLS=7, ROWS=6;
+const BOARD_FRAC=ROWS/COLS;                     // combat-h reserves app-w × rows/cols for the board
+const BASE_A=0.05;                              // .mb-cell base white alpha
+const combatH = Math.max(150, H-HEADER-NAV-ORDERS-APPW*BOARD_FRAC);
+// board-area padding in game = 6 top / 2 sides / 8 bottom; the mockup's uniform "margin" replaces it.
+const SAMPLE={ 8:'blade',9:'blade',15:'range',16:'range',22:'magic',23:'magic',29:'blade',36:'range', 0:'gen',2:'gen',4:'gen' };
+// 6 tiles → shows all three types in BOTH normal + completable(✓) states, plus the ribbon rule.
+const ORDERS_DATA=[
+  { reward:'gear',   rar:'#5ea0ff', reqs:['🏹','🏹'], glyph:'📦' },                                 // gear · normal
+  { reward:'gear',   rar:'#5ea0ff', reqs:['🗡'], glyph:'📦', ready:true },                          // gear · completable
+  { reward:'potion', rar:'#38d6c0', reqs:['🗡'], glyph:'🧪', ribbon:'LIMIT' },                      // potion · normal · 1 unit → LIMIT hidden
+  { reward:'potion', rar:'#38d6c0', reqs:['🗡','🗡'], glyph:'🧪', ready:true, ribbon:'LIMIT' },      // potion · completable · 2 units → LIMIT shown
+  { reward:'special',rar:'#ffcf45', reqs:['✨','✨'], glyph:'S', ribbon:'SPECIAL' },                 // special · normal · 2 units → SPECIAL shown
+  { reward:'special',rar:'#b46bff', reqs:['✨'], glyph:'S', ready:true, ribbon:'SPECIAL' },          // special · completable · 1 unit → SPECIAL hidden
+];
+
+const STORE_KEY='cc.orders-board', VERSION=8;
+const OC_ROWS=[['gear','Gear'],['gearRdy','Gear ✓ (completable)'],['potion','Potion'],['potionRdy','Potion ✓'],['special','Special'],['specialRdy','Special ✓']];
+// DEFAULTS = your values + per-type order gradients (top→bottom) for normal + completable states.
+function defaultState(){ return { grad:true, cTL:'#003d4d', cBR:'#130014', cCell:'#ffffff', checker:0.025, hl:true, margin:4, tab:16, combatGap:8, orderGap:0, contour:0, tabIcon:18, tabMargin:2, ribbonSize:8,
+  oc:{ gear:{a:'#3b4066',b:'#2a2e4d'}, gearRdy:{a:'#6f5f30',b:'#3f3820'}, potion:{a:'#124a44',b:'#0e2a2e'}, potionRdy:{a:'#1d7a6e',b:'#124a44'}, special:{a:'#3a2a5a',b:'#241a38'}, specialRdy:{a:'#6a4a2a',b:'#3a2a5a'} } }; }
+const state=defaultState();
+function persist(){ try{ sessionStorage.setItem(STORE_KEY, JSON.stringify({__v:VERSION,...state})); }catch{} }
+function loadPersisted(){ try{ const s=JSON.parse(sessionStorage.getItem(STORE_KEY)||'null'); if(s&&s.__v===VERSION){ delete s.__v; return s; } }catch{} return null; }
+const $=(id)=>document.getElementById(id);
+const hexA=(hex,a)=>{ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; };
+// opaque colour helpers — the board renders as a SOLID composite (checker baked onto the gradient), never rgba
+const hexToRgb=(hex)=>{ const n=parseInt(hex.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; };
+const rgbToHex=(c)=>'#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const lerp=(a,b,t)=>a+(b-a)*t;
+const lerpRgb=(A,B,t)=>[lerp(A[0],B[0],t),lerp(A[1],B[1],t),lerp(A[2],B[2],t)];
+// sample the shaker's radial-gradient (135% 135% at 10% 5%; cTL 0% → mid 52% → cBR 100%) at fractional (fx,fy)
+function sampleBoardGrad(fx,fy){
+  const TL=hexToRgb(state.cTL), BR=hexToRgb(state.cBR), MID=lerpRgb(TL,BR,0.5);
+  const dx=(fx-0.10)/1.35, dy=(fy-0.05)/1.35;
+  let t=Math.sqrt(dx*dx+dy*dy); t=Math.max(0,Math.min(1,t));
+  return t<=0.52 ? lerpRgb(TL,MID,t/0.52) : lerpRgb(MID,BR,(t-0.52)/0.48);
+}
+
+function render(){
+  $('phone').style.width=W+'px'; $('phone').style.height=H+'px';
+  $('hdr').style.height=HEADER+'px'; $('nav').style.height=NAV+'px';
+  $('combat').style.height=combatH+'px';
+  $('orders').style.marginTop=state.combatGap+'px'; $('orders').style.marginBottom=state.orderGap+'px';
+  $('orders').style.setProperty('--railtop', state.contour+'px'); // distance from the divider down to the order tiles (− pulls tiles up so tabs cross into combat)
+  $('orders').style.setProperty('--tab', state.tab+'px');
+  $('orders').style.setProperty('--tabicon', state.tabIcon+'px'); $('orders').style.setProperty('--tabmargin', state.tabMargin+'px'); $('orders').style.setProperty('--ribbon', state.ribbonSize+'px');
+  $('rail').innerHTML='';
+  for(const o of ORDERS_DATA){
+    const el=document.createElement('div'); el.className='order'+(o.reward==='potion'?' potion':o.reward==='special'?' special':'')+(o.ready?' ready':''); el.style.setProperty('--rar', o.rar);
+    const tabInner = o.reward==='special'?`<span class="otab-s">S</span>`:`<span class="glyph ${o.reward==='potion'?'otab-potion':''}">${o.glyph}</span>`;
+    const ribbon = (o.ribbon && o.reqs.length>=2)?`<span class="oribbon">${o.ribbon}</span>`:''; // ribbon (LIMIT/SPECIAL) only on 2+ unit orders
+    const reqs=o.reqs.map(r=>`<span class="req">${r}</span>`).join('');
+    const ck=o.ready?o.reward+'Rdy':o.reward; const g=state.oc[ck]||state.oc[o.reward]; // per-type + completable gradient
+    const bodyBg=`linear-gradient(180deg, ${g.a}, ${g.b})`;
+    el.innerHTML=`<div class="order-body" style="background:${bodyBg}">${ribbon}<div class="reqs">${reqs}</div><span class="reroll">🎲</span></div><span class="otab">${tabInner}</span>`;
+    $('rail').appendChild(el);
+  }
+  // BOARD — cell size from the REAL layout: board-area leftover height, uniform margin, aspect 7/6, width cap.
+  const contextH = H-HEADER-combatH-NAV-state.combatGap-state.orderGap;
+  const boardAreaH = contextH-ORDERS;
+  const m=state.margin, contentW=W-2*m, contentH=boardAreaH-2*m;
+  let bh=contentH, bw=bh*COLS/ROWS; if(bw>contentW){ bw=contentW; bh=bw*ROWS/COLS; }
+  const cell=bw/COLS;
+  $('shaker').style.width=bw+'px'; $('shaker').style.height=bh+'px';
+  $('shaker').style.background = state.grad
+    ? `radial-gradient(135% 135% at 10% 5%, ${state.cTL} 0%, color-mix(in srgb, ${state.cTL}, ${state.cBR}) 52%, ${state.cBR} 100%)`
+    : 'transparent';
+  const b=$('board'); b.style.gridTemplateColumns=`repeat(${COLS},1fr)`; b.style.gridTemplateRows=`repeat(${ROWS},1fr)`; b.innerHTML='';
+  const boardBase = hexToRgb('#0c1020'); // .board-area bg, shown when the gradient is off
+  for(let i=0;i<COLS*ROWS;i++){ const row=Math.floor(i/COLS),col=i%COLS,light=(row+col)%2===0;
+    const c=document.createElement('div'); c.className='mb-cell';
+    const a=Math.max(0,Math.min(1, BASE_A+(light?state.checker:-state.checker)));
+    // OPAQUE cell: bake the checker tint onto the (gradient-sampled) base — no rgba, nothing shows through
+    const base = state.grad ? sampleBoardGrad((col+0.5)/COLS,(row+0.5)/ROWS) : boardBase;
+    c.style.background = rgbToHex(lerpRgb(base, hexToRgb(state.cCell), a));
+    c.style.boxShadow = state.hl ? 'inset 0 1px 0 rgba(255,255,255,.04)' : 'none'; // hairline highlight (0-blur), not a shadow/glow
+    if(SAMPLE[i]){ const k=SAMPLE[i]; const inner=document.createElement('div'); inner.className='mb-inner '+k;
+      inner.style.fontSize=Math.round(cell*0.5)+'px'; inner.textContent = k==='gen'?'⚙':k==='blade'?'🗡':k==='range'?'🏹':'✨'; c.appendChild(inner); }
+    b.appendChild(c);
+  }
+  $('dims').innerHTML=`iPhone 14 · combat <b>${Math.round(combatH)}px</b> · board <b>${Math.round(bw)}×${Math.round(bh)}</b> · cell <b>${Math.round(cell)}px</b>`;
+  $('dims2').innerHTML=`checker <b>${state.checker.toFixed(3)}</b> · margin <b>${state.margin}px</b> · tab <b>${state.tab}px</b> · gaps <b>${state.combatGap}/${state.orderGap}px</b> · gradient <b>${state.grad?'on':'off'}</b>`;
+  persist();
+}
+function buildOcControls(){
+  $('ocControls').innerHTML = OC_ROWS.map(([k,label])=>`<label>${label} <span><input type="color" id="oc-${k}-a"><input type="color" id="oc-${k}-b" style="margin-left:4px"></span></label>`).join('');
+  OC_ROWS.forEach(([k])=>['a','b'].forEach(x=>{ $(`oc-${k}-${x}`).oninput=(e)=>{ state.oc[k][x]=e.target.value; render(); }; }));
+}
+function syncInputs(){
+  OC_ROWS.forEach(([k])=>{ if($(`oc-${k}-a`)){ $(`oc-${k}-a`).value=state.oc[k].a; $(`oc-${k}-b`).value=state.oc[k].b; } });
+  $('grad').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='on')===state.grad));
+  $('hl').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='on')===state.hl));
+  $('cTL').value=state.cTL; $('cBR').value=state.cBR; $('cCell').value=state.cCell;
+  for(const k of ['checker','margin','tab','combatGap','orderGap','contour','tabIcon','tabMargin','ribbonSize']){ $(k).value=state[k]; $(k+'V').textContent = k==='checker'?state[k].toFixed(3):state[k]+'px'; }
+}
+$('grad').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.grad=b.dataset.v==='on'; syncInputs(); render(); });
+$('hl').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.hl=b.dataset.v==='on'; syncInputs(); render(); });
+['cTL','cBR','cCell'].forEach(k=>{ $(k).oninput=(e)=>{ state[k]=e.target.value; render(); }; });
+['checker','margin','tab','combatGap','orderGap','contour','tabIcon','tabMargin','ribbonSize'].forEach(k=>{ $(k).oninput=(e)=>{ state[k]=+e.target.value; $(k+'V').textContent = k==='checker'?state[k].toFixed(3):state[k]+'px'; render(); }; });
+$('reset').onclick=()=>{ try{ sessionStorage.removeItem(STORE_KEY); }catch{} Object.assign(state, defaultState()); syncInputs(); render(); };
+$('export').onclick=()=>{ const t=JSON.stringify(state,null,2); navigator.clipboard.writeText(t).then(()=>{ const b=$('export'),o=b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1200); },()=>alert(t)); };
+
+const saved=loadPersisted(); if(saved) Object.assign(state,saved); buildOcControls(); syncInputs(); render();
+</script>
+</body>
+</html>

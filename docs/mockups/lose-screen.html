@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — LOSE screen mockup</title>
+<!--
+  LOSE-SCREEN MOCKUP — faithful standalone replica of the in-game lose state.
+  Ported 1:1 (classes + colours + sizing) from the live source:
+     src/view/Autobattler.jsx   (battle.status === 'lost' → .lose-banner > .lose-word)
+     src/index.css              (.battle backdrop, .arena, .lose-banner/.lose-word, shell)
+     src/data/strings.js        (combat.lose = 'LOSE')
+
+  The LOSE banner is position:absolute inset:0 of .battle — so it scrims ONLY the
+  combat panel. The header currency bar, the merge board (context panel) and the
+  bottom nav stay fully visible. That is the accurate current in-game presentation.
+
+  Low fidelity for the gameplay itself (emoji stand-in fighters / board items) —
+  correct colours, aspect and sizing only. Mockup for iteration; not wired to the game.
+-->
+<style>
+  /* fonts — the three Uniform faces the game embeds (relative to /docs/mockups) */
+  @font-face{font-family:'Uniform Bold';src:url('../../src/fonts/Uniform-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Bold';src:url('../../src/fonts/Uniform-Condensed-Bold.ttf') format('truetype');font-display:swap}
+  @font-face{font-family:'Uniform Condensed Medium';src:url('../../src/fonts/Uniform-Condensed-Medium.ttf') format('truetype');font-display:swap}
+
+  :root{
+    --bg:#0e1424; --panel:rgba(255,255,255,.06); --panel-line:rgba(255,255,255,.1);
+    --cell:rgba(255,255,255,.05); --gold:#ffd45e; --green:#5ad17a; --red:#ff5d6c;
+    --blue:#5a8cff; --purple:#b46bff; --text:#eef2ff; --nav-h:60px;
+    --combat-h:360px;                    /* combat panel = top ~44% (live: dynamic calc) */
+    /* mossbog fens biome wash (from/to/accent), set inline on .battle in-game */
+    --biome-from:#3a6b4a; --biome-to:#12331f; --biome-accent:#8fe58a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:#05070f;color:var(--text);font-family:'Uniform Condensed Medium',system-ui,sans-serif;
+    display:flex;align-items:flex-start;justify-content:center;gap:28px;padding:26px;min-height:100vh}
+
+  /* ── app frame (live: .app max-width 460, height 100dvh) ── */
+  .app{position:relative;width:420px;height:860px;flex:none;margin:0;display:flex;flex-direction:column;
+    background:radial-gradient(120% 80% at 50% 0%, #1b2340 0%, var(--bg) 55%, #0a0f1c 100%);
+    overflow:hidden;user-select:none;border-radius:34px;
+    box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 9px #0a0a0d,0 0 0 11px #23242c}
+
+  .art-emoji{line-height:1}
+
+  /* ── header / currency bar ── */
+  .header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 12px;
+    background:rgba(0,0,0,.3);border-bottom:1px solid var(--panel-line);flex:0 0 auto}
+  .stat{display:flex;flex-direction:column;align-items:center;min-width:56px}
+  .stat-row{display:flex;align-items:center;gap:4px;font-weight:700;font-size:13px}
+  .stat-icon{font-size:15px}
+  .stat-sub{font-size:9px;opacity:.6}
+  .bg-btn{flex:0 0 auto;width:28px;height:28px;border-radius:8px;padding:0;background:var(--panel);
+    border:1px solid var(--panel-line);color:var(--text);font-size:15px;line-height:1;cursor:pointer;opacity:.55}
+
+  /* ── combat panel (persistent) ── */
+  .combat-panel{flex:0 0 var(--combat-h);height:var(--combat-h);position:relative;overflow:hidden;z-index:20;
+    border-bottom:1px solid var(--panel-line)}
+  .battle{height:100%;position:relative;display:flex;flex-direction:column;padding:0 8px 4px;gap:4px;overflow:hidden}
+
+  /* backdrop layers */
+  .battle>.bg{position:absolute;inset:0;pointer-events:none}
+  .bg-sky{background:
+      radial-gradient(120% 80% at 50% -10%, #3a1730 0%, rgba(58,23,48,0) 55%),
+      radial-gradient(90% 70% at 50% 120%, #10324a 0%, rgba(16,50,74,0) 60%),
+      linear-gradient(180deg,#241a3d 0%, #141737 40%, #0a1020 100%);z-index:0}
+  .bg-rays{left:50%;top:50%;right:auto;bottom:auto;width:260%;height:260%;
+    background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,220,140,.09) 0deg 6deg, rgba(255,220,140,0) 6deg 16deg);
+    opacity:.55;transform:translate(-50%,-50%);transform-origin:50% 50%;z-index:0}
+  .bg-horizon{position:absolute;top:38%;height:2px;left:-10%;right:-10%;z-index:0;
+    background:linear-gradient(90deg, transparent, rgba(255,120,90,.6), transparent);
+    filter:blur(1px);box-shadow:0 0 24px 6px rgba(255,90,60,.25)}
+  .fog{position:absolute;width:60%;height:60%;border-radius:50%;filter:blur(30px);opacity:.32;z-index:0}
+  .fog.a{left:-15%;top:5%;background:radial-gradient(circle,#5a2b6b,transparent 70%)}
+  .fog.b{right:-15%;top:30%;background:radial-gradient(circle,#1e5a7a,transparent 70%)}
+  .floor{position:absolute;left:6%;right:6%;height:46px;border-radius:50%;filter:blur(7px);opacity:.6;z-index:0}
+  .floor.hero{bottom:46px;background:radial-gradient(ellipse at center, rgba(90,180,255,.30), transparent 70%);box-shadow:0 0 30px rgba(90,180,255,.15)}
+  .grid{position:absolute;left:0;right:0;bottom:0;height:44%;z-index:0;
+    background:repeating-linear-gradient(90deg, rgba(120,170,255,.08) 0 1px, transparent 1px 34px), linear-gradient(180deg, transparent, rgba(90,140,255,.05));
+    transform:perspective(220px) rotateX(58deg);transform-origin:bottom;opacity:.5}
+  .biome-tint{z-index:0;opacity:.55;mix-blend-mode:soft-light;
+    background:radial-gradient(120% 85% at 50% 8%, var(--biome-from), transparent 72%), linear-gradient(180deg, transparent 42%, var(--biome-to))}
+  .vignette{background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%);z-index:1}
+  .embers{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+  .ember{position:absolute;bottom:-6px;border-radius:50%;background:radial-gradient(circle,#ffd88a,#ff7a3c);
+    box-shadow:0 0 6px 1px rgba(255,150,60,.8);animation:emberRise ease-out infinite;opacity:0}
+  @keyframes emberRise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-180px);opacity:0}}
+
+  /* zone name + level track */
+  .zone-name{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:8;
+    font-family:'Uniform Condensed Bold',system-ui,sans-serif;font-weight:900;font-size:16px;letter-spacing:.5px;
+    text-transform:uppercase;color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:0 1px 2px #000;white-space:nowrap}
+  .level-track{position:absolute;left:6px;top:4px;bottom:108px;width:14px;z-index:8;overflow:visible}
+  .level-track .track-line{position:absolute;top:2px;bottom:2px;left:50%;width:2px;transform:translateX(-50%);
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.22), rgba(255,255,255,.04));border-radius:2px}
+  .dots{position:relative;display:flex;flex-direction:column-reverse;justify-content:space-between;align-items:center;height:100%}
+  .ldot{width:7px;height:7px;border-radius:50%;position:relative;color:#8b93a3;background:currentColor;
+    border:1px solid rgba(255,255,255,.28);box-shadow:0 0 4px currentColor}
+  .ldot.boss{width:10px;height:10px;color:var(--red);box-shadow:0 0 7px currentColor}
+  .ldot.past{opacity:.32}
+  .ldot.current{width:15px;height:15px;z-index:2;display:grid;place-items:center;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+  .ldot.current b{font-size:9px;color:#241a02;font-weight:900;line-height:1}
+
+  /* arena */
+  .arena{position:relative;z-index:5;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+    justify-content:center;gap:10px;overflow:hidden;padding-top:34px;padding-bottom:106px}
+  .row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+  .enemy-row{transform:translateY(-4px)}
+  .hero-row{position:absolute;left:0;right:0;bottom:2px;z-index:3;flex-wrap:nowrap}
+  .hero-row .chip{flex:1 1 0;min-width:0;max-width:72px}
+  .chip{width:50px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;isolation:isolate}
+  .chip-art{width:100%;height:34px;display:flex;align-items:center;justify-content:center}
+  .chip-emoji{font-size:24px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+  .hero-chip .chip-art{animation:heroBob 2.4s ease-in-out infinite}
+  .enemy-chip .chip-art{animation:enemySway 2.8s ease-in-out infinite}
+  @keyframes heroBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes enemySway{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-2px) rotate(1.5deg)}}
+  .chip.dead{opacity:.3;filter:grayscale(1)}
+  .chip.dead .chip-art{animation:none}
+
+  .bar{width:100%;height:4px;border-radius:3px;background:rgba(0,0,0,.5);overflow:hidden;position:relative}
+  .bar span{display:block;height:100%;border-radius:3px}
+  .bar.hp .hp-fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:var(--green);z-index:2}
+  .bar.hp.enemy .hp-fill{background:var(--red)}
+  .bar.normal span{background:var(--blue)}
+  .bar.limit{height:6px}
+  .bar.limit span{background:linear-gradient(90deg,#6a2cff,#b46bff 50%,#6a2cff)}
+
+  /* ── THE LOSE SCREEN (redesign) ── */
+  .lose-overlay{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;
+    padding-top:96px;pointer-events:none}
+  .lose-overlay.hidden{display:none}
+  .lose-scrim{position:absolute;inset:0;background:rgba(3,5,9,.5);z-index:0}
+  /* black stripe that whips fast across the screen */
+  .lose-stripe{position:relative;z-index:1;width:100%;height:92px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#141414 0%,#000 50%,#0a0a0a 100%);
+    border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(0,0,0,.6);
+    box-shadow:0 10px 30px rgba(0,0,0,.7),0 0 40px -6px rgba(255,45,60,.35);
+    transform:scaleX(0);transform-origin:left center}
+  .lose-stripe.in{animation:stripeIn .24s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes stripeIn{0%{transform:scaleX(0)}70%{transform:scaleX(1.04)}100%{transform:scaleX(1)}}
+  .lose-word-wrap{position:relative}
+  .lose-word{display:inline-block;font-family:'Uniform Condensed Bold',system-ui,sans-serif;font-weight:900;
+    font-size:66px;letter-spacing:3px;line-height:1;color:var(--red);
+    text-shadow:0 2px 0 #4a0713,0 0 22px rgba(255,45,60,.6),0 3px 6px rgba(0,0,0,.7);
+    transform:scale(.4);opacity:0}
+  .lose-word.in{animation:losePop .3s cubic-bezier(.2,1.5,.35,1) .16s forwards}
+  @keyframes losePop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:1}}
+  /* red particles dripping from the LOSE text */
+  .drip-layer{position:absolute;left:0;right:0;bottom:0;height:0;z-index:2;pointer-events:none}
+  .drip{position:absolute;top:0;width:5px;height:7px;border-radius:50%;transform-origin:top center;opacity:0;
+    background:radial-gradient(circle at 40% 30%,#ff8a97,#ff2d3c 55%,#b3121f);box-shadow:0 0 6px rgba(255,45,60,.7);
+    animation:drip var(--dd,1.1s) cubic-bezier(.5,.05,.7,1) forwards}
+  @keyframes drip{0%{opacity:0;transform:translateY(0) scaleY(.6)}
+    12%{opacity:1;transform:translateY(6px) scaleY(1.7)}
+    70%{opacity:1}
+    100%{opacity:0;transform:translateY(var(--dy,150px)) scaleY(2.3)}}
+  /* restart countdown + actions */
+  .lose-restart{position:relative;z-index:1;margin-top:22px;font-family:'Uniform Condensed Medium',system-ui,sans-serif;
+    font-size:15px;letter-spacing:.4px;color:#cfd6e8;text-shadow:0 1px 3px #000;opacity:0}
+  .lose-restart b{color:var(--gold);font-family:'Uniform Condensed Bold',system-ui,sans-serif;font-size:17px}
+  .lose-actions{position:relative;z-index:1;margin-top:18px;display:flex;gap:10px;opacity:0}
+  .lose-restart.in,.lose-actions.in{animation:riseIn .3s ease-out .42s forwards}
+  @keyframes riseIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .lose-overlay .lose-btn{pointer-events:auto;font-family:'Uniform Condensed Bold',system-ui,sans-serif;
+    text-transform:uppercase;letter-spacing:.5px;font-size:15px;font-weight:900;padding:12px 18px;border-radius:12px;
+    border:2px solid;cursor:pointer;min-width:132px}
+  .lose-btn.secondary{border-color:var(--blue);background:rgba(90,140,255,.18);color:#cfe0ff}
+  .lose-btn.primary{border-color:#fff3c8;color:#241a02;background:linear-gradient(180deg,#ffe89a,var(--gold));
+    box-shadow:0 3px 10px rgba(255,180,40,.45),0 0 18px rgba(255,212,94,.5);animation:ctaPulse 1.2s ease-in-out infinite}
+  @keyframes ctaPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .lose-btn:active{transform:translateY(1px);filter:brightness(.95)}
+
+  /* ── context panel: merge board (gameplay behind/below the combat panel) ── */
+  .context-panel{flex:1 1 0;min-height:0;position:relative;display:flex;overflow:hidden}
+  .merge-screen{display:flex;flex-direction:column;height:100%;width:100%;min-height:0}
+  .board-area{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
+  .board{width:auto;height:100%;max-width:100%;aspect-ratio:7/6;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:0}
+  .cell{border:1px solid var(--panel-line);background:var(--cell);display:flex;align-items:center;justify-content:center;position:relative}
+  .cell-item{background:rgba(255,255,255,.09)}
+  .cell-generator{background:rgba(90,140,255,.18);border-color:rgba(120,160,255,.4)}
+  .cell-reward{background:rgba(255,212,94,.2);border-color:var(--gold)}
+  .cell-emoji{font-size:clamp(16px,5vw,26px)}
+  .cell-badge{position:absolute;top:2px;right:3px;font-size:9px;opacity:.85}
+
+  /* ── bottom nav ── */
+  .navbar{height:var(--nav-h);flex:0 0 auto;display:flex;border-top:1px solid var(--panel-line);background:rgba(0,0,0,.4)}
+  .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    background:none;border:none;color:var(--text);opacity:.55;font:inherit;cursor:pointer}
+  .nav-btn.active{opacity:1;color:var(--gold);background:rgba(255,212,94,.08)}
+  .nav-icon{font-size:20px}
+  .nav-label{font-size:10px;font-weight:600}
+
+  /* side note */
+  .side{max-width:270px;font-size:13px;line-height:1.55;color:#b9c2d8}
+  .side h1{font-family:'Uniform Bold',system-ui,sans-serif;color:#eef2ff;font-size:19px;margin:0 0 10px}
+  .side code{color:#8fe58a}
+  .side b.red{color:var(--red)}
+  .side .row2{display:flex;gap:8px;margin-top:14px}
+  .side button{font-family:'Uniform Condensed Bold',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.5px;
+    background:rgba(90,209,122,.18);color:#d8ffe4;border:1px solid var(--green);border-radius:10px;padding:8px 14px;font-size:12px;cursor:pointer}
+  .side button.alt{background:rgba(90,140,255,.18);border-color:var(--blue);color:#cfe0ff}
+</style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- header currency bar -->
+    <header class="header">
+      <div class="stat"><div class="stat-row"><span class="stat-icon art-emoji">⚡</span><span>12/24</span></div><span class="stat-sub">+1 8s</span></div>
+      <div class="stat"><div class="stat-row"><span class="stat-icon art-emoji">🪙</span><span>1.24k</span></div></div>
+      <div class="stat"><div class="stat-row"><span class="stat-icon art-emoji">⭐</span><span>340</span></div></div>
+      <div class="stat"><div class="stat-row"><span class="stat-icon art-emoji">🔧</span><span>88</span></div></div>
+      <button class="bg-btn" title="Background mode">☾</button>
+      <button class="bg-btn" title="Reset">⟲</button>
+    </header>
+
+    <!-- combat panel -->
+    <div class="combat-panel">
+      <section class="battle" id="battle">
+        <div class="bg bg-sky"></div>
+        <div class="bg bg-rays"></div>
+        <div class="bg-horizon"></div>
+        <div class="bg fog a"></div>
+        <div class="bg fog b"></div>
+        <div class="bg grid"></div>
+        <div class="floor hero"></div>
+        <div class="embers" id="embers"></div>
+        <div class="bg vignette"></div>
+        <div class="bg biome-tint"></div>
+
+        <div class="zone-name">Mossbog Fens</div>
+        <div class="level-track">
+          <div class="track-line"></div>
+          <div class="dots">
+            <div class="ldot past"></div>
+            <div class="ldot past"></div>
+            <div class="ldot current"><b>7</b></div>
+            <div class="ldot"></div>
+            <div class="ldot"></div>
+            <div class="ldot boss"></div>
+          </div>
+        </div>
+
+        <div class="arena">
+          <!-- enemies remain (that's why you lost) -->
+          <div class="row enemy-row">
+            <div class="chip enemy-chip"><div class="chip-art"><span class="art-emoji chip-emoji">🦂</span></div><div class="bar hp enemy"><span class="hp-fill" style="width:72%"></span></div></div>
+            <div class="chip enemy-chip"><div class="chip-art"><span class="art-emoji chip-emoji">👹</span></div><div class="bar hp enemy"><span class="hp-fill" style="width:100%"></span></div></div>
+            <div class="chip enemy-chip"><div class="chip-art"><span class="art-emoji chip-emoji">🕷️</span></div><div class="bar hp enemy"><span class="hp-fill" style="width:46%"></span></div></div>
+          </div>
+          <!-- heroes all dead → grayscale, empty HP -->
+          <div class="row hero-row">
+            <div class="chip hero-chip dead"><div class="chip-art"><span class="art-emoji chip-emoji">🛡️</span></div><div class="bar hp"><span class="hp-fill" style="width:0"></span></div><div class="bar normal"><span style="width:0"></span></div><div class="bar limit"><span style="width:0"></span></div></div>
+            <div class="chip hero-chip dead"><div class="chip-art"><span class="art-emoji chip-emoji">⚔️</span></div><div class="bar hp"><span class="hp-fill" style="width:0"></span></div><div class="bar normal"><span style="width:0"></span></div><div class="bar limit"><span style="width:0"></span></div></div>
+            <div class="chip hero-chip dead"><div class="chip-art"><span class="art-emoji chip-emoji">🧙</span></div><div class="bar hp"><span class="hp-fill" style="width:0"></span></div><div class="bar normal"><span style="width:0"></span></div><div class="bar limit"><span style="width:0"></span></div></div>
+            <div class="chip hero-chip dead"><div class="chip-art"><span class="art-emoji chip-emoji">🏹</span></div><div class="bar hp"><span class="hp-fill" style="width:0"></span></div><div class="bar normal"><span style="width:0"></span></div><div class="bar limit"><span style="width:0"></span></div></div>
+            <div class="chip hero-chip dead"><div class="chip-art"><span class="art-emoji chip-emoji">✨</span></div><div class="bar hp"><span class="hp-fill" style="width:0"></span></div><div class="bar normal"><span style="width:0"></span></div><div class="bar limit"><span style="width:0"></span></div></div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- context panel: merge board -->
+    <div class="context-panel">
+      <div class="merge-screen">
+        <div class="board-area">
+          <div class="board" id="board"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <nav class="navbar">
+      <button class="nav-btn"><span class="nav-icon art-emoji">🦸</span><span class="nav-label">Heroes</span></button>
+      <button class="nav-btn"><span class="nav-icon art-emoji">🛡️</span><span class="nav-label">Gear</span></button>
+      <button class="nav-btn active"><span class="nav-icon art-emoji">🧩</span><span class="nav-label">Merge</span></button>
+      <button class="nav-btn"><span class="nav-icon art-emoji">🎰</span><span class="nav-label">Gacha</span></button>
+      <button class="nav-btn"><span class="nav-icon art-emoji">🗺️</span><span class="nav-label">Map</span></button>
+    </nav>
+
+    <!-- ===== LOSE SCREEN (redesign) — fast black stripe · LOSE middle-top · red drips · restart countdown · actions ===== -->
+    <div class="lose-overlay" id="loseOverlay">
+      <div class="lose-scrim"></div>
+      <div class="lose-stripe" id="loseStripe">
+        <div class="lose-word-wrap">
+          <span class="lose-word" id="loseWord">LOSE</span>
+          <div class="drip-layer" id="dripLayer"></div>
+        </div>
+      </div>
+      <div class="lose-restart" id="loseRestart">Restarting previous level in <b>3</b> seconds</div>
+      <div class="lose-actions" id="loseActions">
+        <button class="lose-btn secondary">Hero Screen</button>
+        <button class="lose-btn primary">Get More Heroes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <h1>LOSE screen — redesign</h1>
+    <p>Fast black stripe whips across → <b class="red">LOSE</b> pops middle-top (Uniform Condensed Bold red) → red particles drip from it → <em>Restarting previous level in <b style="color:var(--gold)">3</b> seconds</em> → <b>Hero Screen</b> / <b>Get More Heroes</b>.</p>
+    <p>Overlaid on the dimmed gameplay replica. Countdown auto-loops so the sequence keeps demoing.</p>
+    <div class="row2"><button onclick="startLose()">▸ Replay</button><button class="alt" onclick="toggleOverlay()">Toggle overlay</button></div>
+  </div>
+
+<script>
+  // embers (live: 8-12 rising)
+  (function(){const w=document.getElementById('embers');
+    for(let i=0;i<10;i++){const e=document.createElement('span');e.className='ember';
+      const s=2+Math.random()*3;e.style.left=(6+i*9)+'%';e.style.width=s+'px';e.style.height=s+'px';
+      e.style.animationDelay=(Math.random()*4)+'s';e.style.animationDuration=(3.4+Math.random()*2.4)+'s';w.appendChild(e);} })();
+  // merge board — a few items + a generator, rest empty (7×6 = 42 cells)
+  (function(){const b=document.getElementById('board');
+    const items={2:['🍃',2],4:['🍃',1],9:['🔮',3],11:['⚗️',1],16:['gen',0],18:['🍃',2],23:['🔮',1],30:['⚗️',2],38:['🍃',1]};
+    for(let i=0;i<42;i++){const c=document.createElement('div');c.className='cell';
+      const it=items[i];
+      if(it){ if(it[0]==='gen'){c.classList.add('cell-generator');c.innerHTML='<span class="art-emoji cell-emoji">🌿</span>';}
+        else{c.classList.add('cell-item');c.innerHTML='<span class="art-emoji cell-emoji">'+it[0]+'</span>'+(it[1]?'<span class="cell-badge">'+it[1]+'</span>':'');}}
+      b.appendChild(c);} })();
+  // ── LOSE screen sequence: stripe wipe → LOSE pop → drips → countdown ──
+  const overlay=document.getElementById('loseOverlay');
+  const stripe=document.getElementById('loseStripe');
+  const word=document.getElementById('loseWord');
+  const restart=document.getElementById('loseRestart');
+  const actions=document.getElementById('loseActions');
+  const dripLayer=document.getElementById('dripLayer');
+  const RESTART_SECS=3;                     // default restart countdown
+  let dripTimer=null, cdTimer=null;
+  function spawnDrip(){
+    const w=word.getBoundingClientRect();
+    const n=1+Math.floor(Math.random()*2);
+    for(let i=0;i<n;i++){
+      const d=document.createElement('span'); d.className='drip';
+      d.style.left=(6+Math.random()*(w.width-12))+'px';
+      d.style.setProperty('--dy',(110+Math.random()*90)+'px');
+      d.style.setProperty('--dd',(0.9+Math.random()*0.6)+'s');
+      dripLayer.appendChild(d);
+      setTimeout(()=>d.remove(),1700);
+    }
+  }
+  function startLose(){
+    overlay.classList.remove('hidden');
+    if(dripTimer)clearInterval(dripTimer); if(cdTimer)clearInterval(cdTimer);
+    restart.innerHTML='Restarting previous level in <b>'+RESTART_SECS+'</b> seconds';
+    const cd=restart.querySelector('b');
+    // reset + replay the entrance animations
+    [stripe,word,restart,actions].forEach(el=>el.classList.remove('in'));
+    void stripe.offsetWidth;
+    [stripe,word,restart,actions].forEach(el=>el.classList.add('in'));
+    setTimeout(()=>{ dripTimer=setInterval(spawnDrip,150); }, 430);
+    let n=RESTART_SECS;
+    cdTimer=setInterval(()=>{
+      n--;
+      if(n>=1){ cd.textContent=n; }
+      else { clearInterval(cdTimer); clearInterval(dripTimer); restart.innerHTML='Restarting…'; setTimeout(startLose,750); }
+    },1000);
+  }
+  function toggleOverlay(){
+    if(overlay.classList.contains('hidden')){ startLose(); }
+    else { overlay.classList.add('hidden'); if(dripTimer)clearInterval(dripTimer); if(cdTimer)clearInterval(cdTimer); }
+  }
+  startLose();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+	"key": "spdUp",
+	"op": "spdMul",
+	"magnitude": 1.6,
+	"durationMs": 8000,
+	"kind": "buff",
+	"opposite": "spdDown"
+}

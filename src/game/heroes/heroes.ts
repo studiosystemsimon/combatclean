@@ -36,6 +36,17 @@ export const heroPower = (hero: string, char: Character | null, ordersCompleted:
   return s.atk * C.HERO_COMBAT.powerAtkWeight + Math.round(s.maxHp / C.HERO_COMBAT.powerHpDivisor);
 };
 
+// The status KEYS a hero applies via its abilities (normal + limit `status` effects) — deduped, in
+// declaration order. Pure derivation for out-of-combat display (the hero detail "Applies" row).
+export const statusesApplied = (hero: string): string[] => {
+  const d: any = heroDef(hero); if (!d) return [];
+  const keys: string[] = [];
+  for (const eff of [d.normal?.effect, d.limit?.effect]) {
+    if (eff && Array.isArray(eff.statusKeys)) for (const k of eff.statusKeys) if (!keys.includes(k)) keys.push(k); // any effect can carry a status rider
+  }
+  return keys;
+};
+
 export const canAscendChar = (char: Character) => ascensionsDone(char) < C.HERO_UPGRADE.maxAscensions;
 export const ascendChar = (char: Character): Character => canAscendChar(char) ? { ...char, abilityLevel: (char.abilityLevel || 1) + 1 } : char;
 export const ascendCrystalRarity = (char: Character) => heroRarity(char);

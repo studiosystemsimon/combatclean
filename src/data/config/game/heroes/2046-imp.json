@@ -1,0 +1,27 @@
+{
+	"id": 2046,
+	"displayName": "imp",
+	"rarityKey": "legendary",
+	"weaponChainKey": "magic",
+	"baseAtk": 17,
+	"baseHp": 220,
+	"baseDef": 11,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "status",
+			"statusKeys": ["defDown", "atkDown", "spdDown"],
+			"target": "enemies"
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "status",
+			"statusKeys": ["defDown", "atkDown", "spdDown"],
+			"target": "enemies",
+			"durationMs": 12000
+		}
+	},
+	"classKey": "imp"
+}

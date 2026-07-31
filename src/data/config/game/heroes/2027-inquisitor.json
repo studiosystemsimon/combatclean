@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "aoe",
-			"mult": 4
+			"mult": 4,
+			"statusKeys": [
+				"spdDown"
+			],
+			"target": "enemies",
+			"statusMag": {
+				"spdDown": 0.7
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "inquisitor"

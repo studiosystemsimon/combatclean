@@ -1,0 +1,7 @@
+{
+	"key": "stealth",
+	"name": "Stealth",
+	"description": "Untargetable.",
+	"color": "#b48bff",
+	"iconAssetId": "status.stealth"
+}

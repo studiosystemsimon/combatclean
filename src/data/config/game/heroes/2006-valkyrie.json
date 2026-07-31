@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "aoe",
-			"mult": 3.5
+			"mult": 3.5,
+			"statusKeys": [
+				"atkUp"
+			],
+			"target": "allies",
+			"statusMag": {
+				"atkUp": 1.35
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "valkyrie",

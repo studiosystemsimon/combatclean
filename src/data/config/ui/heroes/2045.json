@@ -1,0 +1,19 @@
+{
+	"id": 2045,
+	"name": "Nomad",
+	"iconAssetId": "hero.nomad",
+	"emoji": "🧭",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Rally",
+		"limit": "War Chant"
+	},
+	"portrait": {
+		"scale": 1.75,
+		"x": -0.137,
+		"y": -0.44
+	},
+	"combat": {
+		"scale": 1.05
+	}
+}

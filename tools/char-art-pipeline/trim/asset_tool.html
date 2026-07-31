@@ -457,6 +457,7 @@ async function boot() {
   const list = await (await fetch('/api/list')).json();
   buildFromList(list);
   const meta = await (await fetch('/api/meta')).json();
+  state.loadedMeta = meta || {};   // keep the full loaded meta so metaPayload preserves top-level keys we don't manage (e.g. `shadow`)
   state.meta = (meta && meta.images) ? meta.images : {};
   for (const it of state.items) if (!state.meta[it.key]) state.meta[it.key] = { pockets: [] };
   if (meta && meta.treatmentLarge && meta.treatmentLarge.length) state.treatment.large = meta.treatmentLarge;
@@ -934,7 +935,9 @@ document.getElementById('delBtn').onclick=async ()=>{
 };
 let _rt; window.addEventListener('resize',()=>{clearTimeout(_rt); _rt=setTimeout(fitZoom,120);});
 
-function metaPayload(){ return { generated_by:'asset_tool',
+// Spread the full loaded meta first so top-level keys this UI doesn't manage (e.g. `shadow`) survive a
+// save/clip round-trip; then override the keys the UI DOES own. (Previously these unmanaged keys were dropped.)
+function metaPayload(){ return { ...(state.loadedMeta||{}), generated_by:'asset_tool',
   treatmentLarge:state.treatment.large, treatmentSmall:state.treatment.small, presets:state.presets, images:state.meta }; }
 async function save(silent){ const res=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metaPayload())});
   const j=await res.json(); if(!silent) toast(res.ok?('Saved → '+j.path):'Save failed'); return res.ok; }
@@ -974,14 +977,14 @@ function renderTreat(){
       const row=document.createElement('div'); row.className='trow';
       row.innerHTML=`<input type="color" value="${o.color}"><input type="number" min="0" max="80" step="1" value="${o.width}"><span>px</span><button class="trm">✕</button>`;
       const ins=row.querySelectorAll('input');
-      ins[0].oninput=()=>{ o.color=ins[0].value; };
-      ins[1].oninput=()=>{ o.width=Math.max(0,parseInt(ins[1].value||'0',10)); };
-      row.querySelector('.trm').onclick=()=>{ state.treatment[which].splice(idx,1); renderTreat(); };
+      ins[0].oninput=()=>{ o.color=ins[0].value; scheduleSave(); };
+      ins[1].oninput=()=>{ o.width=Math.max(0,parseInt(ins[1].value||'0',10)); scheduleSave(); };
+      row.querySelector('.trm').onclick=()=>{ state.treatment[which].splice(idx,1); renderTreat(); scheduleSave(); };
       box.appendChild(row);
     });
   }
 }
-document.querySelectorAll('.addOutline').forEach(b=>b.onclick=()=>{ state.treatment[b.dataset.t].push({color:'#000000',width:3}); renderTreat(); });
+document.querySelectorAll('.addOutline').forEach(b=>b.onclick=()=>{ state.treatment[b.dataset.t].push({color:'#000000',width:3}); renderTreat(); scheduleSave(); });
 document.getElementById('treatBtn').onclick=()=>{ document.getElementById('treatModal').hidden=false; };
 document.getElementById('treatClose').onclick=()=>{ document.getElementById('treatModal').hidden=true; };
 document.getElementById('treatModal').addEventListener('click',e=>{ if(e.target.id==='treatModal') e.currentTarget.hidden=true; });
@@ -1004,7 +1007,7 @@ document.getElementById('presetLoad').onclick=()=>{
   const nm=document.getElementById('presetSel').value, p=state.presets[nm];
   if(!p){ toast('Pick a preset first'); return; }
   state.treatment.large=cloneOutlines(p.large); state.treatment.small=cloneOutlines(p.small);
-  renderTreat(); toast('Loaded “'+nm+'” — Clip to process with it');
+  renderTreat(); scheduleSave(); toast('Loaded “'+nm+'” — Clip to process with it');
 };
 document.getElementById('presetDel').onclick=async ()=>{
   const nm=document.getElementById('presetSel').value; if(!nm||!state.presets[nm]) return;

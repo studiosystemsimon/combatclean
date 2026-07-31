@@ -16,15 +16,23 @@ export type OrderReward = 'gear' | 'special' | 'potion';
 export interface Order { id: number; items: OrderItem[]; difficulty: number; rarity: string; pending?: boolean; dur?: number; fulfilling?: boolean; reward?: OrderReward; special?: boolean; rerolled?: boolean }
 
 // ── autobattler ──
+// Per-unit status effects: key (→ statuses config) → the APPLIED instance. Each instance SNAPSHOTS its
+// op + magnitude at apply time (so one status key can be applied at different amounts by different heroes
+// — the per-ability `statusMag` override) plus its remaining lifetime in ms. Combat folds instances into
+// effective ATK / incoming-damage / cadence / regen / targetability; opposite pairs can't co-exist.
+export type StatusInstance = { remainingMs: number; op: string; magnitude: number };
+export type StatusMap = Record<string, StatusInstance>;
 export interface Enemy {
   arch: string; asset: string; name: string; uid: number;
   hp: number; maxHp: number; atk: number;
   atkMs?: number; accomplice?: boolean; isBoss?: boolean;
   specialMs?: number; specialCount?: number; telegraphed?: boolean; healMs?: number;
+  statuses?: StatusMap;
 }
 export interface BattleHero {
   id: string; hero: string; hp: number; maxHp: number; atk: number;
   abilityMul: number; normalMs: number; basicMs: number; limitEnergy: number;
+  statuses?: StatusMap;
 }
 export type BattleStatus = 'intro' | 'fighting' | 'clearing' | 'won' | 'lost' | 'gate' | 'chest';
 export interface BattleState {

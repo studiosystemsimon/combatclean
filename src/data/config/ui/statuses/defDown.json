@@ -1,0 +1,7 @@
+{
+	"key": "defDown",
+	"name": "Defense Down",
+	"description": "Takes 50% more damage.",
+	"color": "#ff5d6c",
+	"iconAssetId": "status.defDown"
+}

@@ -41,6 +41,22 @@
   var TREAT_LARGE = (meta.treatmentLarge && meta.treatmentLarge.length) ? meta.treatmentLarge : DEFAULT_TREATMENT;
   var TREAT_SMALL = (meta.treatmentSmall && meta.treatmentSmall.length) ? meta.treatmentSmall : DEFAULT_TREATMENT;
 
+  // ---- shadow layer ----
+  // A SEPARATE baked drop-shadow PNG (<name>_<sz>_shadow.png) emitted on the SAME sz×sz canvas as the
+  // sprite, so the game's mergeStyle reg/scale/rotation transform lands it exactly behind the icon
+  // (the static replacement for the per-tile CSS `filter: drop-shadow`). All params are in 256-src px
+  // (tuned in docs/mockups/merge-shadow-parity.html). Override via trim_meta.json `shadow` block —
+  // same config channel as treatmentSmall/Large (no parallel path).
+  var SH = { enabled: true, blur: 8, dx: 0, dy: 20, opacity: 42, color: "#000000" };
+  if (meta.shadow) {
+    if (meta.shadow.enabled !== undefined) SH.enabled = meta.shadow.enabled;
+    if (meta.shadow.blur    !== undefined) SH.blur    = Number(meta.shadow.blur);
+    if (meta.shadow.dx      !== undefined) SH.dx      = Number(meta.shadow.dx);
+    if (meta.shadow.dy      !== undefined) SH.dy      = Number(meta.shadow.dy);
+    if (meta.shadow.opacity !== undefined) SH.opacity = Number(meta.shadow.opacity);
+    if (meta.shadow.color   !== undefined) SH.color   = String(meta.shadow.color);
+  }
+
   function magicWandPoint(x,y,tol,aa){
     var desc=new ActionDescriptor(), ref=new ActionReference();
     ref.putProperty(charIDToTypeID("Chnl"),charIDToTypeID("fsel")); desc.putReference(charIDToTypeID("null"),ref);
@@ -91,13 +107,39 @@
     }
   }
 
+  // Build a SEPARATE shadow PNG from a treated icon doc (sz×sz). Silhouette (subject + outline) ->
+  // fill shadow colour -> gaussian blur -> offset -> layer opacity, on the SAME canvas as the sprite
+  // so the game's mergeStyle transform aligns it. Never modifies the source doc.
+  function exportShadow(iconDoc, outFile, sh){
+    if(!sh || !sh.enabled) return false;
+    var s=iconDoc.duplicate(); var ok=false;
+    try{
+      try{ s.mergeVisibleLayers(); }catch(e){}          // one layer, transparency preserved (incl. outline)
+      var icon=s.artLayers[0];
+      var shl=s.artLayers.add(); shl.name="__shadow";
+      shl.move(icon, ElementPlacement.PLACEAFTER);       // below the icon
+      loadLayerAlpha(s, icon);                            // select the icon silhouette
+      s.activeLayer=shl; fillSel(s, sh.color);            // paint the silhouette onto the shadow layer
+      try{ s.selection.deselect(); }catch(e){}
+      icon.remove();                                      // leave only the silhouette
+      s.activeLayer=shl;
+      if(sh.blur>0){ try{ shl.applyGaussianBlur(sh.blur); }catch(e){} }
+      if(sh.dx||sh.dy){ try{ shl.translate(sh.dx, sh.dy); }catch(e){} }
+      try{ shl.opacity=Math.max(0,Math.min(100, sh.opacity)); }catch(e){}
+      s.saveAs(outFile, png, true, Extension.LOWERCASE); ok=true;
+    }catch(e){}
+    s.close(SaveOptions.DONOTSAVECHANGES);
+    app.activeDocument=iconDoc;
+    return ok;
+  }
+
   var rootF=new Folder(ROOT); if(!rootF.exists){ alert("root not found:\n"+ROOT); return; }
   var cats=rootF.getFiles(function(f){ return (f instanceof Folder); });
   var prevDialogs=app.displayDialogs, prevUnits=app.preferences.rulerUnits;
   app.displayDialogs=DialogModes.NO; app.preferences.rulerUnits=Units.PIXELS;
   var png=new PNGSaveOptions(); png.interlaced=false;
 
-  var processed=0, scaled=0, exported=0;
+  var processed=0, scaled=0, exported=0, shadows=0;
 
   for(var c=0;c<cats.length;c++){
     var cat=cats[c], catName=decodeURI(cat.name);
@@ -106,7 +148,7 @@
     for(var i=0;i<files.length;i++){
       if(!(files[i] instanceof File)) continue;
       var name=decodeURI(files[i].name);
-      if(endsWith(name,"_trim.png")||endsWith(name,"_256.png")||endsWith(name,"_128.png")) continue;
+      if(endsWith(name,"_trim.png")||endsWith(name,"_256.png")||endsWith(name,"_128.png")||endsWith(name,"_shadow.png")) continue;
       var rel=catName+"/"+name;
       if(ONLY && rel!==ONLY) continue;
 
@@ -165,6 +207,11 @@
           applyTreatment(dup,dup.artLayers[0],TREAT_SMALL);
           dup.saveAs(new File(cat.fsName+"/"+name.replace(/\.png$/i,"_"+sz+".png")),png,true,Extension.LOWERCASE);
           exported++;
+          // separate shadow layer on the SAME canvas (merge chains only — the merge board consumes it)
+          if(SH.enabled && MERGE_CATS[catName]){
+            var shf=new File(cat.fsName+"/"+name.replace(/\.png$/i,"_"+sz+"_shadow.png"));
+            if(exportShadow(dup, shf, SH)) shadows++;
+          }
         }catch(e){}
         dup.close(SaveOptions.DONOTSAVECHANGES);
         app.activeDocument=doc;
@@ -180,5 +227,7 @@
 
   app.displayDialogs=prevDialogs; app.preferences.rulerUnits=prevUnits;
   return "trim.jsx done — trimmed "+processed+", rescaled "+scaled+", 256-exports "+exported+
-         " | treatLarge="+TREAT_LARGE.length+" outline(s), treat256="+TREAT_SMALL.length+" outline(s)";
+         ", shadow-layers "+shadows+
+         " | treatLarge="+TREAT_LARGE.length+" outline(s), treat256="+TREAT_SMALL.length+" outline(s)"+
+         " | shadow="+(SH.enabled?("blur"+SH.blur+" dy"+SH.dy+" op"+SH.opacity):"off");
 })();

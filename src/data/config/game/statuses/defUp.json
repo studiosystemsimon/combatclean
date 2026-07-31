@@ -1,0 +1,8 @@
+{
+	"key": "defUp",
+	"op": "dmgTakenMul",
+	"magnitude": 0.5,
+	"durationMs": 8000,
+	"kind": "buff",
+	"opposite": "defDown"
+}

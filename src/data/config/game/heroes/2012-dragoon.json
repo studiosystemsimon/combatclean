@@ -17,7 +17,15 @@
 		"orders": 4,
 		"effect": {
 			"type": "aoe",
-			"mult": 3
+			"mult": 3,
+			"statusKeys": [
+				"atkUp"
+			],
+			"target": "allies",
+			"statusMag": {
+				"atkUp": 1.5
+			},
+			"durationMs": 10000
 		}
 	},
 	"classKey": "dragoon",

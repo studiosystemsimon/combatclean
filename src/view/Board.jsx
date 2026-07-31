@@ -18,7 +18,7 @@ import { useGame } from '../controller/GameContext';
 import { BOARD, TIER_PRESENTATION } from '../data/config.js';
 import { canMerge, canMergeGenerator, maxLevel } from '../model/merge.js';
 import { STRINGS } from '../data/strings.js';
-import { itemAsset, generatorAsset, mergeStyle } from './assets.js';
+import { itemAsset, generatorAsset, itemShadow, generatorShadow, mergeStyle } from './assets.js';
 import { fx } from './fx/fx-engine.js';
 
 const N = BOARD.cols * BOARD.rows;
@@ -82,8 +82,18 @@ export default function Board() {
     const bob = document.createElement('div'); bob.className = 'mb-bob';
     const inner = document.createElement('div'); inner.className = 'mb-inner';
     if (a && a.img) {
+      const ms = mergeStyle(a); // reg→centre + scale + rotation (1:1 with the tile) — items AND generators
+      // Baked drop-shadow layer BEHIND the sprite — the static replacement for the per-tile runtime CSS
+      // `filter: drop-shadow` (stripped from .mb-art). Absolute-centred with the SAME mergeStyle transform
+      // so it aligns 1:1 with the sprite. See src/index.css .mb-shadow / .mb-art.
+      const shSrc = isGen ? generatorShadow(cell.genId, cell.level) : itemShadow(cell.chain, cell.level);
+      if (shSrc) {
+        const sh = document.createElement('img'); sh.src = shSrc; sh.className = 'mb-shadow'; sh.draggable = false;
+        if (ms) { sh.style.height = ms.height; sh.style.width = ms.width; sh.style.maxWidth = ms.maxWidth; sh.style.transform = `translate(-50%,-50%) ${ms.transform}`; }
+        inner.appendChild(sh);
+      }
       const im = document.createElement('img'); im.src = a.img; im.className = 'mb-art'; im.draggable = false;
-      const ms = mergeStyle(a); if (ms) Object.assign(im.style, ms); // reg→centre + scale + rotation (1:1 with the tile) — items AND generators
+      if (ms) Object.assign(im.style, ms);
       inner.appendChild(im);
     } else {
       const sp = document.createElement('span'); sp.className = 'mb-emoji'; sp.textContent = (a && a.emoji) || '?'; inner.appendChild(sp);
@@ -452,7 +462,7 @@ export default function Board() {
       <div className="mb-shaker" ref={shakerRef} style={{ aspectRatio: `${BOARD.cols} / ${BOARD.rows}` }}>
         <div className="mb-board" style={{ gridTemplateColumns: `repeat(${BOARD.cols}, 1fr)`, gridTemplateRows: `repeat(${BOARD.rows}, 1fr)` }}>
           {Array.from({ length: N }, (_, i) => (
-            <div key={i} className="mb-cell" data-cell-index={i} ref={(el) => { cellEls.current[i] = el; }} />
+            <div key={i} className={`mb-cell mb-cell-${(Math.floor(i / BOARD.cols) + (i % BOARD.cols)) % 2 ? 'b' : 'a'}`} data-cell-index={i} ref={(el) => { cellEls.current[i] = el; }} />
           ))}
         </div>
         <div className="mb-tiles" ref={tilesRef} />

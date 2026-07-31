@@ -1,0 +1,7 @@
+{
+	"key": "atkUp",
+	"name": "Attack Up",
+	"description": "+50% attack.",
+	"color": "#ff9e2e",
+	"iconAssetId": "status.atkUp"
+}

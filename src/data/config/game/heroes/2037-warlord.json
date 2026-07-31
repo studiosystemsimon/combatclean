@@ -17,7 +17,15 @@
 		"orders": 5,
 		"effect": {
 			"type": "aoe",
-			"mult": 3.5
+			"mult": 3.5,
+			"statusKeys": [
+				"spdUp"
+			],
+			"target": "allies",
+			"statusMag": {
+				"spdUp": 1.4
+			},
+			"durationMs": 8000
 		}
 	},
 	"classKey": "warlord",

@@ -1,0 +1,7 @@
+{
+	"key": "defUp",
+	"name": "Defense Up",
+	"description": "Takes 50% less damage.",
+	"color": "#5aa0ff",
+	"iconAssetId": "status.defUp"
+}

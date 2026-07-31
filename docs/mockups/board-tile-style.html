@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Combat Clean — Board tile styling</title>
+<style>
+  :root{ --ink:#eaf0ff; --dim:#9fb0d0; --dim2:#6f7f9e; --gold:#ffcf45; --panel:#151a2e; --panel2:#1b2340; --line:rgba(255,255,255,.12); }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 800px at 20% -10%, #202a4d 0%, #0d1122 60%, #090c18 100%); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .app{ display:flex; gap:22px; align-items:flex-start; padding:22px; }
+  h1{ font-size:19px; margin:0 0 2px; } .sub{ color:var(--dim); font-size:12.5px; margin:0 0 14px; max-width:300px; }
+  .panel{ width:300px; flex:0 0 300px; background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:14px; padding:14px 15px; position:sticky; top:22px; }
+  .grp{ margin:0 0 12px; padding-bottom:12px; border-bottom:1px solid var(--line); } .grp:last-child{ border-bottom:none; }
+  h3{ font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--dim2); margin:0 0 8px; }
+  label{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--dim); margin:7px 0; }
+  input[type=range]{ flex:1; accent-color:var(--gold); } .val{ color:var(--ink); font-weight:800; min-width:40px; text-align:right; }
+  .seg{ display:flex; gap:4px; } .seg button{ flex:1; background:#0e1220; color:var(--dim); border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:11.5px; font-weight:800; cursor:pointer; }
+  .seg button.on{ background:var(--gold); color:#0b1220; border-color:var(--gold); }
+  .btn{ width:100%; background:#0e1220; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px; font-size:12.5px; font-weight:800; cursor:pointer; } .btn.gold{ background:var(--gold); color:#0b1220; border-color:var(--gold); } .btn+.btn{ margin-top:7px; }
+  .hint{ color:var(--dim2); font-size:11px; line-height:1.4; margin-top:6px; } code{ background:#ffffff12; color:#cfe0ff; padding:1px 5px; border-radius:4px; font-size:11px; }
+
+  .stage{ flex:1; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  /* merge-screen-ish backdrop the board sits on */
+  .boardbg{ background:linear-gradient(180deg,#161d3a,#0c1020); border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow:0 20px 60px rgba(0,0,0,.55); }
+  .mb-shaker{ position:relative; }
+  .mb-board{ display:grid; }
+  .mb-cell{ position:relative; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+  .mb-inner{ position:absolute; inset:8%; display:flex; align-items:center; justify-content:center; border-radius:9px; font-size:20px; font-weight:900;
+    color:#0b1220; box-shadow:inset 0 -5px 8px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.4); }
+  .mb-inner .tier{ position:absolute; right:2px; bottom:0; font-size:9px; font-weight:900; color:#fff; -webkit-text-stroke:1.5px #000; paint-order:stroke fill; }
+  .mb-inner.blade{ background:linear-gradient(180deg,#cfe0ff,#7fa8ff); } .mb-inner.range{ background:linear-gradient(180deg,#bfe8c8,#5ecb84); }
+  .mb-inner.magic{ background:linear-gradient(180deg,#e6c6ff,#b46bff); } .mb-inner.gen{ background:linear-gradient(180deg,#9fb8ff,#4f7bd8); color:#fff; }
+  .dims{ color:var(--dim); font-size:12px; } .dims b{ color:var(--gold); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <h1>Board tile styling</h1>
+    <p class="sub">Live 7×6 merge board. Tune the cell look; export the values to apply to <code>.mb-cell</code> / <code>.mb-board</code>.</p>
+
+    <div class="grp">
+      <h3>Cell style</h3>
+      <label>Outline <span class="seg" id="outline"><button data-v="on" class="on">On</button><button data-v="off">Off</button></span></label>
+      <label>Corner radius <span><input type="range" id="radius" min="0" max="26" step="1"><b class="val" id="radiusV"></b></span></label>
+      <label>Gap <span><input type="range" id="gap" min="0" max="14" step="1"><b class="val" id="gapV"></b></span></label>
+      <label>Checkerboard <span><input type="range" id="checker" min="0" max="0.14" step="0.005"><b class="val" id="checkerV"></b></span></label>
+      <p class="hint" id="ghint"></p>
+    </div>
+
+    <div class="grp">
+      <h3>Preview</h3>
+      <label>Sample tiles <span class="seg" id="tiles"><button data-v="on" class="on">On</button><button data-v="off">Off</button></span></label>
+    </div>
+
+    <div class="grp">
+      <button class="btn gold" id="export">Copy CSS + values</button>
+      <button class="btn" id="reset">Reset to game defaults</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="dims" id="dims"></div>
+    <div class="boardbg">
+      <div class="mb-shaker" id="shaker">
+        <div class="mb-board" id="board"></div>
+      </div>
+    </div>
+    <div class="dims">7 across × 6 down · cell <b id="cellSize">–</b></div>
+  </div>
+</div>
+
+<script>
+const COLS=7, ROWS=6, BOARD_W=364;           // board render width (px); cells derive from cols/gap
+const BASE_A=0.05;                            // .mb-cell base background alpha (live game)
+// a few placeholder tiles to preview the cells WITH content {cell index: [kind, tier]}
+const SAMPLE={ 0:['gen',0],2:['gen',0],4:['gen',0], 8:['blade',1],9:['blade',0],15:['range',2],16:['range',1],22:['magic',0],23:['magic',1],29:['blade',3],36:['range',0] };
+
+const STORE_KEY='cc.board-style', VERSION=1;
+function defaultState(){ return { outline:true, radius:10, gap:0, checker:0.05, tiles:true }; } // radius/gap/outline = live game; checker is NEW (game=0)
+const state=defaultState();
+function persist(){ try{ sessionStorage.setItem(STORE_KEY, JSON.stringify({__v:VERSION, ...state})); }catch{} }
+function loadPersisted(){ try{ const s=JSON.parse(sessionStorage.getItem(STORE_KEY)||'null'); if(s&&s.__v===VERSION){ delete s.__v; return s; } }catch{} return null; }
+
+const $=(id)=>document.getElementById(id);
+const clampA=(a)=>Math.max(0, Math.min(1, a));
+function cellAlpha(row,col){ // checkerboard around BASE_A: one parity brighter, the other darker
+  const light=(row+col)%2===0; return clampA(BASE_A + (light? state.checker : -state.checker));
+}
+function render(){
+  const gap=state.gap, board=$('board');
+  const cell=(BOARD_W-(COLS-1)*gap)/COLS;
+  $('shaker').style.width=BOARD_W+'px'; $('shaker').style.height=(cell*ROWS+(ROWS-1)*gap)+'px';
+  board.style.position='absolute'; board.style.inset='0'; board.style.display='grid'; board.style.gap=gap+'px';
+  board.style.gridTemplateColumns=`repeat(${COLS},1fr)`; board.style.gridTemplateRows=`repeat(${ROWS},1fr)`;
+  board.innerHTML='';
+  for(let i=0;i<COLS*ROWS;i++){
+    const row=Math.floor(i/COLS), col=i%COLS;
+    const c=document.createElement('div'); c.className='mb-cell';
+    c.style.borderRadius=state.radius+'px';
+    c.style.background=`rgba(255,255,255,${cellAlpha(row,col).toFixed(3)})`;
+    c.style.border=state.outline? '1px solid rgba(255,255,255,.09)':'1px solid transparent';
+    if(state.tiles && SAMPLE[i]){ const [kind,tier]=SAMPLE[i];
+      const inner=document.createElement('div'); inner.className='mb-inner '+kind;
+      inner.textContent = kind==='gen'?'⚙':(kind==='blade'?'🗡':kind==='range'?'🏹':'✨');
+      if(kind!=='gen'){ const t=document.createElement('span'); t.className='tier'; t.textContent=tier; inner.appendChild(t); }
+      c.appendChild(inner);
+    }
+    board.appendChild(c);
+  }
+  $('cellSize').textContent=Math.round(cell)+'px';
+  $('dims').innerHTML=`radius <b>${state.radius}px</b> · gap <b>${state.gap}px</b> · outline <b>${state.outline?'on':'off'}</b> · checker <b>${state.checker.toFixed(3)}</b>`;
+  $('ghint').innerHTML = state.checker>0
+    ? `Checkerboard: alt cells <code>rgba(255,255,255,${clampA(BASE_A+state.checker).toFixed(3)})</code> / <code>${clampA(BASE_A-state.checker).toFixed(3)}</code>. Needs a per-cell parity class in <code>Board.jsx</code>.`
+    : `Checkerboard off → uniform <code>rgba(255,255,255,${BASE_A})</code> (the current game look).`;
+  persist();
+}
+function syncInputs(){
+  $('outline').querySelectorAll('button').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===state.outline));
+  $('tiles').querySelectorAll('button').forEach(b=>b.classList.toggle('on', (b.dataset.v==='on')===state.tiles));
+  $('radius').value=state.radius; $('radiusV').textContent=state.radius+'px';
+  $('gap').value=state.gap; $('gapV').textContent=state.gap+'px';
+  $('checker').value=state.checker; $('checkerV').textContent=state.checker.toFixed(3);
+}
+
+$('outline').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.outline=b.dataset.v==='on'; syncInputs(); render(); });
+$('tiles').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.tiles=b.dataset.v==='on'; syncInputs(); render(); });
+$('radius').oninput=(e)=>{ state.radius=+e.target.value; $('radiusV').textContent=state.radius+'px'; render(); };
+$('gap').oninput=(e)=>{ state.gap=+e.target.value; $('gapV').textContent=state.gap+'px'; render(); };
+$('checker').oninput=(e)=>{ state.checker=+e.target.value; $('checkerV').textContent=state.checker.toFixed(3); render(); };
+$('reset').onclick=()=>{ try{ sessionStorage.removeItem(STORE_KEY); }catch{} Object.assign(state, defaultState()); syncInputs(); render(); };
+$('export').onclick=()=>{
+  const lightA=clampA(BASE_A+state.checker).toFixed(3), darkA=clampA(BASE_A-state.checker).toFixed(3);
+  const css = `.mb-board { gap: ${state.gap}px; }
+.mb-cell {
+  border-radius: ${state.radius}px;
+  border: ${state.outline?'1px solid rgba(255,255,255,.09)':'none'};
+  background: rgba(255,255,255,${BASE_A});
+}` + (state.checker>0 ? `
+/* checkerboard — Board.jsx adds .mb-cell-a / .mb-cell-b by (row+col)%2 */
+.mb-cell-a { background: rgba(255,255,255,${lightA}); }
+.mb-cell-b { background: rgba(255,255,255,${darkA}); }` : '');
+  const out = { values:{...state}, css };
+  navigator.clipboard.writeText(css+'\n\n/* values */ '+JSON.stringify(state)).then(()=>{ const b=$('export'),o=b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1200); },()=>alert(css));
+  void out;
+};
+
+const saved=loadPersisted(); if(saved) Object.assign(state, saved); syncInputs(); render();
+</script>
+</body>
+</html>

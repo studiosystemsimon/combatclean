@@ -17,7 +17,15 @@
 		"orders": 4,
 		"effect": {
 			"type": "aoe",
-			"mult": 5.5
+			"mult": 5.5,
+			"statusKeys": [
+				"atkDown"
+			],
+			"target": "enemies",
+			"statusMag": {
+				"atkDown": 0.8
+			},
+			"durationMs": 10000
 		}
 	},
 	"classKey": "demon",

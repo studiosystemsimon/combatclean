@@ -1442,8 +1442,12 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .mb-board { position: absolute; inset: 0; display: grid; gap: 0; } /* flush cells → bigger icons */
 .mb-tiles { position: absolute; inset: 0; pointer-events: none; }
 
-.mb-cell { border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09);
+.mb-cell { border-radius: 0; background: rgba(255, 255, 255, 0.05); border: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); transition: background 0.15s ease, box-shadow 0.15s ease; }
+/* Checkerboard — Board.jsx tags each cell .mb-cell-a / .mb-cell-b by (row+col)%2. Kept ABOVE the
+   drag-state rules so mb-dim / mb-dropok still override the cell background during a drag. */
+.mb-cell.mb-cell-a { background: rgba(255, 255, 255, 0.075); }
+.mb-cell.mb-cell-b { background: rgba(255, 255, 255, 0.025); }
 .mb-cell.mb-dim { background: rgba(255, 255, 255, 0.02); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05); }
 .mb-cell.mb-dropok { background: rgba(90, 209, 122, 0.10); box-shadow: inset 0 0 0 2px rgba(90, 209, 122, 0.55); }
 
@@ -1451,10 +1455,17 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .mb-tile.mb-gen { cursor: pointer; }
 .mb-tile.mb-dragging { cursor: grabbing; z-index: 60; }
 .mb-bob { width: 100%; height: 100%; }
-.mb-inner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform-origin: 50% 60%;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease; border-radius: 12px; }
-.mb-art { width: 100%; height: 100%; object-fit: contain; pointer-events: none;
-  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45)); user-select: none; -webkit-user-drag: none; }
+.mb-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform-origin: 50% 60%;
+  transition: transform 0.12s ease, box-shadow 0.12s ease; border-radius: 12px; }
+/* Sprite sits ABOVE the baked shadow layer (which is absolute-positioned below it). The per-tile
+   runtime `filter: drop-shadow` was REMOVED (v?.?.?) — the shadow is now a baked _shadow.png layer
+   (.mb-shadow) rendered behind each tile: static, zero per-frame blur. */
+.mb-art { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; pointer-events: none;
+  user-select: none; -webkit-user-drag: none; }
+/* Baked drop-shadow layer — the static replacement for the old CSS blur. Absolute-centred in .mb-inner;
+   Board.jsx gives it height/width + `translate(-50%,-50%) <mergeStyle transform>` so it aligns 1:1 behind .mb-art. */
+.mb-shadow { position: absolute; left: 50%; top: 50%; z-index: 0; object-fit: contain; pointer-events: none;
+  user-select: none; -webkit-user-drag: none; }
 .mb-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 34px; }
 
 /* generator: NO gold ring/halo — a slowly-spinning COG badge (top-left) is the
@@ -1486,7 +1497,9 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
   font-size: 44px; opacity: 0.45; pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
 
 /* drag lift */
-.mb-tile.mb-lifted .mb-inner { transform: scale(var(--mb-lift-scale, 1.15)) rotate(var(--mb-tilt, -5deg)); filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.55)); }
+/* Lift = scale + tilt only. The old drag drop-shadow (runtime blur) was REMOVED for perf — the baked
+   .mb-shadow scales up with the tile during lift; no per-frame gaussian blur on the dragged tile. */
+.mb-tile.mb-lifted .mb-inner { transform: scale(var(--mb-lift-scale, 1.15)) rotate(var(--mb-tilt, -5deg)); }
 
 /* valid-merge-target pulse (during drag) */
 .mb-tile.mb-canmerge .mb-inner { animation: mbCanmerge 0.9s ease-in-out infinite; }
@@ -1951,6 +1964,15 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hero-chip .hero-pow s { font-size: 7px; text-decoration: none; opacity: .85; margin-right: 1px; }
 .chip.dead .hero-pow { display: none; }
 
+/* In-combat STATUS badges — a horizontal strip floating above the chip art (does not disturb the
+   chip's flex column). Each badge = the status icon tinted by its --sc colour + a per-second timer. */
+.status-badges { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); z-index: 8; display: flex; gap: 2px; pointer-events: none; }
+.status-badge { position: relative; width: 15px; height: 15px; border-radius: 4px; background: rgba(0,0,0,.35); box-shadow: 0 0 0 1.5px var(--sc, #fff), 0 1px 2px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+.status-badge .status-ic, .status-badge .status-ic .art-img { width: 13px; height: 13px; }
+.status-badge .status-ic .art-emoji { font-size: 10px; }
+.status-badge .status-cd { position: absolute; bottom: -5px; right: -3px; font-family: 'Uniform Condensed Bold', sans-serif; font-size: 7px; font-weight: 900; line-height: 1; color: #fff; text-decoration: none; -webkit-text-stroke: 2px #000; paint-order: stroke fill; }
+.chip.dead .status-badges { display: none; }
+
 /* LEVEL/AREA intro: normal enemies start hidden, revealed one-by-one by the director */
 .battle.intro:not(.boss-mode) .enemy-row .enemy-chip { visibility: hidden; }
 
@@ -2059,6 +2081,17 @@ body { font-family: 'Uniform Condensed Bold', system-ui, -apple-system, sans-ser
 .hero-menu .stat .sv { display: flex; flex-direction: column; line-height: 1; }
 .hero-menu .stat b { font-size: 14px; color: #fff; }
 .hero-menu .stat small { font-family: 'Uniform Condensed Medium', sans-serif; font-size: 9.5px; color: var(--dim, #9aa7bd); }
+
+/* "Applies" row — the statuses this hero grants via its abilities (tap a chip → status detail sheet). */
+.hero-menu .hm-applies { display: flex; align-items: center; gap: 8px; background: rgba(9,11,17,.42); backdrop-filter: blur(6px); border-top: 1px solid rgba(255,255,255,.06); padding: 5px 12px; }
+.hero-menu .hm-applies-lbl { font-family: 'Uniform Condensed Medium', sans-serif; font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: var(--dim, #9aa7bd); }
+.hero-menu .hm-applies-row { display: flex; gap: 6px; }
+.hero-menu .status-chip { width: 26px; height: 26px; border-radius: 6px; padding: 0; border: 0; background: rgba(0,0,0,.35); box-shadow: 0 0 0 1.5px var(--sc, #fff), 0 1px 2px rgba(0,0,0,.6); display: grid; place-items: center; cursor: pointer; }
+.hero-menu .status-chip:active { transform: scale(.92); }
+.hero-menu .status-chip-ic, .hero-menu .status-chip-ic .art-img { width: 22px; height: 22px; }
+.hero-menu .status-chip-ic .art-emoji { font-size: 16px; }
+.hero-menu .skhead .sc.status-sc { background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 2px var(--sc, #fff); }
+.hero-menu .skhead .sc.status-sc .status-chip-ic, .hero-menu .skhead .sc.status-sc .status-chip-ic .art-img { width: 34px; height: 34px; }
 
 .hero-menu .hm-actions { background: #10151f; border-top: 1px solid var(--panel-line, #2a3346); padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); }
 .hero-menu .lvl-stacks { display: flex; gap: 8px; }

@@ -41,8 +41,8 @@
 			"type": "image",
 			"file": "heroes/barbarian.png",
 			"anchor": {
-				"x": 0.4904,
-				"y": 0.918
+				"x": 0.4949,
+				"y": 0.95
 			}
 		},
 		"hero.berserker": {
@@ -176,6 +176,38 @@
 		"ui.energy": {
 			"type": "image",
 			"file": "ui/energy.png"
+		},
+		"status.atkUp": {
+			"type": "image",
+			"file": "status/atkUp.png"
+		},
+		"status.atkDown": {
+			"type": "image",
+			"file": "status/atkDown.png"
+		},
+		"status.defUp": {
+			"type": "image",
+			"file": "status/defUp.png"
+		},
+		"status.defDown": {
+			"type": "image",
+			"file": "status/defDown.png"
+		},
+		"status.spdUp": {
+			"type": "image",
+			"file": "status/spdUp.png"
+		},
+		"status.spdDown": {
+			"type": "image",
+			"file": "status/spdDown.png"
+		},
+		"status.regen": {
+			"type": "image",
+			"file": "status/regen.png"
+		},
+		"status.stealth": {
+			"type": "image",
+			"file": "status/stealth.png"
 		},
 		"ui.hero-bg": {
 			"type": "image",
@@ -365,8 +397,8 @@
 			"type": "image",
 			"file": "heroes/dark-knight.png",
 			"anchor": {
-				"x": 0.5527,
-				"y": 0.927
+				"x": 0.5727,
+				"y": 0.9544
 			}
 		},
 		"hero.geomancer": {
@@ -987,7 +1019,11 @@
 		},
 		"hero.demon": {
 			"type": "image",
-			"file": "heroes/demon.png"
+			"file": "heroes/demon.png",
+			"anchor": {
+				"x": 0.5283,
+				"y": 0.9473
+			}
 		},
 		"hero.golem": {
 			"type": "image",
@@ -1114,373 +1150,6 @@
 			},
 			"scale": 1
 		},
-		"magic.0": {
-			"type": "image",
-			"file": "merge/magic-0.png",
-			"anchor": {
-				"x": 0.4919,
-				"y": 0.5135
-			},
-			"scale": 0.7,
-			"rotation": -7
-		},
-		"magic.1": {
-			"type": "image",
-			"file": "merge/magic-1.png",
-			"anchor": {
-				"x": 0.5018,
-				"y": 0.5299
-			},
-			"scale": 0.95,
-			"rotation": 4
-		},
-		"magic.2": {
-			"type": "image",
-			"file": "merge/magic-2.png",
-			"anchor": {
-				"x": 0.4976,
-				"y": 0.5179
-			},
-			"scale": 0.9,
-			"rotation": -6
-		},
-		"magic.3": {
-			"type": "image",
-			"file": "merge/magic-3.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 0.85
-		},
-		"magic.4": {
-			"type": "image",
-			"file": "merge/magic-4.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 0.9
-		},
-		"magic.5": {
-			"type": "image",
-			"file": "merge/magic-5.png",
-			"anchor": {
-				"x": 0.4833,
-				"y": 0.5385
-			},
-			"scale": 0.9,
-			"rotation": -16
-		},
-		"magic.6": {
-			"type": "image",
-			"file": "merge/magic-6.png",
-			"anchor": {
-				"x": 0.4984,
-				"y": 0.5141
-			},
-			"scale": 1.05,
-			"rotation": -10
-		},
-		"magic.7": {
-			"type": "image",
-			"file": "merge/magic-7.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"rotation": -1
-		},
-		"gen.magic.0": {
-			"type": "image",
-			"file": "gen/magic-0.png",
-			"anchor": {
-				"x": 0.4793,
-				"y": 0.4622
-			},
-			"scale": 0.9
-		},
-		"gen.magic.1": {
-			"type": "image",
-			"file": "gen/magic-1.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			}
-		},
-		"gen.magic.2": {
-			"type": "image",
-			"file": "gen/magic-2.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.1
-		},
-		"gen.magic.3": {
-			"type": "image",
-			"file": "gen/magic-3.png",
-			"anchor": {
-				"x": 0.4983,
-				"y": 0.5072
-			},
-			"scale": 1.1
-		},
-		"gen.magic.4": {
-			"type": "image",
-			"file": "gen/magic-4.png",
-			"anchor": {
-				"x": 0.502,
-				"y": 0.5076
-			},
-			"scale": 1.05
-		},
-		"blade.0": {
-			"type": "image",
-			"file": "merge/blade-0.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 0.9
-		},
-		"blade.1": {
-			"type": "image",
-			"file": "merge/blade-1.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"rotation": 5
-		},
-		"blade.2": {
-			"type": "image",
-			"file": "merge/blade-2.png",
-			"anchor": {
-				"x": 0.504,
-				"y": 0.5129
-			},
-			"scale": 1.1
-		},
-		"blade.3": {
-			"type": "image",
-			"file": "merge/blade-3.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.1
-		},
-		"blade.4": {
-			"type": "image",
-			"file": "merge/blade-4.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.15,
-			"rotation": 6
-		},
-		"blade.5": {
-			"type": "image",
-			"file": "merge/blade-5.png",
-			"anchor": {
-				"x": 0.479,
-				"y": 0.5169
-			},
-			"scale": 1.2,
-			"rotation": 3
-		},
-		"blade.6": {
-			"type": "image",
-			"file": "merge/blade-6.png",
-			"anchor": {
-				"x": 0.4865,
-				"y": 0.5334
-			},
-			"scale": 1.15,
-			"rotation": 4
-		},
-		"blade.7": {
-			"type": "image",
-			"file": "merge/blade-7.png",
-			"anchor": {
-				"x": 0.491,
-				"y": 0.5036
-			},
-			"scale": 1.1,
-			"rotation": 1
-		},
-		"gen.blade.0": {
-			"type": "image",
-			"file": "gen/blade-0.png",
-			"anchor": {
-				"x": 0.5054,
-				"y": 0.4117
-			},
-			"scale": 0.85
-		},
-		"gen.blade.1": {
-			"type": "image",
-			"file": "gen/blade-1.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.05
-		},
-		"gen.blade.2": {
-			"type": "image",
-			"file": "gen/blade-2.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.1
-		},
-		"gen.blade.3": {
-			"type": "image",
-			"file": "gen/blade-3.png",
-			"anchor": {
-				"x": 0.5,
-				"y": 0.5
-			},
-			"scale": 1.15
-		},
-		"gen.blade.4": {
-			"type": "image",
-			"file": "gen/blade-4.png",
-			"anchor": {
-				"x": 0.4981,
-				"y": 0.5047
-			},
-			"scale": 1.15
-		},
-		"range.0": {
-			"type": "image",
-			"file": "merge/range-0.png",
-			"anchor": {
-				"x": 0.4952,
-				"y": 0.5109
-			},
-			"scale": 1.05,
-			"rotation": 15
-		},
-		"range.1": {
-			"type": "image",
-			"file": "merge/range-1.png",
-			"anchor": {
-				"x": 0.4929,
-				"y": 0.5282
-			},
-			"scale": 0.95,
-			"rotation": 4
-		},
-		"range.2": {
-			"type": "image",
-			"file": "merge/range-2.png",
-			"anchor": {
-				"x": 0.5054,
-				"y": 0.5076
-			},
-			"scale": 1.2,
-			"rotation": 9
-		},
-		"range.3": {
-			"type": "image",
-			"file": "merge/range-3.png",
-			"anchor": {
-				"x": 0.5041,
-				"y": 0.5216
-			},
-			"scale": 1.25,
-			"rotation": 32
-		},
-		"range.4": {
-			"type": "image",
-			"file": "merge/range-4.png",
-			"anchor": {
-				"x": 0.4877,
-				"y": 0.512
-			},
-			"scale": 1.25,
-			"rotation": -22
-		},
-		"range.5": {
-			"type": "image",
-			"file": "merge/range-5.png",
-			"anchor": {
-				"x": 0.4749,
-				"y": 0.4785
-			},
-			"scale": 1.25,
-			"rotation": 20
-		},
-		"range.6": {
-			"type": "image",
-			"file": "merge/range-6.png",
-			"anchor": {
-				"x": 0.5002,
-				"y": 0.5138
-			},
-			"scale": 1.25,
-			"rotation": -17
-		},
-		"range.7": {
-			"type": "image",
-			"file": "merge/range-7.png",
-			"anchor": {
-				"x": 0.5701,
-				"y": 0.4577
-			},
-			"scale": 1.35,
-			"rotation": -34
-		},
-		"gen.range.0": {
-			"type": "image",
-			"file": "gen/range-0.png",
-			"anchor": {
-				"x": 0.5022,
-				"y": 0.4269
-			},
-			"scale": 1.05
-		},
-		"gen.range.1": {
-			"type": "image",
-			"file": "gen/range-1.png",
-			"anchor": {
-				"x": 0.4981,
-				"y": 0.4409
-			},
-			"scale": 1.1
-		},
-		"gen.range.2": {
-			"type": "image",
-			"file": "gen/range-2.png",
-			"anchor": {
-				"x": 0.4976,
-				"y": 0.4784
-			},
-			"scale": 1.2
-		},
-		"gen.range.3": {
-			"type": "image",
-			"file": "gen/range-3.png",
-			"anchor": {
-				"x": 0.5001,
-				"y": 0.4707
-			},
-			"scale": 1.2
-		},
-		"gen.range.4": {
-			"type": "image",
-			"file": "gen/range-4.png",
-			"anchor": {
-				"x": 0.5015,
-				"y": 0.4857
-			},
-			"scale": 1.2
-		},
 		"hero.nomad": {
 			"type": "image",
 			"file": "heroes/nomad.png",
@@ -1497,8 +1166,8 @@
 			"type": "image",
 			"file": "heroes/doctor.png",
 			"anchor": {
-				"x": 0.508,
-				"y": 0.9328
+				"x": 0.4762,
+				"y": 0.9015
 			}
 		},
 		"hero.imp": {
@@ -1508,6 +1177,537 @@
 				"x": 0.5317,
 				"y": 0.9175
 			}
+		},
+		"hero.merchant": {
+			"type": "image",
+			"file": "heroes/merchant.png",
+			"anchor": {
+				"x": 0.4957,
+				"y": 0.9702
+			}
+		},
+		"magic.0": {
+			"type": "image",
+			"file": "merge/magic-0.png",
+			"anchor": {
+				"x": 0.4919,
+				"y": 0.5135
+			},
+			"scale": 0.7,
+			"rotation": -7
+		},
+		"magic.0.shadow": {
+			"type": "image",
+			"file": "merge/magic-0_shadow.png"
+		},
+		"magic.1": {
+			"type": "image",
+			"file": "merge/magic-1.png",
+			"anchor": {
+				"x": 0.5018,
+				"y": 0.5299
+			},
+			"scale": 0.95,
+			"rotation": 4
+		},
+		"magic.1.shadow": {
+			"type": "image",
+			"file": "merge/magic-1_shadow.png"
+		},
+		"magic.2": {
+			"type": "image",
+			"file": "merge/magic-2.png",
+			"anchor": {
+				"x": 0.4976,
+				"y": 0.5179
+			},
+			"scale": 0.9,
+			"rotation": -6
+		},
+		"magic.2.shadow": {
+			"type": "image",
+			"file": "merge/magic-2_shadow.png"
+		},
+		"magic.3": {
+			"type": "image",
+			"file": "merge/magic-3.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.85
+		},
+		"magic.3.shadow": {
+			"type": "image",
+			"file": "merge/magic-3_shadow.png"
+		},
+		"magic.4": {
+			"type": "image",
+			"file": "merge/magic-4.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.9
+		},
+		"magic.4.shadow": {
+			"type": "image",
+			"file": "merge/magic-4_shadow.png"
+		},
+		"magic.5": {
+			"type": "image",
+			"file": "merge/magic-5.png",
+			"anchor": {
+				"x": 0.4833,
+				"y": 0.5385
+			},
+			"scale": 0.9,
+			"rotation": -16
+		},
+		"magic.5.shadow": {
+			"type": "image",
+			"file": "merge/magic-5_shadow.png"
+		},
+		"magic.6": {
+			"type": "image",
+			"file": "merge/magic-6.png",
+			"anchor": {
+				"x": 0.4984,
+				"y": 0.5141
+			},
+			"scale": 1.05,
+			"rotation": -10
+		},
+		"magic.6.shadow": {
+			"type": "image",
+			"file": "merge/magic-6_shadow.png"
+		},
+		"magic.7": {
+			"type": "image",
+			"file": "merge/magic-7.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"rotation": -1
+		},
+		"magic.7.shadow": {
+			"type": "image",
+			"file": "merge/magic-7_shadow.png"
+		},
+		"gen.magic.0": {
+			"type": "image",
+			"file": "gen/magic-0.png",
+			"anchor": {
+				"x": 0.4793,
+				"y": 0.4622
+			},
+			"scale": 0.9
+		},
+		"gen.magic.0.shadow": {
+			"type": "image",
+			"file": "gen/magic-0_shadow.png"
+		},
+		"gen.magic.1": {
+			"type": "image",
+			"file": "gen/magic-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			}
+		},
+		"gen.magic.1.shadow": {
+			"type": "image",
+			"file": "gen/magic-1_shadow.png"
+		},
+		"gen.magic.2": {
+			"type": "image",
+			"file": "gen/magic-2.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.1
+		},
+		"gen.magic.2.shadow": {
+			"type": "image",
+			"file": "gen/magic-2_shadow.png"
+		},
+		"gen.magic.3": {
+			"type": "image",
+			"file": "gen/magic-3.png",
+			"anchor": {
+				"x": 0.4983,
+				"y": 0.5072
+			},
+			"scale": 1.1
+		},
+		"gen.magic.3.shadow": {
+			"type": "image",
+			"file": "gen/magic-3_shadow.png"
+		},
+		"gen.magic.4": {
+			"type": "image",
+			"file": "gen/magic-4.png",
+			"anchor": {
+				"x": 0.502,
+				"y": 0.5076
+			},
+			"scale": 1.05
+		},
+		"gen.magic.4.shadow": {
+			"type": "image",
+			"file": "gen/magic-4_shadow.png"
+		},
+		"blade.0": {
+			"type": "image",
+			"file": "merge/blade-0.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 0.9
+		},
+		"blade.0.shadow": {
+			"type": "image",
+			"file": "merge/blade-0_shadow.png"
+		},
+		"blade.1": {
+			"type": "image",
+			"file": "merge/blade-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"rotation": 5
+		},
+		"blade.1.shadow": {
+			"type": "image",
+			"file": "merge/blade-1_shadow.png"
+		},
+		"blade.2": {
+			"type": "image",
+			"file": "merge/blade-2.png",
+			"anchor": {
+				"x": 0.504,
+				"y": 0.5129
+			},
+			"scale": 1.1
+		},
+		"blade.2.shadow": {
+			"type": "image",
+			"file": "merge/blade-2_shadow.png"
+		},
+		"blade.3": {
+			"type": "image",
+			"file": "merge/blade-3.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.1
+		},
+		"blade.3.shadow": {
+			"type": "image",
+			"file": "merge/blade-3_shadow.png"
+		},
+		"blade.4": {
+			"type": "image",
+			"file": "merge/blade-4.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.15,
+			"rotation": 6
+		},
+		"blade.4.shadow": {
+			"type": "image",
+			"file": "merge/blade-4_shadow.png"
+		},
+		"blade.5": {
+			"type": "image",
+			"file": "merge/blade-5.png",
+			"anchor": {
+				"x": 0.479,
+				"y": 0.5169
+			},
+			"scale": 1.2,
+			"rotation": 3
+		},
+		"blade.5.shadow": {
+			"type": "image",
+			"file": "merge/blade-5_shadow.png"
+		},
+		"blade.6": {
+			"type": "image",
+			"file": "merge/blade-6.png",
+			"anchor": {
+				"x": 0.4865,
+				"y": 0.5334
+			},
+			"scale": 1.15,
+			"rotation": 4
+		},
+		"blade.6.shadow": {
+			"type": "image",
+			"file": "merge/blade-6_shadow.png"
+		},
+		"blade.7": {
+			"type": "image",
+			"file": "merge/blade-7.png",
+			"anchor": {
+				"x": 0.491,
+				"y": 0.5036
+			},
+			"scale": 1.1,
+			"rotation": 1
+		},
+		"blade.7.shadow": {
+			"type": "image",
+			"file": "merge/blade-7_shadow.png"
+		},
+		"gen.blade.0": {
+			"type": "image",
+			"file": "gen/blade-0.png",
+			"anchor": {
+				"x": 0.5054,
+				"y": 0.4117
+			},
+			"scale": 0.85
+		},
+		"gen.blade.0.shadow": {
+			"type": "image",
+			"file": "gen/blade-0_shadow.png"
+		},
+		"gen.blade.1": {
+			"type": "image",
+			"file": "gen/blade-1.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.05
+		},
+		"gen.blade.1.shadow": {
+			"type": "image",
+			"file": "gen/blade-1_shadow.png"
+		},
+		"gen.blade.2": {
+			"type": "image",
+			"file": "gen/blade-2.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.1
+		},
+		"gen.blade.2.shadow": {
+			"type": "image",
+			"file": "gen/blade-2_shadow.png"
+		},
+		"gen.blade.3": {
+			"type": "image",
+			"file": "gen/blade-3.png",
+			"anchor": {
+				"x": 0.5,
+				"y": 0.5
+			},
+			"scale": 1.15
+		},
+		"gen.blade.3.shadow": {
+			"type": "image",
+			"file": "gen/blade-3_shadow.png"
+		},
+		"gen.blade.4": {
+			"type": "image",
+			"file": "gen/blade-4.png",
+			"anchor": {
+				"x": 0.4981,
+				"y": 0.5047
+			},
+			"scale": 1.15
+		},
+		"gen.blade.4.shadow": {
+			"type": "image",
+			"file": "gen/blade-4_shadow.png"
+		},
+		"range.0": {
+			"type": "image",
+			"file": "merge/range-0.png",
+			"anchor": {
+				"x": 0.4952,
+				"y": 0.5109
+			},
+			"scale": 1.05,
+			"rotation": 15
+		},
+		"range.0.shadow": {
+			"type": "image",
+			"file": "merge/range-0_shadow.png"
+		},
+		"range.1": {
+			"type": "image",
+			"file": "merge/range-1.png",
+			"anchor": {
+				"x": 0.4929,
+				"y": 0.5282
+			},
+			"scale": 0.95,
+			"rotation": 4
+		},
+		"range.1.shadow": {
+			"type": "image",
+			"file": "merge/range-1_shadow.png"
+		},
+		"range.2": {
+			"type": "image",
+			"file": "merge/range-2.png",
+			"anchor": {
+				"x": 0.5054,
+				"y": 0.5076
+			},
+			"scale": 1.2,
+			"rotation": 9
+		},
+		"range.2.shadow": {
+			"type": "image",
+			"file": "merge/range-2_shadow.png"
+		},
+		"range.3": {
+			"type": "image",
+			"file": "merge/range-3.png",
+			"anchor": {
+				"x": 0.5041,
+				"y": 0.5216
+			},
+			"scale": 1.25,
+			"rotation": 32
+		},
+		"range.3.shadow": {
+			"type": "image",
+			"file": "merge/range-3_shadow.png"
+		},
+		"range.4": {
+			"type": "image",
+			"file": "merge/range-4.png",
+			"anchor": {
+				"x": 0.4877,
+				"y": 0.512
+			},
+			"scale": 1.25,
+			"rotation": -22
+		},
+		"range.4.shadow": {
+			"type": "image",
+			"file": "merge/range-4_shadow.png"
+		},
+		"range.5": {
+			"type": "image",
+			"file": "merge/range-5.png",
+			"anchor": {
+				"x": 0.4749,
+				"y": 0.4785
+			},
+			"scale": 1.25,
+			"rotation": 20
+		},
+		"range.5.shadow": {
+			"type": "image",
+			"file": "merge/range-5_shadow.png"
+		},
+		"range.6": {
+			"type": "image",
+			"file": "merge/range-6.png",
+			"anchor": {
+				"x": 0.5002,
+				"y": 0.5138
+			},
+			"scale": 1.25,
+			"rotation": -17
+		},
+		"range.6.shadow": {
+			"type": "image",
+			"file": "merge/range-6_shadow.png"
+		},
+		"range.7": {
+			"type": "image",
+			"file": "merge/range-7.png",
+			"anchor": {
+				"x": 0.5701,
+				"y": 0.4577
+			},
+			"scale": 1.35,
+			"rotation": -34
+		},
+		"range.7.shadow": {
+			"type": "image",
+			"file": "merge/range-7_shadow.png"
+		},
+		"gen.range.0": {
+			"type": "image",
+			"file": "gen/range-0.png",
+			"anchor": {
+				"x": 0.5022,
+				"y": 0.4269
+			},
+			"scale": 1.05
+		},
+		"gen.range.0.shadow": {
+			"type": "image",
+			"file": "gen/range-0_shadow.png"
+		},
+		"gen.range.1": {
+			"type": "image",
+			"file": "gen/range-1.png",
+			"anchor": {
+				"x": 0.4981,
+				"y": 0.4409
+			},
+			"scale": 1.1
+		},
+		"gen.range.1.shadow": {
+			"type": "image",
+			"file": "gen/range-1_shadow.png"
+		},
+		"gen.range.2": {
+			"type": "image",
+			"file": "gen/range-2.png",
+			"anchor": {
+				"x": 0.4976,
+				"y": 0.4784
+			},
+			"scale": 1.2
+		},
+		"gen.range.2.shadow": {
+			"type": "image",
+			"file": "gen/range-2_shadow.png"
+		},
+		"gen.range.3": {
+			"type": "image",
+			"file": "gen/range-3.png",
+			"anchor": {
+				"x": 0.5001,
+				"y": 0.4707
+			},
+			"scale": 1.2
+		},
+		"gen.range.3.shadow": {
+			"type": "image",
+			"file": "gen/range-3_shadow.png"
+		},
+		"gen.range.4": {
+			"type": "image",
+			"file": "gen/range-4.png",
+			"anchor": {
+				"x": 0.5015,
+				"y": 0.4857
+			},
+			"scale": 1.2
+		},
+		"gen.range.4.shadow": {
+			"type": "image",
+			"file": "gen/range-4_shadow.png"
 		}
 	}
 }

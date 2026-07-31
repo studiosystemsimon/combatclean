@@ -76,4 +76,10 @@ export const assetFor = resolve;
 export const itemAsset = (chain, level) => resolve(`${chain}.${level}`);
 // Generators are levelled (0-based) — art keyed `gen.<genId>.<level>`, mirroring item ladders.
 export const generatorAsset = (genId, level = 0) => resolve(`gen.${genId}.${level}`);
+// Baked drop-shadow companions — art keyed `<sprite-key>.shadow` (a plain `image` asset in the same
+// registry). The merge board renders these BEHIND the sprite with the SAME mergeStyle transform,
+// replacing the per-tile runtime CSS `filter: drop-shadow`. URL only (the shadow inherits the
+// sprite's placement); null when the asset registry has no shadow for that key.
+export const itemShadow = (chain, level) => artUrl(`${chain}.${level}.shadow`);
+export const generatorShadow = (genId, level = 0) => artUrl(`gen.${genId}.${level}.shadow`);
 export const heroAsset = (id) => resolve(HEROES[id].asset);

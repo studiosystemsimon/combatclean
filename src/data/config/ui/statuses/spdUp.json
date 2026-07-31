@@ -1,0 +1,7 @@
+{
+	"key": "spdUp",
+	"name": "Speed Up",
+	"description": "Attacks faster.",
+	"color": "#ffd45e",
+	"iconAssetId": "status.spdUp"
+}

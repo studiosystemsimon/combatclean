@@ -9,6 +9,11 @@
  *      reading the trim tool's per-icon params from trim_meta.json:
  *         reg → anchor (registration point; merge default = tile CENTRE [0.5,0.5])
  *         combat.scale → scale        combat.rot → rotation
+ *   3. ALSO carry the baked shadow layer: copy `<chain>-<T>_256_shadow.png` → merge/<chain>-<gameTier>_shadow.png
+ *      and write a COMPANION asset `<chain>.<gameTier>.shadow` = { type:image, file }. The merge board renders
+ *      it BEHIND the sprite with the SAME mergeStyle transform — a static replacement for the runtime CSS
+ *      `filter: drop-shadow` (see src/view/Board.jsx + src/index.css .mb-shadow). Generators get the same
+ *      `.shadow` companion. No anchor/scale/rotation on the shadow entry — it inherits the sprite's placement.
  * GENERATOR LADDERS (`<chain>-gen/<chain>-gen-<L>_256.png`, L = 1..GEN_LEVELS) are transferred the same
  * way into assets.json `gen.<chain>.<gameLevel>` (gameLevel = L-1, the 0-indexed game ladder — matching
  * the 0-indexed merge item ladder + the game code) → asset dir assets/combatclean/gen/. Non-merge/non-gen
@@ -37,8 +42,8 @@ assets.assets ||= {};
 // Drop existing merge tier entries (blade.N/bow.N/magic.N/range.N) + generator entries
 // (gen.<chain>[.<L>], incl. legacy single-art gen.<chain>) — we re-author them below.
 for (const k of Object.keys(assets.assets)) {
-  if (/^(blade|bow|magic|range)\.\d+$/.test(k)) delete assets.assets[k];
-  if (/^gen\.(blade|bow|magic|range)(\.\d+)?$/.test(k)) delete assets.assets[k];
+  if (/^(blade|bow|magic|range)\.\d+(\.shadow)?$/.test(k)) delete assets.assets[k];
+  if (/^gen\.(blade|bow|magic|range)(\.\d+)?(\.shadow)?$/.test(k)) delete assets.assets[k];
 }
 
 // merge default reg = tile CENTRE; combat.scale/rot cook the on-tile size + spin.
@@ -64,6 +69,12 @@ for (const chain of CHAINS) {
     const { entry, scale, rot, reg } = entryFrom(`${chain}/${chain}-${T}.png`, `merge/${chain}-${gameTier}.png`);
     assets.assets[`${chain}.${gameTier}`] = entry;
     out.copied.push(`${chain}.${gameTier}  (scale ${scale}, rot ${rot}, reg ${reg.join(',')})`);
+    // baked shadow companion (behind the sprite, same transform)
+    const shSrc = join(TRIM, chain, `${chain}-${T}_256_shadow.png`);
+    if (existsSync(shSrc)) {
+      copyFileSync(shSrc, join(MERGE_DIR, `${chain}-${gameTier}_shadow.png`));
+      assets.assets[`${chain}.${gameTier}.shadow`] = { type: 'image', file: `merge/${chain}-${gameTier}_shadow.png` };
+    } else out.missing.push(`${chain}-${T}_256_shadow.png`);
   }
   // ── generator ladder (0-indexed game gen level, mirroring the merge ladder + game code) ──
   for (let L = 1; L <= GEN_LEVELS; L++) {
@@ -74,6 +85,12 @@ for (const chain of CHAINS) {
     const { entry, scale, rot, reg } = entryFrom(`${chain}-gen/${chain}-gen-${L}.png`, `gen/${chain}-${gameLevel}.png`);
     assets.assets[`gen.${chain}.${gameLevel}`] = entry;
     out.copied.push(`gen.${chain}.${gameLevel}  (scale ${scale}, rot ${rot}, reg ${reg.join(',')})`);
+    // baked shadow companion (behind the sprite, same transform)
+    const shSrc = join(TRIM, `${chain}-gen`, `${chain}-gen-${L}_256_shadow.png`);
+    if (existsSync(shSrc)) {
+      copyFileSync(shSrc, join(GEN_DIR, `${chain}-${gameLevel}_shadow.png`));
+      assets.assets[`gen.${chain}.${gameLevel}.shadow`] = { type: 'image', file: `gen/${chain}-${gameLevel}_shadow.png` };
+    } else out.missing.push(`${chain}-gen-${L}_256_shadow.png`);
   }
 }
 
