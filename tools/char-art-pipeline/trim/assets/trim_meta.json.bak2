@@ -9,7 +9,11 @@
   "treatmentSmall": [
     {
       "color": "#000000",
-      "width": 2
+      "width": 1
+    },
+    {
+      "color": "#ffffff",
+      "width": 6
     }
   ],
   "presets": {
@@ -355,9 +359,9 @@
         0.9555
       ],
       "portrait": {
-        "scale": 1.7,
-        "x": 0.012,
-        "y": -0.383
+        "scale": 1.85,
+        "x": 0.02,
+        "y": -0.492
       }
     },
     "heroes/inquisitor.png": {
@@ -783,7 +787,7 @@
         0.9124
       ],
       "combat": {
-        "scale": 1.05
+        "scale": 1
       }
     },
     "boneyard/bone-hound.png": {
@@ -2079,7 +2083,7 @@
         "rot": -34
       },
       "reg": [
-        0.5568,
+        0.5701,
         0.4577
       ]
     },
@@ -2631,6 +2635,93 @@
         0.5267,
         0.9377
       ]
+    },
+    "heroes/nomad.png": {
+      "pockets": [],
+      "portrait": {
+        "scale": 1.75,
+        "x": -0.137,
+        "y": -0.44
+      },
+      "combat": {
+        "scale": 1.05
+      },
+      "reg": [
+        0.5119,
+        0.9232
+      ]
+    },
+    "heroes/dragon.png": {
+      "pockets": [
+        [
+          451,
+          575
+        ],
+        [
+          671,
+          599
+        ],
+        [
+          346,
+          611
+        ],
+        [
+          213,
+          815
+        ],
+        [
+          272,
+          408
+        ]
+      ],
+      "portrait": {
+        "scale": 1.85,
+        "x": 0.063,
+        "y": -0.503
+      },
+      "combat": {
+        "scale": 1.05
+      }
+    },
+    "heroes/doctor.png": {
+      "pockets": [
+        [
+          396,
+          502
+        ]
+      ],
+      "portrait": {
+        "scale": 2.2,
+        "x": 0.078,
+        "y": -0.719
+      },
+      "combat": {
+        "scale": 1.15
+      },
+      "reg": [
+        0.508,
+        0.9328
+      ]
+    },
+    "heroes/imp.png": {
+      "pockets": [
+        [
+          679,
+          653
+        ]
+      ],
+      "combat": {
+        "scale": 1.15
+      },
+      "reg": [
+        0.5317,
+        0.9175
+      ],
+      "portrait": {
+        "scale": 1.95,
+        "x": 0,
+        "y": -0.534
+      }
     }
   }
 }

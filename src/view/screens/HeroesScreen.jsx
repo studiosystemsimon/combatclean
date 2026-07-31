@@ -43,7 +43,6 @@ export default function HeroesScreen() {
   // Meta view (no battle/fx) — this screen never reads combat state, so it must not re-render on the
   // 5 Hz combat tick while the player browses the roster at scale (50 heroes × 100 gear).
   const { state, actions } = useMetaGame();
-  console.log('[dragdbg] HeroesScreen render — order head', state.order.slice(0, 6)); // TEMP
   const [popId, setPopId] = useState(null);
   const [popState, setPopState] = useState('hero'); // 'hero' | 'equip' | 'reequip'
   const [selSlot, setSelSlot] = useState(null);
@@ -241,7 +240,6 @@ export default function HeroesScreen() {
     const src = tileEl(d.id);
     if (!src) { clearTimeout(d.lp); if (dragRef.current === d) dragRef.current = null; return; }
     d.started = true;
-    console.log('[dragdbg] beginDrag started', d.id, 'touch', d.touch); // TEMP
     const r = src.getBoundingClientRect();
     d.originRect = r; d.grabDx = clientX - r.left; d.grabDy = clientY - r.top;
     d.lift = r.height * HS.dragLiftFrac; // raise the tile so it stays visible above the finger
@@ -270,7 +268,6 @@ export default function HeroesScreen() {
     // until then a move is treated as a list scroll (see `move`). lp = the pending long-press timer.
     const d = { id, sx: e.clientX, sy: e.clientY, pid: e.pointerId, started: false, over: null, touch, armed: !touch, lp: null };
     dragRef.current = d;
-    console.log('[dragdbg] pointerdown', { id, touch, button: e.button, pointerType: e.pointerType }); // TEMP
     if (touch) d.lp = setTimeout(() => {
       if (dragRef.current === d && !d.started) beginDrag(d, d.sx, d.sy); // held still → pick up in place; moves position it
     }, HERO_DRAG_HOLD_MS);
@@ -296,10 +293,11 @@ export default function HeroesScreen() {
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const cell = el && el.closest && el.closest('[data-hid]');
       const tid = cell && cell.getAttribute('data-hid');
-      const over = tid && tid !== d.id ? tid : null;
+      // Only SQUAD slots are valid drop targets — a hero is dragged INTO the squad. Dragging within the
+      // (display-sorted) roster does nothing, so a roster cell never becomes a target: no displace, no swap.
+      const over = (tid && tid !== d.id && cell.closest('.hs-squad-band')) ? tid : null;
       if (over !== d.over) {
         d.over = over;
-        console.log('[dragdbg] over changed →', over, '(self', d.id + ')'); // TEMP
         if (over) {
           // The CELL is never transformed (only the inner tile), so its rect is the
           // target's NATURAL slot — the displacement + landing both key off this.
@@ -316,7 +314,6 @@ export default function HeroesScreen() {
       if (!d || e.pointerId !== d.pid) return;
       clearTimeout(d.lp); // cancel a pending long-press (a tap or scroll that never became a drag)
       dragRef.current = null;
-      console.log('[dragdbg] finish', { started: d.started, over: d.over, id: d.id }); // TEMP
       if (!d.started) return;
       dragEnd.current = performance.now(); // swallow the click that trails this pointerup
       const { avatar: av, over } = d;
@@ -335,7 +332,7 @@ export default function HeroesScreen() {
         // still carries the displacement transform and would send it back to origin.
         const oc = cellRefs.current[over];
         const nr = d.overRect || (oc && oc.getBoundingClientRect()) || d.originRect;
-        glide(nr.left, nr.top, () => { console.log('[dragdbg] swapHeroes()', d.id, '↔', over); actions.swapHeroes(d.id, over); done(); }); // TEMP log
+        glide(nr.left, nr.top, () => { actions.swapHeroes(d.id, over); done(); });
       } else {
         glide(d.originRect.left, d.originRect.top, done);
       }

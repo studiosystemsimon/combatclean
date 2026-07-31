@@ -1,0 +1,19 @@
+{
+	"id": 2044,
+	"name": "Bishop",
+	"iconAssetId": "hero.bishop",
+	"emoji": "✝️",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Blessing",
+		"limit": "Divine Grace"
+	},
+	"portrait": {
+		"scale": 1.5,
+		"x": 0,
+		"y": -0.32
+	},
+	"combat": {
+		"scale": 1
+	}
+}

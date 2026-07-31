@@ -15,11 +15,10 @@ type Act = any;
 export const heroesHandlers: Record<string, (state: S, action: Act) => S> = {
   [A.SWAP_HEROES]: (state, action) => {
     const { a, b } = action;
-    if (a === b) { console.log('[dragdbg] reducer SWAP_HEROES noop (a===b)', a); return state; } // TEMP
+    if (a === b) return state;
     const ia = state.order.indexOf(a); const ib = state.order.indexOf(b);
-    if (ia < 0 || ib < 0) { console.log('[dragdbg] reducer SWAP_HEROES not-in-order', { a, b, ia, ib }); return state; } // TEMP
+    if (ia < 0 || ib < 0) return state;
     const order = state.order.slice(); order[ia] = b; order[ib] = a;
-    console.log('[dragdbg] reducer SWAP_HEROES ok', { a, b, ia, ib, newHead: order.slice(0, 6) }); // TEMP
     const squad = squadOf(order);
     const byId = Object.fromEntries(state.battle.heroes.map((h: any) => [h.id, h]));
     const statsFn = battleStatsFor(state.heroes, state.gear, state.ordersCompleted);

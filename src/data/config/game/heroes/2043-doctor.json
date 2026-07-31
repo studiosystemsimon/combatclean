@@ -1,0 +1,24 @@
+{
+	"id": 2043,
+	"displayName": "doctor",
+	"rarityKey": "legendary",
+	"weaponChainKey": "magic",
+	"baseAtk": 16,
+	"baseHp": 235,
+	"baseDef": 12,
+	"normal": {
+		"chargeMs": 6000,
+		"effect": {
+			"type": "heal",
+			"frac": 0.16
+		}
+	},
+	"limit": {
+		"orders": 5,
+		"effect": {
+			"type": "heal",
+			"frac": 0.45
+		}
+	},
+	"classKey": "doctor"
+}

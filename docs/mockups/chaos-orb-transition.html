@@ -371,20 +371,20 @@ function merge(ts,dt){
   if(el>=RUSH) amp=1.2+Math.min(6,chargeT*2.2);
   if(collideFlash>0){amp+=collideFlash*8;collideFlash=Math.max(0,collideFlash-dt*3);}
   const shx=rand(-amp,amp), shy=rand(-amp,amp);
+  // backdrop (the live screen) + rush orbs shake
   sc.save();sc.translate(shx,shy);
   sc.drawImage(tex,0,0);
   const dim=Math.min(0.5,chargeT*0.22);
   if(dim>0){sc.fillStyle=`rgba(4,5,10,${dim})`;sc.fillRect(-20,-20,W+40,H+40);}
-  if(el<RUSH){
-    drawRushOrbs(el/RUSH);
-  }else{
+  if(el<RUSH) drawRushOrbs(el/RUSH);
+  sc.restore();
+  if(el>=RUSH){
     if(!collided){collided=true;collideFlash=1;onCollision();}
     runEmitter(chargeT,dt);
-    stepFx(dt);
-    drawBigOrb(chargeT);
+    stepFx(dt);                                             // trails/impacts/sparks — STABLE screen space (not coupled to the orb shake)
+    sc.save();sc.translate(shx,shy);drawBigOrb(chargeT);sc.restore(); // only the orb rattles
     orbBoost=Math.max(0,orbBoost-dt*2.2);
   }
-  sc.restore();
   if(el>=TOTAL){ // POP — quick pulse + fast radial burst; the shatter begins THIS exact instant
     fxImpact(CX,CY,{color:'#ffffff',r:80,heavy:true});
     fxImpact(CX,CY,{color:MCFG.orbGlow,r:150,heavy:true});

@@ -148,7 +148,7 @@ function HeroChip({ h, pow, onLimit, fighting }) {
         {/* In-combat AVATAR, 1:1 with the trim tool: sprite HEIGHT = COMBAT_BASE_H × cooked combat.scale,
             bottom-anchored, no clamp, translated by its registration-point anchor. (The hero TILE portrait
             is a separate system — portraitStyle — and is untouched here.) */}
-        <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `${COMBAT_BASE_H_HERO * (HEROES[h.hero]?.combatScale ?? 1)}px` }} />
+        <Art a={ha} className="chip-emoji" style={{ ...(anchorStyle(ha) || {}), height: `calc(var(--cbh-hero, ${COMBAT_BASE_H_HERO}px) * ${HEROES[h.hero]?.combatScale ?? 1})` }} />
       </div>
       {/* power badge lives on the (non-bobbing) .chip root, not inside the idle-animated .chip-art */}
       {pow > 0 && <span className="hero-pow"><s>✊</s>{fmt(pow)}</span>}
@@ -177,7 +177,7 @@ function EnemyChip({ e, focused, onFocus, art, scale = 1, gone, conceal, lv, onD
           bottom-anchored on the baseline, then translated by its registration-point anchor. The size
           lives in the img height (NOT a box scale) so it matches the tool exactly for every enemy/boss. */}
       <div className="chip-art">
-        <Art a={art} className="chip-emoji" style={{ ...(anchorStyle(art) || {}), height: `${(boss ? COMBAT_BASE_H_BOSS : COMBAT_BASE_H) * scale}px` }} />
+        <Art a={art} className="chip-emoji" style={{ ...(anchorStyle(art) || {}), height: `calc(var(--cbh-${boss ? 'boss' : 'enemy'}, ${boss ? COMBAT_BASE_H_BOSS : COMBAT_BASE_H}px) * ${scale})` }} />
       </div>
       <HpBar frac={e.hp / e.maxHp} kind="enemy" />
       {conceal && <span className="conceal-q" aria-hidden="true">?</span>}

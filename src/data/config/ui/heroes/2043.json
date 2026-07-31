@@ -1,0 +1,19 @@
+{
+	"id": 2043,
+	"name": "Doctor",
+	"iconAssetId": "hero.doctor",
+	"emoji": "💉",
+	"abilityNames": {
+		"basic": "Attack",
+		"normal": "Mend",
+		"limit": "Field Surgery"
+	},
+	"portrait": {
+		"scale": 1.5,
+		"x": 0,
+		"y": -0.32
+	},
+	"combat": {
+		"scale": 1
+	}
+}

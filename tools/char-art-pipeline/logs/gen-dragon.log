@@ -1,0 +1,11 @@
+using existing classes.tsv subject for 'dragon'
+overrides: Green skin, lizard eyes, voluptuous body, fire orb in one hand, woman, back pony tail tight hair
+running gen.sh dragon (FORCE=1)…
+  ..dragon try 1 bg=MISS, retrying
+  ..dragon try 2 bg=MISS, retrying
+  ..dragon try 3 bg=MISS, retrying
+  ..dragon try 4 bg=MISS, retrying
+WARN dragon (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 46  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/dragon.png

@@ -315,10 +315,14 @@ export function playChaosOrbTransition(canvas, { onApex, onDone } = {}) {
         const el = (ts - mT0) / 1000, RUSH = cfg.rushT, TOTAL = RUSH + cfg.growT, chargeT = Math.max(0, el - RUSH);
         drawClear();                                                 // transparent → live game shows through
         let amp = 0; if (el >= RUSH) amp = 1.2 + Math.min(6, chargeT * 2.2); if (collideFlash > 0) { amp += collideFlash * 8; collideFlash = Math.max(0, collideFlash - dt * 3); }
-        ctx.save(); ctx.translate(rand(-amp, amp), rand(-amp, amp));
-        if (el < RUSH) { drawRushOrbs(el / RUSH); }
-        else { if (!collided) { collided = true; collideFlash = 1; onCollision(); } runEmitter(chargeT, dt); stepFx(dt); drawBigOrb(chargeT, dt); }
-        ctx.restore();
+        const shx = rand(-amp, amp), shy = rand(-amp, amp);
+        if (el < RUSH) { ctx.save(); ctx.translate(shx, shy); drawRushOrbs(el / RUSH); ctx.restore(); }
+        else {
+          if (!collided) { collided = true; collideFlash = 1; onCollision(); }
+          runEmitter(chargeT, dt);
+          stepFx(dt);                                                // trails/impacts/sparks — STABLE screen space (NOT coupled to the orb's shake)
+          ctx.save(); ctx.translate(shx, shy); drawBigOrb(chargeT, dt); ctx.restore(); // only the orb rattles
+        }
         if (el >= TOTAL) {                                           // POP → hand off (launch minigame under the cover), then ignite→crumble
           fxImpact(CX, CY, { color: cfg.igniteColor, r: 64, heavy: true }); fxImpact(CX, CY, { color: cfg.orbGlow, r: 120, heavy: true });
           popBurst(); buildShards();

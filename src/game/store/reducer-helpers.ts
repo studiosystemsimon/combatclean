@@ -146,6 +146,7 @@ export const initState = (now: number, saved: any = null): S => {
   // Non-FTUE (+ legacy) saves keep special orders on from the start; an FTUE save keeps its own
   // specialOrders progress (unlocked later at specialsUnlockAtLevel) so a reload can't re-enable them early.
   merged.flags = (saved.flags && saved.flags.ftueActive) ? { ...(merged.flags || {}) } : { ...(merged.flags || {}), specialOrders: true };
+  merged.board = Board.normalizeBoard(merged.board); // migrate older saves to the current cellCount (7×5 → 7×6 → new row usable)
   const level = (saved.battle && saved.battle.level) || fresh.battle.level;
   const rebuilt = buildBattle(merged.heroes, merged.gear, merged.order, merged.ordersCompleted, level, merged.nextId, 'fighting', !!(saved.flags && saved.flags.ftueActive));
   // Restore the active squad's limit-break charge across a refresh (buildBattle rebuilds heroes at 0).

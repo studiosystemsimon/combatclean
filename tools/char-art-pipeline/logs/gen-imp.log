@@ -1,0 +1,10 @@
+using existing classes.tsv subject for 'imp'
+running gen.sh imp (FORCE=1)…
+  ..imp try 1 bg=MISS, retrying
+  ..imp try 2 bg=MISS, retrying
+  ..imp try 3 bg=MISS, retrying
+  ..imp try 4 bg=MISS, retrying
+WARN imp (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 48  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/imp.png

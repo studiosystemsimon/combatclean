@@ -1,0 +1,12 @@
+deploying a Claude instance to author the subject for 'nomad'…
+subject: a MALE fantasy NOMAD with sun-bleached-sand-to-bronze root-to-tip gradient hair, an ornate Honkai-Impact-style layered battle costume of segmented tan-and-bronze plate over a high-collared flowing desert war-coat with gold filigree, flared armored pauldrons and trailing wind-swept layered fabric wraps, slashing across in a dynamic forward-lunging mid-swing with an ornate curved scimitar.
+overrides: Turban, scimitar, shaved head, metal jaw
+running gen.sh nomad (FORCE=1)…
+  ..nomad try 1 bg=MISS, retrying
+  ..nomad try 2 bg=MISS, retrying
+  ..nomad try 3 bg=MISS, retrying
+  ..nomad try 4 bg=MISS, retrying
+WARN nomad (kept non-white bg)
+=== batch done: attempted 1 ===
+output count: 45  -> /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes
+DONE: /Users/simonhill/combatclean/tools/char-art-pipeline/trim/assets/heroes/nomad.png

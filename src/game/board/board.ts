@@ -13,6 +13,18 @@ export const firstEmptyIndex = (board: BoardCell[]) => board.indexOf(null);
 export const isBoardFull = (board: BoardCell[]) => board.indexOf(null) === -1;
 export const withCell = (board: BoardCell[], index: number, value: BoardCell): BoardCell[] => { const next = board.slice(); next[index] = value; return next; };
 
+// Resize a (possibly older) saved board to the CURRENT cellCount() — pad short boards with empty cells
+// so a rows/cols increase (e.g. 7×5 → 7×6) makes the new cells immediately usable, and truncate any
+// overflow if it ever shrinks. Existing tiles keep their index/position. Non-array → a fresh board.
+export const normalizeBoard = (board: BoardCell[]): BoardCell[] => {
+  const n = cellCount();
+  if (!Array.isArray(board)) return emptyBoard();
+  if (board.length === n) return board;
+  const next = emptyBoard();
+  for (let i = 0; i < Math.min(board.length, n); i++) next[i] = board[i] ?? null;
+  return next;
+};
+
 // Where a newly-ADDED tile should land: prefer any EMPTY cell; if the board is full, replace the
 // LOWEST-TIER ACTIVE tile — an UNLOCKED item (never a generator, never a cobwebbed/locked tile).
 // Returns -1 only when the board is full of nothing but generators + cobwebs (nothing replaceable).

@@ -1480,6 +1480,34 @@
 				"y": 0.4857
 			},
 			"scale": 1.2
+		},
+		"hero.nomad": {
+			"type": "image",
+			"file": "heroes/nomad.png",
+			"anchor": {
+				"x": 0.5119,
+				"y": 0.9232
+			}
+		},
+		"hero.dragon": {
+			"type": "image",
+			"file": "heroes/dragon.png"
+		},
+		"hero.doctor": {
+			"type": "image",
+			"file": "heroes/doctor.png",
+			"anchor": {
+				"x": 0.508,
+				"y": 0.9328
+			}
+		},
+		"hero.imp": {
+			"type": "image",
+			"file": "heroes/imp.png",
+			"anchor": {
+				"x": 0.5317,
+				"y": 0.9175
+			}
 		}
 	}
 }
